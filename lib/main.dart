@@ -21,13 +21,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ChatViewModel(aiService: aiService),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => ChatViewModel(aiService: aiService),
+        ),
+      ],
       child: MaterialApp(
-        title: 'NMIXX 채팅',
+        title: 'NMIXX Chat',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           primarySwatch: Colors.purple,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
+          fontFamily: 'Quicksand',
+          textTheme: TextTheme(
+            bodyMedium: TextStyle(fontFamily: 'Quicksand'),
+            bodyLarge: TextStyle(fontFamily: 'Quicksand'),
+            titleMedium: TextStyle(fontFamily: 'Quicksand'),
+          ),
         ),
         home: const HomeScreen(),
       ),
