@@ -33,7 +33,7 @@ class ChatViewModel extends ChangeNotifier {
     if (!_memberMessages.containsKey(memberId) || _memberMessages[memberId]!.isEmpty) {
       _memberMessages[memberId] = [
         ChatMessage(
-          message: "안녕하세요! ${_currentMember.name}입니다. 오늘도 채팅해서 반가워요! 무슨 얘기든 편하게 물어보세요~",
+          message: _currentMember.firstMessage,
           isUser: false,
           timestamp: DateTime.now(),
         )

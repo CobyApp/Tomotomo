@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../widgets/chat_input.dart';
 import '../widgets/message_list.dart';
 import '../../viewmodels/chat_viewmodel.dart';
-import 'package:color/color.dart';
 
 class ChatScreen extends StatefulWidget {
   final String memberId;
