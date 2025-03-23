@@ -1,47 +1,61 @@
 import 'package:flutter/foundation.dart';
 import '../models/chat_message.dart';
 import '../services/ai_service.dart';
+import '../data/members_data.dart';
+import '../models/member.dart';
 
 class ChatViewModel extends ChangeNotifier {
   final AIService _aiService;
-  List<ChatMessage> _messages = [];  // private 변수로 변경
+  Map<String, List<ChatMessage>> _memberMessages = {}; // 멤버별 메시지 저장
   bool _isGenerating = false;
+  
+  Member _currentMember = MembersData.members[0];
+  String _currentMemberId = '';
+  
+  List<ChatMessage> get messages => _memberMessages[_currentMemberId] ?? [];
+  bool get isGenerating => _isGenerating;
+  Member get currentMember => _currentMember;
 
-  List<ChatMessage> get messages => _messages;
-
-  ChatViewModel({AIService? aiService}) 
-      : _aiService = aiService ?? AIService() {
-    _addWelcomeMessage();
-  }
-
-  void _addWelcomeMessage() {
-    _messages = [
-      ChatMessage(
-        message: "안녕하세요! 저와 대화를 나누게 되어서 기뻐요 🥰 완전 럭키비키잖아💛✨",
-        isUser: false,
-        timestamp: DateTime.now(),
-      )
-    ];
+  ChatViewModel({required AIService aiService}) : _aiService = aiService;
+  
+  void initializeForMember(String memberId) {
+    print('Initializing for member ID: $memberId');
+    
+    // 현재 멤버 ID 업데이트
+    _currentMemberId = memberId;
+    _currentMember = MembersData.getMemberById(memberId);
+    print('Member name set to: ${_currentMember.name}');
+    
+    // AI 서비스 초기화
+    _aiService.initializeForMember(memberId);
+    
+    // 해당 멤버의 메시지가 없으면 웰컴 메시지 추가
+    if (!_memberMessages.containsKey(memberId) || _memberMessages[memberId]!.isEmpty) {
+      _memberMessages[memberId] = [
+        ChatMessage(
+          message: "안녕하세요! ${_currentMember.name}입니다. 오늘도 채팅해서 반가워요! 무슨 얘기든 편하게 물어보세요~",
+          isUser: false,
+          timestamp: DateTime.now(),
+        )
+      ];
+    }
+    
     notifyListeners();
   }
 
-  bool get isGenerating => _isGenerating;
-
   void clearMessages() {
-    // 서비스 초기화
     _isGenerating = false;
     _aiService.resetChat();
     
-    // 메시지를 비우고 웰컴 메시지 즉시 추가 (한 번에 처리)
-    _messages = [
+    // 현재 멤버의 메시지만 초기화
+    _memberMessages[_currentMemberId] = [
       ChatMessage(
-        message: "안녕하세요! 저와 대화를 나누게 되어서 기뻐요 🥰 완전 럭키비키잖아💛✨",
+        message: "채팅이 초기화되었어요! ${_currentMember.name}입니다. 다시 대화해요~",
         isUser: false,
         timestamp: DateTime.now(),
       )
     ];
     
-    // 한 번만 알림
     notifyListeners();
   }
 
@@ -54,7 +68,12 @@ class ChatViewModel extends ChangeNotifier {
       isUser: true,
       timestamp: DateTime.now(),
     );
-    _messages.add(userMessage);
+    
+    if (!_memberMessages.containsKey(_currentMemberId)) {
+      _memberMessages[_currentMemberId] = [];
+    }
+    
+    _memberMessages[_currentMemberId]!.add(userMessage);
     notifyListeners();
 
     try {
@@ -71,7 +90,7 @@ class ChatViewModel extends ChangeNotifier {
           isUser: false,
           timestamp: DateTime.now(),
         );
-        _messages.add(aiMessage);
+        _memberMessages[_currentMemberId]!.add(aiMessage);
       }
     } catch (e) {
       // 에러 처리
@@ -80,7 +99,7 @@ class ChatViewModel extends ChangeNotifier {
         isUser: false,
         timestamp: DateTime.now(),
       );
-      _messages.add(errorMessage);
+      _memberMessages[_currentMemberId]!.add(errorMessage);
     } finally {
       _isGenerating = false;
       notifyListeners();

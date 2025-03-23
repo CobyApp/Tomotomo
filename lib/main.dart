@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'viewmodels/chat_viewmodel.dart';
-import 'views/screens/chat_screen.dart';
+import 'views/screens/home_screen.dart';
 import 'services/ai_service.dart';
 import 'utils/constants.dart';  // AppTheme 가져오기
 
@@ -24,9 +24,12 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => ChatViewModel(aiService: aiService),
       child: MaterialApp(
-        title: '럭키비키 채팅',
-        theme: AppTheme.theme,  // 새로 정의한 테마 적용
-        home: const ChatScreen(),
+        title: 'NMIXX 채팅',
+        theme: ThemeData(
+          primarySwatch: Colors.purple,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+        home: const HomeScreen(),
       ),
     );
   }

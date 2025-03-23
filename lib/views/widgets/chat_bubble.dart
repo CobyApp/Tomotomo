@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../models/chat_message.dart';
 import '../../utils/constants.dart';
 import '../../utils/bubble_animation.dart';
+import '../../viewmodels/chat_viewmodel.dart';
+import 'package:provider/provider.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
@@ -12,6 +14,9 @@ class ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
+    final viewModel = Provider.of<ChatViewModel>(context, listen: false);
+    final memberName = isUser ? "나" : viewModel.currentMember.name;
+    final memberColor = viewModel.currentMember.primaryColor;
     
     return BubbleAnimation(
       isNew: isNew,
@@ -29,9 +34,9 @@ class ChatBubble extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(left: 16, bottom: 4),
                 child: Text(
-                  '럭키비키',
+                  memberName,
                   style: TextStyle(
-                    color: AppColors.primaryDark, 
+                    color: memberColor, 
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -39,7 +44,7 @@ class ChatBubble extends StatelessWidget {
               ),
             Container(
               decoration: BoxDecoration(
-                color: isUser ? AppColors.userBubble : AppColors.botBubble,
+                color: isUser ? memberColor : Colors.white,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(20),
                   topRight: const Radius.circular(20),
@@ -48,7 +53,7 @@ class ChatBubble extends StatelessWidget {
                 ),
                 border: isUser 
                     ? null 
-                    : Border.all(color: AppColors.botBubbleBorder, width: 1.5),
+                    : Border.all(color: memberColor.withOpacity(0.7), width: 1.5),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
@@ -61,7 +66,7 @@ class ChatBubble extends StatelessWidget {
               child: Text(
                 message.message,
                 style: TextStyle(
-                  color: isUser ? AppColors.userBubbleText : AppColors.botBubbleText,
+                  color: isUser ? Colors.white : Colors.black87,
                   fontSize: 16,
                 ),
               ),
