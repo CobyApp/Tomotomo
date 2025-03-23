@@ -4,13 +4,52 @@ import '../services/ai_service.dart';
 
 class ChatViewModel extends ChangeNotifier {
   final AIService _aiService;
-  List<ChatMessage> messages = [];
+  List<ChatMessage> _messages = [];  // private 변수로 변경
   bool _isGenerating = false;
 
+  List<ChatMessage> get messages => _messages;
+
   ChatViewModel({AIService? aiService}) 
-      : _aiService = aiService ?? AIService();
+      : _aiService = aiService ?? AIService() {
+    _addWelcomeMessage();
+  }
+
+  void _addWelcomeMessage() {
+    _messages = [
+      ChatMessage(
+        message: "안녕하세요! 저와 대화를 나누게 되어서 기뻐요 🥰 완전 럭키비키잖아💛✨",
+        isUser: false,
+        timestamp: DateTime.now(),
+      )
+    ];
+    notifyListeners();
+  }
 
   bool get isGenerating => _isGenerating;
+
+  void clearMessages() {
+    // 완전히 새로운 리스트로 교체
+    _messages = [];
+    
+    // 상태 업데이트를 즉시 알림
+    notifyListeners();
+    
+    // AI 서비스 초기화
+    _isGenerating = false;
+    _aiService.resetChat();
+    
+    // 웰컴 메시지 추가 (별도 알림)
+    _messages = [
+      ChatMessage(
+        message: "안녕하세요! 저와 대화를 나누게 되어서 기뻐요 🥰 완전 럭키비키잖아💛✨",
+        isUser: false,
+        timestamp: DateTime.now(),
+      )
+    ];
+    
+    // 두 번째 알림으로 확실하게 업데이트
+    notifyListeners();
+  }
 
   Future<void> sendMessage(String message) async {
     if (message.trim().isEmpty) return;
@@ -21,7 +60,7 @@ class ChatViewModel extends ChangeNotifier {
       isUser: true,
       timestamp: DateTime.now(),
     );
-    messages.add(userMessage);
+    _messages.add(userMessage);
     notifyListeners();
 
     try {
@@ -38,7 +77,7 @@ class ChatViewModel extends ChangeNotifier {
           isUser: false,
           timestamp: DateTime.now(),
         );
-        messages.add(aiMessage);
+        _messages.add(aiMessage);
       }
     } catch (e) {
       // 에러 처리
@@ -47,16 +86,10 @@ class ChatViewModel extends ChangeNotifier {
         isUser: false,
         timestamp: DateTime.now(),
       );
-      messages.add(errorMessage);
+      _messages.add(errorMessage);
     } finally {
       _isGenerating = false;
       notifyListeners();
     }
-  }
-
-  void clearMessages() {
-    messages.clear();
-    _aiService.resetChat();
-    notifyListeners();
   }
 } 

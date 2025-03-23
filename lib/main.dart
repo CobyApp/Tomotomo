@@ -6,6 +6,7 @@ import 'views/screens/chat_screen.dart';
 import 'services/ai_service.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();  // Flutter 바인딩 초기화
   await dotenv.load(fileName: ".env");
   final aiService = AIService();
   

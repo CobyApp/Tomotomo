@@ -11,6 +11,7 @@ class MessageList extends StatelessWidget {
     return Consumer<ChatViewModel>(
       builder: (context, viewModel, child) {
         return ListView.builder(
+          key: ValueKey(viewModel.messages.length),
           padding: EdgeInsets.only(
             left: 8,
             right: 8,
@@ -23,8 +24,9 @@ class MessageList extends StatelessWidget {
           itemBuilder: (context, index) {
             final message = viewModel.messages[viewModel.messages.length - 1 - index];
             return ChatBubble(
+              key: UniqueKey(),
               message: message,
-              isNew: index == 0 && viewModel.messages.isNotEmpty,
+              isNew: index == 0,
             );
           },
         );
