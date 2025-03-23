@@ -28,17 +28,11 @@ class ChatViewModel extends ChangeNotifier {
   bool get isGenerating => _isGenerating;
 
   void clearMessages() {
-    // 완전히 새로운 리스트로 교체
-    _messages = [];
-    
-    // 상태 업데이트를 즉시 알림
-    notifyListeners();
-    
-    // AI 서비스 초기화
+    // 서비스 초기화
     _isGenerating = false;
     _aiService.resetChat();
     
-    // 웰컴 메시지 추가 (별도 알림)
+    // 메시지를 비우고 웰컴 메시지 즉시 추가 (한 번에 처리)
     _messages = [
       ChatMessage(
         message: "안녕하세요! 저와 대화를 나누게 되어서 기뻐요 🥰 완전 럭키비키잖아💛✨",
@@ -47,7 +41,7 @@ class ChatViewModel extends ChangeNotifier {
       )
     ];
     
-    // 두 번째 알림으로 확실하게 업데이트
+    // 한 번만 알림
     notifyListeners();
   }
 

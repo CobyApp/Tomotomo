@@ -13,15 +13,6 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  // 화면을 강제로 다시 그리기 위한 키
-  Key _contentKey = UniqueKey();
-
-  void _refreshScreen() {
-    setState(() {
-      _contentKey = UniqueKey();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,18 +25,15 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              // 메시지 초기화
-              context.read<ChatViewModel>().clearMessages();
-              // 화면 갱신
-              _refreshScreen();
+              // 메시지 초기화 직접 수행
+              Provider.of<ChatViewModel>(context, listen: false).clearMessages();
             },
           ),
         ],
       ),
       body: SafeArea(
         child: Column(
-          key: _contentKey, // 키를 통해 전체 컨텐츠를 갱신
-          children: const [
+          children: const [  // const 유지
             Expanded(
               child: MessageList(),
             ),
