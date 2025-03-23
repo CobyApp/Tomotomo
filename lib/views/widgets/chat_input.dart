@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../utils/constants.dart';
 import '../../viewmodels/chat_viewmodel.dart';
+import '../../utils/constants.dart';
 
 class ChatInput extends StatefulWidget {
-  const ChatInput({super.key});
+  const ChatInput({Key? key}) : super(key: key);
 
   @override
   State<ChatInput> createState() => _ChatInputState();
@@ -12,95 +12,112 @@ class ChatInput extends StatefulWidget {
 
 class _ChatInputState extends State<ChatInput> {
   final TextEditingController _controller = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
+  bool _hasText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      setState(() {
+        _hasText = _controller.text.isNotEmpty;
+      });
+    });
+  }
 
   @override
   void dispose() {
     _controller.dispose();
-    _focusNode.dispose();
     super.dispose();
   }
 
-  void _handleSubmit() {
-    if (_controller.text.trim().isEmpty) return;
-    
-    final viewModel = context.read<ChatViewModel>();
-    viewModel.sendMessage(_controller.text);
-    _controller.clear();
-    _focusNode.requestFocus(); // 포커스 유지
+  void _sendMessage() {
+    if (_controller.text.trim().isNotEmpty) {
+      context.read<ChatViewModel>().sendMessage(_controller.text.trim());
+      _controller.clear();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<ChatViewModel>();
-    
     return Container(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 8,
-        bottom: MediaQuery.of(context).padding.bottom + 8,
-      ),
       decoration: BoxDecoration(
-        color: AppColors.inputBackground,
-        border: Border(
-          top: BorderSide(
-            color: AppColors.divider,
-            width: 0.5,
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, -2),
           ),
+        ],
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(25),
+          topRight: Radius.circular(25),
         ),
       ),
-      child: Container(
-        decoration: AppDecorations.inputDecoration,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                enabled: !viewModel.isGenerating,
-                style: AppTextStyles.input,
-                maxLines: null,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  hintText: viewModel.isGenerating 
-                      ? 'AI가 응답을 생성하고 있습니다...' 
-                      : '메시지를 입력하세요...',
-                  hintStyle: AppTextStyles.input.copyWith(
-                    color: AppColors.textSecondary,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Consumer<ChatViewModel>(
+        builder: (context, viewModel, child) {
+          return Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.inputBackground,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: AppColors.accent, width: 1.5),
                   ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(
+                      hintText: '메시지를 입력하세요...',
+                      hintStyle: TextStyle(color: Colors.grey),
+                      border: InputBorder.none,
+                    ),
+                    maxLines: 3,
+                    minLines: 1,
+                    textInputAction: TextInputAction.send,
+                    enabled: !viewModel.isGenerating,
+                    onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
-                onSubmitted: viewModel.isGenerating ? null : (_) => _handleSubmit(),
               ),
-            ),
-            Material(
-              type: MaterialType.transparency,
-              child: IconButton(
-                icon: viewModel.isGenerating
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Icon(
-                        Icons.arrow_upward_rounded,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
-                onPressed: viewModel.isGenerating ? null : _handleSubmit,
-                splashRadius: 24,
+              const SizedBox(width: 8),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: _hasText ? AppColors.sendButton : Colors.grey.shade300,
+                  shape: BoxShape.circle,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(25),
+                    onTap: viewModel.isGenerating || !_hasText ? null : _sendMessage,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      child: viewModel.isGenerating
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 3,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.send_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }

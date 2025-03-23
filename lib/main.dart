@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'viewmodels/chat_viewmodel.dart';
 import 'views/screens/chat_screen.dart';
 import 'services/ai_service.dart';
+import 'utils/constants.dart';  // AppTheme 가져오기
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();  // Flutter 바인딩 초기화
@@ -23,11 +24,8 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => ChatViewModel(aiService: aiService),
       child: MaterialApp(
-        title: 'AI Chat',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-        ),
+        title: '럭키비키 채팅',
+        theme: AppTheme.theme,  // 새로 정의한 테마 적용
         home: const ChatScreen(),
       ),
     );

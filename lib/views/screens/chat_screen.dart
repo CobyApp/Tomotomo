@@ -18,27 +18,52 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('AI Chat'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/crown.png',  // 왕관 아이콘 이미지 추가 필요
+              height: 24,
+              width: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('럭키비키와 대화'),
+            const SizedBox(width: 8),
+            Image.asset(
+              'assets/images/crown.png',  // 왕관 아이콘 이미지 추가 필요
+              height: 24,
+              width: 24,
+            ),
+          ],
+        ),
         backgroundColor: AppColors.primary,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
-              // 메시지 초기화 직접 수행
               Provider.of<ChatViewModel>(context, listen: false).clearMessages();
             },
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: const [  // const 유지
-            Expanded(
-              child: MessageList(),
-            ),
-            ChatInput(),
-          ],
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background.png'), // 배경 이미지 추가 필요
+            fit: BoxFit.cover,
+            opacity: 0.1,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: const [
+              Expanded(
+                child: MessageList(),
+              ),
+              ChatInput(),
+            ],
+          ),
         ),
       ),
       resizeToAvoidBottomInset: true,
