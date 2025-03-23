@@ -1,26 +1,14 @@
 import 'package:flutter/foundation.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/chat_message.dart';
+import '../services/ai_service.dart';
 
 class ChatViewModel extends ChangeNotifier {
+  final AIService _aiService;
   List<ChatMessage> messages = [];
-  late final GenerativeModel _model;
-  late final ChatSession _chat;
   bool _isGenerating = false;
 
-  ChatViewModel() {
-    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-    if (apiKey.isEmpty) {
-      throw Exception('GEMINI_API_KEY not found in .env file');
-    }
-    
-    _model = GenerativeModel(
-      model: 'gemini-1.5-pro',
-      apiKey: apiKey,
-    );
-    _chat = _model.startChat();
-  }
+  ChatViewModel({AIService? aiService}) 
+      : _aiService = aiService ?? AIService();
 
   bool get isGenerating => _isGenerating;
 
@@ -41,8 +29,7 @@ class ChatViewModel extends ChangeNotifier {
       notifyListeners();
 
       // AI 응답 생성
-      final response = await _chat.sendMessage(Content.text(message));
-      final aiResponse = response.text;
+      final aiResponse = await _aiService.sendMessage(message);
 
       if (aiResponse != null) {
         // AI 메시지 추가
@@ -69,7 +56,7 @@ class ChatViewModel extends ChangeNotifier {
 
   void clearMessages() {
     messages.clear();
-    _chat = _model.startChat();
+    _aiService.resetChat();
     notifyListeners();
   }
 } 

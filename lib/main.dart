@@ -3,19 +3,24 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'viewmodels/chat_viewmodel.dart';
 import 'views/screens/chat_screen.dart';
+import 'services/ai_service.dart';
 
-Future<void> main() async {
+void main() async {
   await dotenv.load(fileName: ".env");
-  runApp(const MyApp());
+  final aiService = AIService();
+  
+  runApp(MyApp(aiService: aiService));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final AIService aiService;
+
+  const MyApp({super.key, required this.aiService});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ChatViewModel(),
+      create: (_) => ChatViewModel(aiService: aiService),
       child: MaterialApp(
         title: 'AI Chat',
         theme: ThemeData(
