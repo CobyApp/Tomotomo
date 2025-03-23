@@ -65,23 +65,24 @@ class _MessageListState extends State<MessageList> {
                   : MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // 멤버 아바타 (사용자 메시지일 경우 표시 안 함)
-                  if (!isUserMessage) ...[
-                    CircleAvatar(
-                      backgroundImage: AssetImage(member.imageUrl),
-                      radius: 16,
+                  // 멤버 아바타
+                  if (!isUserMessage)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: CircleAvatar(
+                        radius: 16,
+                        backgroundImage: AssetImage(member.imageUrl),
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                  ],
-                  
-                  // 메시지 컨텐츠
+                    
+                  // 메시지와 시간
                   Flexible(
                     child: Column(
-                      crossAxisAlignment: isUserMessage
-                          ? CrossAxisAlignment.end
-                          : CrossAxisAlignment.start,
+                      crossAxisAlignment: isUserMessage 
+                        ? CrossAxisAlignment.end 
+                        : CrossAxisAlignment.start,
                       children: [
-                        // 이름
+                        // 멤버 이름
                         if (!isUserMessage)
                           Padding(
                             padding: const EdgeInsets.only(left: 4, bottom: 4),
@@ -101,9 +102,15 @@ class _MessageListState extends State<MessageList> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
                             color: isUserMessage
-                                ? AppTheme.primaryColor
-                                : member.primaryColor.withOpacity(0.1),
+                                ? member.primaryColor
+                                : member.primaryColor.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(18),
+                            border: !isUserMessage 
+                                ? Border.all(
+                                    color: member.primaryColor.withOpacity(0.3),
+                                    width: 1,
+                                  ) 
+                                : null,
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.05),
