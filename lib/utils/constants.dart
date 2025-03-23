@@ -63,6 +63,125 @@ class AppDecorations {
 }
 
 class AppTheme {
+  // 앱 기본 색상
+  static const Color primaryColor = Color(0xFF6A3EA1);
+  static const Color secondaryColor = Color(0xFFEFE9F7);
+  static const Color accentColor = Color(0xFFFF8FAB);
+  
+  // 텍스트 색상
+  static const Color textPrimary = Color(0xFF1A1A1A);
+  static const Color textSecondary = Color(0xFF666666);
+  static const Color textLight = Color(0xFF999999);
+  
+  // 배경 색상
+  static const Color background = Color(0xFFFCFCFC);
+  static const Color cardBackground = Color(0xFFFFFFFF);
+  
+  // 그라데이션
+  static const LinearGradient primaryGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF8A4FFF),
+      Color(0xFF6A3EA1),
+    ],
+  );
+  
+  // 그림자
+  static List<BoxShadow> cardShadow = [
+    BoxShadow(
+      color: Colors.black.withOpacity(0.08),
+      blurRadius: 12,
+      offset: const Offset(0, 4),
+    ),
+  ];
+  
+  // 모서리 둥글기
+  static const double borderRadius = 16.0;
+  static BorderRadius defaultBorderRadius = BorderRadius.circular(borderRadius);
+  
+  // 애니메이션 지속 시간
+  static const Duration animationDuration = Duration(milliseconds: 300);
+  
+  // 텍스트 스타일
+  static TextStyle get headingLarge => const TextStyle(
+    fontFamily: 'Quicksand',
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
+    height: 1.3,
+    color: textPrimary,
+  );
+  
+  static TextStyle get headingMedium => const TextStyle(
+    fontFamily: 'Quicksand',
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+    height: 1.3,
+    color: textPrimary,
+  );
+  
+  static TextStyle get bodyLarge => const TextStyle(
+    fontFamily: 'Quicksand',
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    height: 1.5,
+    color: textPrimary,
+  );
+  
+  static TextStyle get bodyMedium => const TextStyle(
+    fontFamily: 'Quicksand',
+    fontSize: 14,
+    fontWeight: FontWeight.normal,
+    height: 1.5,
+    color: textPrimary,
+  );
+  
+  static TextStyle get bodySmall => const TextStyle(
+    fontFamily: 'Quicksand',
+    fontSize: 12,
+    fontWeight: FontWeight.normal,
+    height: 1.5,
+    color: textSecondary,
+  );
+  
+  static TextStyle get buttonText => const TextStyle(
+    fontFamily: 'Quicksand',
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+  );
+  
+  // 버튼 스타일
+  static ButtonStyle get primaryButtonStyle => ElevatedButton.styleFrom(
+    backgroundColor: primaryColor,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(borderRadius),
+    ),
+    elevation: 0,
+  );
+  
+  // 입력창 장식
+  static InputDecoration get inputDecoration => InputDecoration(
+    filled: true,
+    fillColor: cardBackground,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(borderRadius),
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(borderRadius),
+      borderSide: BorderSide(color: Colors.grey.withOpacity(0.1)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(borderRadius),
+      borderSide: const BorderSide(color: primaryColor),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    hintStyle: bodyMedium.copyWith(color: textLight),
+  );
+
   static ThemeData get theme {
     return ThemeData(
       primaryColor: AppColors.primary,
