@@ -88,18 +88,29 @@ class ChatViewModel extends ChangeNotifier {
     }
   }
 
-  void setCurrentMember(Character character) {
+  void setCurrentMember(Character character, String languageCode) {
     _currentMember = character;
-    _aiService.initializeForCharacter(character);
+    _aiService.initializeForCharacter(character, languageCode);
     if (!_memberMessages.containsKey(character.id)) {
       _memberMessages[character.id] = [
         ChatMessage(
-          message: character.firstMessage,
+          message: _getLocalizedFirstMessage(character, languageCode),
           isUser: false,
           timestamp: DateTime.now(),
         )
       ];
     }
     notifyListeners();
+  }
+  
+  String _getLocalizedFirstMessage(Character character, String languageCode) {
+    switch (languageCode) {
+      case 'ja':
+        return 'こんにちは！${character.name}です。お話しましょう！';
+      case 'en':
+        return 'Hi! I\'m ${character.name}. Let\'s chat!';
+      default:
+        return '안녕하세요! ${character.name}입니다. 이야기 나눠요!';
+    }
   }
 } 

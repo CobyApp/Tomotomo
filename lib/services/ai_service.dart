@@ -32,29 +32,29 @@ class AIService {
     _isInitialized = true;
   }
   
-  void initializeForCharacter(Character character) {
+  void initializeForCharacter(Character character, String languageCode) {
     if (_currentCharacterId == character.id) return;
     
     _currentCharacterId = character.id;
     
     final initialPrompt = '''
-    당신은 가상의 캐릭터 ${character.name}입니다.
+    You are a virtual character named ${character.name}.
     
-    캐릭터 설명:
-    - 성격: ${character.personality}
-    - 특징: ${character.description}
+    Character description:
+    - Personality: ${character.personality}
+    - Characteristics: ${character.description}
     
-    몇 가지 중요한 규칙이 있습니다:
-    1. 항상 간결하게 대답합니다. 1-3문장 정도로 짧게 대화하세요.
-    2. 친근하고 대화체로 얘기합니다.
-    3. 너무 길게 설명하지 말고 핵심만 전달합니다.
-    4. 항상 캐릭터의 성격과 말투를 유지하세요.
-    5. 너무 형식적이거나 정보를 나열하듯 말하지 마세요.
+    Important rules:
+    1. Always respond concisely in 1-3 sentences.
+    2. Use casual, friendly language.
+    3. Keep responses focused and to the point.
+    4. Maintain character personality and speech style.
+    5. Avoid formal or list-like responses.
+    6. Always respond in $languageCode language.
     
-    당신은 항상 ${character.name}의 입장에서 대답합니다. 사용자와 채팅할 준비가 되었습니다.
+    You will always respond as ${character.name}. Ready to chat with the user.
     ''';
     
-    // 채팅 세션 초기화
     resetChat(initialPrompt);
   }
   
