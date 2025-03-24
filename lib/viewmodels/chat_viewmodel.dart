@@ -10,87 +10,19 @@ class ChatViewModel extends ChangeNotifier {
   bool _isGenerating = false;
   
   Character _currentMember = characters[0];
+  String _currentLanguage = 'ko';  // 현재 언어 추가
   
-  List<ChatMessage> get messages => _memberMessages[_currentMember.id] ?? [];
-  bool get isGenerating => _isGenerating;
   Character get currentMember => _currentMember;
+  bool get isGenerating => _isGenerating;
+  List<ChatMessage> get messages => _memberMessages[_currentMember.id] ?? [];
 
-  ChatViewModel({required AIService aiService}) : _aiService = aiService {
-    // 초기화 시 첫 메시지 설정
-    _memberMessages[_currentMember.id] = [
-      ChatMessage(
-        message: _currentMember.firstMessage,
-        isUser: false,
-        timestamp: DateTime.now(),
-      )
-    ];
-  }
-
-  void clearMessages() {
-    _isGenerating = false;
-    _aiService.resetChat();
-    
-    _memberMessages[_currentMember.id] = [
-      ChatMessage(
-        message: "채팅이 초기화되었어요! ${_currentMember.name}입니다. 다시 대화해요~",
-        isUser: false,
-        timestamp: DateTime.now(),
-      )
-    ];
-    
-    notifyListeners();
-  }
-
-  Future<void> sendMessage(String message) async {
-    if (message.trim().isEmpty) return;
-
-    // 사용자 메시지 추가
-    final userMessage = ChatMessage(
-      message: message,
-      isUser: true,
-      timestamp: DateTime.now(),
-    );
-    
-    if (!_memberMessages.containsKey(_currentMember.id)) {
-      _memberMessages[_currentMember.id] = [];
-    }
-    
-    _memberMessages[_currentMember.id]!.add(userMessage);
-    notifyListeners();
-
-    try {
-      _isGenerating = true;
-      notifyListeners();
-
-      // AI 응답 생성
-      final aiResponse = await _aiService.sendMessage(message);
-
-      if (aiResponse != null) {
-        // AI 메시지 추가
-        final aiMessage = ChatMessage(
-          message: aiResponse,
-          isUser: false,
-          timestamp: DateTime.now(),
-        );
-        _memberMessages[_currentMember.id]!.add(aiMessage);
-      }
-    } catch (e) {
-      // 에러 처리
-      final errorMessage = ChatMessage(
-        message: '죄송합니다. 응답을 생성하는 중 오류가 발생했습니다.',
-        isUser: false,
-        timestamp: DateTime.now(),
-      );
-      _memberMessages[_currentMember.id]!.add(errorMessage);
-    } finally {
-      _isGenerating = false;
-      notifyListeners();
-    }
-  }
+  ChatViewModel({required AIService aiService}) : _aiService = aiService;
 
   void setCurrentMember(Character character, String languageCode) {
     _currentMember = character;
+    _currentLanguage = languageCode;  // 언어 코드 저장
     _aiService.initializeForCharacter(character, languageCode);
+    
     if (!_memberMessages.containsKey(character.id)) {
       _memberMessages[character.id] = [
         ChatMessage(
@@ -102,7 +34,7 @@ class ChatViewModel extends ChangeNotifier {
     }
     notifyListeners();
   }
-  
+
   String _getLocalizedFirstMessage(Character character, String languageCode) {
     switch (languageCode) {
       case 'ja':
@@ -112,5 +44,53 @@ class ChatViewModel extends ChangeNotifier {
       default:
         return '안녕하세요! ${character.name}입니다. 이야기 나눠요!';
     }
+  }
+
+  Future<void> sendMessage(String message) async {
+    if (message.trim().isEmpty) return;
+
+    final userMessage = ChatMessage(
+      message: message,
+      isUser: true,
+      timestamp: DateTime.now(),
+    );
+
+    _memberMessages[_currentMember.id]?.add(userMessage);
+    notifyListeners();
+
+    _isGenerating = true;
+    notifyListeners();
+
+    try {
+      final response = await _aiService.sendMessage(message, _currentLanguage);  // 언어 코드 전달
+      if (response != null) {
+        final aiMessage = ChatMessage(
+          message: response,
+          isUser: false,
+          timestamp: DateTime.now(),
+        );
+        _memberMessages[_currentMember.id]?.add(aiMessage);
+      }
+    } catch (e) {
+      // 에러 처리
+    } finally {
+      _isGenerating = false;
+      notifyListeners();
+    }
+  }
+
+  void clearMessages() {
+    _isGenerating = false;
+    _aiService.resetChat(_currentLanguage);  // 언어 코드 전달
+    
+    _memberMessages[_currentMember.id] = [
+      ChatMessage(
+        message: _getLocalizedFirstMessage(_currentMember, _currentLanguage),
+        isUser: false,
+        timestamp: DateTime.now(),
+      )
+    ];
+    
+    notifyListeners();
   }
 } 

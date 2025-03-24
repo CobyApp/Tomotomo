@@ -50,7 +50,8 @@ class AIService {
     3. Keep responses focused and to the point.
     4. Maintain character personality and speech style.
     5. Avoid formal or list-like responses.
-    6. Always respond in $languageCode language.
+    6. ALWAYS respond in ${_getLanguageName(languageCode)} language only.
+    7. Never use any other language than ${_getLanguageName(languageCode)}.
     
     You will always respond as ${character.name}. Ready to chat with the user.
     ''';
@@ -88,21 +89,42 @@ class AIService {
     ]);
   }
   
-  Future<String?> sendMessage(String message) async {
+  String _getLanguageName(String languageCode) {
+    switch (languageCode) {
+      case 'ja':
+        return 'Japanese';
+      case 'en':
+        return 'English';
+      default:
+        return 'Korean';
+    }
+  }
+  
+  Future<String?> sendMessage(String message, String languageCode) async {
     if (_chatSession == null || _model == null) {
-      return '죄송합니다. AI 서비스가 초기화되지 않았습니다.';
+      return _getLocalizedError(languageCode);
     }
     
     try {
       final response = await _chatSession!.sendMessage(
-        Content.text(message),
+        Content.text('$message\n\nRemember to ALWAYS respond in ${_getLanguageName(languageCode)} language only.'),
       );
       
-      final responseText = response.text;
-      return responseText;
+      return response.text;
     } catch (e) {
       debugPrint('AI 응답 생성 중 오류: $e');
-      return '죄송합니다. 응답을 생성하는 중 오류가 발생했습니다.';
+      return _getLocalizedError(languageCode);
+    }
+  }
+
+  String _getLocalizedError(String languageCode) {
+    switch (languageCode) {
+      case 'ja':
+        return 'すみません。エラーが発生しました。';
+      case 'en':
+        return 'Sorry, an error occurred.';
+      default:
+        return '죄송합니다. 오류가 발생했습니다.';
     }
   }
 }
