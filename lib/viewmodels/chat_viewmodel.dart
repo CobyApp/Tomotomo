@@ -6,25 +6,28 @@ import '../data/characters.dart';
 
 class ChatViewModel extends ChangeNotifier {
   final AIService _aiService;
-  Map<String, List<ChatMessage>> _memberMessages = {};
+  Map<String, List<ChatMessage>> _characterMessages = {};
   bool _isGenerating = false;
   
-  Character _currentMember = characters[0];
+  Character _currentCharacter;
   String _currentLanguage = 'ko';  // 현재 언어 추가
   
-  Character get currentMember => _currentMember;
+  Character get character => _currentCharacter;
   bool get isGenerating => _isGenerating;
-  List<ChatMessage> get messages => _memberMessages[_currentMember.id] ?? [];
+  List<ChatMessage> get messages => _characterMessages[_currentCharacter.id] ?? [];
 
-  ChatViewModel({required AIService aiService}) : _aiService = aiService;
+  ChatViewModel({
+    Character? initialCharacter,
+    required AIService aiService,
+  }) : _aiService = aiService, _currentCharacter = initialCharacter ?? characters[0];
 
-  void setCurrentMember(Character character, String languageCode) {
-    _currentMember = character;
+  void setCurrentCharacter(Character character, String languageCode) {
+    _currentCharacter = character;
     _currentLanguage = languageCode;  // 언어 코드 저장
     _aiService.initializeForCharacter(character, languageCode);
     
-    if (!_memberMessages.containsKey(character.id)) {
-      _memberMessages[character.id] = [
+    if (!_characterMessages.containsKey(character.id)) {
+      _characterMessages[character.id] = [
         ChatMessage(
           message: character.getFirstMessage(languageCode),
           isUser: false,
@@ -39,6 +42,11 @@ class ChatViewModel extends ChangeNotifier {
     return character.getFirstMessage(languageCode);
   }
 
+  void changeCharacter(Character newCharacter) {
+    _currentCharacter = newCharacter;
+    notifyListeners();
+  }
+
   Future<void> sendMessage(String message) async {
     if (message.trim().isEmpty) return;
 
@@ -48,24 +56,24 @@ class ChatViewModel extends ChangeNotifier {
       timestamp: DateTime.now(),
     );
 
-    _memberMessages[_currentMember.id]?.add(userMessage);
+    _characterMessages[_currentCharacter.id]?.add(userMessage);
     notifyListeners();
 
     _isGenerating = true;
     notifyListeners();
 
     try {
-      final response = await _aiService.sendMessage(message, _currentLanguage);  // 언어 코드 전달
+      final response = await _aiService.generateResponse(message);
       if (response != null) {
         final aiMessage = ChatMessage(
           message: response,
           isUser: false,
           timestamp: DateTime.now(),
         );
-        _memberMessages[_currentMember.id]?.add(aiMessage);
+        _characterMessages[_currentCharacter.id]?.add(aiMessage);
       }
     } catch (e) {
-      // 에러 처리
+      print('AI 응답 생성 중 오류: $e');
     } finally {
       _isGenerating = false;
       notifyListeners();
@@ -74,13 +82,11 @@ class ChatViewModel extends ChangeNotifier {
 
   void clearMessages() {
     _isGenerating = false;
+    _aiService.resetChat();  // 파라미터 제거
     
-    // resetChat 호출 시 현재 언어 코드를 전달
-    _aiService.resetChat(null, _currentLanguage);  // null은 customPrompt, 두 번째 파라미터로 언어 코드 전달
-    
-    _memberMessages[_currentMember.id] = [
+    _characterMessages[_currentCharacter.id] = [
       ChatMessage(
-        message: _currentMember.getFirstMessage(_currentLanguage),
+        message: _currentCharacter.getFirstMessage(_currentLanguage),
         isUser: false,
         timestamp: DateTime.now(),
       )

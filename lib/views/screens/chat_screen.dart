@@ -7,6 +7,7 @@ import '../../utils/constants.dart';
 import '../../viewmodels/settings_viewmodel.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/localization.dart';
+import '../widgets/character_profile_dialog.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({Key? key}) : super(key: key);
@@ -65,9 +66,9 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<ChatViewModel>(context);
+    final viewModel = context.watch<ChatViewModel>();
     final settingsVM = Provider.of<SettingsViewModel>(context);
-    final character = viewModel.currentMember;
+    final character = viewModel.character;
     final l10n = L10n.of(context);
 
     return Scaffold(

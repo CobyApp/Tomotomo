@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../models/character.dart';
 import '../../data/characters.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 import '../../viewmodels/settings_viewmodel.dart';
@@ -63,97 +64,7 @@ class CharacterSelectScreen extends StatelessWidget {
                   itemCount: characters.length,
                   itemBuilder: (context, index) {
                     final character = characters[index];
-                    return GestureDetector(
-                      onTap: () {
-                        context.read<ChatViewModel>().setCurrentMember(
-                          character,
-                          settingsVM.currentLanguage.code,
-                        );
-                        Navigator.pushNamed(context, '/chat');
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: character.primaryColor.withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            // 배경 장식
-                            Positioned(
-                              right: -20,
-                              top: -20,
-                              child: Icon(
-                                Icons.favorite,
-                                size: 100,
-                                color: character.primaryColor.withOpacity(0.1),
-                              ),
-                            ),
-                            
-                            // 캐릭터 정보
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  // 캐릭터 이미지
-                                  Hero(
-                                    tag: 'character_${character.id}',
-                                    child: Container(
-                                      width: 100,
-                                      height: 100,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: character.primaryColor,
-                                          width: 3,
-                                        ),
-                                        image: DecorationImage(
-                                          image: AssetImage(character.imageUrl),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  
-                                  // 캐릭터 텍스트 정보
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          character.getName(settingsVM.currentLanguage.code),
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: character.primaryColor,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          character.getDescription(settingsVM.currentLanguage.code),
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
+                    return _buildCharacterCard(context, character);
                   },
                 ),
               ),
@@ -162,5 +73,74 @@ class CharacterSelectScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildCharacterCard(BuildContext context, Character character) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: () => _onCharacterSelected(context, character),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 캐릭터 이미지
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: Image.asset(
+                  character.imageUrl,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            // 간단한 캐릭터 정보
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        character.name,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: character.primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${character.age}세',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    character.getDescription(context.read<SettingsViewModel>().currentLanguage.code),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _onCharacterSelected(BuildContext context, Character character) {
+    context.read<ChatViewModel>().setCurrentCharacter(
+      character,
+      context.read<SettingsViewModel>().currentLanguage.code,
+    );
+    
+    Navigator.pushNamed(context, '/chat');
   }
 } 
