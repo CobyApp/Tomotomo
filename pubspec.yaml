@@ -97,7 +97,7 @@ flutter:
   assets:
     - .env
     - assets/images/
-    - assets/images/members/
+    - assets/images/characters/
 
   fonts:
     - family: Quicksand

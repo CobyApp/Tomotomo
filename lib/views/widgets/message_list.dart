@@ -79,6 +79,7 @@ class _MessageListState extends State<MessageList> {
                         child: CircleAvatar(
                           radius: 16,
                           backgroundImage: AssetImage(member.imageUrl),
+                          backgroundColor: member.primaryColor.withOpacity(0.1),
                         ),
                       ),
                     
@@ -97,7 +98,7 @@ class _MessageListState extends State<MessageList> {
                                 member.name,
                                 style: TextStyle(
                                   fontFamily: 'Quicksand',
-                                  fontSize: 12,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.bold,
                                   color: member.primaryColor,
                                 ),
