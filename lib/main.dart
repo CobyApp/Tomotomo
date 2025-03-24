@@ -10,6 +10,7 @@ import 'views/screens/settings_screen.dart';
 import 'viewmodels/settings_viewmodel.dart';
 import 'utils/localization.dart';
 import 'utils/app_theme.dart';  // AppTheme는 여기서만 import
+import 'data/characters.dart';  // characters import 추가
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();  // Flutter 바인딩 초기화
@@ -24,9 +25,14 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => L10n()),
         ChangeNotifierProvider(create: (_) => SettingsViewModel()),
-        ChangeNotifierProvider(create: (_) => ChatViewModel(aiService: aiService)),
+        ChangeNotifierProvider(
+          create: (_) => ChatViewModel(
+            character: characters.first,
+            aiService: aiService,
+          ),
+        ),
       ],
-      child: MyApp(aiService: aiService),  // aiService 파라미터 추가
+      child: MyApp(aiService: aiService),  // aiService 전달
     ),
   );
 }
@@ -39,7 +45,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: AppTheme.appNameEn,
+      title: AppConstants.appNameEn,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       initialRoute: '/',

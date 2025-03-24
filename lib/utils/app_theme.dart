@@ -81,4 +81,23 @@ class AppTheme {
   static String getRandomEmoticon() {
     return moeEmoticons[DateTime.now().millisecond % moeEmoticons.length];
   }
+
+  // 텍스트 스타일
+  static TextStyle get titleStyle => const TextStyle(
+    fontFamily: 'Quicksand',
+    fontWeight: FontWeight.w700,
+    fontSize: 18,
+  );
+
+  static TextStyle get subtitleStyle => const TextStyle(
+    fontFamily: 'Quicksand',
+    fontWeight: FontWeight.w500,
+    fontSize: 14,
+  );
+
+  static TextStyle get bodyStyle => const TextStyle(
+    fontFamily: 'Quicksand',
+    fontWeight: FontWeight.w400,
+    fontSize: 14,
+  );
 } 

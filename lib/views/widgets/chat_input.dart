@@ -1,63 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../models/character.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 import '../../utils/constants.dart';
 import '../../viewmodels/settings_viewmodel.dart';
 
 class ChatInput extends StatefulWidget {
-  final String hintText;
-  final Color primaryColor;
   final Function(String) onSendMessage;
-  final VoidCallback onMessageSent;
+  final Character character;
+  final bool isGenerating;
 
   const ChatInput({
     Key? key,
-    required this.hintText,
-    required this.primaryColor,
     required this.onSendMessage,
-    required this.onMessageSent,
+    required this.character,
+    required this.isGenerating,
   }) : super(key: key);
 
   @override
-  State<ChatInput> createState() => _ChatInputState();
+  _ChatInputState createState() => _ChatInputState();
 }
 
 class _ChatInputState extends State<ChatInput> {
-  final TextEditingController _controller = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
   bool _hasText = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _handleSubmit() {
-    final message = _controller.text;
-    if (message.trim().isNotEmpty) {
-      widget.onSendMessage(message);
-      _controller.clear();
-      setState(() {});
-      
-      widget.onMessageSent();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -69,95 +41,122 @@ class _ChatInputState extends State<ChatInput> {
         ],
       ),
       child: SafeArea(
-        top: false,
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
               child: Container(
-                height: 42,
+                constraints: const BoxConstraints(
+                  minHeight: 40,
+                  maxHeight: 120,
+                ),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(21),
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: _focusNode.hasFocus
-                        ? widget.primaryColor
-                        : _hasText 
-                            ? widget.primaryColor.withOpacity(0.5)
-                            : Colors.grey[300]!,
-                    width: _focusNode.hasFocus ? 2 : 1,
+                        ? widget.character.primaryColor
+                        : Colors.transparent,
+                    width: 1.5,
                   ),
                 ),
-                child: Center(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    onChanged: (text) {
-                      setState(() {
-                        _hasText = text.trim().isNotEmpty;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      hintText: widget.hintText,
-                      hintStyle: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 15,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 0,
-                      ),
-                      border: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      errorBorder: InputBorder.none,
-                      disabledBorder: InputBorder.none,
-                      isDense: true,
-                      filled: false,
-                    ),
-                    style: const TextStyle(
-                      fontSize: 15,
-                    ),
-                    cursorColor: widget.primaryColor,
-                    maxLines: 1,
-                    minLines: 1,
-                    textAlignVertical: TextAlignVertical.center,
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  enabled: !widget.isGenerating,
+                  style: AppTextStyles.input.copyWith(
+                    color: AppColors.textPrimary,
                   ),
+                  decoration: InputDecoration(
+                    hintText: widget.isGenerating
+                        ? '${widget.character.name}가 응답하고 있어요...'
+                        : '메시지를 입력하세요',
+                    hintStyle: AppTextStyles.input.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    isDense: true,
+                  ),
+                  maxLines: null,
+                  minLines: 1,
+                  textAlignVertical: TextAlignVertical.center,
+                  cursorColor: widget.character.primaryColor,
+                  onChanged: (text) {
+                    setState(() {
+                      _hasText = text.trim().isNotEmpty;
+                    });
+                  },
                 ),
               ),
             ),
             const SizedBox(width: 8),
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: _hasText 
-                    ? widget.primaryColor
-                    : Colors.grey[300],
-                shape: BoxShape.circle,
-                boxShadow: _hasText ? [
-                  BoxShadow(
-                    color: widget.primaryColor.withOpacity(0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ] : null,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(21),
-                  onTap: _hasText ? _handleSubmit : null,
-                  child: Icon(
-                    Icons.send_rounded,
-                    size: 20,
-                    color: _hasText ? Colors.white : Colors.grey[400],
-                  ),
-                ),
-              ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: _hasText ? 40 : 0,
+              height: 40,
+              curve: Curves.easeInOut,
+              child: _hasText
+                  ? Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            widget.character.primaryColor,
+                            widget.character.primaryColor.withOpacity(0.8),
+                          ],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: widget.character.primaryColor.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: widget.isGenerating
+                              ? null
+                              : () {
+                                  final message = _controller.text.trim();
+                                  if (message.isNotEmpty) {
+                                    widget.onSendMessage(message);
+                                    _controller.clear();
+                                    setState(() {
+                                      _hasText = false;
+                                    });
+                                  }
+                                },
+                          child: const Center(
+                            child: Icon(
+                              Icons.arrow_upward_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : null,
             ),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
   }
 }

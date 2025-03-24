@@ -1,110 +1,84 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../models/character.dart';
+import '../../models/chat_message.dart';
+import '../../viewmodels/settings_viewmodel.dart';
+import '../../utils/date_formatter.dart';
+
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
+  final Character character;
   final Color characterColor;
 
   const MessageBubble({
     required this.message,
+    required this.character,
     required this.characterColor,
     Key? key,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 6,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (!message.isUser) ...[
-              // 캐릭터 미니 프로필
-              Container(
-                width: 28,
-                height: 28,
-                margin: const EdgeInsets.only(right: 8, bottom: 4),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: characterColor,
-                    width: 2,
-                  ),
-                  image: DecorationImage(
-                    image: AssetImage(character.imageUrl),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            ],
-            Flexible(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: message.isUser 
-                      ? AppTheme.primary
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(20).copyWith(
-                    bottomLeft: message.isUser ? null : const Radius.circular(4),
-                    bottomRight: message.isUser ? const Radius.circular(4) : null,
-                  ),
-                  border: message.isUser
-                      ? null
-                      : Border.all(
-                          color: characterColor.withOpacity(0.3),
-                          width: 1,
-                        ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (message.isUser ? AppTheme.primary : characterColor)
-                          .withOpacity(0.15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    if (!message.isUser)
-                      Positioned(
-                        right: -8,
-                        top: -8,
-                        child: Icon(
-                          Icons.favorite,
-                          size: 24,
-                          color: characterColor.withOpacity(0.1),
-                        ),
-                      ),
-                    Text(
-                      message.message,
-                      style: TextStyle(
-                        color: message.isUser ? Colors.white : Colors.black87,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    final languageCode = context.read<SettingsViewModel>().currentLanguage.code;
+    final isUser = message.isUser;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isUser) ...[
+            CircleAvatar(
+              radius: 16,
+              backgroundImage: AssetImage(character.imageUrl),
             ),
-            if (message.isUser) ...[
-              // 사용자 메시지 전송 상태
+            const SizedBox(width: 8),
+          ],
+          Column(
+            crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
               Container(
-                margin: const EdgeInsets.only(left: 8, bottom: 4),
-                child: Icon(
-                  Icons.check_circle,
-                  size: 16,
-                  color: AppTheme.primary.withOpacity(0.5),
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.7,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isUser ? characterColor : Colors.white,
+                  borderRadius: BorderRadius.circular(20).copyWith(
+                    bottomLeft: isUser ? null : const Radius.circular(4),
+                    bottomRight: isUser ? const Radius.circular(4) : null,
+                  ),
+                  border: isUser ? null : Border.all(
+                    color: Colors.grey[200]!,
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  message.message,
+                  style: TextStyle(
+                    color: isUser ? Colors.white : Colors.black87,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: 4,
+                  left: 4,
+                  right: 4,
+                ),
+                child: Text(
+                  DateFormatter.getMessageTime(message.timestamp, languageCode),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[500],
+                  ),
                 ),
               ),
             ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

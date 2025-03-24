@@ -1,161 +1,188 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../models/character.dart';
+import '../../models/chat_message.dart';
+import './dot_indicator.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 import '../../utils/constants.dart';
 import '../../viewmodels/settings_viewmodel.dart';
 // import 'package:intl/intl.dart';  // 주석 처리
 
-class MessageList extends StatefulWidget {
+class MessageList extends StatelessWidget {
+  final List<ChatMessage> messages;
+  final Character character;
+  final bool isGenerating;
   final ScrollController scrollController;
 
   const MessageList({
     Key? key,
+    required this.messages,
+    required this.character,
+    required this.isGenerating,
     required this.scrollController,
   }) : super(key: key);
 
   @override
-  State<MessageList> createState() => _MessageListState();
-}
-
-class _MessageListState extends State<MessageList> {
-  @override
-  void dispose() {
-    super.dispose();
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      controller: scrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: messages.length + (isGenerating ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == messages.length) {
+          return _buildTypingIndicator();
+        }
+        
+        final message = messages[index];
+        final isLastMessage = index == messages.length - 1;
+        
+        return Padding(
+          padding: EdgeInsets.only(bottom: isLastMessage ? 8 : 12),
+          child: message.isUser
+              ? _buildUserMessage(context, message)
+              : _buildCharacterMessage(context, message),
+        );
+      },
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final viewModel = context.watch<ChatViewModel>();
-    final character = viewModel.character;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.scrollController.hasClients && viewModel.messages.isNotEmpty) {
-        widget.scrollController.animateTo(
-          widget.scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-
-    if (viewModel.messages.isEmpty) {
-      return const Center(child: Text('메시지가 없습니다.'));
-    }
-
-    // 목록을 GestureDetector로 감싸서 클릭 이벤트 감지
-    return GestureDetector(
-      // 화면 터치 시 키보드 닫기
-      onTap: () {
-        // 현재 포커스 해제 (키보드 닫기)
-        FocusScope.of(context).unfocus();
-      },
-      child: ListView.builder(
-        controller: widget.scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        itemCount: viewModel.messages.length,
-        itemBuilder: (context, index) {
-          final message = viewModel.messages[index];
-          
-          return Align(
-            alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
-            child: Container(
-              margin: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 6,
+  Widget _buildUserMessage(BuildContext context, ChatMessage message) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Container(
+          constraints: const BoxConstraints(maxWidth: 280),
+          margin: const EdgeInsets.only(left: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: character.primaryColor.withOpacity(0.9),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(4),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: character.primaryColor.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (!message.isUser) ...[
-                    // 캐릭터 미니 프로필
-                    Container(
-                      width: 28,
-                      height: 28,
-                      margin: const EdgeInsets.only(right: 8, bottom: 4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: character.primaryColor,
-                          width: 2,
-                        ),
-                        image: DecorationImage(
-                          image: AssetImage(character.imageUrl),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ],
-                  Flexible(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: message.isUser 
-                            ? character.primaryColor
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(20).copyWith(
-                          bottomLeft: message.isUser ? null : const Radius.circular(4),
-                          bottomRight: message.isUser ? const Radius.circular(4) : null,
-                        ),
-                        border: message.isUser
-                            ? null
-                            : Border.all(
-                                color: character.primaryColor.withOpacity(0.3),
-                                width: 1,
-                              ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: character.primaryColor.withOpacity(0.15),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        children: [
-                          if (!message.isUser)
-                            Positioned(
-                              right: -8,
-                              top: -8,
-                              child: Icon(
-                                Icons.favorite,
-                                size: 24,
-                                color: character.primaryColor.withOpacity(0.1),
-                              ),
-                            ),
-                          Text(
-                            message.message,
-                            style: TextStyle(
-                              color: message.isUser 
-                                  ? Colors.white
-                                  : Colors.black87,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (message.isUser) ...[
-                    // 사용자 메시지 전송 상태
-                    Container(
-                      margin: const EdgeInsets.only(left: 8, bottom: 4),
-                      child: Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: character.primaryColor.withOpacity(0.5),
-                      ),
-                    ),
-                  ],
-                ],
+            ],
+          ),
+          child: Text(
+            message.message,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCharacterMessage(BuildContext context, ChatMessage message) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          margin: const EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: character.primaryColor,
+              width: 1.5,
+            ),
+            image: DecorationImage(
+              image: AssetImage(character.imageUrl),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        Flexible(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 280),
+            margin: const EdgeInsets.only(right: 40),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(4),
+                topRight: Radius.circular(20),
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              message.message,
+              style: TextStyle(
+                color: Colors.grey[800],
+                fontSize: 14,
               ),
             ),
-          );
-        },
-      ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTypingIndicator() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          margin: const EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: character.primaryColor,
+              width: 1.5,
+            ),
+            image: DecorationImage(
+              image: AssetImage(character.imageUrl),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(3, (index) => 
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: DotIndicator(
+                  color: character.primaryColor,
+                  delay: Duration(milliseconds: 300 * index),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 } 

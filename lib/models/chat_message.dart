@@ -3,7 +3,7 @@ class ChatMessage {
   final bool isUser;
   final DateTime timestamp;
 
-  ChatMessage({
+  const ChatMessage({
     required this.message,
     required this.isUser,
     required this.timestamp,

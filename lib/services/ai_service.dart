@@ -80,4 +80,21 @@ class AIService {
         return '죄송합니다. 오류가 발생했습니다.';
     }
   }
+
+  Future<String> sendMessage(String message, Character character) async {
+    try {
+      // 현재 캐릭터가 다르다면 새로운 세션 초기화
+      if (_currentCharacter?.id != character.id) {
+        initializeForCharacter(character, _currentLanguage);
+      }
+      
+      // generateResponse 사용하여 실제 AI 응답 받기
+      final response = await generateResponse(message);
+      return response ?? _getLocalizedError(_currentLanguage);
+      
+    } catch (e) {
+      debugPrint('AI 서비스 에러: $e');
+      return _getLocalizedError(_currentLanguage);
+    }
+  }
 }

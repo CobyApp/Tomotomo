@@ -62,6 +62,21 @@ class AppDecorations {
   );
 }
 
+class AppConstants {
+  // 앱 이름
+  static const String appNameKo = '모에톡';
+  static const String appNameEn = 'MoeTalk';
+  static const String appNameJa = 'モエトーク';
+
+  // 라우트
+  static const String initialRoute = '/';
+  static const String chatRoute = '/chat';
+  static const String settingsRoute = '/settings';
+
+  // 애셋 경로
+  static const String patternPath = 'assets/images/patterns/moe_pattern.png';
+}
+
 class Constants {
   // API 관련 상수
   static const String apiBaseUrl = 'https://api.example.com';
