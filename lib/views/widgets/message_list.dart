@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 import '../../utils/constants.dart';
+import '../../viewmodels/settings_viewmodel.dart';
 // import 'package:intl/intl.dart';  // 주석 처리
 
 class MessageList extends StatefulWidget {
@@ -29,8 +30,8 @@ class _MessageListState extends State<MessageList> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ChatViewModel>(
-      builder: (context, viewModel, child) {
+    return Consumer2<ChatViewModel, SettingsViewModel>(
+      builder: (context, viewModel, settingsVM, child) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollController.hasClients && viewModel.messages.isNotEmpty) {
             _scrollController.animateTo(
@@ -95,7 +96,7 @@ class _MessageListState extends State<MessageList> {
                             Padding(
                               padding: const EdgeInsets.only(left: 4, bottom: 4),
                               child: Text(
-                                member.name,
+                                member.getName(settingsVM.currentLanguage.code),
                                 style: TextStyle(
                                   fontFamily: 'Quicksand',
                                   fontSize: 13,

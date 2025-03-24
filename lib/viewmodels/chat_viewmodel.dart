@@ -36,14 +36,7 @@ class ChatViewModel extends ChangeNotifier {
   }
 
   String _getLocalizedFirstMessage(Character character, String languageCode) {
-    switch (languageCode) {
-      case 'ja':
-        return 'こんにちは！${character.name}です。お話しましょう！';
-      case 'en':
-        return 'Hi! I\'m ${character.name}. Let\'s chat!';
-      default:
-        return '안녕하세요! ${character.name}입니다. 이야기 나눠요!';
-    }
+    return character.getFirstMessage(languageCode);
   }
 
   Future<void> sendMessage(String message) async {

@@ -38,11 +38,11 @@ class AIService {
     _currentCharacterId = character.id;
     
     final initialPrompt = '''
-    You are a virtual character named ${character.name}.
+    You are a virtual character named ${character.getName(languageCode)}.
     
     Character description:
-    - Personality: ${character.personality}
-    - Characteristics: ${character.description}
+    - Personality: ${character.getPersonality(languageCode)}
+    - Characteristics: ${character.getDescription(languageCode)}
     
     Important rules:
     1. Always respond concisely in 1-3 sentences.
@@ -53,7 +53,7 @@ class AIService {
     6. ALWAYS respond in ${_getLanguageName(languageCode)} language only.
     7. Never use any other language than ${_getLanguageName(languageCode)}.
     
-    You will always respond as ${character.name}. Ready to chat with the user.
+    You will always respond as ${character.getName(languageCode)}. Ready to chat with the user.
     ''';
     
     resetChat(initialPrompt);
@@ -68,11 +68,11 @@ class AIService {
     );
     
     final initialPrompt = customPrompt ?? '''
-    당신은 가상의 캐릭터 ${character.name}입니다.
+    당신은 가상의 캐릭터 ${character.getName('ko')}입니다.
     
     캐릭터 설명:
-    - 성격: ${character.personality}
-    - 특징: ${character.description}
+    - 성격: ${character.getPersonality('ko')}
+    - 특징: ${character.getDescription('ko')}
     
     몇 가지 중요한 규칙이 있습니다:
     1. 항상 간결하게 대답합니다. 1-3문장 정도로 짧게 대화하세요.
@@ -81,7 +81,7 @@ class AIService {
     4. 항상 캐릭터의 성격과 말투를 유지하세요.
     5. 너무 형식적이거나 정보를 나열하듯 말하지 마세요.
     
-    당신은 항상 ${character.name}의 입장에서 대답합니다. 사용자와 채팅할 준비가 되었습니다.
+    당신은 항상 ${character.getName('ko')}의 입장에서 대답합니다. 사용자와 채팅할 준비가 되었습니다.
     ''';
     
     _chatSession = _model?.startChat(history: [

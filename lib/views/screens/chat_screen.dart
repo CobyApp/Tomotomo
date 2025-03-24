@@ -4,6 +4,7 @@ import '../widgets/chat_input.dart';
 import '../widgets/message_list.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 import '../../utils/constants.dart';
+import '../../viewmodels/settings_viewmodel.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({Key? key}) : super(key: key);
@@ -39,6 +40,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<ChatViewModel>(context);
+    final settingsVM = Provider.of<SettingsViewModel>(context);
     final character = viewModel.currentMember;
 
     return WillPopScope(
@@ -80,7 +82,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
                 radius: 16,
               ),
               const SizedBox(width: 8),
-              Text(character.name),
+              Text(character.getName(settingsVM.currentLanguage.code)),
             ],
           ),
           actions: [

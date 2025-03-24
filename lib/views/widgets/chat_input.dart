@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 import '../../utils/constants.dart';
+import '../../viewmodels/settings_viewmodel.dart';
 
 class ChatInput extends StatefulWidget {
   const ChatInput({Key? key}) : super(key: key);
@@ -46,8 +47,8 @@ class _ChatInputState extends State<ChatInput> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ChatViewModel>(
-      builder: (context, viewModel, child) {
+    return Consumer2<ChatViewModel, SettingsViewModel>(
+      builder: (context, viewModel, settingsVM, child) {
         final memberColor = viewModel.currentMember.primaryColor;
         
         return Container(
@@ -95,7 +96,7 @@ class _ChatInputState extends State<ChatInput> with SingleTickerProviderStateMix
                     child: TextField(
                       controller: _controller,
                       decoration: InputDecoration(
-                        hintText: '${viewModel.currentMember.name}에게 메시지...',
+                        hintText: '${viewModel.currentMember.getName(settingsVM.currentLanguage.code)}에게 메시지...',
                         hintStyle: TextStyle(
                           fontFamily: 'Quicksand',
                           color: Colors.grey[400],

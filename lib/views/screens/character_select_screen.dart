@@ -12,6 +12,7 @@ class CharacterSelectScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = L10n.of(context);
+    final settingsVM = context.watch<SettingsViewModel>();
     
     return Scaffold(
       appBar: AppBar(
@@ -44,7 +45,6 @@ class CharacterSelectScreen extends StatelessWidget {
           final character = characters[index];
           return GestureDetector(
             onTap: () {
-              final settingsVM = context.read<SettingsViewModel>();
               context.read<ChatViewModel>().setCurrentMember(
                 character,
                 settingsVM.currentLanguage.code,
@@ -69,7 +69,7 @@ class CharacterSelectScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    character.name,
+                    character.getName(settingsVM.currentLanguage.code),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -80,7 +80,7 @@ class CharacterSelectScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
-                      character.description,
+                      character.getDescription(settingsVM.currentLanguage.code),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 12,
