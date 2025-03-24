@@ -5,99 +5,159 @@ import '../../utils/constants.dart';
 import '../../viewmodels/settings_viewmodel.dart';
 
 class ChatInput extends StatefulWidget {
-  const ChatInput({Key? key}) : super(key: key);
+  final String hintText;
+  final Color primaryColor;
+  final Function(String) onSendMessage;
+  final VoidCallback onMessageSent;
+
+  const ChatInput({
+    Key? key,
+    required this.hintText,
+    required this.primaryColor,
+    required this.onSendMessage,
+    required this.onMessageSent,
+  }) : super(key: key);
 
   @override
   State<ChatInput> createState() => _ChatInputState();
 }
 
-class _ChatInputState extends State<ChatInput> with SingleTickerProviderStateMixin {
+class _ChatInputState extends State<ChatInput> {
   final TextEditingController _controller = TextEditingController();
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-  
+  final FocusNode _focusNode = FocusNode();
+  bool _hasText = false;
+
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    );
+    _focusNode.addListener(() => setState(() {}));
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
-    _animationController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
-  
-  void _sendMessage(BuildContext context, ChatViewModel viewModel) {
-    final text = _controller.text.trim();
-    if (text.isNotEmpty && !viewModel.isGenerating) {
-      viewModel.sendMessage(text);
+
+  void _handleSubmit() {
+    final message = _controller.text;
+    if (message.trim().isNotEmpty) {
+      widget.onSendMessage(message);
       _controller.clear();
-      _animationController.reset();
+      setState(() {});
+      
+      widget.onMessageSent();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ChatViewModel, SettingsViewModel>(
-      builder: (context, viewModel, settingsVM, child) {
-        final memberColor = viewModel.currentMember.primaryColor;
-        
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          color: Colors.white,
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  decoration: InputDecoration(
-                    hintText: '메시지를 입력하세요...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            offset: const Offset(0, -1),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Container(
+                height: 42,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(21),
+                  border: Border.all(
+                    color: _focusNode.hasFocus
+                        ? widget.primaryColor
+                        : _hasText 
+                            ? widget.primaryColor.withOpacity(0.5)
+                            : Colors.grey[300]!,
+                    width: _focusNode.hasFocus ? 2 : 1,
                   ),
-                  maxLines: null,  // 여러 줄 입력 가능
-                  textInputAction: TextInputAction.send,
-                  onChanged: (text) {
-                    // 텍스트가 입력되면 애니메이션 시작
-                    if (text.isNotEmpty && !_animationController.isCompleted) {
-                      _animationController.forward();
-                    } else if (text.isEmpty && _animationController.isCompleted) {
-                      _animationController.reverse();
-                    }
-                  },
-                  onSubmitted: (text) {
-                    _sendMessage(context, viewModel);
-                  },
+                ),
+                child: Center(
+                  child: TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    onChanged: (text) {
+                      setState(() {
+                        _hasText = text.trim().isNotEmpty;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: widget.hintText,
+                      hintStyle: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 15,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 0,
+                      ),
+                      border: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      isDense: true,
+                      filled: false,
+                    ),
+                    style: const TextStyle(
+                      fontSize: 15,
+                    ),
+                    cursorColor: widget.primaryColor,
+                    maxLines: 1,
+                    minLines: 1,
+                    textAlignVertical: TextAlignVertical.center,
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.send),
-                onPressed: viewModel.isGenerating
-                    ? null
-                    : () => _sendMessage(context, viewModel),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: _hasText 
+                    ? widget.primaryColor
+                    : Colors.grey[300],
+                shape: BoxShape.circle,
+                boxShadow: _hasText ? [
+                  BoxShadow(
+                    color: widget.primaryColor.withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ] : null,
               ),
-            ],
-          ),
-        );
-      },
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(21),
+                  onTap: _hasText ? _handleSubmit : null,
+                  child: Icon(
+                    Icons.send_rounded,
+                    size: 20,
+                    color: _hasText ? Colors.white : Colors.grey[400],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
-} 
+}

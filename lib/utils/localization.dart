@@ -53,4 +53,15 @@ class L10n extends ChangeNotifier {
     _currentLanguage = languageCode;
     notifyListeners();
   }
+
+  String messageHint(String characterName) {
+    switch (_currentLanguage) {
+      case 'ja':
+        return '$characterNameにメッセージを送る...';
+      case 'en':
+        return 'Message to $characterName...';
+      default:
+        return '$characterName에게 메시지...';
+    }
+  }
 } 
