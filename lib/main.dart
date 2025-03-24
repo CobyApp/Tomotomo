@@ -11,49 +11,57 @@ import 'viewmodels/settings_viewmodel.dart';
 import 'utils/localization.dart';
 import 'utils/app_theme.dart';  // AppTheme는 여기서만 import
 import 'data/characters.dart';  // characters import 추가
+import 'services/chat_storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();  // Flutter 바인딩 초기화
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // dotenv 로드 추가
   await dotenv.load(fileName: ".env");
   
-  // AIService 초기화
+  final prefs = await SharedPreferences.getInstance();
+  final chatStorage = ChatStorageService(prefs);
   final aiService = AIService();
-  await aiService.initialize();  // initialize 메서드 호출 추가
-  
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => L10n()),
-        ChangeNotifierProvider(create: (_) => SettingsViewModel()),
-        ChangeNotifierProvider(
-          create: (_) => ChatViewModel(
-            character: characters.first,
-            aiService: aiService,
-          ),
-        ),
-      ],
-      child: MyApp(aiService: aiService),  // aiService 전달
-    ),
-  );
+
+  runApp(MyApp(
+    aiService: aiService,
+    chatStorage: chatStorage,
+  ));
 }
 
 class MyApp extends StatelessWidget {
   final AIService aiService;
+  final ChatStorageService chatStorage;
 
-  const MyApp({super.key, required this.aiService});
+  const MyApp({super.key, required this.aiService, required this.chatStorage});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: AppConstants.appNameEn,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.theme,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const CharacterSelectScreen(),
-        '/chat': (context) => const ChatScreen(),
-        '/settings': (context) => const SettingsScreen(),
-      },
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => SettingsViewModel(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => L10n(),
+        ),
+        Provider.value(value: aiService),
+        Provider.value(value: chatStorage),
+      ],
+      child: MaterialApp(
+        title: AppConstants.appNameEn,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.theme,
+        initialRoute: '/',
+        routes: {
+          '/': (context) => CharacterSelectScreen(
+                chatStorage: chatStorage,
+                aiService: aiService,
+              ),
+          '/settings': (context) => const SettingsScreen(),
+        },
+      ),
     );
   }
 }

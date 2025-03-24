@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -8,8 +9,19 @@ class L10n extends ChangeNotifier {
   
   L10n._internal();
   
+  String _currentLocale = 'ko';
+
+  String get currentLocale => _currentLocale;
+
+  void setLocale(String locale) {
+    if (_currentLocale != locale) {
+      _currentLocale = locale;
+      notifyListeners();
+    }
+  }
+
   static L10n of(BuildContext context) {
-    return Provider.of<L10n>(context, listen: false);
+    return context.read<L10n>();
   }
   
   static final Map<String, Map<String, String>> _localizedValues = {
@@ -39,23 +51,20 @@ class L10n extends ChangeNotifier {
     },
   };
   
-  String get settings => _localizedValues[_currentLanguage]!['settings']!;
-  String get language => _localizedValues[_currentLanguage]!['language']!;
-  String get chat => _localizedValues[_currentLanguage]!['chat']!;
-  String get send => _localizedValues[_currentLanguage]!['send']!;
-  String get typing => _localizedValues[_currentLanguage]!['typing']!;
-  String get selectCharacter => _localizedValues[_currentLanguage]!['selectCharacter']!;
-  
-  String _currentLanguage = 'ko';
-  String get currentLanguage => _currentLanguage;
+  String get settings => _localizedValues[_currentLocale]!['settings']!;
+  String get language => _localizedValues[_currentLocale]!['language']!;
+  String get chat => _localizedValues[_currentLocale]!['chat']!;
+  String get send => _localizedValues[_currentLocale]!['send']!;
+  String get typing => _localizedValues[_currentLocale]!['typing']!;
+  String get selectCharacter => _localizedValues[_currentLocale]!['selectCharacter']!;
   
   void setLanguage(String languageCode) {
-    _currentLanguage = languageCode;
+    _currentLocale = languageCode;
     notifyListeners();
   }
 
   String messageHint(String characterName) {
-    switch (_currentLanguage) {
+    switch (_currentLocale) {
       case 'ja':
         return '$characterNameにメッセージを送る...';
       case 'en':

@@ -10,12 +10,35 @@ import '../../utils/app_theme.dart';
 import '../../utils/constants.dart';
 import '../../utils/date_formatter.dart';
 import '../../views/screens/chat_screen.dart';
+import '../../services/chat_storage_service.dart';
+import '../../services/ai_service.dart';
+import 'package:intl/intl.dart';
+import '../../models/chat_message.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 class CharacterSelectScreen extends StatelessWidget {
-  const CharacterSelectScreen({Key? key}) : super(key: key);
+  final ChatStorageService chatStorage;
+  final AIService aiService;
+
+  const CharacterSelectScreen({
+    super.key, 
+    required this.chatStorage,
+    required this.aiService,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // 한 번만 실행되도록 Future.microtask 사용
+    Future.microtask(() {
+      if (kDebugMode) {
+        for (var character in characters) {
+          chatStorage.getLastMessage(character.id).then((message) {
+            print('Last message for ${character.name}: ${message?.content}');
+          });
+        }
+      }
+    });
+    
     final languageCode = context.watch<SettingsViewModel>().currentLanguage.code;
     
     return Scaffold(
@@ -49,72 +72,39 @@ class CharacterSelectScreen extends StatelessWidget {
   }
 
   Widget _buildCharacterItem(BuildContext context, Character character) {
-    return InkWell(
-      onTap: () => _onCharacterSelected(context, character),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            // 프로필 이미지
-            GestureDetector(
-              onTap: () => _showCharacterInfo(context, character),
-              child: Hero(
-                tag: 'character_${character.id}',
-                child: Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: AssetImage(character.imageUrl),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
+    return FutureBuilder<ChatMessage?>(
+      future: chatStorage.getLastMessage(character.id),
+      builder: (context, snapshot) {
+        final lastMessage = snapshot.data;
+        print('Last message for ${character.name}: ${lastMessage?.content}');
+        
+        return ListTile(
+          leading: GestureDetector(
+            onTap: () => _showCharacterInfo(context, character),
+            child: Hero(
+              tag: 'character_${character.id}',
+              child: CircleAvatar(
+                backgroundImage: AssetImage(character.imageUrl),
+                radius: 28,
               ),
             ),
-            const SizedBox(width: 12),
-            // 캐릭터 정보
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    character.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _getLastMessage(character, context),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+          ),
+          title: Text(character.name),
+          subtitle: Text(
+            lastMessage?.content ?? _getDefaultMessage(context),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: lastMessage != null ? Text(
+            _formatMessageTime(context, lastMessage.timestamp),
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 12,
             ),
-            // 시간 표시
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  _getLastMessageTime(context),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+          ) : null,
+          onTap: () => _onCharacterSelected(context, character),
+        );
+      },
     );
   }
 
@@ -248,33 +238,42 @@ class CharacterSelectScreen extends StatelessWidget {
     }
   }
 
-  String _getLastMessage(Character character, BuildContext context) {
+  String _getDefaultMessage(BuildContext context) {
     final languageCode = context.read<SettingsViewModel>().currentLanguage.code;
     
     switch (languageCode) {
       case 'ja':
-        return 'タップしてチャットを開始';
+        return 'メッセージがありません';
       case 'en':
-        return 'Tap to start chat';
+        return 'No messages yet';
       default:
-        return '탭하여 채팅 시작하기';
+        return '아직 메시지가 없습니다';
     }
   }
 
-  String _getLastMessageTime(BuildContext context) {
-    // TODO: 실제 마지막 메시지 시간으로 교체
-    return '';  // 처음에는 시간 표시 안함
+  String _formatMessageTime(BuildContext context, DateTime time) {
+    final now = DateTime.now();
+    final difference = now.difference(time);
+
+    if (difference.inDays == 0) {
+      return DateFormat('HH:mm').format(time);
+    } else if (difference.inDays == 1) {
+      return '어제';
+    } else if (difference.inDays < 7) {
+      return DateFormat('EEEE').format(time);
+    } else {
+      return DateFormat('MM/dd').format(time);
+    }
   }
 
   void _onCharacterSelected(BuildContext context, Character character) {
-    final aiService = context.read<ChatViewModel>().aiService;
-    
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChangeNotifierProvider(
           create: (_) => ChatViewModel(
             character: character,
+            chatStorage: chatStorage,
             aiService: aiService,
           ),
           child: const ChatScreen(),

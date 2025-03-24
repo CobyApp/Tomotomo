@@ -71,7 +71,7 @@ class MessageList extends StatelessWidget {
             ],
           ),
           child: Text(
-            message.message,
+            message.content,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 14,
@@ -124,7 +124,7 @@ class MessageList extends StatelessWidget {
               ],
             ),
             child: Text(
-              message.message,
+              message.content,
               style: TextStyle(
                 color: Colors.grey[800],
                 fontSize: 14,
