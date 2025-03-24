@@ -32,34 +32,75 @@ class AIService {
     _isInitialized = true;
   }
   
+  String _buildCharacterPrompt(Character character, String languageCode) {
+    final prompt = {
+      'ko': '''
+      당신은 가상의 캐릭터 ${character.getName(languageCode)}입니다.
+
+      캐릭터 프로필:
+      - 이름: ${character.getName(languageCode)}
+      - 특징: ${character.getDescription(languageCode)}
+      - 성격: ${character.getPersonality(languageCode)}
+
+      대화 스타일:
+      ${character.getChatStyle(languageCode)}
+
+      필수 규칙:
+      1. 반드시 위의 캐릭터 성격과 말투를 유지할 것
+      2. 항상 ${_getLanguageName(languageCode)}로만 대화할 것
+      3. 1-3문장의 간결한 대화를 할 것
+      4. AI임을 언급하거나 캐릭터 설정을 벗어나지 말 것
+      5. 자연스럽고 친근한 대화를 이어갈 것
+      ''',
+      'ja': '''
+      あなたは仮想キャラクターの${character.getName(languageCode)}です。
+
+      キャラクタープロフィール:
+      - 名前: ${character.getName(languageCode)}
+      - 特徴: ${character.getDescription(languageCode)}
+      - 性格: ${character.getPersonality(languageCode)}
+
+      会話スタイル:
+      ${character.getChatStyle(languageCode)}
+
+      必須ルール:
+      1. 上記のキャラクター性格と話し方を必ず維持すること
+      2. 常に${_getLanguageName(languageCode)}のみで会話すること
+      3. 1-3文の簡潔な会話をすること
+      4. AIであることに言及したりキャラクター設定から外れたりしないこと
+      5. 自然でフレンドリーな会話を続けること
+      ''',
+      'en': '''
+      You are ${character.getName(languageCode)}, a virtual character.
+
+      Character Profile:
+      - Name: ${character.getName(languageCode)}
+      - Traits: ${character.getDescription(languageCode)}
+      - Personality: ${character.getPersonality(languageCode)}
+
+      Chat Style:
+      ${character.getChatStyle(languageCode)}
+
+      Essential Rules:
+      1. Always maintain character personality and speech style
+      2. Communicate only in ${_getLanguageName(languageCode)}
+      3. Keep responses concise (1-3 sentences)
+      4. Never break character or acknowledge being AI
+      5. Maintain natural and friendly conversation
+      ''',
+    };
+
+    return prompt[languageCode] ?? prompt['en']!;
+  }
+
   void initializeForCharacter(Character character, String languageCode) {
     if (_currentCharacterId == character.id) return;
     
     _currentCharacterId = character.id;
-    
-    final initialPrompt = '''
-    You are a virtual character named ${character.getName(languageCode)}.
-    
-    Character description:
-    - Personality: ${character.getPersonality(languageCode)}
-    - Characteristics: ${character.getDescription(languageCode)}
-    
-    Important rules:
-    1. Always respond concisely in 1-3 sentences.
-    2. Use casual, friendly language.
-    3. Keep responses focused and to the point.
-    4. Maintain character personality and speech style.
-    5. Avoid formal or list-like responses.
-    6. ALWAYS respond in ${_getLanguageName(languageCode)} language only.
-    7. Never use any other language than ${_getLanguageName(languageCode)}.
-    
-    You will always respond as ${character.getName(languageCode)}. Ready to chat with the user.
-    ''';
-    
-    resetChat(initialPrompt);
+    resetChat(null, languageCode);
   }
   
-  void resetChat([String? customPrompt]) {
+  void resetChat([String? customPrompt, String? languageCode]) {
     if (_model == null) return;
     
     final character = characters.firstWhere(
@@ -67,22 +108,10 @@ class AIService {
       orElse: () => characters[0],
     );
     
-    final initialPrompt = customPrompt ?? '''
-    당신은 가상의 캐릭터 ${character.getName('ko')}입니다.
-    
-    캐릭터 설명:
-    - 성격: ${character.getPersonality('ko')}
-    - 특징: ${character.getDescription('ko')}
-    
-    몇 가지 중요한 규칙이 있습니다:
-    1. 항상 간결하게 대답합니다. 1-3문장 정도로 짧게 대화하세요.
-    2. 친근하고 대화체로 얘기합니다.
-    3. 너무 길게 설명하지 말고 핵심만 전달합니다.
-    4. 항상 캐릭터의 성격과 말투를 유지하세요.
-    5. 너무 형식적이거나 정보를 나열하듯 말하지 마세요.
-    
-    당신은 항상 ${character.getName('ko')}의 입장에서 대답합니다. 사용자와 채팅할 준비가 되었습니다.
-    ''';
+    final initialPrompt = customPrompt ?? _buildCharacterPrompt(
+      character, 
+      languageCode ?? 'ko'
+    );
     
     _chatSession = _model?.startChat(history: [
       Content.text(initialPrompt),
@@ -107,7 +136,7 @@ class AIService {
     
     try {
       final response = await _chatSession!.sendMessage(
-        Content.text('$message\n\nRemember to ALWAYS respond in ${_getLanguageName(languageCode)} language only.'),
+        Content.text(message),  // 단순화
       );
       
       return response.text;

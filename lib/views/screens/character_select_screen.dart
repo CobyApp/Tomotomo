@@ -66,6 +66,9 @@ class CharacterSelectScreen extends StatelessWidget {
                     radius: 48,
                     backgroundImage: AssetImage(character.imageUrl),
                     backgroundColor: character.primaryColor.withOpacity(0.2),
+                    onBackgroundImageError: (exception, stackTrace) {
+                      debugPrint('이미지 로드 오류: $exception');
+                    },
                   ),
                   const SizedBox(height: 16),
                   Text(

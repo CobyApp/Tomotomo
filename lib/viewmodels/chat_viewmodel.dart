@@ -26,7 +26,7 @@ class ChatViewModel extends ChangeNotifier {
     if (!_memberMessages.containsKey(character.id)) {
       _memberMessages[character.id] = [
         ChatMessage(
-          message: _getLocalizedFirstMessage(character, languageCode),
+          message: character.getFirstMessage(languageCode),
           isUser: false,
           timestamp: DateTime.now(),
         )
@@ -74,11 +74,13 @@ class ChatViewModel extends ChangeNotifier {
 
   void clearMessages() {
     _isGenerating = false;
-    _aiService.resetChat(_currentLanguage);  // 언어 코드 전달
+    
+    // resetChat 호출 시 현재 언어 코드를 전달
+    _aiService.resetChat(null, _currentLanguage);  // null은 customPrompt, 두 번째 파라미터로 언어 코드 전달
     
     _memberMessages[_currentMember.id] = [
       ChatMessage(
-        message: _getLocalizedFirstMessage(_currentMember, _currentLanguage),
+        message: _currentMember.getFirstMessage(_currentLanguage),
         isUser: false,
         timestamp: DateTime.now(),
       )

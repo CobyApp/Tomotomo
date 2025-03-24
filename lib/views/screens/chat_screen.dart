@@ -80,6 +80,10 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
               CircleAvatar(
                 backgroundImage: AssetImage(character.imageUrl),
                 radius: 16,
+                backgroundColor: character.primaryColor.withOpacity(0.2),
+                onBackgroundImageError: (exception, stackTrace) {
+                  debugPrint('이미지 로드 오류: $exception');
+                },
               ),
               const SizedBox(width: 8),
               Text(character.getName(settingsVM.currentLanguage.code)),
@@ -96,49 +100,38 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
             ),
           ],
         ),
-        body: Stack(
-          children: [
-            // 배경 이미지
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.25,
-                child: Image.asset(
-                  character.imageUrl,
-                  fit: BoxFit.cover,
-                ),
+        body: Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage(character.displayImageUrl),
+              fit: BoxFit.cover,
+              opacity: 0.25,
+            ),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  character.primaryColor.withOpacity(0.1),
+                  Colors.white.withOpacity(0.8),
+                  Colors.white.withOpacity(0.95),
+                ],
               ),
             ),
-            
-            // 그래디언트 오버레이
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      character.primaryColor.withOpacity(0.1),
-                      Colors.white.withOpacity(0.8),
-                      Colors.white.withOpacity(0.95),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            
-            // 채팅 내용
-            SafeArea(
-              bottom: false,
+            child: SafeArea(
               child: Column(
                 children: [
                   Expanded(
                     child: MessageList(),
                   ),
                   ChatInput(),
+                  SizedBox(height: MediaQuery.of(context).padding.bottom),
                 ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

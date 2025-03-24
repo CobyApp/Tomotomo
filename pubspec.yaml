@@ -96,9 +96,8 @@ flutter:
   # see https://flutter.dev/to/font-from-package
 
   assets:
-    - .env
-    - assets/images/
     - assets/images/characters/
+    - .env
 
   fonts:
     - family: Quicksand
