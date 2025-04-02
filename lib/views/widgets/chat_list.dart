@@ -69,6 +69,37 @@ class ChatList extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'AI의 답변',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            message.content,
+                            style: TextStyle(
+                              fontSize: 15,
+                              height: 1.5,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     if (message.explanation != null) ...[
                       Text(
                         message.explanation!,
@@ -86,7 +117,9 @@ class ChatList extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 8,
                               children: [
                                 Text(
                                   vocab.word,
@@ -96,8 +129,7 @@ class ChatList extends StatelessWidget {
                                     color: Colors.grey[800],
                                   ),
                                 ),
-                                if (vocab.reading != null && vocab.reading!.isNotEmpty) ...[
-                                  const SizedBox(width: 8),
+                                if (vocab.reading != null && vocab.reading!.isNotEmpty)
                                   Text(
                                     '(${vocab.reading})',
                                     style: TextStyle(
@@ -105,7 +137,6 @@ class ChatList extends StatelessWidget {
                                       color: Colors.grey[600],
                                     ),
                                   ),
-                                ],
                               ],
                             ),
                             const SizedBox(height: 8),
@@ -154,13 +185,15 @@ class ChatList extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 CircleAvatar(
                   radius: 16,
                   backgroundImage: AssetImage(character.imagePath),
                 ),
                 const SizedBox(width: 12),
-                SizedBox(
+                Container(
                   width: 12,
                   height: 12,
                   child: CircularProgressIndicator(
@@ -170,6 +203,7 @@ class ChatList extends StatelessWidget {
                     ),
                   ),
                 ),
+                const Spacer(),
               ],
             ),
           );

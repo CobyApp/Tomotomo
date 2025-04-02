@@ -13,22 +13,31 @@ class CharacterListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('캐릭터 선택'),
+        title: const Text('토모토모'),
+        centerTitle: false,
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: characters.length,
-        itemBuilder: (context, index) {
-          final character = characters[index];
-          return _buildCharacterCard(context, character);
-        },
+      body: Container(
+        color: const Color(0xFFF8F9FA),
+        child: ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          itemCount: characters.length,
+          itemBuilder: (context, index) {
+            final character = characters[index];
+            return _buildCharacterCard(context, character);
+          },
+        ),
       ),
     );
   }
 
   Widget _buildCharacterCard(BuildContext context, Character character) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -59,21 +68,24 @@ class CharacterListScreen extends StatelessWidget {
                       '${character.name} (${character.nameJp})',
                       style: const TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Pretendard',
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       character.description,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
+                        height: 1.4,
+                        fontFamily: 'Pretendard',
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
+                        horizontal: 10,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
@@ -85,6 +97,8 @@ class CharacterListScreen extends StatelessWidget {
                         style: TextStyle(
                           color: character.primaryColor,
                           fontWeight: FontWeight.w500,
+                          fontSize: 13,
+                          fontFamily: 'Pretendard',
                         ),
                       ),
                     ),
