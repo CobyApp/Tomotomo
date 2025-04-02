@@ -35,6 +35,9 @@ class ChatList extends StatelessWidget {
             ),
           ],
         ),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,15 +71,6 @@ class ChatList extends StatelessWidget {
                   children: [
                     if (message.explanation != null) ...[
                       Text(
-                        '문법 설명',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
                         message.explanation!,
                         style: TextStyle(
                           fontSize: 15,
@@ -87,85 +81,45 @@ class ChatList extends StatelessWidget {
                       const SizedBox(height: 24),
                     ],
                     if (message.vocabulary != null && message.vocabulary!.isNotEmpty) ...[
-                      Text(
-                        '단어',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[200]!),
-                        ),
+                      ...message.vocabulary!.map((vocab) => Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                              ),
-                              child: Text(
-                                '단어와 읽는 법',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ),
-                            ...message.vocabulary!.map((vocab) => Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(color: Colors.grey[200]!),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        vocab.word,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.grey[800],
-                                        ),
-                                      ),
-                                      if (vocab.reading != null && vocab.reading!.isNotEmpty) ...[
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '(${vocab.reading})',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
-                                    ],
+                            Row(
+                              children: [
+                                Text(
+                                  vocab.word,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[800],
                                   ),
-                                  const SizedBox(height: 8),
+                                ),
+                                if (vocab.reading != null && vocab.reading!.isNotEmpty) ...[
+                                  const SizedBox(width: 8),
                                   Text(
-                                    vocab.meaning,
+                                    '(${vocab.reading})',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.grey[700],
-                                      height: 1.5,
+                                      color: Colors.grey[600],
                                     ),
                                   ),
                                 ],
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              vocab.meaning,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[700],
+                                height: 1.5,
                               ),
-                            )),
+                            ),
                           ],
                         ),
-                      ),
+                      )),
                     ],
                   ],
                 ),
