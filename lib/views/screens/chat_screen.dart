@@ -4,11 +4,6 @@ import '../widgets/chat_input.dart';
 import '../widgets/message_list.dart';
 import '../../models/character.dart';
 import '../../viewmodels/chat_viewmodel.dart';
-import '../../utils/constants.dart';
-import '../../viewmodels/settings_viewmodel.dart';
-import '../../utils/app_theme.dart';
-import '../../utils/localization.dart';
-import '../widgets/character_profile_dialog.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({Key? key}) : super(key: key);
@@ -36,7 +31,9 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
     _controller.forward();
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _scrollToBottom();
+      });
     });
   }
 
@@ -44,120 +41,75 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final viewModel = context.watch<ChatViewModel>();
     final character = viewModel.character;
-    final theme = Theme.of(context);
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text('${character.name} (${character.level})'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => _showResetConfirmation(context),
+          ),
+        ],
+      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              character.primaryColor.withOpacity(0.15),
-              Colors.white.withOpacity(0.95),
+              character.level == '초급' 
+                ? const Color(0xFF4CAF50).withOpacity(0.1)
+                : character.level == '중급'
+                  ? const Color(0xFF2196F3).withOpacity(0.1)
+                  : const Color(0xFF9C27B0).withOpacity(0.1),
+              Colors.white,
             ],
-          ),
-          image: DecorationImage(
-            image: AssetImage('assets/images/patterns/moe_pattern.png'),
-            opacity: 0.03,
-            repeat: ImageRepeat.repeat,
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              _buildAppBar(context, character, theme),
               Expanded(
-                child: MessageList(
-                  messages: viewModel.messages,
-                  character: character,
-                  isGenerating: viewModel.isGenerating,
-                  scrollController: _scrollController,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.8),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                  ),
+                  child: MessageList(
+                    messages: viewModel.messages,
+                    character: character,
+                    isGenerating: viewModel.isGenerating,
+                    scrollController: _scrollController,
+                  ),
                 ),
               ),
-              ChatInput(
-                onSendMessage: (message) {
-                  viewModel.sendMessage(message);
-                  _scrollToBottom();
-                },
-                character: character,
-                isGenerating: viewModel.isGenerating,
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: ChatInput(
+                  onSendMessage: (message) {
+                    viewModel.sendMessage(message);
+                    _scrollToBottom();
+                  },
+                  character: character,
+                  isGenerating: viewModel.isGenerating,
+                ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context, Character character, ThemeData theme) {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new),
-        color: character.primaryColor,
-        onPressed: () => Navigator.pop(context),
-      ),
-      title: Row(
-        children: [
-          GestureDetector(
-            onTap: () => _showCharacterProfile(context, character),
-            child: Hero(
-              tag: 'character_${character.id}',
-              child: CircleAvatar(
-                radius: 18,
-                backgroundImage: AssetImage(character.imageUrl),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            character.name,
-            style: TextStyle(
-              fontFamily: 'Quicksand',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh_rounded),
-          color: character.primaryColor,
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: Text('채팅 초기화'),
-                content: Text('대화 내용이 모두 삭제됩니다.\n정말 초기화하시겠습니까?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      '취소',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      context.read<ChatViewModel>().resetChat();
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      '초기화',
-                      style: TextStyle(color: character.primaryColor),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-        const SizedBox(width: 8),
-      ],
     );
   }
 
@@ -168,7 +120,36 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
+    } else {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _scrollToBottom();
+      });
     }
+  }
+
+  void _showResetConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('대화 초기화'),
+          content: const Text('정말 대화를 초기화하시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                context.read<ChatViewModel>().resetChat();
+              },
+              child: const Text('초기화'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -176,12 +157,5 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _showCharacterProfile(BuildContext context, Character character) {
-    showDialog(
-      context: context,
-      builder: (context) => CharacterProfileDialog(character: character),
-    );
   }
 } 

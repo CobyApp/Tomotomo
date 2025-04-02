@@ -3,12 +3,6 @@ import 'package:provider/provider.dart';
 import '../../models/character.dart';
 import '../../data/characters.dart';
 import '../../viewmodels/chat_viewmodel.dart';
-import '../../viewmodels/settings_viewmodel.dart';
-import '../../utils/localization.dart';
-import '../../views/screens/settings_screen.dart';
-import '../../utils/app_theme.dart';
-import '../../utils/constants.dart';
-import '../../utils/date_formatter.dart';
 import '../../views/screens/chat_screen.dart';
 import '../../services/chat_storage_service.dart';
 import '../../services/ai_service.dart';
@@ -28,7 +22,6 @@ class CharacterSelectScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 한 번만 실행되도록 Future.microtask 사용
     Future.microtask(() {
       if (kDebugMode) {
         for (var character in characters) {
@@ -39,29 +32,19 @@ class CharacterSelectScreen extends StatelessWidget {
       }
     });
     
-    final languageCode = context.watch<SettingsViewModel>().currentLanguage.code;
-    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
-        title: Text(
-          _getAppName(languageCode),
-          style: const TextStyle(
-            fontFamily: 'Quicksand',
+        title: const Text(
+          '일본어 학습 챗봇',
+          style: TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 20,
-            color: AppColors.primary,
+            color: Colors.blue,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            color: AppColors.primary,
-            onPressed: () => Navigator.pushNamed(context, AppConstants.settingsRoute),
-          ),
-        ],
       ),
       body: ListView.separated(
         itemCount: characters.length,
@@ -76,7 +59,6 @@ class CharacterSelectScreen extends StatelessWidget {
       future: chatStorage.getLastMessage(character.id),
       builder: (context, snapshot) {
         final lastMessage = snapshot.data;
-        print('Last message for ${character.name}: ${lastMessage?.content}');
         
         return ListTile(
           leading: GestureDetector(
@@ -91,12 +73,12 @@ class CharacterSelectScreen extends StatelessWidget {
           ),
           title: Text(character.name),
           subtitle: Text(
-            lastMessage?.content ?? _getDefaultMessage(context),
+            lastMessage?.content ?? '아직 메시지가 없습니다',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           trailing: lastMessage != null ? Text(
-            _formatMessageTime(context, lastMessage.timestamp),
+            _formatMessageTime(lastMessage.timestamp),
             style: TextStyle(
               color: Colors.grey[600],
               fontSize: 12,
@@ -109,8 +91,6 @@ class CharacterSelectScreen extends StatelessWidget {
   }
 
   void _showCharacterInfo(BuildContext context, Character character) {
-    final languageCode = context.read<SettingsViewModel>().currentLanguage.code;
-    
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -120,7 +100,6 @@ class CharacterSelectScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 헤더 이미지
             Stack(
               children: [
                 Container(
@@ -136,7 +115,6 @@ class CharacterSelectScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                // 닫기 버튼
                 Positioned(
                   right: 8,
                   top: 8,
@@ -148,13 +126,11 @@ class CharacterSelectScreen extends StatelessWidget {
                 ),
               ],
             ),
-            // 캐릭터 정보
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 이름과 나이
                   Row(
                     children: [
                       Text(
@@ -176,7 +152,6 @@ class CharacterSelectScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  // 일본어 이름
                   Text(
                     character.nameKanji,
                     style: TextStyle(
@@ -185,16 +160,14 @@ class CharacterSelectScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // 설명
                   Text(
-                    character.getDescription(languageCode),
+                    character.description,
                     style: const TextStyle(
                       fontSize: 15,
                       height: 1.5,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // 대화하기 버튼
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -209,9 +182,9 @@ class CharacterSelectScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text(
-                        _getChatButtonText(languageCode),
-                        style: const TextStyle(
+                      child: const Text(
+                        '대화 시작하기',
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -227,31 +200,7 @@ class CharacterSelectScreen extends StatelessWidget {
     );
   }
 
-  String _getChatButtonText(String languageCode) {
-    switch (languageCode) {
-      case 'ja':
-        return 'チャットを始める';
-      case 'en':
-        return 'Start Chat';
-      default:
-        return '대화 시작하기';
-    }
-  }
-
-  String _getDefaultMessage(BuildContext context) {
-    final languageCode = context.read<SettingsViewModel>().currentLanguage.code;
-    
-    switch (languageCode) {
-      case 'ja':
-        return 'メッセージがありません';
-      case 'en':
-        return 'No messages yet';
-      default:
-        return '아직 메시지가 없습니다';
-    }
-  }
-
-  String _formatMessageTime(BuildContext context, DateTime time) {
+  String _formatMessageTime(DateTime time) {
     final now = DateTime.now();
     final difference = now.difference(time);
 
@@ -260,7 +209,9 @@ class CharacterSelectScreen extends StatelessWidget {
     } else if (difference.inDays == 1) {
       return '어제';
     } else if (difference.inDays < 7) {
-      return DateFormat('EEEE').format(time);
+      final weekday = time.weekday;
+      final days = ['월', '화', '수', '목', '금', '토', '일'];
+      return '${days[weekday - 1]}요일';
     } else {
       return DateFormat('MM/dd').format(time);
     }
@@ -280,16 +231,5 @@ class CharacterSelectScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _getAppName(String languageCode) {
-    switch (languageCode) {
-      case 'ja':
-        return AppConstants.appNameJa;
-      case 'en':
-        return AppConstants.appNameEn;
-      default:
-        return AppConstants.appNameKo;
-    }
   }
 } 

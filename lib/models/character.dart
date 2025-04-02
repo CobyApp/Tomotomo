@@ -21,9 +21,11 @@ class CharacterInterest {
 
 class Character {
   final String id;
-  final String name;
-  final String nameKanji;
-  final String nameRomaji;
+  final String name;  // 한글 이름
+  final String nameJp;  // 히라가나/가타카나
+  final String nameKanji;  // 한자
+  final String level;
+  final String description;
   final int age;
   final String schoolYear;
   final List<CharacterTrait> traits;
@@ -31,32 +33,23 @@ class Character {
   final String speechStyle;
   final Color primaryColor;
   final Color secondaryColor;
-  final String imageUrl;
-  
-  // 외형 관련
   final String hairStyle;
   final String hairColor;
   final String eyeColor;
   final String outfit;
   final List<String> accessories;
-  
-  // 대화 스타일 관련
   final String selfReference;
   final List<String> commonPhrases;
   final Map<String, List<String>> emotionalResponses;
-  
-  // 다국어 지원
-  final Map<String, String> names;  // 각 언어별 이름
-  final Map<String, String> descriptions;  // 각 언어별 설명
-  final Map<String, String> personalities;  // 각 언어별 성격 설명
-  final Map<String, String> chatStyles;  // 각 언어별 대화 스타일
-  final Map<String, String> firstMessages;  // 각 언어별 첫 메시지
+  final String imageUrl;
 
   const Character({
     required this.id,
     required this.name,
+    required this.nameJp,
     required this.nameKanji,
-    required this.nameRomaji,
+    required this.level,
+    required this.description,
     required this.age,
     required this.schoolYear,
     required this.traits,
@@ -73,18 +66,61 @@ class Character {
     required this.commonPhrases,
     required this.emotionalResponses,
     required this.imageUrl,
-    required this.names,
-    required this.descriptions,
-    required this.personalities,
-    required this.chatStyles,
-    required this.firstMessages,
   });
 
-  String getName(String languageCode) => names[languageCode] ?? names['ko'] ?? name;
-  String getDescription(String languageCode) => descriptions[languageCode] ?? descriptions['ko'] ?? '';
-  String getPersonality(String languageCode) => personalities[languageCode] ?? personalities['ko'] ?? '';
-  String getChatStyle(String languageCode) => chatStyles[languageCode] ?? chatStyles['ko'] ?? '';
-  String getFirstMessage(String languageCode) => firstMessages[languageCode] ?? firstMessages['ko'] ?? '';
-
   String get displayImageUrl => imageUrl;
+
+  factory Character.fromJson(Map<String, dynamic> json) {
+    return Character(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      nameJp: json['nameJp'] as String,
+      nameKanji: json['nameKanji'] as String,
+      level: json['level'] as String,
+      description: json['description'] as String,
+      age: json['age'] as int,
+      schoolYear: json['schoolYear'] as String,
+      traits: (json['traits'] as List).map((e) => CharacterTrait(e['trait'] as String, e['weight'] as double)).toList(),
+      interests: (json['interests'] as List).map((e) => CharacterInterest(category: e['category'] as String, items: e['items'] as List<String>)).toList(),
+      speechStyle: json['speechStyle'] as String,
+      primaryColor: Color(int.parse(json['primaryColor'] as String)),
+      secondaryColor: Color(int.parse(json['secondaryColor'] as String)),
+      hairStyle: json['hairStyle'] as String,
+      hairColor: json['hairColor'] as String,
+      eyeColor: json['eyeColor'] as String,
+      outfit: json['outfit'] as String,
+      accessories: json['accessories'] as List<String>,
+      selfReference: json['selfReference'] as String,
+      commonPhrases: json['commonPhrases'] as List<String>,
+      emotionalResponses: json['emotionalResponses'] as Map<String, List<String>>,
+      imageUrl: json['imageUrl'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'nameJp': nameJp,
+      'nameKanji': nameKanji,
+      'level': level,
+      'description': description,
+      'age': age,
+      'schoolYear': schoolYear,
+      'traits': traits.map((e) => {'trait': e.trait, 'weight': e.weight}).toList(),
+      'interests': interests.map((e) => {'category': e.category, 'items': e.items}).toList(),
+      'speechStyle': speechStyle,
+      'primaryColor': primaryColor.value.toString(),
+      'secondaryColor': secondaryColor.value.toString(),
+      'hairStyle': hairStyle,
+      'hairColor': hairColor,
+      'eyeColor': eyeColor,
+      'outfit': outfit,
+      'accessories': accessories,
+      'selfReference': selfReference,
+      'commonPhrases': commonPhrases,
+      'emotionalResponses': emotionalResponses,
+      'imageUrl': imageUrl,
+    };
+  }
 } 
