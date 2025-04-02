@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/chat_message.dart';
 import '../services/ai_service.dart';
 import '../models/character.dart';
-import '../services/chat_storage_service.dart';
+import '../services/chat_storage.dart';
 import 'package:flutter/material.dart';
 
 class ChatViewModel extends ChangeNotifier {

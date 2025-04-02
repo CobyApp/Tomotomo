@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/ai_service.dart';
-import 'services/chat_storage_service.dart';
+import 'services/chat_storage.dart';
 import 'viewmodels/chat_viewmodel.dart';
 import 'views/screens/character_list_screen.dart';
 

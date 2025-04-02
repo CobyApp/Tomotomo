@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../models/character.dart';
 import '../../models/chat_message.dart';
-import '../../utils/date_formatter.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;

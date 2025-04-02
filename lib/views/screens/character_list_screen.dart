@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/characters.dart';
 import '../../models/character.dart';
-import '../../services/chat_storage_service.dart';
+import '../../services/chat_storage.dart';
 import '../../services/ai_service.dart';
 import '../screens/chat_screen.dart';
 

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../widgets/chat_list.dart';
 import '../widgets/chat_bubble.dart';
 import '../../models/character.dart';
-import '../../services/chat_storage_service.dart';
+import '../../services/chat_storage.dart';
 import '../../services/ai_service.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 import '../widgets/chat_input.dart';
