@@ -7,67 +7,83 @@ import 'package:flutter/material.dart';
 
 class ChatViewModel extends ChangeNotifier {
   final Character character;
-  final ChatStorageService chatStorage;
   final AIService aiService;
+  final ChatStorage chatStorage;
   final TextEditingController messageController = TextEditingController();
-  final List<ChatMessage> _messages = [];
-  bool isGenerating = false;
+  
+  List<ChatMessage> _messages = [];
+  bool _isGenerating = false;
 
   ChatViewModel({
     required this.character,
-    required this.chatStorage,
     required this.aiService,
+    required this.chatStorage,
   }) {
     _loadMessages();
+    aiService.initializeForCharacter(character);
   }
 
-  List<ChatMessage> get messages => List.unmodifiable(_messages);
+  List<ChatMessage> get messages => _messages;
+  bool get isGenerating => _isGenerating;
 
   Future<void> _loadMessages() async {
-    final savedMessages = await chatStorage.getMessages(character.id);
-    _messages.addAll(savedMessages);
-    notifyListeners();
+    try {
+      _messages = await chatStorage.getMessages(character.id);
+      if (_messages.isEmpty) {
+        final welcomeMessage = ChatMessage(
+          content: '${character.nameJp}です。よろしくお願いします！',
+          role: 'assistant',
+          timestamp: DateTime.now(),
+          explanation: '기본적인 자기소개 표현입니다.\n- 〜です: ~입니다\n- よろしくお願いします: 잘 부탁드립니다',
+          vocabulary: [
+            Vocabulary(
+              word: 'よろしく',
+              reading: 'よろしく',
+              meaning: '잘 부탁드립니다',
+            ),
+            Vocabulary(
+              word: 'お願い',
+              reading: 'おねがい',
+              meaning: '부탁',
+            ),
+          ],
+        );
+        _messages.add(welcomeMessage);
+        await chatStorage.saveMessage(character.id, welcomeMessage);
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Failed to load messages: $e');
+    }
   }
 
   Future<void> sendMessage() async {
-    final text = messageController.text.trim();
-    if (text.isEmpty) return;
+    final userMessage = messageController.text.trim();
+    if (userMessage.isEmpty || _isGenerating) return;
 
-    final userMessage = ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      characterId: character.id,
-      content: text,
-      isUser: true,
+    final userChatMessage = ChatMessage(
+      content: userMessage,
+      role: 'user',
       timestamp: DateTime.now(),
     );
 
-    _messages.add(userMessage);
     messageController.clear();
+    _messages.add(userChatMessage);
+    await chatStorage.saveMessage(character.id, userChatMessage);
     notifyListeners();
 
-    await chatStorage.saveMessage(userMessage);
-
-    isGenerating = true;
+    _isGenerating = true;
     notifyListeners();
 
     try {
-      final response = await aiService.sendMessage(text, character);
-      
-      final aiMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        characterId: character.id,
-        content: response,
-        isUser: false,
-        timestamp: DateTime.now(),
-      );
-
+      final aiMessage = await aiService.generateResponse(userMessage);
       _messages.add(aiMessage);
-      await chatStorage.saveMessage(aiMessage);
+      await chatStorage.saveMessage(character.id, aiMessage);
     } catch (e) {
-      print('Error generating response: $e');
-      // TODO: 에러 처리
+      debugPrint('Failed to generate response: $e');
+      // Show error message to user
     } finally {
-      isGenerating = false;
+      _isGenerating = false;
       notifyListeners();
     }
   }
@@ -77,23 +93,31 @@ class ChatViewModel extends ChangeNotifier {
       await chatStorage.clearMessages(character.id);
       _messages.clear();
       messageController.clear();
-      isGenerating = false;
-      
-      // 초기 인사 메시지 추가
+      _isGenerating = false;
+
       final welcomeMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        characterId: character.id,
-        content: '${character.nameJp}と日本語で話しましょう！',
-        isUser: false,
+        content: '${character.nameJp}です。よろしくお願いします！',
+        role: 'assistant',
         timestamp: DateTime.now(),
+        explanation: '기본적인 자기소개 표현입니다.\n- 〜です: ~입니다\n- よろしくお願いします: 잘 부탁드립니다',
+        vocabulary: [
+          Vocabulary(
+            word: 'よろしく',
+            reading: 'よろしく',
+            meaning: '잘 부탁드립니다',
+          ),
+          Vocabulary(
+            word: 'お願い',
+            reading: 'おねがい',
+            meaning: '부탁',
+          ),
+        ],
       );
-      
       _messages.add(welcomeMessage);
-      await chatStorage.saveMessage(welcomeMessage);
+      await chatStorage.saveMessage(character.id, welcomeMessage);
       notifyListeners();
     } catch (e) {
-      print('Error resetting chat: $e');
-      rethrow;
+      debugPrint('Failed to reset chat: $e');
     }
   }
 

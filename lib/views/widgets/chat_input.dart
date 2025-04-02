@@ -1,91 +1,90 @@
 import 'package:flutter/material.dart';
-import '../../models/character.dart';
 
-class ChatInput extends StatefulWidget {
-  final Function(String) onSendMessage;
+class ChatInput extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onSend;
   final bool isGenerating;
-  final Character character;
 
   const ChatInput({
-    Key? key,
-    required this.onSendMessage,
+    super.key,
+    required this.controller,
+    required this.onSend,
     required this.isGenerating,
-    required this.character,
-  }) : super(key: key);
-
-  @override
-  State<ChatInput> createState() => _ChatInputState();
-}
-
-class _ChatInputState extends State<ChatInput> {
-  final _textController = TextEditingController();
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, -1),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _textController,
-              decoration: InputDecoration(
-                hintText: '메시지를 입력하세요',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(
-                    color: widget.character.primaryColor,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.grey.shade200,
+                    width: 1,
                   ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(
-                    color: widget.character.primaryColor,
-                    width: 2,
+                child: TextField(
+                  controller: controller,
+                  maxLines: 5,
+                  minLines: 1,
+                  enabled: !isGenerating,
+                  decoration: InputDecoration(
+                    hintText: '메시지를 입력하세요',
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 16,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    border: InputBorder.none,
                   ),
                 ),
               ),
-              enabled: !widget.isGenerating,
-              onSubmitted: _handleSubmit,
             ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: Icon(
-              Icons.send,
-              color: widget.isGenerating 
-                ? Colors.grey 
-                : widget.character.primaryColor,
+            const SizedBox(width: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(24),
+                  onTap: isGenerating ? null : onSend,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Icon(
+                      isGenerating ? Icons.hourglass_empty : Icons.send_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
             ),
-            onPressed: widget.isGenerating 
-              ? null 
-              : () => _handleSubmit(_textController.text),
-          ),
-        ],
+          ],
+        ),
       ),
     );
-  }
-
-  void _handleSubmit(String text) {
-    if (text.trim().isEmpty) return;
-    widget.onSendMessage(text);
-    _textController.clear();
-  }
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    super.dispose();
   }
 }

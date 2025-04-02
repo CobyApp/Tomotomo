@@ -1,31 +1,63 @@
 class ChatMessage {
-  final String id;
-  final String characterId;
   final String content;
-  final bool isUser;
+  final String role;
   final DateTime timestamp;
+  final String? explanation;
+  final List<Vocabulary>? vocabulary;
 
   ChatMessage({
-    required this.id,
-    required this.characterId,
     required this.content,
-    required this.isUser,
+    required this.role,
     required this.timestamp,
+    this.explanation,
+    this.vocabulary,
   });
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'characterId': characterId,
     'content': content,
-    'isUser': isUser,
+    'role': role,
     'timestamp': timestamp.toIso8601String(),
+    'explanation': explanation,
+    'vocabulary': vocabulary?.map((v) => v.toJson()).toList(),
   };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
-    id: json['id'],
-    characterId: json['characterId'],
-    content: json['content'],
-    isUser: json['isUser'],
+    content: json['content'] as String,
+    role: json['role'] as String,
     timestamp: DateTime.parse(json['timestamp']),
+    explanation: json['explanation'] as String?,
+    vocabulary: json['vocabulary'] != null
+        ? (json['vocabulary'] as List)
+            .map((v) => Vocabulary.fromJson(v as Map<String, dynamic>))
+            .toList()
+        : null,
   );
+}
+
+class Vocabulary {
+  final String word;
+  final String? reading;
+  final String meaning;
+
+  Vocabulary({
+    required this.word,
+    this.reading,
+    required this.meaning,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'word': word,
+      'reading': reading,
+      'meaning': meaning,
+    };
+  }
+
+  factory Vocabulary.fromJson(Map<String, dynamic> json) {
+    return Vocabulary(
+      word: json['word'] as String,
+      reading: json['reading'] as String?,
+      meaning: json['meaning'] as String,
+    );
+  }
 } 

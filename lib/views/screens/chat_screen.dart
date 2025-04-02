@@ -3,14 +3,21 @@ import 'package:provider/provider.dart';
 import '../widgets/chat_list.dart';
 import '../widgets/chat_bubble.dart';
 import '../../models/character.dart';
+import '../../services/chat_storage_service.dart';
+import '../../services/ai_service.dart';
 import '../../viewmodels/chat_viewmodel.dart';
+import '../widgets/chat_input.dart';
 
 class ChatScreen extends StatefulWidget {
   final Character character;
+  final ChatStorage chatStorage;
+  final AIService aiService;
   
   const ChatScreen({
     Key? key,
     required this.character,
+    required this.chatStorage,
+    required this.aiService,
   }) : super(key: key);
 
   @override
@@ -44,128 +51,72 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: AssetImage(widget.character.imagePath),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              widget.character.name,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+    return ChangeNotifierProvider(
+      create: (_) => ChatViewModel(
+        character: widget.character,
+        chatStorage: widget.chatStorage,
+        aiService: widget.aiService,
+      ),
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 1,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundImage: AssetImage(widget.character.imagePath),
               ),
+              const SizedBox(width: 12),
+              Text(
+                widget.character.name,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.black54),
+              onPressed: () => _showResetConfirmation(context),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black54),
-            onPressed: () => _showResetConfirmation(context),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Consumer<ChatViewModel>(
-              builder: (context, chatViewModel, child) {
-                return ChatList(
-                  messages: chatViewModel.messages,
-                  character: widget.character,
-                  isGenerating: chatViewModel.isGenerating,
+        body: Column(
+          children: [
+            Expanded(
+              child: Consumer<ChatViewModel>(
+                builder: (context, viewModel, child) {
+                  return ChatList(
+                    messages: viewModel.messages,
+                    character: widget.character,
+                    isGenerating: viewModel.isGenerating,
+                  );
+                },
+              ),
+            ),
+            Consumer<ChatViewModel>(
+              builder: (context, viewModel, child) {
+                return ChatInput(
+                  controller: viewModel.messageController,
+                  onSend: () {
+                    if (viewModel.messageController.text.trim().isNotEmpty) {
+                      viewModel.sendMessage();
+                    }
+                  },
+                  isGenerating: viewModel.isGenerating,
                 );
               },
             ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Colors.grey.shade200,
-                          width: 1,
-                        ),
-                      ),
-                      child: TextField(
-                        controller: context.read<ChatViewModel>().messageController,
-                        maxLines: 5,
-                        minLines: 1,
-                        decoration: InputDecoration(
-                          hintText: '메시지를 입력하세요',
-                          hintStyle: TextStyle(
-                            color: Colors.grey.shade400,
-                            fontSize: 16,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: _getLevelColor(widget.character.level),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(24),
-                        onTap: () {
-                          final viewModel = context.read<ChatViewModel>();
-                          if (viewModel.messageController.text.trim().isNotEmpty) {
-                            viewModel.sendMessage();
-                          }
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: Icon(
-                            Icons.send_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

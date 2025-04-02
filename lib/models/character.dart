@@ -28,6 +28,7 @@ class Character {
   final String description;
   final int age;
   final String schoolYear;
+  final String occupation;
   final List<CharacterTrait> traits;
   final List<CharacterInterest> interests;
   final String speechStyle;
@@ -53,6 +54,7 @@ class Character {
     required this.description,
     required this.age,
     required this.schoolYear,
+    required this.occupation,
     required this.traits,
     required this.interests,
     required this.speechStyle,
@@ -82,6 +84,7 @@ class Character {
       description: json['description'] as String,
       age: json['age'] as int,
       schoolYear: json['schoolYear'] as String,
+      occupation: json['occupation'] as String,
       traits: (json['traits'] as List).map((e) => CharacterTrait(e['trait'] as String, e['weight'] as double)).toList(),
       interests: (json['interests'] as List).map((e) => CharacterInterest(category: e['category'] as String, items: e['items'] as List<String>)).toList(),
       speechStyle: json['speechStyle'] as String,
@@ -110,6 +113,7 @@ class Character {
       'description': description,
       'age': age,
       'schoolYear': schoolYear,
+      'occupation': occupation,
       'traits': traits.map((e) => {'trait': e.trait, 'weight': e.weight}).toList(),
       'interests': interests.map((e) => {'category': e.category, 'items': e.items}).toList(),
       'speechStyle': speechStyle,
