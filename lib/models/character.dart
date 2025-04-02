@@ -42,6 +42,7 @@ class Character {
   final List<String> commonPhrases;
   final Map<String, List<String>> emotionalResponses;
   final String imageUrl;
+  final String imagePath;
 
   const Character({
     required this.id,
@@ -66,6 +67,7 @@ class Character {
     required this.commonPhrases,
     required this.emotionalResponses,
     required this.imageUrl,
+    required this.imagePath,
   });
 
   String get displayImageUrl => imageUrl;
@@ -94,6 +96,7 @@ class Character {
       commonPhrases: json['commonPhrases'] as List<String>,
       emotionalResponses: json['emotionalResponses'] as Map<String, List<String>>,
       imageUrl: json['imageUrl'] as String,
+      imagePath: json['imagePath'] as String,
     );
   }
 
@@ -121,6 +124,7 @@ class Character {
       'commonPhrases': commonPhrases,
       'emotionalResponses': emotionalResponses,
       'imageUrl': imageUrl,
+      'imagePath': imagePath,
     };
   }
 } 

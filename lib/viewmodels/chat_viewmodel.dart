@@ -3,23 +3,25 @@ import '../models/chat_message.dart';
 import '../services/ai_service.dart';
 import '../models/character.dart';
 import '../services/chat_storage_service.dart';
+import 'package:flutter/material.dart';
 
 class ChatViewModel extends ChangeNotifier {
-  final AIService aiService;
-  final ChatStorageService chatStorage;
   final Character character;
+  final ChatStorageService chatStorage;
+  final AIService aiService;
+  final TextEditingController messageController = TextEditingController();
   final List<ChatMessage> _messages = [];
   bool isGenerating = false;
 
-  List<ChatMessage> get messages => _messages;
-
   ChatViewModel({
-    required this.aiService,
-    required this.chatStorage,
     required this.character,
+    required this.chatStorage,
+    required this.aiService,
   }) {
     _loadMessages();
   }
+
+  List<ChatMessage> get messages => List.unmodifiable(_messages);
 
   Future<void> _loadMessages() async {
     final savedMessages = await chatStorage.getMessages(character.id);
@@ -27,27 +29,29 @@ class ChatViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> sendMessage(String content) async {
-    if (content.trim().isEmpty) return;
+  Future<void> sendMessage() async {
+    final text = messageController.text.trim();
+    if (text.isEmpty) return;
 
     final userMessage = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       characterId: character.id,
-      content: content,
+      content: text,
       isUser: true,
       timestamp: DateTime.now(),
     );
-    
+
     _messages.add(userMessage);
-    await chatStorage.saveMessage(userMessage);
+    messageController.clear();
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 300));
+    await chatStorage.saveMessage(userMessage);
+
     isGenerating = true;
     notifyListeners();
 
     try {
-      final response = await aiService.sendMessage(content, character);
+      final response = await aiService.sendMessage(text, character);
       
       final aiMessage = ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -56,18 +60,12 @@ class ChatViewModel extends ChangeNotifier {
         isUser: false,
         timestamp: DateTime.now(),
       );
-      
+
       _messages.add(aiMessage);
       await chatStorage.saveMessage(aiMessage);
-      
     } catch (e) {
-      _messages.add(ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        characterId: character.id,
-        content: '申し訳ありません。エラーが発生しました。',
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
+      print('Error generating response: $e');
+      // TODO: 에러 처리
     } finally {
       isGenerating = false;
       notifyListeners();
@@ -75,36 +73,15 @@ class ChatViewModel extends ChangeNotifier {
   }
 
   Future<void> resetChat() async {
-    try {
-      // 저장된 메시지 삭제
-      await chatStorage.clearMessages(character.id);
-      
-      // 메모리상의 메시지 목록 초기화
-      _messages.clear();
-      
-      // AI 서비스 세션 초기화
-      aiService.resetChat();
-      
-      // 상태 업데이트
-      isGenerating = false;
-      notifyListeners();
-      
-      // 초기 메시지 추가
-      _messages.add(ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        characterId: character.id,
-        content: '${character.nameJp}と日本語で話しましょう！',
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
-      
-      // 초기 메시지 저장
-      await chatStorage.saveMessage(_messages.first);
-      
-      notifyListeners();
-    } catch (e) {
-      print('Error resetting chat: $e');
-      // 에러 발생 시 사용자에게 알림
-    }
+    await chatStorage.clearMessages(character.id);
+    _messages.clear();
+    messageController.clear();
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    messageController.dispose();
+    super.dispose();
   }
 } 

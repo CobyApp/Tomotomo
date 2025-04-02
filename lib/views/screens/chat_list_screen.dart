@@ -111,7 +111,21 @@ class ChatListScreen extends StatelessWidget {
               ),
             ],
           ) : null,
-          onTap: () => _openChatScreen(context, character),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ChangeNotifierProvider(
+                  create: (_) => ChatViewModel(
+                    character: character,
+                    chatStorage: chatStorage,
+                    aiService: aiService,
+                  ),
+                  child: ChatScreen(character: character),
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -156,7 +170,7 @@ class ChatListScreen extends StatelessWidget {
             chatStorage: chatStorage,
             aiService: aiService,
           ),
-          child: const ChatScreen(),
+          child: ChatScreen(character: character),
         ),
       ),
     );
