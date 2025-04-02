@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../widgets/chat_input.dart';
-import '../widgets/message_list.dart';
-import '../widgets/message_bubble.dart';
+import '../widgets/chat_list.dart';
+import '../widgets/chat_bubble.dart';
 import '../../models/character.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 
@@ -82,18 +81,10 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
           Expanded(
             child: Consumer<ChatViewModel>(
               builder: (context, chatViewModel, child) {
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: chatViewModel.messages.length,
-                  itemBuilder: (context, index) {
-                    final message = chatViewModel.messages[index];
-                    return MessageBubble(
-                      message: message.content,
-                      isUser: message.isUser,
-                      timestamp: message.timestamp,
-                      character: widget.character,
-                    );
-                  },
+                return ChatList(
+                  messages: chatViewModel.messages,
+                  character: widget.character,
+                  isGenerating: chatViewModel.isGenerating,
                 );
               },
             ),

@@ -1,113 +1,62 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'services/ai_service.dart';
+import 'views/screens/character_list_screen.dart';
 import 'services/chat_storage_service.dart';
-import 'views/screens/chat_screen.dart';
-import 'viewmodels/chat_viewmodel.dart';
-import 'data/characters.dart';
-import 'views/screens/chat_list_screen.dart';
+import 'services/ai_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   await dotenv.load(fileName: ".env");
   final prefs = await SharedPreferences.getInstance();
-  final chatStorage = ChatStorageService(prefs);
-  
   final sessionId = DateTime.now().millisecondsSinceEpoch.toString();
-  final aiService = AIService(sessionId: sessionId);
 
   runApp(MyApp(
-    chatStorage: chatStorage,
-    aiService: aiService,
+    prefs: prefs,
+    sessionId: sessionId,
   ));
 }
 
 class MyApp extends StatelessWidget {
-  final ChatStorageService chatStorage;
-  final AIService aiService;
+  final SharedPreferences prefs;
+  final String sessionId;
 
   const MyApp({
     Key? key,
-    required this.chatStorage,
-    required this.aiService,
+    required this.prefs,
+    required this.sessionId,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '일본어 학습 채팅',
-      theme: ThemeData(
-        primarySwatch: Colors.pink,
-        scaffoldBackgroundColor: Colors.grey[50],
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.black87),
-          titleTextStyle: const TextStyle(
-            color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-          actionsIconTheme: const IconThemeData(color: Colors.black87),
+    return MultiProvider(
+      providers: [
+        Provider<ChatStorageService>(
+          create: (_) => ChatStorageService(prefs),
         ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: BorderSide(color: Colors.grey[300]!),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: BorderSide(color: Colors.grey[300]!),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: BorderSide(color: Colors.pink[200]!, width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 16,
-          ),
+        Provider<AIService>(
+          create: (_) => AIService(sessionId: sessionId),
         ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.pink[200],
-            foregroundColor: Colors.white,
-            elevation: 2,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 12,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+      ],
+      child: MaterialApp(
+        title: '일본어 회화 연습',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          scaffoldBackgroundColor: Colors.grey[50],
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            iconTheme: IconThemeData(color: Colors.black87),
+            titleTextStyle: TextStyle(
+              color: Colors.black87,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
-        cardTheme: CardTheme(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          color: Colors.white,
-        ),
-        dividerTheme: DividerThemeData(
-          color: Colors.grey[200],
-          thickness: 1,
-        ),
-        listTileTheme: ListTileThemeData(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-      home: ChatListScreen(
-        chatStorage: chatStorage,
-        aiService: aiService,
+        home: const CharacterListScreen(),
       ),
     );
   }
