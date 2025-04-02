@@ -73,10 +73,28 @@ class ChatViewModel extends ChangeNotifier {
   }
 
   Future<void> resetChat() async {
-    await chatStorage.clearMessages(character.id);
-    _messages.clear();
-    messageController.clear();
-    notifyListeners();
+    try {
+      await chatStorage.clearMessages(character.id);
+      _messages.clear();
+      messageController.clear();
+      isGenerating = false;
+      
+      // 초기 인사 메시지 추가
+      final welcomeMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        characterId: character.id,
+        content: '${character.nameJp}と日本語で話しましょう！',
+        isUser: false,
+        timestamp: DateTime.now(),
+      );
+      
+      _messages.add(welcomeMessage);
+      await chatStorage.saveMessage(welcomeMessage);
+      notifyListeners();
+    } catch (e) {
+      print('Error resetting chat: $e');
+      rethrow;
+    }
   }
 
   @override
