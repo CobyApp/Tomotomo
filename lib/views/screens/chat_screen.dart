@@ -57,78 +57,10 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
         chatStorage: widget.chatStorage,
         aiService: widget.aiService,
       ),
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundImage: AssetImage(widget.character.imagePath),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                widget.character.name,
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Pretendard',
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.black54),
-              onPressed: () => _showResetConfirmation(context),
-            ),
-          ],
-        ),
-        body: Container(
-          color: const Color(0xFFF8F9FA),
-          child: Column(
-            children: [
-              Expanded(
-                child: Consumer<ChatViewModel>(
-                  builder: (context, viewModel, child) {
-                    return ChatList(
-                      messages: viewModel.messages,
-                      character: widget.character,
-                      isGenerating: viewModel.isGenerating,
-                    );
-                  },
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    top: BorderSide(color: Colors.grey.shade200),
-                  ),
-                ),
-                child: Consumer<ChatViewModel>(
-                  builder: (context, viewModel, child) {
-                    return ChatInput(
-                      controller: viewModel.messageController,
-                      onSend: () {
-                        if (viewModel.messageController.text.trim().isNotEmpty) {
-                          viewModel.sendMessage();
-                        }
-                      },
-                      isGenerating: viewModel.isGenerating,
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: _ChatScreenContent(
+        character: widget.character,
+        scrollController: _scrollController,
+        onResetPressed: _showResetConfirmation,
       ),
     );
   }
@@ -300,5 +232,95 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+}
+
+class _ChatScreenContent extends StatelessWidget {
+  final Character character;
+  final ScrollController scrollController;
+  final Function(BuildContext) onResetPressed;
+
+  const _ChatScreenContent({
+    Key? key,
+    required this.character,
+    required this.scrollController,
+    required this.onResetPressed,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundImage: AssetImage(character.imagePath),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              character.name,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Pretendard',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black54),
+            onPressed: () => onResetPressed(context),
+          ),
+        ],
+      ),
+      body: Container(
+        color: const Color(0xFFF8F9FA),
+        child: Column(
+          children: [
+            Expanded(
+              child: Consumer<ChatViewModel>(
+                builder: (context, viewModel, child) {
+                  return ChatList(
+                    messages: viewModel.messages,
+                    character: character,
+                    isGenerating: viewModel.isGenerating,
+                  );
+                },
+              ),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(color: Colors.grey.shade200),
+                ),
+              ),
+              child: Consumer<ChatViewModel>(
+                builder: (context, viewModel, child) {
+                  return ChatInput(
+                    controller: viewModel.messageController,
+                    onSend: () {
+                      if (viewModel.messageController.text.trim().isNotEmpty) {
+                        viewModel.sendMessage();
+                      }
+                    },
+                    isGenerating: viewModel.isGenerating,
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 } 
