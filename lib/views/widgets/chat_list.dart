@@ -167,10 +167,12 @@ class _ChatListState extends State<ChatList> {
         if (index == widget.messages.length) {
           return _buildLoadingIndicator();
         }
+        final message = widget.messages[index];
         return ChatBubble(
-          message: widget.messages[index],
+          message: message,
           character: widget.character,
-          isUser: widget.messages[index].role == 'user',
+          isUser: message.role == 'user',
+          onExplanationTap: message.role != 'user' ? () => _showExplanation(context, message) : null,
         );
       },
     );
