@@ -80,8 +80,11 @@ class ChatViewModel extends ChangeNotifier {
       _messages.add(aiMessage);
       await chatStorage.saveMessage(character.id, aiMessage);
     } catch (e) {
-      debugPrint('Failed to generate response: $e');
-      // Show error message to user
+      _messages.add(ChatMessage(
+        content: '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.',
+        role: 'assistant',
+        timestamp: DateTime.now(),
+      ));
     } finally {
       _isGenerating = false;
       notifyListeners();

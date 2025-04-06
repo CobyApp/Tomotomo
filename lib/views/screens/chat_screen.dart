@@ -67,10 +67,14 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
         chatStorage: widget.chatStorage,
         aiService: widget.aiService,
       ),
-      child: _ChatScreenContent(
-        character: widget.character,
-        scrollController: _scrollController,
-        onResetPressed: _showResetConfirmation,
+      child: Consumer<ChatViewModel>(
+        builder: (context, viewModel, child) {
+          return _ChatScreenContent(
+            character: widget.character,
+            scrollController: _scrollController,
+            onResetPressed: (context) => _showResetDialog(context, viewModel),
+          );
+        },
       ),
     );
   }
@@ -88,137 +92,173 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
     }
   }
 
-  void _showResetConfirmation(BuildContext context) {
-    final levelColor = _getLevelColor(widget.character.level);
-    final viewModel = context.read<ChatViewModel>();
-    
+  void _showResetDialog(BuildContext context, ChatViewModel viewModel) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.warning_rounded,
-              color: levelColor.withOpacity(0.8),
-              size: 28,
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              '대화 초기화',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '모든 대화 내용이 삭제됩니다.\n계속하시겠습니까?',
-              style: TextStyle(
-                fontSize: 16,
-                height: 1.5,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.grey[200]!,
-                  width: 1,
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: widget.character.primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.refresh,
+                  size: 36,
+                  color: widget.character.primaryColor,
                 ),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 16,
-                    color: Colors.grey[600],
+              const SizedBox(height: 24),
+              Text(
+                '대화 초기화',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: widget.character.primaryColor,
+                  fontFamily: 'Pretendard',
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.grey[200]!,
+                    width: 1,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '삭제된 대화는 복구할 수 없습니다',
-                    style: TextStyle(
-                      fontSize: 13,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 18,
                       color: Colors.grey[600],
-                      height: 1.5,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '삭제된 대화는 복구할 수 없습니다',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          height: 1.4,
+                          fontFamily: 'Pretendard',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      '취소',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                        fontFamily: 'Pretendard',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _resetChat(context, viewModel);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: widget.character.primaryColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      '초기화',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontFamily: 'Pretendard',
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            child: Text(
-              '취소',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-              ),
-            ),
+      ),
+    );
+  }
+
+  void _resetChat(BuildContext context, ChatViewModel viewModel) {
+    viewModel.resetChat();
+    _scrollToBottom();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: widget.character.primaryColor,
+            borderRadius: BorderRadius.circular(12),
           ),
-          TextButton(
-            onPressed: () {
-              viewModel.resetChat();
-              Navigator.pop(dialogContext);
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle_outline,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('대화가 초기화되었습니다'),
-                    ],
-                  ),
-                  backgroundColor: levelColor.withOpacity(0.9),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  margin: const EdgeInsets.all(16),
-                  duration: const Duration(seconds: 2),
+          child: Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                '대화가 초기화되었습니다',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontFamily: 'Pretendard',
                 ),
-              );
-            },
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            child: Text(
-              '초기화',
-              style: TextStyle(
-                color: levelColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
               ),
-            ),
+            ],
           ),
-        ],
-        actionsPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(
+          bottom: MediaQuery.of(context).size.height * 0.15,
+          left: 16,
+          right: 16,
+        ),
       ),
     );
   }
@@ -338,50 +378,55 @@ class _ChatScreenContent extends StatelessWidget {
           ),
         ],
       ),
-      body: Container(
-        color: character.primaryColor.withOpacity(0.05),
-        child: Column(
-          children: [
-            Expanded(
-              child: Consumer<ChatViewModel>(
-                builder: (context, viewModel, child) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _scrollToBottom();
-                  });
-                  return ChatList(
-                    messages: viewModel.messages,
-                    character: character,
-                    isGenerating: viewModel.isGenerating,
-                    scrollController: scrollController,
-                  );
-                },
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  top: BorderSide(color: character.primaryColor.withOpacity(0.1)),
-                ),
-              ),
-              child: SafeArea(
+      body: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: Container(
+          color: character.primaryColor.withOpacity(0.05),
+          child: Column(
+            children: [
+              Expanded(
                 child: Consumer<ChatViewModel>(
                   builder: (context, viewModel, child) {
-                    return ChatInput(
-                      controller: viewModel.messageController,
-                      onSend: () {
-                        if (viewModel.messageController.text.trim().isNotEmpty) {
-                          viewModel.sendMessage();
-                        }
-                      },
-                      isGenerating: viewModel.isGenerating,
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _scrollToBottom();
+                    });
+                    return ChatList(
+                      messages: viewModel.messages,
                       character: character,
+                      isGenerating: viewModel.isGenerating,
+                      scrollController: scrollController,
                     );
                   },
                 ),
               ),
-            ),
-          ],
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(color: character.primaryColor.withOpacity(0.1)),
+                  ),
+                ),
+                child: SafeArea(
+                  child: Consumer<ChatViewModel>(
+                    builder: (context, viewModel, child) {
+                      return ChatInput(
+                        controller: viewModel.messageController,
+                        onSend: () {
+                          if (viewModel.messageController.text.trim().isNotEmpty) {
+                            viewModel.sendMessage();
+                          }
+                        },
+                        isGenerating: viewModel.isGenerating,
+                        character: character,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

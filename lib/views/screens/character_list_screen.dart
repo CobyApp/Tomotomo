@@ -38,6 +38,7 @@ class CharacterListScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         side: BorderSide(color: Colors.grey.shade200),
       ),
+      color: character.primaryColor.withOpacity(0.05),
       child: InkWell(
         onTap: () {
           Navigator.push(

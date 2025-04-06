@@ -18,8 +18,6 @@ class ChatList extends StatelessWidget {
   }) : super(key: key);
 
   void _showExplanation(BuildContext context, ChatMessage message) {
-    final levelColor = _getLevelColor(character.level);
-    
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -47,19 +45,20 @@ class ChatList extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: levelColor.withOpacity(0.1),
+                color: character.primaryColor.withOpacity(0.1),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.lightbulb_outline, color: levelColor),
+                  Icon(Icons.lightbulb_outline, color: character.primaryColor),
                   const SizedBox(width: 12),
                   Text(
                     '표현 설명',
                     style: TextStyle(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: levelColor,
+                      fontWeight: FontWeight.w600,
+                      color: character.primaryColor,
+                      fontFamily: 'Pretendard',
                     ),
                   ),
                 ],
@@ -72,33 +71,21 @@ class ChatList extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
+                      width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey.shade200),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'AI의 답변',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            message.content,
-                            style: TextStyle(
-                              fontSize: 15,
-                              height: 1.5,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        message.content,
+                        style: TextStyle(
+                          fontSize: 15,
+                          height: 1.5,
+                          color: Colors.grey[800],
+                          fontFamily: 'Pretendard',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -109,6 +96,7 @@ class ChatList extends StatelessWidget {
                           fontSize: 15,
                           height: 1.5,
                           color: Colors.grey[700],
+                          fontFamily: 'Pretendard',
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -164,19 +152,6 @@ class ChatList extends StatelessWidget {
     );
   }
 
-  Color _getLevelColor(String level) {
-    switch (level) {
-      case '초급':
-        return const Color(0xFF4CAF50);
-      case '중급':
-        return const Color(0xFF2196F3);
-      case '고급':
-        return const Color(0xFF9C27B0);
-      default:
-        return const Color(0xFF2196F3);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
@@ -186,10 +161,10 @@ class ChatList extends StatelessWidget {
       itemBuilder: (context, index) {
         if (index == messages.length) {
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   width: 32,
@@ -215,7 +190,19 @@ class ChatList extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Container(
-                  height: 32,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -227,7 +214,6 @@ class ChatList extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Spacer(),
               ],
             ),
           );
@@ -255,10 +241,10 @@ class ChatList extends StatelessWidget {
         final delay = index * 0.2;
         final opacity = (value + delay) % 1.0;
         return Container(
-          width: 8,
-          height: 8,
+          width: 6,
+          height: 6,
           decoration: BoxDecoration(
-            color: _getLevelColor(character.level).withOpacity(opacity),
+            color: character.primaryColor.withOpacity(opacity * 0.8),
             shape: BoxShape.circle,
           ),
         );
