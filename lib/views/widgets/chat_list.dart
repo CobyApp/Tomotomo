@@ -3,7 +3,7 @@ import '../../models/chat_message.dart';
 import '../../models/character.dart';
 import 'chat_bubble.dart';
 
-class ChatList extends StatelessWidget {
+class ChatList extends StatefulWidget {
   final List<ChatMessage> messages;
   final Character character;
   final bool isGenerating;
@@ -17,6 +17,11 @@ class ChatList extends StatelessWidget {
     required this.scrollController,
   }) : super(key: key);
 
+  @override
+  State<ChatList> createState() => _ChatListState();
+}
+
+class _ChatListState extends State<ChatList> {
   void _showExplanation(BuildContext context, ChatMessage message) {
     showModalBottomSheet(
       context: context,
@@ -45,19 +50,19 @@ class ChatList extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: character.primaryColor.withOpacity(0.1),
+                color: widget.character.primaryColor.withOpacity(0.1),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.lightbulb_outline, color: character.primaryColor),
+                  Icon(Icons.lightbulb_outline, color: widget.character.primaryColor),
                   const SizedBox(width: 12),
                   Text(
                     '표현 설명',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: character.primaryColor,
+                      color: widget.character.primaryColor,
                       fontFamily: 'Pretendard',
                     ),
                   ),
@@ -155,80 +160,79 @@ class ChatList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      controller: scrollController,
+      controller: widget.scrollController,
       padding: const EdgeInsets.symmetric(vertical: 16),
-      itemCount: messages.length + (isGenerating ? 1 : 0),
+      itemCount: widget.messages.length + (widget.isGenerating ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == messages.length) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: character.primaryColor.withOpacity(0.2),
-                      width: 2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: character.primaryColor.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 16,
-                    backgroundImage: AssetImage(character.imagePath),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildLoadingDot(0),
-                      const SizedBox(width: 8),
-                      _buildLoadingDot(1),
-                      const SizedBox(width: 8),
-                      _buildLoadingDot(2),
-                    ],
-                  ),
+        if (index == widget.messages.length) {
+          return _buildLoadingIndicator();
+        }
+        return ChatBubble(
+          message: widget.messages[index],
+          character: widget.character,
+          isUser: widget.messages[index].role == 'user',
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: widget.character.primaryColor.withOpacity(0.2),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.character.primaryColor.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-          );
-        }
-
-        final message = messages[index];
-        final isUser = message.role == 'user';
-
-        return ChatBubble(
-          message: message,
-          character: character,
-          isUser: isUser,
-          onExplanationTap: !isUser ? () => _showExplanation(context, message) : null,
-        );
-      },
+            child: CircleAvatar(
+              radius: 16,
+              backgroundImage: AssetImage(widget.character.imagePath),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildLoadingDot(0),
+                const SizedBox(width: 8),
+                _buildLoadingDot(1),
+                const SizedBox(width: 8),
+                _buildLoadingDot(2),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -244,11 +248,51 @@ class ChatList extends StatelessWidget {
           width: 6,
           height: 6,
           decoration: BoxDecoration(
-            color: character.primaryColor.withOpacity(opacity * 0.8),
+            color: widget.character.primaryColor.withOpacity(opacity * 0.8),
             shape: BoxShape.circle,
           ),
         );
       },
+    );
+  }
+
+  void _showResetDialog(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: widget.character.primaryColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                '대화가 초기화되었습니다',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontFamily: 'Pretendard',
+                ),
+              ),
+            ],
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(
+          bottom: 16,
+          left: 16,
+          right: 16,
+        ),
+      ),
     );
   }
 } 

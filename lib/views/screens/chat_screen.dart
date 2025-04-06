@@ -224,6 +224,10 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   void _resetChat(BuildContext context, ChatViewModel viewModel) {
     viewModel.resetChat();
     _scrollToBottom();
+    
+    // ChatInput의 높이를 고려하여 SnackBar 위치 조정
+    final double chatInputHeight = 80; // ChatInput의 예상 높이
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
@@ -255,7 +259,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
         elevation: 0,
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.only(
-          bottom: MediaQuery.of(context).size.height * 0.15,
+          bottom: chatInputHeight + 16,  // ChatInput 높이 + 16픽셀
           left: 16,
           right: 16,
         ),
