@@ -5,6 +5,7 @@ import '../../models/character.dart';
 import '../../services/chat_storage.dart';
 import '../../services/ai_service.dart';
 import '../screens/chat_screen.dart';
+import '../../services/ad_service.dart';
 
 class CharacterListScreen extends StatelessWidget {
   const CharacterListScreen({super.key});
@@ -42,16 +43,7 @@ class CharacterListScreen extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(28),
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ChatScreen(
-                character: character,
-                chatStorage: context.read<ChatStorage>(),
-                aiService: context.read<AIService>(),
-              ),
-            ),
-          );
+          _onCharacterTap(context, character);
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,6 +187,20 @@ class CharacterListScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _onCharacterTap(BuildContext context, Character character) {
+    AdService().showAdOnCharacterSelect();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(
+          character: character,
+          chatStorage: context.read<ChatStorage>(),
+          aiService: context.read<AIService>(),
         ),
       ),
     );

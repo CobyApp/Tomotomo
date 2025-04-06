@@ -6,10 +6,12 @@ import 'services/ai_service.dart';
 import 'services/chat_storage.dart';
 import 'viewmodels/chat_viewmodel.dart';
 import 'views/screens/character_list_screen.dart';
+import 'services/ad_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  await AdService().initialize();
   
   final prefs = await SharedPreferences.getInstance();
   final sessionId = DateTime.now().millisecondsSinceEpoch.toString();

@@ -7,6 +7,7 @@ import '../../services/chat_storage.dart';
 import '../../services/ai_service.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 import '../widgets/chat_input.dart';
+import '../../services/ad_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final Character character;
