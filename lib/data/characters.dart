@@ -74,19 +74,43 @@ const Map<String, List<CharacterInterest>> _characterSpecificInterests = {
   'yuna': [
     CharacterInterest(
       category: '취미',
-      items: ['아이돌', '스마트폰 게임', '일본어 꿀팁 공유', '필기 예쁘게 하기'],
+      items: [
+        '아이돌',
+        '연애',
+        '모바일 게임',
+        '일본어 공부',
+        'SNS',
+        '카페 투어',
+        '쇼핑',
+      ],
     ),
   ],
   'ren': [
     CharacterInterest(
       category: '취미',
-      items: ['독서', '라이트노벨', '일본어 문법 탐구', '카페 탐방'],
+      items: [
+        '라이트노벨',
+        '애니메이션',
+        '영화',
+        '독서',
+        '사진 찍기',
+        '음악 감상',
+        '게임',
+      ],
     ),
   ],
   'akari': [
     CharacterInterest(
       category: '취미',
-      items: ['업무 일본어', '비즈니스 매너', '자기계발', '오피스 패션'],
+      items: [
+        '비즈니스 일본어',
+        '패션',
+        '커리어',
+        '자기계발',
+        '요가',
+        '와인',
+        '여행',
+      ],
     ),
   ],
 };
