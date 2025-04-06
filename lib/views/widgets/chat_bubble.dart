@@ -23,93 +23,118 @@ class ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Column(
-        crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!isUser) ...[
-                CircleAvatar(
-                  radius: 16,
-                  backgroundImage: AssetImage(character.imagePath),
+          if (!isUser) ...[
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: character.primaryColor.withOpacity(0.2),
+                  width: 2,
                 ),
-                const SizedBox(width: 8),
-              ],
-              Flexible(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.7,
+                boxShadow: [
+                  BoxShadow(
+                    color: character.primaryColor.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isUser 
-                        ? _getLevelColor(character.level).withOpacity(0.1)
-                        : Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isUser 
-                          ? _getLevelColor(character.level).withOpacity(0.2)
-                          : Colors.grey.shade200,
-                        width: 1,
-                      ),
+                ],
+              ),
+              child: CircleAvatar(
+                radius: 16,
+                backgroundImage: AssetImage(character.imagePath),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Flexible(
+            child: TweenAnimationBuilder<double>(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              tween: Tween(begin: 0.0, end: 1.0),
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: Opacity(
+                    opacity: value,
+                    child: child,
+                  ),
+                );
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isUser 
+                      ? character.primaryColor
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isUser ? character.primaryColor : Colors.black).withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                    child: MarkdownBody(
-                      data: message.content,
-                      styleSheet: MarkdownStyleSheet(
-                        p: TextStyle(
-                          color: isUser ? Colors.black87 : Colors.black87,
-                          fontSize: 15,
-                          height: 1.5,
-                          fontFamily: 'Pretendard',
-                        ),
-                        code: TextStyle(
-                          backgroundColor: isUser 
-                            ? Colors.white.withOpacity(0.7)
-                            : Colors.grey.shade100,
-                          color: Colors.black87,
-                          fontSize: 14,
-                          fontFamily: 'Pretendard',
-                        ),
-                        codeblockDecoration: BoxDecoration(
-                          color: isUser 
-                            ? Colors.white.withOpacity(0.7)
-                            : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      message.content,
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.5,
+                        color: isUser ? Colors.white : Colors.black87,
                       ),
                     ),
                   ),
                 ),
               ),
-              if (isUser) const SizedBox(width: 8),
-            ],
+            ),
           ),
           if (!isUser && onExplanationTap != null) ...[
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.only(left: 40),
-              child: TextButton.icon(
-                onPressed: onExplanationTap,
-                icon: Icon(
-                  Icons.help_outline_rounded,
-                  size: 16,
-                  color: _getLevelColor(character.level).withOpacity(0.7),
-                ),
-                label: Text(
-                  '표현 설명',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: _getLevelColor(character.level).withOpacity(0.7),
+            const SizedBox(width: 8),
+            TweenAnimationBuilder<double>(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              tween: Tween(begin: 0.0, end: 1.0),
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: Opacity(
+                    opacity: value,
+                    child: child,
+                  ),
+                );
+              },
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: character.primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: character.primaryColor.withOpacity(0.2),
+                    width: 1,
                   ),
                 ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: onExplanationTap,
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: character.primaryColor,
+                    ),
+                  ),
                 ),
               ),
             ),

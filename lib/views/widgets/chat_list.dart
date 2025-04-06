@@ -7,12 +7,14 @@ class ChatList extends StatelessWidget {
   final List<ChatMessage> messages;
   final Character character;
   final bool isGenerating;
+  final ScrollController scrollController;
 
   const ChatList({
     Key? key,
     required this.messages,
     required this.character,
     required this.isGenerating,
+    required this.scrollController,
   }) : super(key: key);
 
   void _showExplanation(BuildContext context, ChatMessage message) {
@@ -178,6 +180,7 @@ class ChatList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      controller: scrollController,
       padding: const EdgeInsets.symmetric(vertical: 16),
       itemCount: messages.length + (isGenerating ? 1 : 0),
       itemBuilder: (context, index) {
@@ -188,19 +191,40 @@ class ChatList extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundImage: AssetImage(character.imagePath),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: character.primaryColor.withOpacity(0.2),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: character.primaryColor.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundImage: AssetImage(character.imagePath),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Container(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      _getLevelColor(character.level),
-                    ),
+                  height: 32,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildLoadingDot(0),
+                      const SizedBox(width: 8),
+                      _buildLoadingDot(1),
+                      const SizedBox(width: 8),
+                      _buildLoadingDot(2),
+                    ],
                   ),
                 ),
                 const Spacer(),
@@ -217,6 +241,26 @@ class ChatList extends StatelessWidget {
           character: character,
           isUser: isUser,
           onExplanationTap: !isUser ? () => _showExplanation(context, message) : null,
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingDot(int index) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeInOut,
+      builder: (context, value, child) {
+        final delay = index * 0.2;
+        final opacity = (value + delay) % 1.0;
+        return Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: _getLevelColor(character.level).withOpacity(opacity),
+            shape: BoxShape.circle,
+          ),
         );
       },
     );

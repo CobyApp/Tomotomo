@@ -24,7 +24,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateMixin {
+class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _controller;
   late Animation<double> _animation;
   final ScrollController _scrollController = ScrollController();
@@ -47,6 +47,16 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
         _scrollToBottom();
       });
     });
+
+    // 키보드가 올라올 때 자동 스크롤
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeMetrics() {
+    if (mounted) {
+      _scrollToBottom();
+    }
   }
 
   @override
@@ -231,6 +241,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 }
@@ -247,6 +258,20 @@ class _ChatScreenContent extends StatelessWidget {
     required this.onResetPressed,
   }) : super(key: key);
 
+  void _scrollToBottom() {
+    if (scrollController.hasClients) {
+      scrollController.animateTo(
+        scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    } else {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _scrollToBottom();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -259,40 +284,75 @@ class _ChatScreenContent extends StatelessWidget {
         ),
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: AssetImage(character.imagePath),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: character.primaryColor.withOpacity(0.2),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: character.primaryColor.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: CircleAvatar(
+                radius: 20,
+                backgroundImage: AssetImage(character.imagePath),
+              ),
             ),
             const SizedBox(width: 12),
-            Text(
-              character.name,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Pretendard',
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  character.name,
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
+                Text(
+                  character.nameJp,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
+              ],
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black54),
+            icon: Icon(Icons.refresh, color: character.primaryColor),
             onPressed: () => onResetPressed(context),
           ),
         ],
       ),
       body: Container(
-        color: const Color(0xFFF8F9FA),
+        color: character.primaryColor.withOpacity(0.05),
         child: Column(
           children: [
             Expanded(
               child: Consumer<ChatViewModel>(
                 builder: (context, viewModel, child) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _scrollToBottom();
+                  });
                   return ChatList(
                     messages: viewModel.messages,
                     character: character,
                     isGenerating: viewModel.isGenerating,
+                    scrollController: scrollController,
                   );
                 },
               ),
@@ -301,21 +361,24 @@ class _ChatScreenContent extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border(
-                  top: BorderSide(color: Colors.grey.shade200),
+                  top: BorderSide(color: character.primaryColor.withOpacity(0.1)),
                 ),
               ),
-              child: Consumer<ChatViewModel>(
-                builder: (context, viewModel, child) {
-                  return ChatInput(
-                    controller: viewModel.messageController,
-                    onSend: () {
-                      if (viewModel.messageController.text.trim().isNotEmpty) {
-                        viewModel.sendMessage();
-                      }
-                    },
-                    isGenerating: viewModel.isGenerating,
-                  );
-                },
+              child: SafeArea(
+                child: Consumer<ChatViewModel>(
+                  builder: (context, viewModel, child) {
+                    return ChatInput(
+                      controller: viewModel.messageController,
+                      onSend: () {
+                        if (viewModel.messageController.text.trim().isNotEmpty) {
+                          viewModel.sendMessage();
+                        }
+                      },
+                      isGenerating: viewModel.isGenerating,
+                      character: character,
+                    );
+                  },
+                ),
               ),
             ),
           ],
