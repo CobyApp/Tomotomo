@@ -3,6 +3,7 @@ import '../models/chat_message.dart';
 import '../services/ai_service.dart';
 import '../models/character.dart';
 import '../services/chat_storage.dart';
+import '../services/ad_service.dart';
 import 'package:flutter/material.dart';
 
 class ChatViewModel extends ChangeNotifier {
@@ -70,6 +71,7 @@ class ChatViewModel extends ChangeNotifier {
     messageController.clear();
     _messages.add(userChatMessage);
     await chatStorage.saveMessage(character.id, userChatMessage);
+    AdService().incrementMessageCount();
     notifyListeners();
 
     _isGenerating = true;
@@ -79,6 +81,7 @@ class ChatViewModel extends ChangeNotifier {
       final aiMessage = await aiService.generateResponse(userMessage);
       _messages.add(aiMessage);
       await chatStorage.saveMessage(character.id, aiMessage);
+      AdService().incrementMessageCount();
     } catch (e) {
       _messages.add(ChatMessage(
         content: '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.',
