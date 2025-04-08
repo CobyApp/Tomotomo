@@ -1,4 +1,4 @@
-package com.example.aichat
+package com.dime.tomotomo
 
 import io.flutter.embedding.android.FlutterActivity
 
