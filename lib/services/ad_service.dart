@@ -10,7 +10,7 @@ class AdService {
 
   InterstitialAd? _interstitialAd;
   int _messageCount = 0;
-  static const int _adInterval = 5; // 5개 메시지마다 광고 표시
+  static const int _adInterval = 10; // 10개 메시지마다 광고 표시
 
   String get _adUnitId {
     if (Platform.isIOS) {
