@@ -63,7 +63,7 @@ android {
         release {
             keyAlias keystoreProperties['keyAlias']
             keyPassword keystoreProperties['keyPassword']
-            storeFile keystoreProperties['storeFile'] ? file("${project.rootDir}/${keystoreProperties['storeFile']}") : null
+            storeFile file(keystoreProperties['storeFile'].trim())
             storePassword keystoreProperties['storePassword']
         }
     }
