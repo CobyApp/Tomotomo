@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/chat_message.dart';
 import '../../models/character.dart';
 import 'chat_bubble.dart';
+import 'package:intl/intl.dart';
 
 class ChatList extends StatefulWidget {
   final List<ChatMessage> messages;
@@ -55,8 +57,6 @@ class _ChatListState extends State<ChatList> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.lightbulb_outline, color: widget.character.primaryColor),
-                  const SizedBox(width: 12),
                   Text(
                     '표현 설명',
                     style: TextStyle(
@@ -64,6 +64,51 @@ class _ChatListState extends State<ChatList> {
                       fontWeight: FontWeight.w600,
                       color: widget.character.primaryColor,
                       fontFamily: 'Pretendard',
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.flag, color: Colors.red, size: 20),
+                      onPressed: () async {
+                        final String subject = '토모토모';
+                        final String body = '[신고문장]\n' +
+                            message.content + '\n\n' +
+                            '[신고사유]\n';
+                        
+                        final Uri emailLaunchUri = Uri(
+                          scheme: 'mailto',
+                          path: 'dime0801001@gmail.com',
+                          queryParameters: {
+                            'subject': subject,
+                            'body': body,
+                          },
+                        );
+
+                        try {
+                          final result = await launchUrl(
+                            emailLaunchUri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                          
+                          if (!result) {
+                            // 이메일 앱이 없는 경우 Gmail 웹으로 이동
+                            final gmailUri = Uri.parse('https://mail.google.com/mail/?view=cm&fs=1&to=dime0801001@gmail.com&su=$subject&body=$body');
+                            await launchUrl(
+                              gmailUri,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          }
+                        } catch (e) {
+                          debugPrint('Failed to launch email: $e');
+                        }
+                      },
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(),
                     ),
                   ),
                 ],
