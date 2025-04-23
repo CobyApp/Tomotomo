@@ -2,12 +2,22 @@
 
 일본어 학습을 위한 AI 채팅 앱
 
+## 다운로드
+
+[![Google Play](https://img.shields.io/badge/Google_Play-414141?style=for-the-badge&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=com.dime.tomotomo)
+[![App Store](https://img.shields.io/badge/App_Store-0D96F6?style=for-the-badge&logo=app-store&logoColor=white)](https://play.google.com/store/apps/details?id=com.dime.tomotomo)
+
 ## 주요 기능
 
 - AI 캐릭터와의 자연스러운 일본어 대화
 - 대화 내용의 표현 설명 제공
 - 단어와 문법 학습 지원
 - 부적절한 표현 신고 기능
+
+## 스크린샷
+
+<img width="800" alt="Screenshot 2025-04-15 at 10 02 09 PM" src="https://github.com/user-attachments/assets/30c60647-e2b7-4573-ba53-d5535f89635b" />
+
 
 ## 기술 스택
 
