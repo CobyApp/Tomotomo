@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/character.dart';
+import '../../../../domain/entities/character.dart';
 
 class ChatInput extends StatelessWidget {
   final TextEditingController controller;
@@ -8,12 +8,12 @@ class ChatInput extends StatelessWidget {
   final Character character;
 
   const ChatInput({
-    Key? key,
+    super.key,
     required this.controller,
     required this.onSend,
     required this.isGenerating,
     required this.character,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,11 +27,11 @@ class ChatInput extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: character.primaryColor.withOpacity(0.2),
+                  color: character.primaryColor.withValues(alpha: 0.2),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: character.primaryColor.withOpacity(0.05),
+                    color: character.primaryColor.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -41,10 +41,7 @@ class ChatInput extends StatelessWidget {
                 controller: controller,
                 decoration: InputDecoration(
                   hintText: '메시지를 입력하세요...',
-                  hintStyle: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 15,
-                  ),
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -64,7 +61,7 @@ class ChatInput extends StatelessWidget {
               color: character.primaryColor,
               boxShadow: [
                 BoxShadow(
-                  color: character.primaryColor.withOpacity(0.3),
+                  color: character.primaryColor.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),

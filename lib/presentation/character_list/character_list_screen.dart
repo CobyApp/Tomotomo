@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../data/characters.dart';
-import '../../models/character.dart';
-import '../../services/chat_storage.dart';
-import '../../services/ai_service.dart';
-import '../screens/chat_screen.dart';
-import '../../services/ad_service.dart';
+import '../../data/character/characters_data.dart';
+import '../../domain/entities/character.dart';
+import '../../domain/repositories/chat_repository.dart';
+import '../../domain/repositories/ai_chat_repository.dart';
+import '../chat/chat_screen.dart';
 
 class CharacterListScreen extends StatelessWidget {
   const CharacterListScreen({super.key});
@@ -39,12 +38,10 @@ class CharacterListScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         side: BorderSide(color: Colors.grey.shade200),
       ),
-      color: character.primaryColor.withOpacity(0.03),
+      color: character.primaryColor.withValues(alpha: 0.03),
       child: InkWell(
         borderRadius: BorderRadius.circular(28),
-        onTap: () {
-          _onCharacterTap(context, character);
-        },
+        onTap: () => _onCharacterTap(context, character),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -54,12 +51,12 @@ class CharacterListScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                   border: Border.all(
-                    color: character.primaryColor.withOpacity(0.2),
+                    color: character.primaryColor.withValues(alpha: 0.2),
                     width: 2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: character.primaryColor.withOpacity(0.1),
+                      color: character.primaryColor.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -80,11 +77,11 @@ class CharacterListScreen extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: character.primaryColor.withOpacity(0.9),
+                          color: character.primaryColor.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -150,37 +147,39 @@ class CharacterListScreen extends StatelessWidget {
                     children: character.interests
                         .where((interest) => interest.category == '취미')
                         .expand((interest) => interest.items)
-                        .map((item) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 8,
+                        .map(
+                          (item) => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: character.primaryColor,
+                                width: 1.2,
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: character.primaryColor,
-                                  width: 1.2,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: character.primaryColor.withValues(alpha: 0.08),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: character.primaryColor.withOpacity(0.08),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+                              ],
+                            ),
+                            child: Text(
+                              item,
+                              style: TextStyle(
+                                color: character.primaryColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                height: 1.2,
+                                fontFamily: 'Pretendard',
                               ),
-                              child: Text(
-                                item,
-                                style: TextStyle(
-                                  color: character.primaryColor,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.2,
-                                  fontFamily: 'Pretendard',
-                                ),
-                              ),
-                            ))
+                            ),
+                          ),
+                        )
                         .toList(),
                   ),
                 ],
@@ -193,16 +192,15 @@ class CharacterListScreen extends StatelessWidget {
   }
 
   void _onCharacterTap(BuildContext context, Character character) {
-    AdService().showAdOnCharacterSelect();
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChatScreen(
           character: character,
-          chatStorage: context.read<ChatStorage>(),
-          aiService: context.read<AIService>(),
+          chatRepository: context.read<ChatRepository>(),
+          aiChatRepository: context.read<AiChatRepository>(),
         ),
       ),
     );
   }
-} 
+}

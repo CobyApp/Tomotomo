@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class CharacterTrait {
   final String trait;
-  final double weight; // 성격 특성의 가중치 (0.0 ~ 1.0)
+  final double weight;
 
   const CharacterTrait(this.trait, this.weight);
 }
@@ -10,7 +10,7 @@ class CharacterTrait {
 class CharacterInterest {
   final String category;
   final List<String> items;
-  final double enthusiasm; // 관심도 (0.0 ~ 1.0)
+  final double enthusiasm;
 
   const CharacterInterest({
     required this.category,
@@ -21,9 +21,9 @@ class CharacterInterest {
 
 class Character {
   final String id;
-  final String name;  // 한글 이름
-  final String nameJp;  // 히라가나/가타카나
-  final String nameKanji;  // 한자
+  final String name;
+  final String nameJp;
+  final String nameKanji;
   final String level;
   final String description;
   final int age;
@@ -85,8 +85,15 @@ class Character {
       age: json['age'] as int,
       schoolYear: json['schoolYear'] as String,
       occupation: json['occupation'] as String,
-      traits: (json['traits'] as List).map((e) => CharacterTrait(e['trait'] as String, e['weight'] as double)).toList(),
-      interests: (json['interests'] as List).map((e) => CharacterInterest(category: e['category'] as String, items: e['items'] as List<String>)).toList(),
+      traits: (json['traits'] as List)
+          .map((e) => CharacterTrait(e['trait'] as String, e['weight'] as double))
+          .toList(),
+      interests: (json['interests'] as List)
+          .map((e) => CharacterInterest(
+                category: e['category'] as String,
+                items: e['items'] as List<String>,
+              ))
+          .toList(),
       speechStyle: json['speechStyle'] as String,
       primaryColor: Color(int.parse(json['primaryColor'] as String)),
       secondaryColor: Color(int.parse(json['secondaryColor'] as String)),
@@ -97,7 +104,8 @@ class Character {
       accessories: json['accessories'] as List<String>,
       selfReference: json['selfReference'] as String,
       commonPhrases: json['commonPhrases'] as List<String>,
-      emotionalResponses: json['emotionalResponses'] as Map<String, List<String>>,
+      emotionalResponses:
+          json['emotionalResponses'] as Map<String, List<String>>,
       imageUrl: json['imageUrl'] as String,
       imagePath: json['imagePath'] as String,
     );
@@ -117,8 +125,8 @@ class Character {
       'traits': traits.map((e) => {'trait': e.trait, 'weight': e.weight}).toList(),
       'interests': interests.map((e) => {'category': e.category, 'items': e.items}).toList(),
       'speechStyle': speechStyle,
-      'primaryColor': primaryColor.value.toString(),
-      'secondaryColor': secondaryColor.value.toString(),
+      'primaryColor': primaryColor.toARGB32().toString(),
+      'secondaryColor': secondaryColor.toARGB32().toString(),
       'hairStyle': hairStyle,
       'hairColor': hairColor,
       'eyeColor': eyeColor,
@@ -131,4 +139,4 @@ class Character {
       'imagePath': imagePath,
     };
   }
-} 
+}

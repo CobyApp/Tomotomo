@@ -1,0 +1,13 @@
+# ===========================================
+# Android 릴리즈 서명 설정
+# 사용법: 이 파일을 복사해 key.properties 로 저장한 뒤 값을 채우세요.
+# key.properties 는 버전관리에 포함하지 않는 것을 권장합니다.
+# ===========================================
+# 키스토어 파일 경로 (프로젝트 기준 상대경로 또는 절대경로)
+storeFile=path/to/your/upload-keystore.jks
+# 키스토어 비밀번호
+storePassword=your_keystore_password
+# 키 별칭
+keyAlias=upload
+# 키 비밀번호
+keyPassword=your_key_password

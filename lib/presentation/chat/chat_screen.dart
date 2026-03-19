@@ -1,33 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../widgets/chat_list.dart';
-import '../widgets/chat_bubble.dart';
-import '../../models/character.dart';
-import '../../services/chat_storage.dart';
-import '../../services/ai_service.dart';
-import '../../viewmodels/chat_viewmodel.dart';
-import '../widgets/chat_input.dart';
-import '../../services/ad_service.dart';
+import '../../domain/entities/character.dart';
+import '../../domain/repositories/chat_repository.dart';
+import '../../domain/repositories/ai_chat_repository.dart';
+import 'chat_viewmodel.dart';
+import 'widgets/chat_list.dart';
+import 'widgets/chat_input.dart';
 
 class ChatScreen extends StatefulWidget {
   final Character character;
-  final ChatStorage chatStorage;
-  final AIService aiService;
-  
+  final ChatRepository chatRepository;
+  final AiChatRepository aiChatRepository;
+
   const ChatScreen({
-    Key? key,
+    super.key,
     required this.character,
-    required this.chatStorage,
-    required this.aiService,
-  }) : super(key: key);
+    required this.chatRepository,
+    required this.aiChatRepository,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+class _ChatScreenState extends State<ChatScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _controller;
-  late Animation<double> _animation;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -36,28 +34,16 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticOut,
-    );
-    _controller.forward();
-    
+    )..forward();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollToBottom();
-      });
+      Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
     });
-
-    // 키보드가 올라올 때 자동 스크롤
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void didChangeMetrics() {
-    if (mounted) {
-      _scrollToBottom();
-    }
+    if (mounted) _scrollToBottom();
   }
 
   @override
@@ -65,8 +51,8 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
     return ChangeNotifierProvider(
       create: (_) => ChatViewModel(
         character: widget.character,
-        chatStorage: widget.chatStorage,
-        aiService: widget.aiService,
+        chatRepository: widget.chatRepository,
+        aiChatRepository: widget.aiChatRepository,
       ),
       child: Consumer<ChatViewModel>(
         builder: (context, viewModel, child) {
@@ -78,19 +64,6 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
         },
       ),
     );
-  }
-
-  Color _getLevelColor(String level) {
-    switch (level) {
-      case '초급':
-        return const Color(0xFF4CAF50);
-      case '중급':
-        return const Color(0xFF2196F3);
-      case '고급':
-        return const Color(0xFF9C27B0);
-      default:
-        return const Color(0xFF2196F3);
-    }
   }
 
   void _showResetDialog(BuildContext context, ChatViewModel viewModel) {
@@ -105,7 +78,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -117,7 +90,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: widget.character.primaryColor.withOpacity(0.1),
+                  color: widget.character.primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -142,18 +115,11 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
                 decoration: BoxDecoration(
                   color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.grey[200]!,
-                    width: 1,
-                  ),
+                  border: Border.all(color: Colors.grey[200]!, width: 1),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 18,
-                      color: Colors.grey[600],
-                    ),
+                    Icon(Icons.info_outline, size: 18, color: Colors.grey[600]),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -177,17 +143,11 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
                     onPressed: () => Navigator.pop(context),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: Text(
                       '취소',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                        fontFamily: 'Pretendard',
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600], fontFamily: 'Pretendard'),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -199,18 +159,12 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
                     style: ElevatedButton.styleFrom(
                       backgroundColor: widget.character.primaryColor,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
                     child: const Text(
                       '초기화',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontFamily: 'Pretendard',
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Pretendard'),
                     ),
                   ),
                 ],
@@ -225,10 +179,6 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   void _resetChat(BuildContext context, ChatViewModel viewModel) {
     viewModel.resetChat();
     _scrollToBottom();
-    
-    // ChatInput의 높이를 고려하여 SnackBar 위치 조정
-    final double chatInputHeight = 80; // ChatInput의 예상 높이
-    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
@@ -237,21 +187,13 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
             color: widget.character.primaryColor,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Row(
+          child: const Row(
             children: [
-              Icon(
-                Icons.check_circle_outline,
-                color: Colors.white,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Text(
                 '대화가 초기화되었습니다',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontFamily: 'Pretendard',
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'Pretendard'),
               ),
             ],
           ),
@@ -259,11 +201,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
         backgroundColor: Colors.transparent,
         elevation: 0,
         behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.only(
-          bottom: chatInputHeight + 16,  // ChatInput 높이 + 16픽셀
-          left: 16,
-          right: 16,
-        ),
+        margin: const EdgeInsets.only(bottom: 96, left: 16, right: 16),
       ),
     );
   }
@@ -276,9 +214,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
         curve: Curves.easeOut,
       );
     } else {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollToBottom();
-      });
+      Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
     }
   }
 
@@ -297,11 +233,10 @@ class _ChatScreenContent extends StatelessWidget {
   final Function(BuildContext) onResetPressed;
 
   const _ChatScreenContent({
-    Key? key,
     required this.character,
     required this.scrollController,
     required this.onResetPressed,
-  }) : super(key: key);
+  });
 
   void _scrollToBottom() {
     if (scrollController.hasClients) {
@@ -311,9 +246,7 @@ class _ChatScreenContent extends StatelessWidget {
         curve: Curves.easeOut,
       );
     } else {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollToBottom();
-      });
+      Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
     }
   }
 
@@ -335,12 +268,12 @@ class _ChatScreenContent extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: character.primaryColor.withOpacity(0.2),
+                  color: character.primaryColor.withValues(alpha: 0.2),
                   width: 2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: character.primaryColor.withOpacity(0.1),
+                    color: character.primaryColor.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -384,19 +317,15 @@ class _ChatScreenContent extends StatelessWidget {
         ],
       ),
       body: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
+        onTap: () => FocusScope.of(context).unfocus(),
         child: Container(
-          color: character.primaryColor.withOpacity(0.05),
+          color: character.primaryColor.withValues(alpha: 0.05),
           child: Column(
             children: [
               Expanded(
                 child: Consumer<ChatViewModel>(
                   builder: (context, viewModel, child) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _scrollToBottom();
-                    });
+                    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
                     return ChatList(
                       messages: viewModel.messages,
                       character: character,
@@ -410,7 +339,7 @@ class _ChatScreenContent extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   border: Border(
-                    top: BorderSide(color: character.primaryColor.withOpacity(0.1)),
+                    top: BorderSide(color: character.primaryColor.withValues(alpha: 0.1)),
                   ),
                 ),
                 child: SafeArea(
@@ -436,4 +365,4 @@ class _ChatScreenContent extends StatelessWidget {
       ),
     );
   }
-} 
+}

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../models/chat_message.dart';
-import '../../models/character.dart';
+import '../../../../domain/entities/character.dart';
+import '../../../../domain/entities/chat_message.dart';
 import 'chat_bubble.dart';
-import 'package:intl/intl.dart';
 
 class ChatList extends StatefulWidget {
   final List<ChatMessage> messages;
@@ -12,12 +11,12 @@ class ChatList extends StatefulWidget {
   final ScrollController scrollController;
 
   const ChatList({
-    Key? key,
+    super.key,
     required this.messages,
     required this.character,
     required this.isGenerating,
     required this.scrollController,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatList> createState() => _ChatListState();
@@ -36,7 +35,7 @@ class _ChatListState extends State<ChatList> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -52,7 +51,7 @@ class _ChatListState extends State<ChatList> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: widget.character.primaryColor.withOpacity(0.1),
+                color: widget.character.primaryColor.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: Row(
@@ -69,35 +68,29 @@ class _ChatListState extends State<ChatList> {
                   const Spacer(),
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.flag, color: Colors.red, size: 20),
+                      icon: const Icon(Icons.flag, color: Colors.red, size: 20),
                       onPressed: () async {
-                        final String subject = '토모토모';
-                        final String body = '[신고문장]\n' +
-                            message.content + '\n\n' +
-                            '[신고사유]\n';
-                        
+                        const String subject = '토모토모';
+                        final String body =
+                            '[신고문장]\n${message.content}\n\n[신고사유]\n';
                         final Uri emailLaunchUri = Uri(
                           scheme: 'mailto',
                           path: 'dime0801001@gmail.com',
-                          queryParameters: {
-                            'subject': subject,
-                            'body': body,
-                          },
+                          queryParameters: {'subject': subject, 'body': body},
                         );
-
                         try {
                           final result = await launchUrl(
                             emailLaunchUri,
                             mode: LaunchMode.externalApplication,
                           );
-                          
                           if (!result) {
-                            // 이메일 앱이 없는 경우 Gmail 웹으로 이동
-                            final gmailUri = Uri.parse('https://mail.google.com/mail/?view=cm&fs=1&to=dime0801001@gmail.com&su=$subject&body=$body');
+                            final gmailUri = Uri.parse(
+                              'https://mail.google.com/mail/?view=cm&fs=1&to=dime0801001@gmail.com&su=$subject&body=$body',
+                            );
                             await launchUrl(
                               gmailUri,
                               mode: LaunchMode.externalApplication,
@@ -152,45 +145,47 @@ class _ChatListState extends State<ChatList> {
                       const SizedBox(height: 24),
                     ],
                     if (message.vocabulary != null && message.vocabulary!.isNotEmpty) ...[
-                      ...message.vocabulary!.map((vocab) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Wrap(
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 8,
-                              children: [
-                                Text(
-                                  vocab.word,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey[800],
-                                  ),
-                                ),
-                                if (vocab.reading != null && vocab.reading!.isNotEmpty)
+                      ...message.vocabulary!.map(
+                        (vocab) => Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 8,
+                                children: [
                                   Text(
-                                    '(${vocab.reading})',
+                                    vocab.word,
                                     style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[800],
                                     ),
                                   ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              vocab.meaning,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[700],
-                                height: 1.5,
+                                  if (vocab.reading != null && vocab.reading!.isNotEmpty)
+                                    Text(
+                                      '(${vocab.reading})',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 8),
+                              Text(
+                                vocab.meaning,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      )),
+                      ),
                     ],
                   ],
                 ),
@@ -217,7 +212,9 @@ class _ChatListState extends State<ChatList> {
           message: message,
           character: widget.character,
           isUser: message.role == 'user',
-          onExplanationTap: message.role != 'user' ? () => _showExplanation(context, message) : null,
+          onExplanationTap: message.role != 'user'
+              ? () => _showExplanation(context, message)
+              : null,
         );
       },
     );
@@ -236,12 +233,12 @@ class _ChatListState extends State<ChatList> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: widget.character.primaryColor.withOpacity(0.2),
+                color: widget.character.primaryColor.withValues(alpha: 0.2),
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: widget.character.primaryColor.withOpacity(0.1),
+                  color: widget.character.primaryColor.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -261,7 +258,7 @@ class _ChatListState extends State<ChatList> {
               border: Border.all(color: Colors.grey.shade200),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -295,51 +292,11 @@ class _ChatListState extends State<ChatList> {
           width: 6,
           height: 6,
           decoration: BoxDecoration(
-            color: widget.character.primaryColor.withOpacity(opacity * 0.8),
+            color: widget.character.primaryColor.withValues(alpha: opacity * 0.8),
             shape: BoxShape.circle,
           ),
         );
       },
     );
   }
-
-  void _showResetDialog(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: widget.character.primaryColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.check_circle_outline,
-                color: Colors.white,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                '대화가 초기화되었습니다',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontFamily: 'Pretendard',
-                ),
-              ),
-            ],
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(
-          bottom: 16,
-          left: 16,
-          right: 16,
-        ),
-      ),
-    );
-  }
-} 
+}

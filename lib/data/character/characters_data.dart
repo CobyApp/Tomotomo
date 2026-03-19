@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
-import '../models/character.dart';
+import '../../domain/entities/character.dart';
 
-// 공통 상수 정의
 const String _imageBasePath = 'assets/images';
 const String _imageExtension = '.png';
 
-// 공통 특성 정의
 const List<CharacterTrait> _commonTraits = [
   CharacterTrait('친절함', 0.8),
   CharacterTrait('배려심', 0.8),
 ];
 
-// 공통 관심사 정의
 const List<CharacterInterest> _commonInterests = [
   CharacterInterest(
     category: '일본어',
@@ -19,20 +16,17 @@ const List<CharacterInterest> _commonInterests = [
   ),
 ];
 
-// 공통 감정 반응 정의
 const Map<String, List<String>> _commonEmotionalResponses = {
   'happy': ['いいですね！', 'すごいですね！'],
   'sad': ['そうですか...', '残念ですね...'],
   'excited': ['おもしろい！', 'やってみよう！'],
 };
 
-// 공통 외형 속성 정의
 const Map<String, String> _commonAppearance = {
   'hairStyle': '단발',
   'eyeColor': '갈색',
 };
 
-// 캐릭터별 색상 정의
 const Map<String, Map<String, Color>> _characterColors = {
   'yuna': {
     'primary': Color(0xFFFFB6B6),
@@ -48,7 +42,6 @@ const Map<String, Map<String, Color>> _characterColors = {
   },
 };
 
-// 캐릭터별 특성 정의
 const Map<String, List<CharacterTrait>> _characterSpecificTraits = {
   'yuna': [
     CharacterTrait('명랑함', 0.9),
@@ -69,51 +62,27 @@ const Map<String, List<CharacterTrait>> _characterSpecificTraits = {
   ],
 };
 
-// 캐릭터별 관심사 정의
 const Map<String, List<CharacterInterest>> _characterSpecificInterests = {
   'yuna': [
     CharacterInterest(
       category: '취미',
-      items: [
-        '아이돌',
-        '연애',
-        '모바일 게임',
-        'SNS',
-        '카페 투어',
-        '쇼핑',
-      ],
+      items: ['아이돌', '연애', '모바일 게임', 'SNS', '카페 투어', '쇼핑'],
     ),
   ],
   'ren': [
     CharacterInterest(
       category: '취미',
-      items: [
-        '라이트노벨',
-        '애니메이션',
-        '영화',
-        '독서',
-        '사진 찍기',
-        '음악 감상',
-      ],
+      items: ['라이트노벨', '애니메이션', '영화', '독서', '사진 찍기', '음악 감상'],
     ),
   ],
   'akari': [
     CharacterInterest(
       category: '취미',
-      items: [
-        '비즈니스 일본어',
-        '패션',
-        '커리어',
-        '자기계발',
-        '요가',
-        '와인',
-        '여행',
-      ],
+      items: ['비즈니스 일본어', '패션', '커리어', '자기계발', '요가', '와인', '여행'],
     ),
   ],
 };
 
-// 캐릭터별 감정 반응 정의
 const Map<String, Map<String, List<String>>> _characterSpecificEmotionalResponses = {
   'yuna': {
     'happy': ['わーい！', 'すごい！', 'やったー！'],
@@ -132,7 +101,6 @@ const Map<String, Map<String, List<String>>> _characterSpecificEmotionalResponse
   },
 };
 
-// 캐릭터별 대사 정의
 const Map<String, List<String>> _characterPhrases = {
   'yuna': [
     'ねぇねぇ、これって知ってる〜？✨',
@@ -151,7 +119,6 @@ const Map<String, List<String>> _characterPhrases = {
   ],
 };
 
-// 캐릭터별 말투 정의
 const Map<String, String> _characterSpeechStyles = {
   'yuna': '~だよね！, え〜マジで！？, ~してみよっか！',
   'ren': '~って感じかな, おもしろいね、それ, 少し難しいけど、やってみよう！',
@@ -165,7 +132,8 @@ final List<Character> characters = [
     nameJp: 'ゆうな',
     nameKanji: '天音 ゆうな',
     level: '초급',
-    description: '명랑하고 수다스러운 고등학생. 새로운 것에 흥미가 많고, 다소 덜렁대지만 귀여운 성격으로 주변을 웃게 만드는 분위기 메이커입니다.',
+    description:
+        '명랑하고 수다스러운 고등학생. 새로운 것에 흥미가 많고, 다소 덜렁대지만 귀여운 성격으로 주변을 웃게 만드는 분위기 메이커입니다.',
     age: 17,
     schoolYear: '고등학교 2학년',
     occupation: '고등학생',
@@ -194,7 +162,8 @@ final List<Character> characters = [
     nameJp: 'れん',
     nameKanji: '高橋 蓮',
     level: '중급',
-    description: '차분하고 지적인 대학생. 가끔 덜렁대기도 하지만 책임감이 강하고 유머감각도 있습니다.',
+    description:
+        '차분하고 지적인 대학생. 가끔 덜렁대기도 하지만 책임감이 강하고 유머감각도 있습니다.',
     age: 21,
     schoolYear: '대학교 3학년',
     occupation: '대학생 (문학부 전공)',
@@ -223,7 +192,8 @@ final List<Character> characters = [
     nameJp: 'あかり',
     nameKanji: '白石 あかり',
     level: '고급',
-    description: '침착하고 세련된 커리어우먼. 유저의 페이스에 맞춰 천천히 가르쳐주는 부드러운 조언자 스타일입니다.',
+    description:
+        '침착하고 세련된 커리어우먼. 유저의 페이스에 맞춰 천천히 가르쳐주는 부드러운 조언자 스타일입니다.',
     age: 28,
     schoolYear: '',
     occupation: '외국계 IT기업 마케터',
@@ -246,4 +216,4 @@ final List<Character> characters = [
     imageUrl: '$_imageBasePath/akari$_imageExtension',
     imagePath: '$_imageBasePath/akari$_imageExtension',
   ),
-]; 
+];
