@@ -91,6 +91,7 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
         avatarUrl: r.avatarUrl,
         backgroundUrl: r.backgroundUrl,
         speechStyle: r.speechStyle,
+        tagline: r.tagline,
         language: r.language,
         isPublic: false,
       );
@@ -221,7 +222,13 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
               : null,
         ),
         title: Text(r.name),
-        subtitle: Text(r.nameSecondary ?? (r.language == 'ja' ? context.tr('langJa') : context.tr('langKo'))),
+        subtitle: Text(
+          r.tagline != null && r.tagline!.trim().isNotEmpty
+              ? r.tagline!.trim()
+              : (r.nameSecondary ?? (r.language == 'ja' ? context.tr('langJa') : context.tr('langKo'))),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -4,6 +4,10 @@ abstract class CharacterRecordRepository {
   Future<List<CharacterRecord>> getMyCharacters(String userId);
   Future<List<CharacterRecord>> getPublicCharacters({String? language});
   Future<CharacterRecord?> getCharacter(String id);
+
+  /// Characters the user may chat with: own + public, name matches [query] (min 2 chars).
+  Future<List<CharacterRecord>> searchAccessibleCharacters(String query, {int limit});
+
   Future<CharacterRecord> createCharacter(CharacterRecord character);
   Future<CharacterRecord> updateCharacter(CharacterRecord character);
   Future<void> deleteCharacter(String id, String ownerId);

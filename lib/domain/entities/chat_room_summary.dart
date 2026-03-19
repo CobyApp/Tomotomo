@@ -15,6 +15,12 @@ class ChatRoomSummary {
   /// Other participant for DM rows; null for character chats.
   final String? peerUserId;
 
+  /// DM peer or custom character avatar (https URL).
+  final String? avatarNetworkUrl;
+
+  /// Built-in character avatar from app assets.
+  final String? avatarAssetPath;
+
   const ChatRoomSummary({
     required this.roomId,
     required this.title,
@@ -24,6 +30,8 @@ class ChatRoomSummary {
     this.roomType = 'character',
     required this.roomOwnerUserId,
     this.peerUserId,
+    this.avatarNetworkUrl,
+    this.avatarAssetPath,
   });
 
   bool get isDm => roomType == 'dm';
@@ -34,7 +42,11 @@ class ChatRoomSummary {
     return currentUserId == roomOwnerUserId ? peerUserId : roomOwnerUserId;
   }
 
-  ChatRoomSummary copyWith({String? title}) {
+  ChatRoomSummary copyWith({
+    String? title,
+    String? avatarNetworkUrl,
+    String? avatarAssetPath,
+  }) {
     return ChatRoomSummary(
       roomId: roomId,
       title: title ?? this.title,
@@ -44,6 +56,8 @@ class ChatRoomSummary {
       roomType: roomType,
       roomOwnerUserId: roomOwnerUserId,
       peerUserId: peerUserId,
+      avatarNetworkUrl: avatarNetworkUrl ?? this.avatarNetworkUrl,
+      avatarAssetPath: avatarAssetPath ?? this.avatarAssetPath,
     );
   }
 
@@ -60,6 +74,8 @@ class ChatRoomSummary {
       roomType: row['room_type'] as String? ?? 'character',
       roomOwnerUserId: uid is String ? uid : uid.toString(),
       peerUserId: row['peer_user_id'] as String?,
+      avatarNetworkUrl: null,
+      avatarAssetPath: null,
     );
   }
 }

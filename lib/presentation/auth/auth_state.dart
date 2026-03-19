@@ -31,8 +31,21 @@ class AppAuthState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> signUp(String email, String password) async {
-    await AppSupabase.auth.signUp(email: email, password: password);
+  /// [displayName] is stored in user metadata and copied to `profiles` by trigger.
+  Future<AuthResponse> signUp(
+    String email,
+    String password, {
+    required String displayName,
+    String? statusMessage,
+  }) async {
+    return AppSupabase.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'display_name': displayName.trim(),
+        if (statusMessage != null && statusMessage.trim().isNotEmpty) 'status_message': statusMessage.trim(),
+      },
+    );
   }
 
   Future<void> signIn(String email, String password) async {

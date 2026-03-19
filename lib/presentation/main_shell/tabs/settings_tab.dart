@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../core/supabase/app_supabase.dart';
 import '../../auth/auth_state.dart';
 import '../../locale/l10n_context.dart';
-import '../../notebook/expressions_notebook_screen.dart';
 import '../../settings/language_settings_screen.dart';
+import '../../settings/profile_edit_screen.dart';
 import '../../settings/theme_settings_screen.dart';
 
 class SettingsTab extends StatelessWidget {
@@ -20,12 +20,27 @@ class SettingsTab extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          if (user != null)
+          if (user != null) ...[
             ListTile(
               leading: const Icon(Icons.email_outlined),
               title: Text(context.tr('settingsEmail')),
               subtitle: Text(user.email ?? ''),
             ),
+            ListTile(
+              leading: const Icon(Icons.person_outlined),
+              title: Text(context.tr('settingsEditProfile')),
+              subtitle: Text(context.tr('settingsEditProfileSubtitle')),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProfileEditScreen(),
+                  ),
+                );
+              },
+            ),
+          ],
           const Divider(),
           ListTile(
             leading: const Icon(Icons.palette_outlined),
@@ -37,20 +52,6 @@ class SettingsTab extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => const ThemeSettingsScreen(),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.book_outlined),
-            title: Text(context.tr('notebookTitle')),
-            subtitle: Text(context.tr('notebookSubtitle')),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ExpressionsNotebookScreen(),
                 ),
               );
             },

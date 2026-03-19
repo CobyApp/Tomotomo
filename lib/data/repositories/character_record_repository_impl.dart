@@ -24,6 +24,24 @@ class CharacterRecordRepositoryImpl implements CharacterRecordRepository {
   }
 
   @override
+  Future<List<CharacterRecord>> searchAccessibleCharacters(String query, {int limit = 20}) async {
+    final user = AppSupabase.auth.currentUser;
+    if (user == null) return [];
+    final trimmed = query.trim();
+    if (trimmed.length < 2) return [];
+    final res = await AppSupabase.client.rpc(
+      'search_accessible_characters',
+      params: {
+        'search_query': trimmed,
+        'result_limit': limit,
+      },
+    );
+    if (res == null) return [];
+    final list = res as List<dynamic>;
+    return list.map((e) => CharacterRecord.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+  }
+
+  @override
   Future<CharacterRecord?> getCharacter(String id) async {
     final res = await AppSupabase.client
         .from('characters')
@@ -53,6 +71,7 @@ class CharacterRecordRepositoryImpl implements CharacterRecordRepository {
       'avatar_url': character.avatarUrl,
       'background_url': character.backgroundUrl,
       'speech_style': character.speechStyle,
+      'tagline': character.tagline,
       'voice_provider': character.voiceProvider,
       'voice_id': character.voiceId,
       'language': character.language,

@@ -31,6 +31,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
     await AppSupabase.client.from('profiles').update({
       'display_name': profile.displayName,
       'avatar_url': profile.avatarUrl,
+      'status_message': profile.statusMessage,
       'app_language': profile.appLanguage,
       'learning_language': profile.learningLanguage,
       'updated_at': DateTime.now().toIso8601String(),

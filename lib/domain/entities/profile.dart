@@ -4,6 +4,7 @@ class Profile {
   final String? email;
   final String? displayName;
   final String? avatarUrl;
+  final String? statusMessage;
   final String appLanguage;
   final String learningLanguage;
   final DateTime createdAt;
@@ -14,6 +15,7 @@ class Profile {
     this.email,
     this.displayName,
     this.avatarUrl,
+    this.statusMessage,
     this.appLanguage = 'ko',
     this.learningLanguage = 'ja',
     required this.createdAt,
@@ -26,6 +28,7 @@ class Profile {
       email: json['email'] as String?,
       displayName: json['display_name'] as String?,
       avatarUrl: json['avatar_url'] as String?,
+      statusMessage: json['status_message'] as String?,
       appLanguage: json['app_language'] as String? ?? 'ko',
       learningLanguage: json['learning_language'] as String? ?? 'ja',
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -39,6 +42,7 @@ class Profile {
       'email': email,
       'display_name': displayName,
       'avatar_url': avatarUrl,
+      'status_message': statusMessage,
       'app_language': appLanguage,
       'learning_language': learningLanguage,
       'created_at': createdAt.toIso8601String(),
@@ -49,6 +53,7 @@ class Profile {
   Profile copyWith({
     String? displayName,
     String? avatarUrl,
+    String? statusMessage,
     String? appLanguage,
     String? learningLanguage,
   }) {
@@ -57,6 +62,7 @@ class Profile {
       email: email,
       displayName: displayName ?? this.displayName,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      statusMessage: statusMessage ?? this.statusMessage,
       appLanguage: appLanguage ?? this.appLanguage,
       learningLanguage: learningLanguage ?? this.learningLanguage,
       createdAt: createdAt,

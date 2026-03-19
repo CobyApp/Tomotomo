@@ -148,6 +148,22 @@ class _ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppR
     super.dispose();
   }
 
+  Widget _roomLeading(ChatRoomSummary r) {
+    final initial = r.title.isNotEmpty ? r.title.substring(0, 1) : '?';
+    final net = r.avatarNetworkUrl?.trim();
+    if (net != null && net.isNotEmpty) {
+      return CircleAvatar(
+        foregroundImage: NetworkImage(net),
+        child: Text(initial),
+      );
+    }
+    final asset = r.avatarAssetPath?.trim();
+    if (asset != null && asset.isNotEmpty) {
+      return CircleAvatar(backgroundImage: AssetImage(asset));
+    }
+    return CircleAvatar(child: Text(initial));
+  }
+
   String _subtitle(BuildContext context, ChatRoomSummary r) {
     final t = r.lastMessageAt;
     if (t == null) return context.tr('chatsNewChat');
@@ -242,11 +258,7 @@ class _ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppR
                           return Card(
                             margin: const EdgeInsets.only(bottom: 8),
                             child: ListTile(
-                              leading: CircleAvatar(
-                                child: Text(
-                                  r.title.isNotEmpty ? r.title.substring(0, 1) : '?',
-                                ),
-                              ),
+                              leading: _roomLeading(r),
                               title: Text(r.title),
                               subtitle: Text(_subtitle(context, r)),
                               trailing: const Icon(Icons.chevron_right),

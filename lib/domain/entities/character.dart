@@ -132,13 +132,17 @@ class Character {
   static Character fromRecord(CharacterRecord r) {
     final lang = r.language == 'ja' ? '일본어' : '한국어';
     final image = r.avatarUrl ?? '';
+    final descParts = <String>[
+      if (r.tagline != null && r.tagline!.trim().isNotEmpty) r.tagline!.trim(),
+      if (r.speechStyle != null && r.speechStyle!.trim().isNotEmpty) r.speechStyle!.trim(),
+    ];
     return Character(
       id: r.id,
       name: r.name,
       nameJp: r.nameSecondary ?? r.name,
       nameKanji: r.nameSecondary ?? r.name,
       level: lang,
-      description: r.speechStyle ?? '',
+      description: descParts.isEmpty ? '' : descParts.join('\n'),
       age: 0,
       schoolYear: '',
       occupation: lang == '일본어' ? '일본어 학습 도우미' : '한국어 학습 도우미',

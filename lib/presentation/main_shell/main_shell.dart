@@ -7,8 +7,8 @@ import '../locale/locale_notifier.dart';
 import '../theme/theme_notifier.dart';
 import 'tabs/friends_tab.dart';
 import 'tabs/chats_tab.dart';
-import 'tabs/characters_tab.dart';
 import 'tabs/settings_tab.dart';
+import '../notebook/expressions_notebook_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -45,7 +45,7 @@ class _MainShellState extends State<MainShell> {
   static const List<Widget> _tabs = [
     FriendsTab(),
     ChatsTab(),
-    CharactersTab(),
+    ExpressionsNotebookScreen(),
     SettingsTab(),
   ];
 
@@ -71,9 +71,9 @@ class _MainShellState extends State<MainShell> {
             label: context.tr('tabChats'),
           ),
           NavigationDestination(
-            icon: const Icon(Icons.face_outlined),
-            selectedIcon: const Icon(Icons.face),
-            label: context.tr('tabCharacters'),
+            icon: const Icon(Icons.menu_book_outlined),
+            selectedIcon: const Icon(Icons.menu_book),
+            label: context.tr('tabNotebook'),
           ),
           NavigationDestination(
             icon: const Icon(Icons.settings_outlined),

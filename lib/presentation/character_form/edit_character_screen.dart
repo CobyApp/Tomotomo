@@ -23,6 +23,7 @@ class _EditCharacterScreenState extends State<EditCharacterScreen> {
   final _nameController = TextEditingController();
   final _nameSecondaryController = TextEditingController();
   final _speechStyleController = TextEditingController();
+  final _taglineController = TextEditingController();
   final _avatarUrlController = TextEditingController();
   final _backgroundUrlController = TextEditingController();
 
@@ -40,6 +41,7 @@ class _EditCharacterScreenState extends State<EditCharacterScreen> {
     _nameController.text = _record.name;
     _nameSecondaryController.text = _record.nameSecondary ?? '';
     _speechStyleController.text = _record.speechStyle ?? '';
+    _taglineController.text = _record.tagline ?? '';
     _avatarUrlController.text = _record.avatarUrl ?? '';
     _backgroundUrlController.text = _record.backgroundUrl ?? '';
     _language = _record.language;
@@ -51,6 +53,7 @@ class _EditCharacterScreenState extends State<EditCharacterScreen> {
     _nameController.dispose();
     _nameSecondaryController.dispose();
     _speechStyleController.dispose();
+    _taglineController.dispose();
     _avatarUrlController.dispose();
     _backgroundUrlController.dispose();
     super.dispose();
@@ -84,6 +87,7 @@ class _EditCharacterScreenState extends State<EditCharacterScreen> {
         speechStyle: _speechStyleController.text.trim().isEmpty
             ? null
             : _speechStyleController.text.trim(),
+        tagline: _taglineController.text.trim().isEmpty ? null : _taglineController.text.trim(),
         avatarUrl: _avatarUrlController.text.trim().isEmpty
             ? null
             : _avatarUrlController.text.trim(),
@@ -212,6 +216,17 @@ class _EditCharacterScreenState extends State<EditCharacterScreen> {
               border: const OutlineInputBorder(),
             ),
             maxLines: 3,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _taglineController,
+            decoration: InputDecoration(
+              labelText: context.tr('characterTagline'),
+              hintText: context.tr('characterTaglineHint'),
+              border: const OutlineInputBorder(),
+            ),
+            maxLines: 2,
+            textCapitalization: TextCapitalization.sentences,
           ),
           const SizedBox(height: 12),
           Text(context.tr('avatarImage'), style: const TextStyle(fontWeight: FontWeight.w500)),

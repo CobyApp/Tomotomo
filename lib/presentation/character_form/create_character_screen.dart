@@ -21,6 +21,7 @@ class _CreateCharacterScreenState extends State<CreateCharacterScreen> {
   final _nameController = TextEditingController();
   final _nameSecondaryController = TextEditingController();
   final _speechStyleController = TextEditingController();
+  final _taglineController = TextEditingController();
   final _avatarUrlController = TextEditingController();
   final _backgroundUrlController = TextEditingController();
 
@@ -36,6 +37,7 @@ class _CreateCharacterScreenState extends State<CreateCharacterScreen> {
     _nameController.dispose();
     _nameSecondaryController.dispose();
     _speechStyleController.dispose();
+    _taglineController.dispose();
     _avatarUrlController.dispose();
     _backgroundUrlController.dispose();
     super.dispose();
@@ -68,6 +70,7 @@ class _CreateCharacterScreenState extends State<CreateCharacterScreen> {
         speechStyle: _speechStyleController.text.trim().isEmpty
             ? null
             : _speechStyleController.text.trim(),
+        tagline: _taglineController.text.trim().isEmpty ? null : _taglineController.text.trim(),
         avatarUrl: _avatarUrlController.text.trim().isEmpty
             ? null
             : _avatarUrlController.text.trim(),
@@ -197,6 +200,17 @@ class _CreateCharacterScreenState extends State<CreateCharacterScreen> {
                 border: const OutlineInputBorder(),
               ),
               maxLines: 3,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _taglineController,
+              decoration: InputDecoration(
+                labelText: context.tr('characterTagline'),
+                hintText: context.tr('characterTaglineHint'),
+                border: const OutlineInputBorder(),
+              ),
+              maxLines: 2,
+              textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: 12),
             Text(context.tr('avatarImage'), style: const TextStyle(fontWeight: FontWeight.w500)),

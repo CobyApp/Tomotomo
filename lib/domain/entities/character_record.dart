@@ -8,6 +8,8 @@ class CharacterRecord {
   final String? avatarUrl;
   final String? backgroundUrl;
   final String? speechStyle;
+  /// Short line shown on cards / profile-style UI (optional).
+  final String? tagline;
   final String? voiceProvider;
   final String? voiceId;
   final String language;
@@ -24,6 +26,7 @@ class CharacterRecord {
     this.avatarUrl,
     this.backgroundUrl,
     this.speechStyle,
+    this.tagline,
     this.voiceProvider,
     this.voiceId,
     this.language = 'ja',
@@ -41,6 +44,7 @@ class CharacterRecord {
     String? avatarUrl,
     String? backgroundUrl,
     String? speechStyle,
+    String? tagline,
     String? voiceProvider,
     String? voiceId,
     String language = 'ja',
@@ -55,6 +59,7 @@ class CharacterRecord {
       avatarUrl: avatarUrl,
       backgroundUrl: backgroundUrl,
       speechStyle: speechStyle,
+      tagline: tagline,
       voiceProvider: voiceProvider,
       voiceId: voiceId,
       language: language,
@@ -74,6 +79,7 @@ class CharacterRecord {
       avatarUrl: json['avatar_url'] as String?,
       backgroundUrl: json['background_url'] as String?,
       speechStyle: json['speech_style'] as String?,
+      tagline: json['tagline'] as String?,
       voiceProvider: json['voice_provider'] as String?,
       voiceId: json['voice_id'] as String?,
       language: json['language'] as String? ?? 'ja',
@@ -93,6 +99,7 @@ class CharacterRecord {
       'avatar_url': avatarUrl,
       'background_url': backgroundUrl,
       'speech_style': speechStyle,
+      'tagline': tagline,
       'voice_provider': voiceProvider,
       'voice_id': voiceId,
       'language': language,

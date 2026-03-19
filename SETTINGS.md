@@ -37,7 +37,7 @@
 
 **채팅 동기화**를 쓰려면 `20250320200000_chat_rooms_external_key.sql`도 실행해 `chat_rooms.external_character_key`와 유니크 인덱스를 추가하세요 (기본 캐릭터 id는 UUID가 아님).
 
-**친구 탭**을 쓰려면 `20250320400000_friends_rpc.sql`을 실행해 `list_my_friends`, `add_friend`, `remove_friend` RPC를 생성하세요.
+**친구 탭**을 쓰려면 `20250320400000_friends_rpc.sql`을 실행해 `list_my_friends`, `add_friend`, `remove_friend` RPC를 생성하세요. 닉네임 검색·캐릭터 탭은 `202503208…`, `202503209…`도 필요합니다.
 
 **친구 DM(1:1 채팅)** 을 쓰려면 `20250320500000_dm_chat.sql`을 실행해 `chat_rooms.room_type` / `peer_user_id`, `chat_messages.sender_id`, RLS, `ensure_dm_room` RPC를 적용하세요.
 
@@ -64,6 +64,8 @@ cp .env.example .env
 5. `20250320500000_dm_chat.sql` — 친구 DM·`sender_id`·RLS
 6. `20250320600000_chat_messages_realtime.sql` — 메시지 Realtime
 7. `20250320700000_chat_rooms_realtime.sql` — 채팅방 목록 Realtime
+8. `20250320800000_profile_status_character_tagline_search.sql` — 프로필 상태 메시지·캐릭터 tagline·가입 메타데이터 트리거·친구 목록 확장·닉네임 검색 RPC (`search_profiles_by_nickname`)
+9. `20250320900000_search_accessible_characters.sql` — 내 캐릭터·공개 캐릭터 이름 검색 RPC (`search_accessible_characters`, 친구 탭 캐릭터 탭용)
 
 이 순서까지 적용하면 **인증·캐릭터·AI 채팅·친구·DM·목록/메시지 실시간·앱 복귀 시 동기화**까지 앱이 기대하는 백엔드가 갖춰집니다. 이후는 푸시 알림·음성 통화·이메일로 친구 찾기 등을 단계적으로 붙이면 됩니다.
 

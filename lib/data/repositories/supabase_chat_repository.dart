@@ -1,4 +1,5 @@
 import '../../core/supabase/app_supabase.dart';
+import '../../data/character/characters_data.dart' as builtin_chars;
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_room_summary.dart';
@@ -37,37 +38,85 @@ class SupabaseChatRepository implements ChatRepository {
     final summaries = (res as List<dynamic>)
         .map((e) => ChatRoomSummary.fromRow(Map<String, dynamic>.from(e as Map)))
         .toList();
-    return await _enrichDmRoomTitles(summaries, user.id);
+    return await _enrichRoomsForDisplay(summaries, user.id);
   }
 
-  Future<List<ChatRoomSummary>> _enrichDmRoomTitles(List<ChatRoomSummary> summaries, String me) async {
+  /// Fills display title (DM), and avatar URL or asset path for list tiles.
+  Future<List<ChatRoomSummary>> _enrichRoomsForDisplay(List<ChatRoomSummary> summaries, String me) async {
     final dmOthers = <String>{};
+    final charUuids = <String>{};
     for (final s in summaries) {
       if (s.isDm) {
         final o = s.otherParticipantUserId(me);
         if (o != null) dmOthers.add(o);
+      } else if (s.characterIdSupabase != null && s.characterIdSupabase!.isNotEmpty) {
+        charUuids.add(s.characterIdSupabase!);
       }
     }
-    if (dmOthers.isEmpty) return summaries;
-    final profiles = await AppSupabase.client
-        .from('profiles')
-        .select('id,display_name,email')
-        .inFilter('id', dmOthers.toList());
-    final nameById = <String, String>{};
-    for (final p in profiles as List<dynamic>) {
-      final m = Map<String, dynamic>.from(p as Map);
-      final id = m['id'] is String ? m['id'] as String : m['id'].toString();
-      final dn = m['display_name'] as String?;
-      final em = m['email'] as String?;
-      nameById[id] = dn != null && dn.trim().isNotEmpty ? dn.trim() : (em ?? id);
+
+    final profileById = <String, Map<String, dynamic>>{};
+    if (dmOthers.isNotEmpty) {
+      final profiles = await AppSupabase.client
+          .from('profiles')
+          .select('id,display_name,email,avatar_url')
+          .inFilter('id', dmOthers.toList());
+      for (final p in profiles as List<dynamic>) {
+        final m = Map<String, dynamic>.from(p as Map);
+        final id = m['id'] is String ? m['id'] as String : m['id'].toString();
+        profileById[id] = m;
+      }
     }
+
+    final charAvatarById = <String, String?>{};
+    if (charUuids.isNotEmpty) {
+      final rows = await AppSupabase.client
+          .from('characters')
+          .select('id,avatar_url')
+          .inFilter('id', charUuids.toList());
+      for (final row in rows as List<dynamic>) {
+        final m = Map<String, dynamic>.from(row as Map);
+        final id = m['id'] is String ? m['id'] as String : m['id'].toString();
+        charAvatarById[id] = m['avatar_url'] as String?;
+      }
+    }
+
     return summaries.map((s) {
-      if (!s.isDm) return s;
-      final o = s.otherParticipantUserId(me);
-      if (o == null) return s;
-      final label = nameById[o];
-      if (label == null || label.isEmpty) return s;
-      return s.copyWith(title: label);
+      if (s.isDm) {
+        final o = s.otherParticipantUserId(me);
+        if (o == null) return s;
+        final p = profileById[o];
+        if (p == null) return s;
+        final dn = p['display_name'] as String?;
+        final em = p['email'] as String?;
+        final av = p['avatar_url'] as String?;
+        final label = dn != null && dn.trim().isNotEmpty ? dn.trim() : (em ?? o);
+        final url = av != null && av.trim().isNotEmpty ? av.trim() : null;
+        return s.copyWith(title: label, avatarNetworkUrl: url);
+      }
+
+      final cid = s.characterIdSupabase;
+      if (cid != null && cid.isNotEmpty) {
+        final url = charAvatarById[cid];
+        if (url != null && url.trim().isNotEmpty) {
+          return s.copyWith(avatarNetworkUrl: url.trim());
+        }
+        return s;
+      }
+
+      final ext = s.externalCharacterKey;
+      if (ext != null && ext.isNotEmpty) {
+        for (final c in builtin_chars.characters) {
+          if (c.id == ext) {
+            final path = c.imagePath.trim();
+            if (path.startsWith('http://') || path.startsWith('https://')) {
+              return s.copyWith(avatarNetworkUrl: path);
+            }
+            return s.copyWith(avatarAssetPath: path);
+          }
+        }
+      }
+
+      return s;
     }).toList();
   }
 
