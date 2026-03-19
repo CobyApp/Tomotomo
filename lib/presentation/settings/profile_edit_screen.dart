@@ -10,8 +10,9 @@ import '../../core/supabase/app_supabase.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../locale/l10n_context.dart';
+import '../locale/locale_notifier.dart';
 
-/// Edit current user's profile (display name, avatar, status, learning language).
+/// Edit current user's profile (display name, gallery avatar, status, app language).
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
 
@@ -22,10 +23,10 @@ class ProfileEditScreen extends StatefulWidget {
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _displayNameController = TextEditingController();
   final _statusMessageController = TextEditingController();
-  final _avatarUrlController = TextEditingController();
 
   Profile? _profile;
-  String _learningLanguage = 'ja';
+  String? _avatarUrl;
+  String _appLanguage = 'ko';
   bool _loading = true;
   bool _saving = false;
   bool _uploadingAvatar = false;
@@ -43,7 +44,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   void dispose() {
     _displayNameController.dispose();
     _statusMessageController.dispose();
-    _avatarUrlController.dispose();
     super.dispose();
   }
 
@@ -77,10 +77,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       }
       _displayNameController.text = p.displayName ?? '';
       _statusMessageController.text = p.statusMessage ?? '';
-      _avatarUrlController.text = p.avatarUrl ?? '';
+      _avatarUrl = p.avatarUrl;
       setState(() {
         _profile = p;
-        _learningLanguage = p.learningLanguage == 'ko' ? 'ko' : 'ja';
+        _appLanguage = p.appLanguage == 'ja' ? 'ja' : 'ko';
         _loading = false;
         _error = null;
       });
@@ -106,8 +106,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     try {
       final url = await CharacterStorage.uploadAvatar(user.id, File(x.path));
       if (!mounted) return;
-      _avatarUrlController.text = url;
-      setState(() => _uploadingAvatar = false);
+      setState(() {
+        _avatarUrl = url;
+        _uploadingAvatar = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('avatarUploadDone'))));
     } catch (e) {
       if (!mounted) return;
@@ -133,20 +135,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     });
     try {
       final repo = context.read<ProfileRepository>();
-      final avatar = _avatarUrlController.text.trim();
       final status = _statusMessageController.text.trim();
+      final avatar = _avatarUrl?.trim();
       final updated = Profile(
         id: profile.id,
         email: profile.email,
         displayName: name,
-        avatarUrl: avatar.isEmpty ? null : avatar,
+        avatarUrl: avatar == null || avatar.isEmpty ? null : avatar,
         statusMessage: status.isEmpty ? null : status,
-        appLanguage: profile.appLanguage,
-        learningLanguage: _learningLanguage,
+        appLanguage: _appLanguage,
+        learningLanguage: profile.learningLanguage,
         createdAt: profile.createdAt,
         updatedAt: profile.updatedAt,
       );
       await repo.updateProfile(updated);
+      if (!mounted) return;
+      await context.read<LocaleNotifier>().loadFromProfile(user.id);
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('profileEditSaved'))));
@@ -163,33 +167,25 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   @override
   Widget build(BuildContext context) {
     final user = AppSupabase.auth.currentUser;
+    final scheme = Theme.of(context).colorScheme;
 
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(context.tr('profileEditTitle')),
-          centerTitle: false,
-        ),
+        appBar: AppBar(title: Text(context.tr('profileEditTitle')), centerTitle: false),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (user == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(context.tr('profileEditTitle')),
-          centerTitle: false,
-        ),
+        appBar: AppBar(title: Text(context.tr('profileEditTitle')), centerTitle: false),
         body: Center(child: Text(context.tr('loginRequired'))),
       );
     }
 
     if (_profile == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(context.tr('profileEditTitle')),
-          centerTitle: false,
-        ),
+        appBar: AppBar(title: Text(context.tr('profileEditTitle')), centerTitle: false),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -201,10 +197,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () => unawaited(_load()),
-                  child: Text(context.tr('retry')),
-                ),
+                FilledButton(onPressed: () => unawaited(_load()), child: Text(context.tr('retry'))),
               ],
             ),
           ),
@@ -213,6 +206,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
 
     final profile = _profile!;
+    final hasPhoto = _avatarUrl != null && _avatarUrl!.trim().isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -222,10 +216,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           TextButton(
             onPressed: _saving ? null : _save,
             child: _saving
-                ? const SizedBox(
+                ? SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
                   )
                 : Text(context.tr('save')),
           ),
@@ -236,28 +230,83 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         children: [
           Text(
             context.tr('profileEditSubtitle'),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade700),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           if (_error != null) ...[
             Card(
-              color: Theme.of(context).colorScheme.errorContainer,
+              color: scheme.errorContainer,
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
-                ),
+                child: Text(_error!, style: TextStyle(color: scheme.onErrorContainer)),
               ),
             ),
             const SizedBox(height: 16),
           ],
+          Center(
+            child: Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                Material(
+                  color: scheme.surfaceContainerHigh,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
+                    child: SizedBox(
+                      width: 112,
+                      height: 112,
+                      child: _uploadingAvatar
+                          ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                          : hasPhoto
+                              ? Image.network(
+                                  _avatarUrl!.trim(),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Icon(
+                                    Icons.broken_image_outlined,
+                                    size: 40,
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                                )
+                              : Icon(Icons.person_outline, size: 48, color: scheme.onSurfaceVariant),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: FloatingActionButton.small(
+                    heroTag: 'profile_pick_photo',
+                    onPressed: _uploadingAvatar ? null : _pickAndUploadAvatar,
+                    child: const Icon(Icons.camera_alt_outlined, size: 20),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: TextButton(
+              onPressed: _uploadingAvatar
+                  ? null
+                  : () {
+                      setState(() => _avatarUrl = null);
+                    },
+              child: Text(context.tr('profileEditClearPhoto')),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            context.tr('profilePhotoGalleryHint'),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 28),
           TextFormField(
             controller: _displayNameController,
             decoration: InputDecoration(
               labelText: context.tr('displayNameLabel'),
               hintText: context.tr('displayNameHint'),
-              border: const OutlineInputBorder(),
             ),
             textCapitalization: TextCapitalization.words,
           ),
@@ -267,81 +316,43 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             decoration: InputDecoration(
               labelText: context.tr('profileStatusMessageLabel'),
               hintText: context.tr('profileStatusMessageHint'),
-              border: const OutlineInputBorder(),
             ),
             maxLines: 2,
             textCapitalization: TextCapitalization.sentences,
           ),
-          const SizedBox(height: 20),
-          Text(context.tr('signUpProfilePhoto'), style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              OutlinedButton.icon(
-                onPressed: _uploadingAvatar ? null : _pickAndUploadAvatar,
-                icon: _uploadingAvatar
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.photo_library_outlined, size: 20),
-                label: Text(_uploadingAvatar ? context.tr('uploading') : context.tr('pickFromGallery')),
-              ),
-              const SizedBox(width: 12),
-              TextButton(
-                onPressed: _uploadingAvatar
-                    ? null
-                    : () {
-                        _avatarUrlController.clear();
-                        setState(() {});
-                      },
-                child: Text(context.tr('profileEditClearPhoto')),
-              ),
-            ],
-          ),
-          TextFormField(
-            controller: _avatarUrlController,
-            decoration: InputDecoration(
-              labelText: context.tr('avatarUrlHint'),
-              hintText: context.tr('optional'),
-              border: const OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.url,
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Text(
-            context.tr('settingsLearningLanguageTitle'),
-            style: Theme.of(context).textTheme.titleSmall,
+            context.tr('profileAppLanguageTitle'),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
-            context.tr('settingsLearningLanguageSubtitle'),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade700),
+            context.tr('profileAppLanguageSubtitle'),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Card(
             margin: EdgeInsets.zero,
             child: Column(
               children: [
                 ListTile(
                   title: Text(context.tr('langJa')),
-                  trailing: _learningLanguage == 'ja' ? const Icon(Icons.check) : null,
-                  onTap: () => setState(() => _learningLanguage = 'ja'),
+                  trailing: _appLanguage == 'ja' ? Icon(Icons.check_circle, color: scheme.primary) : null,
+                  onTap: () => setState(() => _appLanguage = 'ja'),
                 ),
-                const Divider(height: 1),
+                Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.35)),
                 ListTile(
                   title: Text(context.tr('langKo')),
-                  trailing: _learningLanguage == 'ko' ? const Icon(Icons.check) : null,
-                  onTap: () => setState(() => _learningLanguage = 'ko'),
+                  trailing: _appLanguage == 'ko' ? Icon(Icons.check_circle, color: scheme.primary) : null,
+                  onTap: () => setState(() => _appLanguage = 'ko'),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 20),
           Text(
             '${context.tr('settingsEmail')}: ${profile.email ?? user.email ?? '—'}',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ],
       ),

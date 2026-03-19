@@ -37,6 +37,7 @@ class SupabaseChatRepository implements ChatRepository {
         .order('last_message_at', ascending: false);
     final summaries = (res as List<dynamic>)
         .map((e) => ChatRoomSummary.fromRow(Map<String, dynamic>.from(e as Map)))
+        .where((s) => s.lastMessageAt != null)
         .toList();
     return await _enrichRoomsForDisplay(summaries, user.id);
   }

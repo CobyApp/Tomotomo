@@ -148,20 +148,70 @@ class _ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppR
     super.dispose();
   }
 
-  Widget _roomLeading(ChatRoomSummary r) {
+  Widget _roomLeading(ChatRoomSummary r, {double radius = 26}) {
     final initial = r.title.isNotEmpty ? r.title.substring(0, 1) : '?';
     final net = r.avatarNetworkUrl?.trim();
     if (net != null && net.isNotEmpty) {
       return CircleAvatar(
+        radius: radius,
         foregroundImage: NetworkImage(net),
-        child: Text(initial),
+        child: Text(initial, style: TextStyle(fontSize: radius * 0.65)),
       );
     }
     final asset = r.avatarAssetPath?.trim();
     if (asset != null && asset.isNotEmpty) {
-      return CircleAvatar(backgroundImage: AssetImage(asset));
+      return CircleAvatar(radius: radius, backgroundImage: AssetImage(asset));
     }
-    return CircleAvatar(child: Text(initial));
+    return CircleAvatar(radius: radius, child: Text(initial, style: TextStyle(fontSize: radius * 0.65)));
+  }
+
+  Widget _chatRoomRow(BuildContext context, ChatRoomSummary r) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _openRoom(r),
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  _roomLeading(r),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          r.title,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _subtitle(context, r),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   String _subtitle(BuildContext context, ChatRoomSummary r) {
@@ -251,21 +301,9 @@ class _ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppR
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                         itemCount: _rooms.length,
-                        itemBuilder: (context, i) {
-                          final r = _rooms[i];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              leading: _roomLeading(r),
-                              title: Text(r.title),
-                              subtitle: Text(_subtitle(context, r)),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () => _openRoom(r),
-                            ),
-                          );
-                        },
+                        itemBuilder: (context, i) => _chatRoomRow(context, _rooms[i]),
                       ),
                     ),
     );

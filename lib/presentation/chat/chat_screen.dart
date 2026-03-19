@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/theme/chat_theme_data.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
@@ -266,123 +267,97 @@ class _ChatScreenContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final chatTheme = Theme.of(context).extension<ChatThemeData>();
+    final chatBg =
+        chatTheme?.chatBg ?? (Color.lerp(scheme.surfaceContainerLow, scheme.primary, 0.04) ?? scheme.surfaceContainerLow);
+
     return Scaffold(
+      backgroundColor: chatBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: scheme.onSurface, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: character.primaryColor.withValues(alpha: 0.2),
-                  width: 2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: character.primaryColor.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: scheme.surfaceContainerHighest,
+              backgroundImage: character.hasAvatar ? character.imageProvider : null,
+              child: !character.hasAvatar
+                  ? Text(
+                      character.name.isNotEmpty ? character.name.substring(0, 1) : '?',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: scheme.primary),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    character.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    character.nameJp,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
-              child: CircleAvatar(
-                radius: 20,
-                backgroundImage: character.hasAvatar ? character.imageProvider : null,
-                child: !character.hasAvatar
-                    ? Text(
-                        character.name.isNotEmpty ? character.name.substring(0, 1) : '?',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                      )
-                    : null,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  character.name,
-                  style: const TextStyle(
-                    color: Colors.black87,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Pretendard',
-                  ),
-                ),
-                Text(
-                  character.nameJp,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                    fontFamily: 'Pretendard',
-                  ),
-                ),
-              ],
             ),
           ],
         ),
         actions: [
           if (!character.isDirectMessage)
             IconButton(
-              icon: Icon(Icons.refresh, color: character.primaryColor),
+              icon: Icon(Icons.refresh_rounded, color: scheme.primary),
               onPressed: () => onResetPressed(context),
             ),
         ],
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
-        child: Container(
-          color: character.primaryColor.withValues(alpha: 0.05),
-          child: Column(
-            children: [
-              Expanded(
-                child: Consumer<ChatViewModel>(
-                  builder: (context, viewModel, child) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-                    return ChatList(
-                      messages: viewModel.messages,
-                      character: character,
-                      isGenerating: viewModel.isGenerating,
-                      scrollController: scrollController,
-                      chatRoomId: chatRoomId,
-                    );
+        child: Column(
+          children: [
+            Expanded(
+              child: Consumer<ChatViewModel>(
+                builder: (context, viewModel, child) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+                  return ChatList(
+                    messages: viewModel.messages,
+                    character: character,
+                    isGenerating: viewModel.isGenerating,
+                    scrollController: scrollController,
+                    chatRoomId: chatRoomId,
+                  );
+                },
+              ),
+            ),
+            Consumer<ChatViewModel>(
+              builder: (context, viewModel, child) {
+                return ChatInput(
+                  controller: viewModel.messageController,
+                  onSend: () {
+                    if (viewModel.messageController.text.trim().isNotEmpty) {
+                      viewModel.sendMessage();
+                    }
                   },
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    top: BorderSide(color: character.primaryColor.withValues(alpha: 0.1)),
-                  ),
-                ),
-                child: SafeArea(
-                  child: Consumer<ChatViewModel>(
-                    builder: (context, viewModel, child) {
-                      return ChatInput(
-                        controller: viewModel.messageController,
-                        onSend: () {
-                          if (viewModel.messageController.text.trim().isNotEmpty) {
-                            viewModel.sendMessage();
-                          }
-                        },
-                        isGenerating: viewModel.isGenerating,
-                        character: character,
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
+                  isGenerating: viewModel.isGenerating,
+                  character: character,
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
