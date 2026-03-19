@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'chat_theme_data.dart';
 
 /// Centralized app theme. Single place to change look and feel.
 class AppTheme {
@@ -7,6 +8,33 @@ class AppTheme {
   static const String fontFamily = 'Pretendard';
   static const Color seedColor = Color(0xFF6A3EA1);
   static const Color scaffoldBackground = Color(0xFFF8F9FA);
+
+  static Color _parseAccent(String? hex) {
+    if (hex == null || hex.isEmpty) return seedColor;
+    String s = hex.startsWith('#') ? hex.substring(1) : hex;
+    if (s.length == 6) s = 'FF$s';
+    return Color(int.parse(s, radix: 16));
+  }
+
+  /// Builds theme with optional user overrides (from Supabase themes).
+  static ThemeData buildWithOverrides(
+    ThemeData base,
+    {String? accent, String? chatBubbleUser, String? chatBubbleBot, String? chatBg}
+  ) {
+    final seed = accent != null && accent.isNotEmpty ? _parseAccent(accent) : null;
+    return base.copyWith(
+      colorScheme: seed != null
+          ? ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.light)
+          : null,
+      extensions: [
+        ChatThemeData.fromUserTheme(
+          chatBubbleUser: chatBubbleUser,
+          chatBubbleBot: chatBubbleBot,
+          chatBg: chatBg,
+        ),
+      ],
+    );
+  }
 
   static ThemeData get light => ThemeData(
         useMaterial3: true,
@@ -67,5 +95,6 @@ class AppTheme {
           ),
           contentTextStyle: TextStyle(fontFamily: fontFamily),
         ),
+        extensions: const [ChatThemeData()],
       );
 }

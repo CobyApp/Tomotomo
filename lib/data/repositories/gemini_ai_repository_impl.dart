@@ -31,6 +31,10 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
     if (_currentCharacter?.id == character.id) return;
 
     _currentCharacter = character;
+    if (character.isDirectMessage) {
+      _chatSession = null;
+      return;
+    }
     if (_model == null) return;
 
     final traits =
@@ -130,6 +134,9 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
   @override
   Future<ChatMessage> generateResponse(String userMessage) async {
     try {
+      if (_currentCharacter?.isDirectMessage == true) {
+        throw StateError('Direct message chat does not use AI');
+      }
       if (_currentCharacter == null || _model == null) {
         throw Exception('AI 서비스가 초기화되지 않았습니다.');
       }
@@ -167,8 +174,14 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
 
   @override
   void resetChat() {
-    if (_currentCharacter == null || _model == null) return;
+    if (_currentCharacter == null) return;
     final currentCharacter = _currentCharacter!;
+    if (currentCharacter.isDirectMessage) {
+      _chatSession = null;
+      _currentCharacter = null;
+      return;
+    }
+    if (_model == null) return;
     _chatSession = null;
     _currentCharacter = null;
     initializeForCharacter(currentCharacter);

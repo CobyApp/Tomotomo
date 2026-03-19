@@ -1,0 +1,66 @@
+/// User profile stored in Supabase (public.profiles).
+class Profile {
+  final String id;
+  final String? email;
+  final String? displayName;
+  final String? avatarUrl;
+  final String appLanguage;
+  final String learningLanguage;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const Profile({
+    required this.id,
+    this.email,
+    this.displayName,
+    this.avatarUrl,
+    this.appLanguage = 'ko',
+    this.learningLanguage = 'ja',
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory Profile.fromJson(Map<String, dynamic> json) {
+    return Profile(
+      id: json['id'] as String,
+      email: json['email'] as String?,
+      displayName: json['display_name'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
+      appLanguage: json['app_language'] as String? ?? 'ko',
+      learningLanguage: json['learning_language'] as String? ?? 'ja',
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'email': email,
+      'display_name': displayName,
+      'avatar_url': avatarUrl,
+      'app_language': appLanguage,
+      'learning_language': learningLanguage,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
+  Profile copyWith({
+    String? displayName,
+    String? avatarUrl,
+    String? appLanguage,
+    String? learningLanguage,
+  }) {
+    return Profile(
+      id: id,
+      email: email,
+      displayName: displayName ?? this.displayName,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      appLanguage: appLanguage ?? this.appLanguage,
+      learningLanguage: learningLanguage ?? this.learningLanguage,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+}

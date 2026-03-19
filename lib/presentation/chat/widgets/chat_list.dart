@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/supabase/app_supabase.dart';
 import '../../../../domain/entities/character.dart';
 import '../../../../domain/entities/chat_message.dart';
+import '../../../../domain/entities/saved_expression.dart';
+import '../../../../domain/repositories/saved_expression_repository.dart';
+import '../../locale/l10n_context.dart';
 import 'chat_bubble.dart';
 
 class ChatList extends StatefulWidget {
@@ -9,6 +14,7 @@ class ChatList extends StatefulWidget {
   final Character character;
   final bool isGenerating;
   final ScrollController scrollController;
+  final String? chatRoomId;
 
   const ChatList({
     super.key,
@@ -16,6 +22,7 @@ class ChatList extends StatefulWidget {
     required this.character,
     required this.isGenerating,
     required this.scrollController,
+    this.chatRoomId,
   });
 
   @override
@@ -23,12 +30,25 @@ class ChatList extends StatefulWidget {
 }
 
 class _ChatListState extends State<ChatList> {
+  bool _isFromCurrentUser(ChatMessage message) {
+    final uid = AppSupabase.auth.currentUser?.id;
+    if (widget.character.isDirectMessage) {
+      if (message.senderId != null && uid != null) return message.senderId == uid;
+      return false;
+    }
+    return message.role == 'user';
+  }
+
   void _showExplanation(BuildContext context, ChatMessage message) {
+    final messenger = ScaffoldMessenger.of(context);
+    final translation = message.vocabulary != null && message.vocabulary!.isNotEmpty
+        ? message.vocabulary!.map((v) => '${v.word}: ${v.meaning}').join('\n')
+        : null;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => Container(
+      builder: (sheetContext) => Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -57,7 +77,7 @@ class _ChatListState extends State<ChatList> {
               child: Row(
                 children: [
                   Text(
-                    '표현 설명',
+                    context.tr('expressionExplanationTitle'),
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -113,6 +133,32 @@ class _ChatListState extends State<ChatList> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        icon: const Icon(Icons.bookmark_add_outlined),
+                        label: Text(context.tr('saveToNotebook')),
+                        onPressed: () async {
+                          final savedMsg = context.tr('savedToNotebook');
+                          try {
+                            await sheetContext.read<SavedExpressionRepository>().add(
+                                  SavedExpressionDraft(
+                                    source: 'chat',
+                                    content: message.content,
+                                    explanation: message.explanation,
+                                    translation: translation,
+                                    roomId: widget.chatRoomId,
+                                  ),
+                                );
+                            if (sheetContext.mounted) Navigator.pop(sheetContext);
+                            messenger.showSnackBar(SnackBar(content: Text(savedMsg)));
+                          } catch (e) {
+                            messenger.showSnackBar(SnackBar(content: Text('$e')));
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
@@ -208,11 +254,12 @@ class _ChatListState extends State<ChatList> {
           return _buildLoadingIndicator();
         }
         final message = widget.messages[index];
+        final isUser = _isFromCurrentUser(message);
         return ChatBubble(
           message: message,
           character: widget.character,
-          isUser: message.role == 'user',
-          onExplanationTap: message.role != 'user'
+          isUser: isUser,
+          onExplanationTap: !widget.character.isDirectMessage && message.role != 'user'
               ? () => _showExplanation(context, message)
               : null,
         );
@@ -221,6 +268,7 @@ class _ChatListState extends State<ChatList> {
   }
 
   Widget _buildLoadingIndicator() {
+    if (widget.character.isDirectMessage) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -246,7 +294,12 @@ class _ChatListState extends State<ChatList> {
             ),
             child: CircleAvatar(
               radius: 16,
-              backgroundImage: AssetImage(widget.character.imagePath),
+              backgroundImage: widget.character.hasAvatar ? widget.character.imageProvider : null,
+              child: !widget.character.hasAvatar
+                  ? Text(
+                      widget.character.name.isNotEmpty ? widget.character.name.substring(0, 1) : '?',
+                    )
+                  : null,
             ),
           ),
           const SizedBox(width: 12),

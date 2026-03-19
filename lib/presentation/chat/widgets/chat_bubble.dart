@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/chat_theme_data.dart';
 import '../../../../domain/entities/character.dart';
 import '../../../../domain/entities/chat_message.dart';
 
@@ -18,6 +19,9 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chatTheme = Theme.of(context).extension<ChatThemeData>();
+    final userBubbleColor = chatTheme?.userBubble ?? character.primaryColor;
+    final botBubbleColor = chatTheme?.botBubble ?? Colors.white;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -44,7 +48,13 @@ class ChatBubble extends StatelessWidget {
               ),
               child: CircleAvatar(
                 radius: 16,
-                backgroundImage: AssetImage(character.imagePath),
+                backgroundImage: character.hasAvatar ? character.imageProvider : null,
+                child: !character.hasAvatar
+                    ? Text(
+                        character.name.isNotEmpty ? character.name.substring(0, 1) : '?',
+                        style: const TextStyle(fontSize: 12),
+                      )
+                    : null,
               ),
             ),
             const SizedBox(width: 12),
@@ -68,11 +78,11 @@ class ChatBubble extends StatelessWidget {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: isUser ? character.primaryColor : Colors.white,
+                  color: isUser ? userBubbleColor : botBubbleColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: (isUser ? character.primaryColor : Colors.black).withValues(alpha: 0.1),
+                      color: (isUser ? userBubbleColor : botBubbleColor).withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -87,7 +97,9 @@ class ChatBubble extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 15,
                         height: 1.5,
-                        color: isUser ? Colors.white : Colors.black87,
+                        color: isUser
+                            ? (userBubbleColor.computeLuminance() > 0.5 ? Colors.black87 : Colors.white)
+                            : Colors.black87,
                       ),
                     ),
                   ),

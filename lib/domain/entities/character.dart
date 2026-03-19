@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'character_record.dart';
+
 class CharacterTrait {
   final String trait;
   final double weight;
@@ -45,6 +47,10 @@ class Character {
   final String imageUrl;
   final String imagePath;
 
+  /// Human-to-human chat (no AI). When true, [directMessageRoomId] must be set.
+  final bool isDirectMessage;
+  final String? directMessageRoomId;
+
   const Character({
     required this.id,
     required this.name,
@@ -70,9 +76,91 @@ class Character {
     required this.emotionalResponses,
     required this.imageUrl,
     required this.imagePath,
+    this.isDirectMessage = false,
+    this.directMessageRoomId,
   });
 
   String get displayImageUrl => imageUrl;
+
+  bool get hasAvatar => imagePath.isNotEmpty;
+
+  bool get isNetworkImage => imagePath.startsWith('http');
+
+  ImageProvider get imageProvider =>
+      isNetworkImage ? NetworkImage(imagePath) : AssetImage(imagePath) as ImageProvider;
+
+  /// DM with a friend; uses [peerUserId] as [id] for stability.
+  static Character forDirectMessage({
+    required String peerUserId,
+    required String roomId,
+    required String displayName,
+    String? email,
+    String? avatarUrl,
+  }) {
+    final image = (avatarUrl != null && avatarUrl.trim().isNotEmpty) ? avatarUrl.trim() : '';
+    return Character(
+      id: peerUserId,
+      name: displayName,
+      nameJp: email ?? displayName,
+      nameKanji: displayName,
+      level: '—',
+      description: '',
+      age: 0,
+      schoolYear: '',
+      occupation: '',
+      traits: const [CharacterTrait('friend', 1.0)],
+      interests: const [CharacterInterest(category: 'chat', items: ['direct'])],
+      speechStyle: '',
+      primaryColor: const Color(0xFF2E7D32),
+      secondaryColor: const Color(0xFFE8F5E9),
+      hairStyle: '-',
+      hairColor: '-',
+      eyeColor: '-',
+      outfit: '-',
+      accessories: const [],
+      selfReference: displayName,
+      commonPhrases: const [],
+      emotionalResponses: const {},
+      imageUrl: image,
+      imagePath: image,
+      isDirectMessage: true,
+      directMessageRoomId: roomId,
+    );
+  }
+
+  /// Builds a Character for chat from a Supabase custom character record.
+  static Character fromRecord(CharacterRecord r) {
+    final lang = r.language == 'ja' ? '일본어' : '한국어';
+    final image = r.avatarUrl ?? '';
+    return Character(
+      id: r.id,
+      name: r.name,
+      nameJp: r.nameSecondary ?? r.name,
+      nameKanji: r.nameSecondary ?? r.name,
+      level: lang,
+      description: r.speechStyle ?? '',
+      age: 0,
+      schoolYear: '',
+      occupation: lang == '일본어' ? '일본어 학습 도우미' : '한국어 학습 도우미',
+      traits: const [CharacterTrait('친절함', 0.8)],
+      interests: const [CharacterInterest(category: '언어', items: ['대화'])],
+      speechStyle: r.speechStyle ?? '친근하게 대화합니다.',
+      primaryColor: const Color(0xFF6A3EA1),
+      secondaryColor: const Color(0xFFF0E6FF),
+      hairStyle: '-',
+      hairColor: '-',
+      eyeColor: '-',
+      outfit: '-',
+      accessories: [],
+      selfReference: r.nameSecondary ?? r.name,
+      commonPhrases: [],
+      emotionalResponses: {},
+      imageUrl: image,
+      imagePath: image,
+      isDirectMessage: false,
+      directMessageRoomId: null,
+    );
+  }
 
   factory Character.fromJson(Map<String, dynamic> json) {
     return Character(
@@ -108,6 +196,8 @@ class Character {
           json['emotionalResponses'] as Map<String, List<String>>,
       imageUrl: json['imageUrl'] as String,
       imagePath: json['imagePath'] as String,
+      isDirectMessage: json['isDirectMessage'] as bool? ?? false,
+      directMessageRoomId: json['directMessageRoomId'] as String?,
     );
   }
 
@@ -137,6 +227,8 @@ class Character {
       'emotionalResponses': emotionalResponses,
       'imageUrl': imageUrl,
       'imagePath': imagePath,
+      'isDirectMessage': isDirectMessage,
+      'directMessageRoomId': directMessageRoomId,
     };
   }
 }

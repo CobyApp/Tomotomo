@@ -62,7 +62,7 @@ class CharacterListScreen extends StatelessWidget {
                     ),
                   ],
                   image: DecorationImage(
-                    image: AssetImage(character.imagePath),
+                    image: character.imageProvider,
                     fit: BoxFit.cover,
                   ),
                 ),

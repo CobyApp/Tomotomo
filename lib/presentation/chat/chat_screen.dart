@@ -27,10 +27,16 @@ class _ChatScreenState extends State<ChatScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _controller;
   final ScrollController _scrollController = ScrollController();
+  late final ChatViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
+    _viewModel = ChatViewModel(
+      character: widget.character,
+      chatRepository: widget.chatRepository,
+      aiChatRepository: widget.aiChatRepository,
+    );
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -47,18 +53,23 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed && mounted) {
+      _viewModel.onAppResumedSync();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ChatViewModel(
-        character: widget.character,
-        chatRepository: widget.chatRepository,
-        aiChatRepository: widget.aiChatRepository,
-      ),
+    return ChangeNotifierProvider<ChatViewModel>.value(
+      value: _viewModel,
       child: Consumer<ChatViewModel>(
         builder: (context, viewModel, child) {
           return _ChatScreenContent(
             character: widget.character,
             scrollController: _scrollController,
+            chatRoomId: viewModel.chatRoomId,
             onResetPressed: (context) => _showResetDialog(context, viewModel),
           );
         },
@@ -220,6 +231,7 @@ class _ChatScreenState extends State<ChatScreen>
 
   @override
   void dispose() {
+    _viewModel.dispose();
     _controller.dispose();
     _scrollController.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -230,11 +242,13 @@ class _ChatScreenState extends State<ChatScreen>
 class _ChatScreenContent extends StatelessWidget {
   final Character character;
   final ScrollController scrollController;
+  final String? chatRoomId;
   final Function(BuildContext) onResetPressed;
 
   const _ChatScreenContent({
     required this.character,
     required this.scrollController,
+    required this.chatRoomId,
     required this.onResetPressed,
   });
 
@@ -281,7 +295,13 @@ class _ChatScreenContent extends StatelessWidget {
               ),
               child: CircleAvatar(
                 radius: 20,
-                backgroundImage: AssetImage(character.imagePath),
+                backgroundImage: character.hasAvatar ? character.imageProvider : null,
+                child: !character.hasAvatar
+                    ? Text(
+                        character.name.isNotEmpty ? character.name.substring(0, 1) : '?',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      )
+                    : null,
               ),
             ),
             const SizedBox(width: 12),
@@ -310,10 +330,11 @@ class _ChatScreenContent extends StatelessWidget {
           ],
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: character.primaryColor),
-            onPressed: () => onResetPressed(context),
-          ),
+          if (!character.isDirectMessage)
+            IconButton(
+              icon: Icon(Icons.refresh, color: character.primaryColor),
+              onPressed: () => onResetPressed(context),
+            ),
         ],
       ),
       body: GestureDetector(
@@ -331,6 +352,7 @@ class _ChatScreenContent extends StatelessWidget {
                       character: character,
                       isGenerating: viewModel.isGenerating,
                       scrollController: scrollController,
+                      chatRoomId: chatRoomId,
                     );
                   },
                 ),

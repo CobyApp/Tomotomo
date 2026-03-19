@@ -7,6 +7,9 @@ class ChatMessage {
   final String? explanation;
   final List<Vocabulary>? vocabulary;
 
+  /// Supabase `chat_messages.sender_id` for direct messages; null for AI chats.
+  final String? senderId;
+
   /// Default welcome message for a character. Single place for content and vocabulary.
   static ChatMessage welcomeFor(Character character) {
     return ChatMessage(
@@ -28,6 +31,7 @@ class ChatMessage {
     required this.timestamp,
     this.explanation,
     this.vocabulary,
+    this.senderId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -36,6 +40,7 @@ class ChatMessage {
         'timestamp': timestamp.toIso8601String(),
         'explanation': explanation,
         'vocabulary': vocabulary?.map((v) => v.toJson()).toList(),
+        'senderId': senderId,
       };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
@@ -48,6 +53,7 @@ class ChatMessage {
                 .map((v) => Vocabulary.fromJson(v as Map<String, dynamic>))
                 .toList()
             : null,
+        senderId: json['senderId'] as String?,
       );
 }
 
