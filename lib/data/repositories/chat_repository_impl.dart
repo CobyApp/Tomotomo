@@ -35,4 +35,7 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<String> ensureDmRoom(String friendUserId) async {
     throw UnsupportedError('Direct messages require Supabase');
   }
+
+  @override
+  Future<void> deleteRoom(String roomId) async {}
 }

@@ -165,51 +165,108 @@ class _ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppR
     return CircleAvatar(radius: radius, child: Text(initial, style: TextStyle(fontSize: radius * 0.65)));
   }
 
-  Widget _chatRoomRow(BuildContext context, ChatRoomSummary r) {
+  Widget _chatRoomCard(BuildContext context, ChatRoomSummary r) {
     final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: scheme.surface,
+    return Material(
+      color: scheme.surface,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () => _openRoom(r),
-          child: Ink(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Row(
-                children: [
-                  _roomLeading(r),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          r.title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _subtitle(context, r),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
+        onTap: () => _openRoom(r),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                _roomLeading(r),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        r.title,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _subtitle(context, r),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                      ),
+                    ],
                   ),
-                  Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
-                ],
-              ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+              ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Future<bool?> _confirmDeleteRoom(BuildContext context, ChatRoomSummary r) {
+    final bodyKey = r.isDm ? 'chatsDeleteBodyDm' : 'chatsDeleteBodyCharacter';
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(ctx.tr('chatsDeleteTitle')),
+        content: Text(ctx.tr(bodyKey, params: {'name': r.title})),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.tr('cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx.tr('confirm'))),
+        ],
+      ),
+    );
+  }
+
+  Widget _dismissibleChatRoomRow(BuildContext context, ChatRoomSummary r) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Dismissible(
+        key: ValueKey<String>('chat_room_${r.roomId}'),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (direction) async {
+          final ok = await _confirmDeleteRoom(context, r);
+          if (!context.mounted || ok != true) return false;
+          final messenger = ScaffoldMessenger.of(context);
+          final repo = context.read<ChatRepository>();
+          try {
+            await repo.deleteRoom(r.roomId);
+            if (!context.mounted) return false;
+            return true;
+          } catch (_) {
+            if (!context.mounted) return false;
+            messenger.showSnackBar(SnackBar(content: Text(context.tr('chatsRoomDeleteFailed'))));
+            return false;
+          }
+        },
+        onDismissed: (_) {
+          if (!mounted) return;
+          setState(() {
+            _rooms.removeWhere((x) => x.roomId == r.roomId);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.tr('chatsRoomDeleted'))),
+          );
+        },
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 22),
+          decoration: BoxDecoration(
+            color: scheme.errorContainer,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Icon(Icons.delete_outline_rounded, color: scheme.onErrorContainer, size: 28),
+        ),
+        child: _chatRoomCard(context, r),
       ),
     );
   }
@@ -302,8 +359,21 @@ class _ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppR
                       onRefresh: _load,
                       child: ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                        itemCount: _rooms.length,
-                        itemBuilder: (context, i) => _chatRoomRow(context, _rooms[i]),
+                        itemCount: _rooms.length + 1,
+                        itemBuilder: (context, i) {
+                          if (i == 0) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Text(
+                                context.tr('chatsDeleteSwipeHint'),
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            );
+                          }
+                          return _dismissibleChatRoomRow(context, _rooms[i - 1]);
+                        },
                       ),
                     ),
     );

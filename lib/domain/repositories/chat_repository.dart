@@ -17,4 +17,7 @@ abstract class ChatRepository {
 
   /// Creates or returns existing DM room with a friend (mutual friendship). Supabase only.
   Future<String> ensureDmRoom(String friendUserId);
+
+  /// Deletes the chat room and all messages (cascade). RLS must allow the current user.
+  Future<void> deleteRoom(String roomId);
 }

@@ -50,10 +50,9 @@ class ChatViewModel extends ChangeNotifier {
   Future<void> _loadMessages() async {
     try {
       _messages = await chatRepository.getMessages(character);
+      // Welcome is UI-only until the user sends a message (avoids empty rooms in recent list).
       if (!character.isDirectMessage && _messages.isEmpty) {
-        final welcomeMessage = ChatMessage.welcomeFor(character);
-        _messages.add(welcomeMessage);
-        await chatRepository.saveMessage(character, welcomeMessage);
+        _messages.add(ChatMessage.welcomeFor(character));
       }
       _chatRoomId = await chatRepository.getChatRoomId(character);
       _subscribeMessagesRealtime();
@@ -88,6 +87,17 @@ class ChatViewModel extends ChangeNotifier {
         )
         .subscribe(_onMessagesChannelSubscribeStatus);
     _messagesChannel = channel;
+  }
+
+  /// After the first persisted message, the room row exists; subscribe if we were not yet.
+  Future<void> _ensureRealtimeSubscription() async {
+    if (_disposed || character.isDirectMessage) return;
+    final id = await chatRepository.getChatRoomId(character);
+    if (id == null || id.isEmpty) return;
+    _chatRoomId = id;
+    if (_messagesChannel == null) {
+      _subscribeMessagesRealtime();
+    }
   }
 
   void _onMessagesChannelSubscribeStatus(RealtimeSubscribeStatus status, [Object? error]) {
@@ -168,6 +178,7 @@ class ChatViewModel extends ChangeNotifier {
     messageController.clear();
     _messages.add(userChatMessage);
     await chatRepository.saveMessage(character, userChatMessage);
+    await _ensureRealtimeSubscription();
     notifyListeners();
 
     if (character.isDirectMessage) {
@@ -181,6 +192,7 @@ class ChatViewModel extends ChangeNotifier {
       final aiMessage = await aiChatRepository.generateResponse(userMessage);
       _messages.add(aiMessage);
       await chatRepository.saveMessage(character, aiMessage);
+      await _ensureRealtimeSubscription();
     } catch (e) {
       _messages.add(ChatMessage(
         content: '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.',
@@ -203,9 +215,7 @@ class ChatViewModel extends ChangeNotifier {
       _isGenerating = false;
 
       if (!character.isDirectMessage) {
-        final welcomeMessage = ChatMessage.welcomeFor(character);
-        _messages.add(welcomeMessage);
-        await chatRepository.saveMessage(character, welcomeMessage);
+        _messages.add(ChatMessage.welcomeFor(character));
         aiChatRepository.resetChat();
       }
       notifyListeners();

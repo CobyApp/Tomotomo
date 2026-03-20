@@ -20,7 +20,7 @@ class SupabaseChatRepository implements ChatRepository {
     if (user == null) return null;
     if (character.isDirectMessage) return character.directMessageRoomId;
     try {
-      return await _ensureRoomId(character);
+      return await _findExistingRoomRowId(character.id, user.id);
     } catch (_) {
       return null;
     }
@@ -35,11 +35,34 @@ class SupabaseChatRepository implements ChatRepository {
         .select('*')
         .or('user_id.eq.${user.id},peer_user_id.eq.${user.id}')
         .order('last_message_at', ascending: false);
-    final summaries = (res as List<dynamic>)
+    var summaries = (res as List<dynamic>)
         .map((e) => ChatRoomSummary.fromRow(Map<String, dynamic>.from(e as Map)))
         .where((s) => s.lastMessageAt != null)
         .toList();
+    summaries = await _roomsWithAtLeastOneUserMessage(summaries);
     return await _enrichRoomsForDisplay(summaries, user.id);
+  }
+
+  /// Hides rooms where only assistant/system messages exist (e.g. legacy auto-welcome).
+  Future<List<ChatRoomSummary>> _roomsWithAtLeastOneUserMessage(List<ChatRoomSummary> rooms) async {
+    if (rooms.isEmpty) return [];
+    final ids = rooms.map((r) => r.roomId).toList();
+    final res = await AppSupabase.client
+        .from('chat_messages')
+        .select('room_id')
+        .inFilter('room_id', ids)
+        .eq('role', 'user');
+    final withUser = <String>{};
+    for (final row in res as List<dynamic>) {
+      final m = Map<String, dynamic>.from(row as Map);
+      final rid = m['room_id'];
+      if (rid is String) {
+        withUser.add(rid);
+      } else if (rid != null) {
+        withUser.add(rid.toString());
+      }
+    }
+    return rooms.where((r) => withUser.contains(r.roomId)).toList();
   }
 
   /// Fills display title (DM), and avatar URL or asset path for list tiles.
@@ -133,6 +156,34 @@ class SupabaseChatRepository implements ChatRepository {
     return raw is String ? raw : raw.toString();
   }
 
+  /// Existing character room only; does not insert. Used so opening a chat without sending
+  /// does not create an empty row that could appear in the recent list.
+  Future<String?> _findExistingRoomRowId(String characterId, String userId) async {
+    if (_isUuid(characterId)) {
+      final existing = await AppSupabase.client
+          .from('chat_rooms')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('character_id', characterId)
+          .maybeSingle();
+      if (existing != null) {
+        return Map<String, dynamic>.from(existing as Map)['id'] as String;
+      }
+      return null;
+    }
+
+    final existing = await AppSupabase.client
+        .from('chat_rooms')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('external_character_key', characterId)
+        .maybeSingle();
+    if (existing != null) {
+      return Map<String, dynamic>.from(existing as Map)['id'] as String;
+    }
+    return null;
+  }
+
   Future<String> _ensureRoomId(Character character) async {
     final user = AppSupabase.auth.currentUser;
     if (user == null) throw Exception('Not signed in');
@@ -170,14 +221,14 @@ class SupabaseChatRepository implements ChatRepository {
       }
     }
 
-    final existing = await AppSupabase.client
+    final existingExt = await AppSupabase.client
         .from('chat_rooms')
         .select('id')
         .eq('user_id', user.id)
         .eq('external_character_key', id)
         .maybeSingle();
-    if (existing != null) {
-      return Map<String, dynamic>.from(existing as Map)['id'] as String;
+    if (existingExt != null) {
+      return Map<String, dynamic>.from(existingExt as Map)['id'] as String;
     }
     try {
       final row = await AppSupabase.client.from('chat_rooms').insert({
@@ -201,12 +252,22 @@ class SupabaseChatRepository implements ChatRepository {
   }
 
   @override
+  Future<void> deleteRoom(String roomId) async {
+    final user = AppSupabase.auth.currentUser;
+    if (user == null) throw Exception('Not signed in');
+    await AppSupabase.client.from('chat_rooms').delete().eq('id', roomId);
+  }
+
+  @override
   Future<List<ChatMessage>> getMessages(Character character) async {
     final user = AppSupabase.auth.currentUser;
     if (user == null) return [];
-    final roomId = character.isDirectMessage
-        ? character.directMessageRoomId
-        : await _ensureRoomId(character);
+    final String? roomId;
+    if (character.isDirectMessage) {
+      roomId = character.directMessageRoomId;
+    } else {
+      roomId = await _findExistingRoomRowId(character.id, user.id);
+    }
     if (roomId == null || roomId.isEmpty) return [];
     final res = await AppSupabase.client
         .from('chat_messages')
