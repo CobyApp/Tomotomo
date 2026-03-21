@@ -142,24 +142,27 @@ class WordBookScreenState extends State<WordBookScreen>
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(context.tr('notebookDeleteTitle')),
-        content: Text(context.tr('notebookDeleteConfirm')),
+        title: Text(ctx.trRead('notebookDeleteTitle')),
+        content: Text(ctx.trRead('notebookDeleteConfirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.tr('cancel'))),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.tr('charactersDelete'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.trRead('cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx.trRead('charactersDelete'))),
         ],
       ),
     );
     if (ok != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final deletedMsg = context.trRead('notebookWordDeleted');
+    final deleteFailedPrefix = context.trRead('notebookDeleteFailed');
     try {
       await context.read<SavedExpressionRepository>().delete(e.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('notebookWordDeleted'))));
+      messenger.showSnackBar(SnackBar(content: Text(deletedMsg)));
       await _load(showSpinner: false);
     } catch (err) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${context.tr('notebookDeleteFailed')}\n$err')),
+      messenger.showSnackBar(
+        SnackBar(content: Text('$deleteFailedPrefix\n$err')),
       );
     }
   }
