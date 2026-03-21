@@ -1,7 +1,7 @@
 import 'character_record.dart';
 import 'user_profile_search_result.dart';
 
-/// Result of the combined "people / character" search dialog on the friends tab.
+/// Result of picking a user or character from the add-friend tab search UI.
 sealed class FriendSearchPick {}
 
 final class FriendSearchPickUser extends FriendSearchPick {

@@ -5,6 +5,7 @@ import '../../domain/repositories/profile_repository.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../theme/theme_notifier.dart';
+import 'tabs/add_friend_tab.dart';
 import 'tabs/friends_tab.dart';
 import 'tabs/chats_tab.dart';
 import 'tabs/settings_tab.dart';
@@ -28,6 +29,7 @@ class _MainShellState extends State<MainShell> {
     _pages = [
       const FriendsTab(),
       const ChatsTab(),
+      const AddFriendTab(),
       WordBookScreen(key: _wordBookKey),
       const SettingsTab(),
     ];
@@ -61,7 +63,7 @@ class _MainShellState extends State<MainShell> {
         selectedIndex: _index,
         onDestinationSelected: (i) {
           setState(() => _index = i);
-          if (i == 2) {
+          if (i == 3) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _wordBookKey.currentState?.reloadWhenTabSelected();
             });
@@ -77,6 +79,11 @@ class _MainShellState extends State<MainShell> {
             icon: const Icon(Icons.chat_bubble_outline),
             selectedIcon: const Icon(Icons.chat_bubble),
             label: context.tr('tabChats'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.search_outlined),
+            selectedIcon: const Icon(Icons.search),
+            label: context.tr('tabAddFriend'),
           ),
           NavigationDestination(
             icon: const Icon(Icons.menu_book_outlined),

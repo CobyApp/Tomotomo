@@ -72,9 +72,11 @@ List<Vocabulary>? _parseVocabularyField(
 /// Maps Gemini (or similar) JSON to [ChatMessage] with alternate key names.
 ChatMessage chatMessageFromGeminiMap(
   Map<String, dynamic> json,
-  Character character,
-) {
+  Character character, {
+  VocabularyMeaningPickMode? vocabularyMeaningPickModeOverride,
+}) {
   final root = _effectiveRoot(json);
+  final meaningMode = vocabularyMeaningPickModeOverride ?? character.vocabularyMeaningPickMode;
 
   final content = _firstNonEmptyString(root, const [
         'content',
@@ -115,7 +117,7 @@ ChatMessage chatMessageFromGeminiMap(
         root['terms'] ??
         root['key_terms'] ??
         root['keyTerms'],
-    meaningMode: character.vocabularyMeaningPickMode,
+    meaningMode: meaningMode,
   );
 
   return ChatMessage(

@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import '../../core/language/dm_utterance_script.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
+import 'gemini_prompts/prompt_dm_expression_analysis.dart';
 import 'gemini_response_parser.dart';
 import 'gemini_system_prompt_builder.dart';
 
@@ -69,6 +71,44 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
       return chatMessageFromGeminiMap(jsonResponse, _currentCharacter!);
     } catch (e) {
       debugPrint('AI 응답 오류: $e');
+      rethrow;
+    }
+  }
+
+  static final Character _dmParseDummy = Character.forDirectMessage(
+    peerUserId: '_dm_expression_parse_',
+    roomId: '_',
+    displayName: 'DM',
+  );
+
+  @override
+  Future<ChatMessage> generateDmExpressionAnalysis(
+    String utterance, {
+    required String appUiLanguageCode,
+  }) async {
+    if (_model == null) {
+      throw Exception('AI 서비스가 초기화되지 않았습니다.');
+    }
+    final script = resolveDmUtteranceScript(utterance, appLanguageCode: appUiLanguageCode);
+    final prompt = buildDmExpressionAnalysisPrompt(utterance, script);
+    final meaningMode = script == DmUtteranceScript.koreanHeavy
+        ? VocabularyMeaningPickMode.preferJapaneseGloss
+        : VocabularyMeaningPickMode.preferKoreanGloss;
+
+    try {
+      final response = await _model!.generateContent([Content.text(prompt)]);
+      final text = response.text;
+      if (text == null || text.trim().isEmpty) {
+        throw Exception('응답이 비어있습니다.');
+      }
+      final jsonResponse = extractJsonObject(text);
+      return chatMessageFromGeminiMap(
+        jsonResponse,
+        _dmParseDummy,
+        vocabularyMeaningPickModeOverride: meaningMode,
+      );
+    } catch (e) {
+      debugPrint('DM expression analysis 오류: $e');
       rethrow;
     }
   }

@@ -3,11 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/language/dm_utterance_script.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/saved_expression.dart';
+import '../../domain/repositories/ai_chat_repository.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
 import '../locale/l10n_context.dart';
+import '../locale/locale_notifier.dart';
 import '../notebook/word_book_refresh_notifier.dart';
 
 String _expressionSheetTitle(String Function(String key) tr) {
@@ -15,31 +18,83 @@ String _expressionSheetTitle(String Function(String key) tr) {
 }
 
 String _expressionExplanationHeading(Character c, String Function(String key) tr) {
-  if (c.isDirectMessage) return tr('expressionSectionExplanation');
   if (c.tutorLocale == 'ja') return tr('expressionSectionExplanationJaImmersion');
   if (c.koreanNationalPersona) return tr('expressionSectionExplanationJaNote');
   return tr('expressionSectionExplanationKoNote');
 }
 
 String? _expressionNoteBadgeKey(Character c) {
-  if (c.isDirectMessage) return null;
   if (c.expectsKoreanStudyNotes) return 'expressionBadgeLangKo';
   if (c.expectsJapaneseStudyNotes) return 'expressionBadgeLangJa';
   return null;
 }
 
 String _expressionVocabHeading(Character c, String Function(String key) tr) {
-  if (c.isDirectMessage) return tr('expressionSectionVocabulary');
   if (c.tutorLocale == 'ja') return tr('expressionSectionVocabJaImmersion');
   if (c.koreanNationalPersona) return tr('expressionSectionVocabKoToJaNote');
   return tr('expressionSectionVocabJaToKo');
 }
 
 String _expressionVocabHintLine(Character c, String Function(String key) tr) {
-  if (c.isDirectMessage) return tr('expressionVocabAddHint');
   if (c.tutorLocale == 'ja') return tr('expressionVocabAddHintImmersion');
   if (c.koreanNationalPersona) return tr('expressionVocabAddHintKoFriend');
   return tr('expressionVocabAddHintKoNotebook');
+}
+
+String _dmExplanationHeading(DmUtteranceScript s, String Function(String key) tr) {
+  switch (s) {
+    case DmUtteranceScript.japaneseHeavy:
+      return tr('expressionSectionExplanationKoNote');
+    case DmUtteranceScript.koreanHeavy:
+      return tr('expressionSectionExplanationJaNote');
+    case DmUtteranceScript.ambiguous:
+      return tr('expressionSectionExplanation');
+  }
+}
+
+String? _dmBadgeKey(DmUtteranceScript s) {
+  switch (s) {
+    case DmUtteranceScript.japaneseHeavy:
+      return 'expressionBadgeLangKo';
+    case DmUtteranceScript.koreanHeavy:
+      return 'expressionBadgeLangJa';
+    case DmUtteranceScript.ambiguous:
+      return null;
+  }
+}
+
+String _dmVocabHeading(DmUtteranceScript s, String Function(String key) tr) {
+  switch (s) {
+    case DmUtteranceScript.japaneseHeavy:
+      return tr('expressionSectionVocabJaToKo');
+    case DmUtteranceScript.koreanHeavy:
+      return tr('expressionSectionVocabKoToJaNote');
+    case DmUtteranceScript.ambiguous:
+      return tr('expressionSectionVocabulary');
+  }
+}
+
+String _dmVocabHint(DmUtteranceScript s, String Function(String key) tr) {
+  switch (s) {
+    case DmUtteranceScript.japaneseHeavy:
+      return tr('expressionVocabAddHintKoNotebook');
+    case DmUtteranceScript.koreanHeavy:
+      return tr('expressionVocabAddHintKoFriend');
+    case DmUtteranceScript.ambiguous:
+      return tr('expressionVocabAddHint');
+  }
+}
+
+String _dmGeneratingLine(DmUtteranceScript s, String Function(String key) tr) {
+  return s == DmUtteranceScript.koreanHeavy ? tr('expressionDmGeneratingJaNotes') : tr('expressionDmGeneratingKoNotes');
+}
+
+String _dmFailedLine(DmUtteranceScript s, String Function(String key) tr) {
+  return s == DmUtteranceScript.koreanHeavy ? tr('expressionDmFailedJaNotes') : tr('expressionDmFailedKoNotes');
+}
+
+String _dmMissingAfterFailLine(DmUtteranceScript s, String Function(String key) tr) {
+  return s == DmUtteranceScript.koreanHeavy ? tr('expressionDmMissingAfterFailJa') : tr('expressionDmMissingAfterFailKo');
 }
 
 /// Bottom sheet: message, explanation, per-word [+] saves **that word only** (headword + gloss) to the word book.
@@ -50,6 +105,10 @@ Future<void> showChatExpressionSheet(
   String? chatRoomId,
 }) async {
   final messenger = ScaffoldMessenger.of(context);
+  final rootLang = context.read<LocaleNotifier>().languageCode;
+  final dmScript = character.isDirectMessage
+      ? resolveDmUtteranceScript(message.content, appLanguageCode: rootLang)
+      : null;
 
   await showModalBottomSheet<void>(
     context: context,
@@ -104,8 +163,11 @@ Future<void> showChatExpressionSheet(
                   child: IconButton(
                     icon: const Icon(Icons.flag, color: Colors.red, size: 20),
                     onPressed: () async {
-                      const String subject = '토모토모';
-                      final String body = '[신고문장]\n${message.content}\n\n[신고사유]\n';
+                      final subject = sheetContext.tr('expressionDmReportSubject');
+                      final bodyPrefix = dmScript == DmUtteranceScript.koreanHeavy
+                          ? sheetContext.tr('expressionDmReportBodyPrefixJa')
+                          : sheetContext.tr('expressionDmReportBodyPrefixKo');
+                      final body = '$bodyPrefix${message.content}\n\n${sheetContext.tr('expressionDmReportReasonLabel')}\n';
                       final Uri emailLaunchUri = Uri(
                         scheme: 'mailto',
                         path: 'dime0801001@gmail.com',
@@ -142,6 +204,7 @@ Future<void> showChatExpressionSheet(
               character: character,
               chatRoomId: chatRoomId,
               messenger: messenger,
+              dmScript: dmScript,
             ),
           ),
         ],
@@ -163,12 +226,14 @@ class _ExpressionSheetBody extends StatefulWidget {
   final Character character;
   final String? chatRoomId;
   final ScaffoldMessengerState messenger;
+  final DmUtteranceScript? dmScript;
 
   const _ExpressionSheetBody({
     required this.message,
     required this.character,
     required this.chatRoomId,
     required this.messenger,
+    required this.dmScript,
   });
 
   @override
@@ -178,12 +243,81 @@ class _ExpressionSheetBody extends StatefulWidget {
 class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
   final Set<int> _savedWordIndices = {};
   final Set<int> _savingIndices = {};
+  ChatMessage? _dmAnalysis;
+  bool _dmLoading = false;
+  String? _dmError;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.character.isDirectMessage && widget.dmScript != null) {
+      _dmLoading = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadDmAnalysis());
+    }
+  }
+
+  Future<void> _loadDmAnalysis() async {
+    if (!mounted || widget.dmScript == null) return;
+    setState(() {
+      _dmLoading = true;
+      _dmError = null;
+    });
+    try {
+      final appLang = context.read<LocaleNotifier>().languageCode;
+      final ai = context.read<AiChatRepository>();
+      final result = await ai.generateDmExpressionAnalysis(widget.message.content, appUiLanguageCode: appLang);
+      if (!mounted) return;
+      setState(() {
+        _dmAnalysis = result;
+        _dmLoading = false;
+        _dmError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _dmLoading = false;
+        _dmError = e.toString();
+      });
+    }
+  }
+
+  String? get _effectiveExplanation {
+    final fromAi = _dmAnalysis?.explanation?.trim();
+    if (fromAi != null && fromAi.isNotEmpty) return fromAi;
+    return widget.message.explanation?.trim();
+  }
+
+  List<Vocabulary>? get _effectiveVocabulary => _dmAnalysis?.vocabulary ?? widget.message.vocabulary;
+
+  bool get _explanationUsesHangul {
+    if (!widget.character.isDirectMessage) return widget.character.expectsKoreanStudyNotes;
+    return widget.dmScript == DmUtteranceScript.japaneseHeavy;
+  }
+
+  bool get _meaningStyleHangul => _explanationUsesHangul;
+
+  bool get _koPhraseVocabLayout {
+    return widget.character.koreanNationalPersona ||
+        (widget.character.isDirectMessage && widget.dmScript == DmUtteranceScript.koreanHeavy);
+  }
+
+  bool get _showJaSurfaceMeaningLabel {
+    if (!widget.character.isDirectMessage) return true;
+    return widget.dmScript == DmUtteranceScript.japaneseHeavy;
+  }
+
+  String _notebookLangForDm() {
+    if (widget.dmScript == DmUtteranceScript.koreanHeavy) return 'ko';
+    if (widget.dmScript == DmUtteranceScript.japaneseHeavy) return 'ja';
+    return widget.character.defaultNotebookLangForVocabSave;
+  }
 
   Future<void> _saveWordToNotebook(int index, Vocabulary v) async {
     if (_savedWordIndices.contains(index) || _savingIndices.contains(index)) return;
     final sheetContext = context;
     final repo = sheetContext.read<SavedExpressionRepository>();
-    final lang = widget.character.defaultNotebookLangForVocabSave;
+    final lang =
+        widget.character.isDirectMessage ? _notebookLangForDm() : widget.character.defaultNotebookLangForVocabSave;
     final snackText = lang == 'ko'
         ? sheetContext.trRead('wordAddedToNotebookKo')
         : sheetContext.trRead('wordAddedToNotebookJa');
@@ -225,7 +359,16 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final message = widget.message;
     final character = widget.character;
     final tr = sheetContext.tr;
-    final badgeKey = _expressionNoteBadgeKey(character);
+    final dm = widget.dmScript;
+    final badgeKey =
+        character.isDirectMessage && dm != null ? _dmBadgeKey(dm) : _expressionNoteBadgeKey(character);
+    final explanationHeading = character.isDirectMessage && dm != null
+        ? _dmExplanationHeading(dm, tr)
+        : _expressionExplanationHeading(character, tr);
+    final vocabHeading =
+        character.isDirectMessage && dm != null ? _dmVocabHeading(dm, tr) : _expressionVocabHeading(character, tr);
+    final vocabHint =
+        character.isDirectMessage && dm != null ? _dmVocabHint(dm, tr) : _expressionVocabHintLine(character, tr);
 
     final messageStyle = TextStyle(
       fontSize: 15,
@@ -237,13 +380,13 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       fontSize: 15,
       height: 1.55,
       color: Colors.grey[800],
-      fontFamily: character.expectsKoreanStudyNotes ? 'Pretendard' : null,
+      fontFamily: _explanationUsesHangul ? 'Pretendard' : null,
     );
     final meaningStyle = TextStyle(
       fontSize: 14,
       color: Colors.grey[700],
       height: 1.5,
-      fontFamily: character.expectsKoreanStudyNotes ? 'Pretendard' : null,
+      fontFamily: _meaningStyleHangul ? 'Pretendard' : null,
     );
     final wordStyle = TextStyle(
       fontSize: 17,
@@ -289,7 +432,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
             children: [
               Expanded(
                 child: Text(
-                  _expressionExplanationHeading(character, tr),
+                  explanationHeading,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -318,7 +461,54 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
           const SizedBox(height: 10),
           Builder(
             builder: (ctx) {
-              final exp = message.explanation?.trim();
+              if (character.isDirectMessage && dm != null && _dmLoading) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2.2, color: character.primaryColor),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _dmGeneratingLine(dm, tr),
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.45,
+                          color: Colors.grey.shade800,
+                          fontFamily: dm == DmUtteranceScript.koreanHeavy ? null : 'Pretendard',
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+              if (character.isDirectMessage && dm != null && _dmError != null) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${_dmFailedLine(dm, tr)}\n$_dmError',
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.45,
+                        color: Colors.red.shade800,
+                        fontFamily: dm == DmUtteranceScript.japaneseHeavy ? 'Pretendard' : null,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextButton.icon(
+                      onPressed: _loadDmAnalysis,
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: Text(tr('expressionDmRetry')),
+                    ),
+                  ],
+                );
+              }
+
+              final exp = _effectiveExplanation;
               if (exp != null && exp.isNotEmpty) {
                 return Container(
                   width: double.infinity,
@@ -329,6 +519,27 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                     border: Border.all(color: character.primaryColor.withValues(alpha: 0.2)),
                   ),
                   child: Text(exp, style: explanationStyle),
+                );
+              }
+              if (character.isDirectMessage && dm != null) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _dmMissingAfterFailLine(dm, tr),
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.45,
+                        color: Colors.orange.shade800,
+                        fontFamily: dm == DmUtteranceScript.japaneseHeavy ? 'Pretendard' : null,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _loadDmAnalysis,
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: Text(tr('expressionDmRetry')),
+                    ),
+                  ],
                 );
               }
               if (character.expectsKoreanStudyNotes) {
@@ -360,7 +571,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
           ),
           const SizedBox(height: 22),
           Text(
-            _expressionVocabHeading(character, tr),
+            vocabHeading,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -369,12 +580,12 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
           ),
           const SizedBox(height: 6),
           Text(
-            _expressionVocabHintLine(character, tr),
+            vocabHint,
             style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.35),
           ),
           const SizedBox(height: 12),
-          if (message.vocabulary != null && message.vocabulary!.isNotEmpty)
-            ...message.vocabulary!.asMap().entries.map((e) {
+          if (_effectiveVocabulary != null && _effectiveVocabulary!.isNotEmpty)
+            ..._effectiveVocabulary!.asMap().entries.map((e) {
               final i = e.key;
               final vocab = e.value;
               final done = _savedWordIndices.contains(i);
@@ -395,7 +606,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (character.koreanNationalPersona) ...[
+                              if (_koPhraseVocabLayout) ...[
                                 Text(vocab.word, style: koreanGlossHeadlineStyle),
                                 if (vocab.reading != null && vocab.reading!.trim().isNotEmpty) ...[
                                   const SizedBox(height: 4),
@@ -442,7 +653,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                                       ),
                                   ],
                                 ),
-                                if (!character.isDirectMessage) ...[
+                                if (_showJaSurfaceMeaningLabel) ...[
                                   const SizedBox(height: 4),
                                   Text(
                                     character.expectsKoreanStudyNotes
@@ -499,6 +710,18 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                 ),
               );
             })
+          else if (character.isDirectMessage && dm != null && (_dmLoading || _dmError != null))
+            const SizedBox.shrink()
+          else if (character.isDirectMessage && dm != null)
+            Text(
+              dm == DmUtteranceScript.koreanHeavy ? tr('expressionMissingVocabularyJa') : tr('expressionMissingVocabulary'),
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.45,
+                color: Colors.orange.shade800,
+                fontFamily: dm == DmUtteranceScript.japaneseHeavy ? 'Pretendard' : null,
+              ),
+            )
           else if (character.expectsKoreanStudyNotes)
             Text(
               tr('expressionMissingVocabulary'),
