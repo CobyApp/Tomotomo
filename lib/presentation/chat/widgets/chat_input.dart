@@ -7,6 +7,8 @@ class ChatInput extends StatelessWidget {
   final VoidCallback onSend;
   final bool isGenerating;
   final Character character;
+  final bool canSendMessage;
+  final String? hintOverride;
 
   const ChatInput({
     super.key,
@@ -14,6 +16,8 @@ class ChatInput extends StatelessWidget {
     required this.onSend,
     required this.isGenerating,
     required this.character,
+    this.canSendMessage = true,
+    this.hintOverride,
   });
 
   @override
@@ -47,8 +51,9 @@ class ChatInput extends StatelessWidget {
                 ),
                 child: TextField(
                   controller: controller,
+                  readOnly: !canSendMessage,
                   decoration: InputDecoration(
-                    hintText: context.tr('chatInputHint'),
+                    hintText: hintOverride ?? context.tr('chatInputHint'),
                     hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: 0.55), fontSize: 15),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -56,7 +61,9 @@ class ChatInput extends StatelessWidget {
                   style: TextStyle(fontSize: 15.5, color: scheme.onSurface),
                   maxLines: null,
                   textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => onSend(),
+                  onSubmitted: (_) {
+                    if (canSendMessage) onSend();
+                  },
                 ),
               ),
             ),
@@ -66,7 +73,7 @@ class ChatInput extends StatelessWidget {
               borderRadius: BorderRadius.circular(22),
               elevation: 0,
               child: InkWell(
-                onTap: isGenerating ? null : onSend,
+                onTap: (isGenerating || !canSendMessage) ? null : onSend,
                 borderRadius: BorderRadius.circular(22),
                 child: SizedBox(
                   width: 44,

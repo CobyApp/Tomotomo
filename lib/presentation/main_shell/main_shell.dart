@@ -21,14 +21,16 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
   final GlobalKey<WordBookScreenState> _wordBookKey = GlobalKey<WordBookScreenState>();
+  final GlobalKey<FriendsTabState> _friendsTabKey = GlobalKey<FriendsTabState>();
+  final GlobalKey<ChatsTabState> _chatsTabKey = GlobalKey<ChatsTabState>();
   late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
     _pages = [
-      const FriendsTab(),
-      const ChatsTab(),
+      FriendsTab(key: _friendsTabKey),
+      ChatsTab(key: _chatsTabKey),
       const AddFriendTab(),
       WordBookScreen(key: _wordBookKey),
       const SettingsTab(),
@@ -63,6 +65,12 @@ class _MainShellState extends State<MainShell> {
         selectedIndex: _index,
         onDestinationSelected: (i) {
           setState(() => _index = i);
+          if (i == 0) {
+            _friendsTabKey.currentState?.reloadFromTabSelection();
+          }
+          if (i == 1) {
+            _chatsTabKey.currentState?.reloadFromTabSelection();
+          }
           if (i == 3) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _wordBookKey.currentState?.reloadWhenTabSelected();

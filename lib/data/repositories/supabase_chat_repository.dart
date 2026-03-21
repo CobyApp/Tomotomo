@@ -40,7 +40,33 @@ class SupabaseChatRepository implements ChatRepository {
         .where((s) => s.lastMessageAt != null)
         .toList();
     summaries = await _roomsWithAtLeastOneUserMessage(summaries);
+    final hiddenDmPeers = await _dmPeerUserIdsHiddenByBlocks(user.id);
+    if (hiddenDmPeers.isNotEmpty) {
+      summaries = summaries.where((s) {
+        if (!s.isDm) return true;
+        final o = s.otherParticipantUserId(user.id);
+        return o == null || !hiddenDmPeers.contains(o);
+      }).toList();
+    }
     return await _enrichRoomsForDisplay(summaries, user.id);
+  }
+
+  /// Peers involved in any block row with the current user (hide DM rooms with them).
+  Future<Set<String>> _dmPeerUserIdsHiddenByBlocks(String me) async {
+    try {
+      final res = await AppSupabase.client.from('user_blocks').select('blocker_id, blocked_id');
+      final hidden = <String>{};
+      for (final row in res as List<dynamic>) {
+        final m = Map<String, dynamic>.from(row as Map);
+        final b = m['blocker_id'].toString();
+        final d = m['blocked_id'].toString();
+        if (b == me) hidden.add(d);
+        if (d == me) hidden.add(b);
+      }
+      return hidden;
+    } catch (_) {
+      return {};
+    }
   }
 
   /// Hides rooms where only assistant/system messages exist (e.g. legacy auto-welcome).

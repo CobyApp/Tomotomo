@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/chat_theme_data.dart';
+import '../../domain/entities/block_relation.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
+import '../../domain/repositories/friends_repository.dart';
 import '../locale/l10n_context.dart';
 import 'chat_viewmodel.dart';
 import 'voice_call_screen.dart';
@@ -33,6 +35,9 @@ class _ChatScreenState extends State<ChatScreen>
   late AnimationController _controller;
   final ScrollController _scrollController = ScrollController();
   late final ChatViewModel _viewModel;
+  bool _dmSocialLoaded = false;
+  bool _dmOutgoingFriend = false;
+  BlockRelation _dmBlock = BlockRelation.none;
 
   @override
   void initState() {
@@ -48,8 +53,75 @@ class _ChatScreenState extends State<ChatScreen>
     )..forward();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+      unawaited(_loadDmSocialState());
     });
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  Future<void> _loadDmSocialState() async {
+    if (!widget.character.isDirectMessage) return;
+    final peer = widget.character.id;
+    try {
+      final friends = context.read<FriendsRepository>();
+      final out = await friends.isOutgoingFriend(peer);
+      final blk = await friends.blockRelationWith(peer);
+      if (!mounted) return;
+      setState(() {
+        _dmOutgoingFriend = out;
+        _dmBlock = blk;
+        _dmSocialLoaded = true;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _dmSocialLoaded = true);
+    }
+  }
+
+  Future<void> _dmAddFriend() async {
+    final peer = widget.character.id;
+    try {
+      await context.read<FriendsRepository>().addFriendById(peer);
+      if (!mounted) return;
+      setState(() => _dmOutgoingFriend = true);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('friendsAdded'))));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  Future<void> _dmConfirmBlock() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.tr('dmBlockConfirmTitle')),
+        content: Text(context.tr('dmBlockConfirmBody')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.tr('cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.tr('dmStrangerBlock'))),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await context.read<FriendsRepository>().blockUser(widget.character.id);
+      if (!mounted) return;
+      setState(() => _dmBlock = const BlockRelation(anyBlock: true, iBlockedThem: true, theyBlockedMe: false));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  Future<void> _dmUnblock() async {
+    try {
+      await context.read<FriendsRepository>().unblockUser(widget.character.id);
+      if (!mounted) return;
+      setState(() => _dmBlock = BlockRelation.none);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('dmUnblock'))));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
   }
 
   @override
@@ -67,6 +139,13 @@ class _ChatScreenState extends State<ChatScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDm = widget.character.isDirectMessage;
+    final showStrangerBanner = isDm && _dmSocialLoaded && !_dmBlock.anyBlock && !_dmOutgoingFriend;
+    final showBlockedByMe = isDm && _dmSocialLoaded && _dmBlock.iBlockedThem;
+    final showBlockedByThem = isDm && _dmSocialLoaded && _dmBlock.theyBlockedMe;
+    final canSendDm = !isDm || !_dmBlock.anyBlock;
+    final voiceOk = !isDm || !_dmBlock.anyBlock;
+
     return ChangeNotifierProvider<ChatViewModel>.value(
       value: _viewModel,
       child: Consumer<ChatViewModel>(
@@ -76,6 +155,7 @@ class _ChatScreenState extends State<ChatScreen>
             scrollController: _scrollController,
             chatRoomId: viewModel.chatRoomId,
             onResetPressed: (context) => _showResetDialog(context, viewModel),
+            voiceEnabled: voiceOk,
             onVoiceCallPressed: () async {
               await Navigator.push<void>(
                 context,
@@ -89,6 +169,14 @@ class _ChatScreenState extends State<ChatScreen>
               );
               if (mounted) _viewModel.onAppResumedSync();
             },
+            showDmStrangerBanner: showStrangerBanner,
+            showDmBlockedByMeBanner: showBlockedByMe,
+            showDmBlockedByThemBanner: showBlockedByThem,
+            onDmAddFriend: _dmAddFriend,
+            onDmBlock: _dmConfirmBlock,
+            onDmUnblock: _dmUnblock,
+            canSendMessage: canSendDm,
+            messageHintOverride: canSendDm ? null : context.trRead('dmInputBlockedHint'),
           );
         },
       ),
@@ -262,14 +350,32 @@ class _ChatScreenContent extends StatelessWidget {
   final ScrollController scrollController;
   final String? chatRoomId;
   final Function(BuildContext) onResetPressed;
+  final bool voiceEnabled;
   final Future<void> Function() onVoiceCallPressed;
+  final bool showDmStrangerBanner;
+  final bool showDmBlockedByMeBanner;
+  final bool showDmBlockedByThemBanner;
+  final Future<void> Function() onDmAddFriend;
+  final Future<void> Function() onDmBlock;
+  final Future<void> Function() onDmUnblock;
+  final bool canSendMessage;
+  final String? messageHintOverride;
 
   const _ChatScreenContent({
     required this.character,
     required this.scrollController,
     required this.chatRoomId,
     required this.onResetPressed,
+    required this.voiceEnabled,
     required this.onVoiceCallPressed,
+    required this.showDmStrangerBanner,
+    required this.showDmBlockedByMeBanner,
+    required this.showDmBlockedByThemBanner,
+    required this.onDmAddFriend,
+    required this.onDmBlock,
+    required this.onDmUnblock,
+    required this.canSendMessage,
+    required this.messageHintOverride,
   });
 
   void _scrollToBottom() {
@@ -338,11 +444,12 @@ class _ChatScreenContent extends StatelessWidget {
           ],
         ),
         actions: [
-          IconButton(
-            tooltip: context.tr('voiceCallTooltip'),
-            icon: Icon(Icons.phone_in_talk_rounded, color: scheme.primary),
-            onPressed: () => unawaited(onVoiceCallPressed()),
-          ),
+          if (voiceEnabled)
+            IconButton(
+              tooltip: context.tr('voiceCallTooltip'),
+              icon: Icon(Icons.phone_in_talk_rounded, color: scheme.primary),
+              onPressed: () => unawaited(onVoiceCallPressed()),
+            ),
           if (!character.isDirectMessage)
             IconButton(
               icon: Icon(Icons.refresh_rounded, color: scheme.primary),
@@ -354,6 +461,16 @@ class _ChatScreenContent extends StatelessWidget {
         onTap: () => FocusScope.of(context).unfocus(),
         child: Column(
           children: [
+            if (showDmStrangerBanner)
+              _DmStrangerBanner(
+                onAddFriend: () => unawaited(onDmAddFriend()),
+                onBlock: () => unawaited(onDmBlock()),
+              ),
+            if (showDmBlockedByMeBanner)
+              _DmBlockedByMeBanner(
+                onUnblock: () => unawaited(onDmUnblock()),
+              ),
+            if (showDmBlockedByThemBanner) const _DmBlockedByThemBanner(),
             Expanded(
               child: Consumer<ChatViewModel>(
                 builder: (context, viewModel, child) {
@@ -379,8 +496,119 @@ class _ChatScreenContent extends StatelessWidget {
                   },
                   isGenerating: viewModel.isGenerating,
                   character: character,
+                  canSendMessage: canSendMessage && !viewModel.isGenerating,
+                  hintOverride: messageHintOverride,
                 );
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DmStrangerBanner extends StatelessWidget {
+  const _DmStrangerBanner({required this.onAddFriend, required this.onBlock});
+
+  final VoidCallback onAddFriend;
+  final VoidCallback onBlock;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.secondaryContainer.withValues(alpha: 0.7),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline_rounded, size: 20, color: scheme.onSecondaryContainer),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    context.tr('dmStrangerBanner'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSecondaryContainer,
+                          height: 1.35,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.end,
+              children: [
+                TextButton(onPressed: onBlock, child: Text(context.tr('dmStrangerBlock'))),
+                FilledButton(onPressed: onAddFriend, child: Text(context.tr('dmStrangerAddFriend'))),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DmBlockedByMeBanner extends StatelessWidget {
+  const _DmBlockedByMeBanner({required this.onUnblock});
+
+  final VoidCallback onUnblock;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.errorContainer.withValues(alpha: 0.5),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        child: Row(
+          children: [
+            Icon(Icons.block, size: 20, color: scheme.onErrorContainer),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                context.tr('dmBlockedByMeBanner'),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onErrorContainer, height: 1.35),
+              ),
+            ),
+            TextButton(
+              onPressed: onUnblock,
+              child: Text(context.tr('dmUnblock')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DmBlockedByThemBanner extends StatelessWidget {
+  const _DmBlockedByThemBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        child: Row(
+          children: [
+            Icon(Icons.shield_outlined, size: 20, color: scheme.onSurfaceVariant),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                context.tr('dmBlockedByThemBanner'),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
+              ),
             ),
           ],
         ),

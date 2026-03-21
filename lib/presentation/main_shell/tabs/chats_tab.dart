@@ -21,10 +21,15 @@ class ChatsTab extends StatefulWidget {
   const ChatsTab({super.key});
 
   @override
-  State<ChatsTab> createState() => _ChatsTabState();
+  ChatsTabState createState() => ChatsTabState();
 }
 
-class _ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppResumedMixin {
+class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppResumedMixin {
+  /// Bottom nav selected this tab — refresh room list (e.g. after block / new DM).
+  void reloadFromTabSelection() {
+    unawaited(_load(silent: true));
+  }
+
   List<ChatRoomSummary> _rooms = [];
   bool _loading = true;
   String? _error;

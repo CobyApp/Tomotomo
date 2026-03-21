@@ -10,9 +10,8 @@ import '../../core/supabase/app_supabase.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../locale/l10n_context.dart';
-import '../locale/locale_notifier.dart';
 
-/// Edit current user's profile (display name, gallery avatar, status, app language).
+/// Edit current user's profile (display name, gallery avatar, status). App language: Settings.
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
 
@@ -26,7 +25,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Profile? _profile;
   String? _avatarUrl;
-  String _appLanguage = 'ko';
   bool _loading = true;
   bool _saving = false;
   bool _uploadingAvatar = false;
@@ -80,7 +78,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       _avatarUrl = p.avatarUrl;
       setState(() {
         _profile = p;
-        _appLanguage = p.appLanguage == 'ja' ? 'ja' : 'ko';
         _loading = false;
         _error = null;
       });
@@ -110,7 +107,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         _avatarUrl = url;
         _uploadingAvatar = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('avatarUploadDone'))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('avatarUploadDone'))));
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -126,7 +123,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     if (profile == null || user == null) return;
     final name = _displayNameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = context.tr('displayNameRequired'));
+      setState(() => _error = context.trRead('displayNameRequired'));
       return;
     }
     setState(() {
@@ -143,17 +140,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         displayName: name,
         avatarUrl: avatar == null || avatar.isEmpty ? null : avatar,
         statusMessage: status.isEmpty ? null : status,
-        appLanguage: _appLanguage,
+        appLanguage: profile.appLanguage,
         learningLanguage: profile.learningLanguage,
         createdAt: profile.createdAt,
         updatedAt: profile.updatedAt,
       );
       await repo.updateProfile(updated);
       if (!mounted) return;
-      await context.read<LocaleNotifier>().loadFromProfile(user.id);
-      if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('profileEditSaved'))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('profileEditSaved'))));
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
@@ -319,35 +314,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ),
             maxLines: 2,
             textCapitalization: TextCapitalization.sentences,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            context.tr('profileAppLanguageTitle'),
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            context.tr('profileAppLanguageSubtitle'),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            margin: EdgeInsets.zero,
-            child: Column(
-              children: [
-                ListTile(
-                  title: Text(context.tr('langJa')),
-                  trailing: _appLanguage == 'ja' ? Icon(Icons.check_circle, color: scheme.primary) : null,
-                  onTap: () => setState(() => _appLanguage = 'ja'),
-                ),
-                Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.35)),
-                ListTile(
-                  title: Text(context.tr('langKo')),
-                  trailing: _appLanguage == 'ko' ? Icon(Icons.check_circle, color: scheme.primary) : null,
-                  onTap: () => setState(() => _appLanguage = 'ko'),
-                ),
-              ],
-            ),
           ),
           const SizedBox(height: 20),
           Text(

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/supabase/app_supabase.dart';
 import '../../auth/auth_state.dart';
 import '../../locale/l10n_context.dart';
+import '../../settings/blocked_users_screen.dart';
 import '../../settings/language_settings_screen.dart';
 import '../../settings/profile_edit_screen.dart';
 import '../../settings/theme_settings_screen.dart';
@@ -66,6 +67,20 @@ class SettingsTab extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => const LanguageSettingsScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.block_outlined),
+            title: Text(context.tr('settingsBlockedUsers')),
+            subtitle: Text(context.tr('settingsBlockedUsersSubtitle')),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const BlockedUsersScreen(),
                 ),
               );
             },

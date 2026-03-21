@@ -21,10 +21,15 @@ class FriendsTab extends StatefulWidget {
   const FriendsTab({super.key});
 
   @override
-  State<FriendsTab> createState() => _FriendsTabState();
+  FriendsTabState createState() => FriendsTabState();
 }
 
-class _FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnAppResumedMixin {
+class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnAppResumedMixin {
+  /// Called when the bottom nav selects the Friends tab (refresh lists).
+  void reloadFromTabSelection() {
+    unawaited(_load(silent: true));
+  }
+
   List<FriendSummary> _friends = [];
   List<CharacterRecord> _myCharacters = [];
   bool _loading = true;
