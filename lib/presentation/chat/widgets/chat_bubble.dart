@@ -1,7 +1,10 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+
 import '../../../../core/theme/chat_theme_data.dart';
 import '../../../../domain/entities/character.dart';
 import '../../../../domain/entities/chat_message.dart';
+import '../../locale/l10n_context.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
@@ -19,6 +22,15 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final voiceUrl = DmVoiceMessage.parsePublicUrl(message.content);
+    if (voiceUrl != null) {
+      return _DmVoiceBubbleRow(
+        url: voiceUrl,
+        character: character,
+        isUser: isUser,
+      );
+    }
+
     final scheme = Theme.of(context).colorScheme;
     final chatTheme = Theme.of(context).extension<ChatThemeData>();
     final userBubbleColor = chatTheme?.userBubble ?? scheme.primary;
@@ -114,6 +126,137 @@ class ChatBubble extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DmVoiceBubbleRow extends StatefulWidget {
+  final String url;
+  final Character character;
+  final bool isUser;
+
+  const _DmVoiceBubbleRow({
+    required this.url,
+    required this.character,
+    required this.isUser,
+  });
+
+  @override
+  State<_DmVoiceBubbleRow> createState() => _DmVoiceBubbleRowState();
+}
+
+class _DmVoiceBubbleRowState extends State<_DmVoiceBubbleRow> {
+  final AudioPlayer _player = AudioPlayer();
+  PlayerState _state = PlayerState.stopped;
+
+  @override
+  void initState() {
+    super.initState();
+    _player.onPlayerStateChanged.listen((s) {
+      if (mounted) setState(() => _state = s);
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggle() async {
+    if (_state == PlayerState.playing) {
+      await _player.stop();
+      return;
+    }
+    await _player.play(UrlSource(widget.url));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final chatTheme = Theme.of(context).extension<ChatThemeData>();
+    final userBubbleColor = chatTheme?.userBubble ?? scheme.primary;
+    final botBubbleColor = chatTheme?.botBubble ?? scheme.surfaceContainerHigh;
+    final bubbleColor = widget.isUser ? userBubbleColor : botBubbleColor;
+    final fg = bubbleColor.computeLuminance() > 0.55 ? scheme.onSurface : Colors.white;
+
+    final bubbleRadius = BorderRadius.only(
+      topLeft: const Radius.circular(22),
+      topRight: const Radius.circular(22),
+      bottomLeft: Radius.circular(widget.isUser ? 22 : 6),
+      bottomRight: Radius.circular(widget.isUser ? 6 : 22),
+    );
+
+    final playing = _state == PlayerState.playing;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      child: Row(
+        mainAxisAlignment: widget.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!widget.isUser) ...[
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: scheme.surfaceContainerHighest,
+              backgroundImage: widget.character.hasAvatar ? widget.character.imageProvider : null,
+              child: !widget.character.hasAvatar
+                  ? Text(
+                      widget.character.displayNamePrimary.isNotEmpty
+                          ? widget.character.displayNamePrimary.substring(0, 1)
+                          : '?',
+                      style: TextStyle(fontSize: 13, color: scheme.primary),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 10),
+          ],
+          Material(
+            color: bubbleColor,
+            borderRadius: bubbleRadius,
+            elevation: 0,
+            child: InkWell(
+              onTap: _toggle,
+              borderRadius: bubbleRadius,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  borderRadius: bubbleRadius,
+                  border: widget.isUser
+                      ? null
+                      : Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      playing ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                      color: fg,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      context.tr('dmVoiceMessageLabel'),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: fg,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

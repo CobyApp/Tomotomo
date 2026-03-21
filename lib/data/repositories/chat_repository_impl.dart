@@ -38,4 +38,9 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<void> deleteRoom(String roomId) async {}
+
+  @override
+  Future<void> sendDirectMessageVoiceNote(Character character, String localAudioPath) async {
+    throw UnsupportedError('Direct message voice requires Supabase');
+  }
 }

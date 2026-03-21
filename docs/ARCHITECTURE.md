@@ -1,10 +1,10 @@
 # Tomotomo v2 — Architecture & Feature Plan
 
 ## Overview
-Line/KakaoTalk-style language learning app with Supabase backend: auth, custom characters, chat, voice calls, expression notebook, themes, and sharing.
+Line/KakaoTalk-style language learning app with Supabase backend: auth, custom characters, chat, voice chat, expression notebook, themes, and sharing.
 
 ### Implemented slice (current repo)
-Auth, profiles, custom characters + discover, Supabase-backed AI chat & DM, friends (UUID), expression notebook, themes, Storage avatars/backgrounds, Realtime for `chat_messages` / `chat_rooms`, app-resume silent refresh (main tabs + open chat screen). **Not in this slice:** push notifications, voice calls, email/username friend discovery, read receipts.
+Auth, profiles, custom characters + discover, Supabase-backed AI chat & DM, friends (UUID), expression notebook, themes, Storage avatars/backgrounds, Realtime for `chat_messages` / `chat_rooms`, app-resume silent refresh (main tabs + open chat screen). **Not in this slice:** push notifications, voice chat, email/username friend discovery, read receipts.
 
 ## App lifecycle
 - Main tabs (**Friends**, **Chats**, **Characters**) use `OnAppResumedMixin` (`lib/core/widgets/on_app_resumed_mixin.dart`): on `AppLifecycleState.resumed`, run a **silent** list reload to catch changes missed while backgrounded (complements Realtime).
@@ -102,7 +102,7 @@ Auth, profiles, custom characters + discover, Supabase-backed AI chat & DM, frie
 - [x] Character list: my characters + public discover
 
 ### Phase 3 — Voice & UX
-- [x] Device STT + TTS (`speech_to_text`, `flutter_tts`): **Voice call screen** from AI character chat (hold mic → same Supabase messages as text chat; assistant line read aloud in Japanese)
+- [x] Device STT + TTS (`speech_to_text`, `flutter_tts`): **Voice chat screen** from AI character chat (hold mic → same Supabase messages as text chat; assistant line read aloud in Japanese)
 - [ ] Rich call UI (waveform, expression sheet during call)
 - [ ] Call summary and save expressions
 

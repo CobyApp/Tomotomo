@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -189,6 +190,23 @@ class ChatViewModel extends ChangeNotifier {
     if (userMessage.isEmpty || _isGenerating) return;
     messageController.clear();
     await _sendUserMessage(userMessage);
+  }
+
+  /// Records a DM voice clip (file from [AudioRecorder]); uploads then reloads messages.
+  Future<String?> sendDmVoiceFile(String localPath) async {
+    if (!character.isDirectMessage || _disposed) return null;
+    try {
+      await chatRepository.sendDirectMessageVoiceNote(character, localPath);
+      try {
+        final f = File(localPath);
+        if (await f.exists()) await f.delete();
+      } catch (_) {}
+      if (!_disposed) await _reloadMessagesFromServer();
+      return null;
+    } catch (e) {
+      debugPrint('sendDmVoiceFile failed: $e');
+      return e.toString();
+    }
   }
 
   Future<void> _sendUserMessage(String userMessage) async {

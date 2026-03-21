@@ -246,3 +246,18 @@ class Vocabulary {
     return Vocabulary(word: word, reading: reading, meaning: meaning);
   }
 }
+
+/// DM voice clips in Storage; [ChatMessage.content] is [prefix] + public URL.
+abstract final class DmVoiceMessage {
+  static const String prefix = 'dm_voice:';
+
+  static bool isVoiceContent(String content) => content.startsWith(prefix);
+
+  static String? parsePublicUrl(String content) {
+    if (!isVoiceContent(content)) return null;
+    final u = content.substring(prefix.length).trim();
+    return u.isEmpty ? null : u;
+  }
+
+  static String wrapPublicUrl(String url) => '$prefix$url';
+}

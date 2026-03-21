@@ -67,7 +67,7 @@ cp .env.example .env
 8. `20250320800000_profile_status_character_tagline_search.sql` — 프로필 상태 메시지·캐릭터 tagline·가입 메타데이터 트리거·친구 목록 확장·닉네임 검색 RPC (`search_profiles_by_nickname`)
 9. `20250320900000_search_accessible_characters.sql` — 내 캐릭터·공개 캐릭터 이름 검색 RPC (`search_accessible_characters`, 친구 탭 캐릭터 탭용)
 
-이 순서까지 적용하면 **인증·캐릭터·AI 채팅·친구·DM·목록/메시지 실시간·앱 복귀 시 동기화**까지 앱이 기대하는 백엔드가 갖춰집니다. 이후는 푸시 알림·음성 통화·이메일로 친구 찾기 등을 단계적으로 붙이면 됩니다.
+이 순서까지 적용하면 **인증·캐릭터·AI 채팅·친구·DM·목록/메시지 실시간·앱 복귀 시 동기화**까지 앱이 기대하는 백엔드가 갖춰집니다. 이후는 푸시 알림·음성채팅·이메일로 친구 찾기 등을 단계적으로 붙이면 됩니다.
 
 #### 로그인/가입 시 `Failed host lookup: '…supabase.co'`
 

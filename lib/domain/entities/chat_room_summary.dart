@@ -23,6 +23,9 @@ class ChatRoomSummary {
   /// Built-in character avatar from app assets.
   final String? avatarAssetPath;
 
+  /// Latest `chat_messages.content` for list preview (raw; UI may shorten / localize).
+  final String? lastMessageContent;
+
   const ChatRoomSummary({
     required this.roomId,
     required this.title,
@@ -35,6 +38,7 @@ class ChatRoomSummary {
     this.peerUserId,
     this.avatarNetworkUrl,
     this.avatarAssetPath,
+    this.lastMessageContent,
   });
 
   bool get isDm => roomType == 'dm';
@@ -50,6 +54,7 @@ class ChatRoomSummary {
     String? titleSecondary,
     String? avatarNetworkUrl,
     String? avatarAssetPath,
+    String? lastMessageContent,
   }) {
     return ChatRoomSummary(
       roomId: roomId,
@@ -63,6 +68,7 @@ class ChatRoomSummary {
       peerUserId: peerUserId,
       avatarNetworkUrl: avatarNetworkUrl ?? this.avatarNetworkUrl,
       avatarAssetPath: avatarAssetPath ?? this.avatarAssetPath,
+      lastMessageContent: lastMessageContent ?? this.lastMessageContent,
     );
   }
 
@@ -82,6 +88,7 @@ class ChatRoomSummary {
       peerUserId: row['peer_user_id'] as String?,
       avatarNetworkUrl: null,
       avatarAssetPath: null,
+      lastMessageContent: null,
     );
   }
 }

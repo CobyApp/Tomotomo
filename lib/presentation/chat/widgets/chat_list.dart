@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/supabase/app_supabase.dart';
 import '../../../../domain/entities/character.dart';
-import '../../../../domain/entities/chat_message.dart';
+import '../../../../domain/entities/chat_message.dart' show ChatMessage, DmVoiceMessage;
 import '../chat_expression_sheet.dart';
 import 'chat_bubble.dart';
 
@@ -50,7 +50,8 @@ class _ChatListState extends State<ChatList> {
         }
         final message = widget.messages[index];
         final isUser = _isFromCurrentUser(message);
-        final showExpression = widget.character.isDirectMessage || message.role != 'user';
+        final showExpression = !DmVoiceMessage.isVoiceContent(message.content) &&
+            (widget.character.isDirectMessage || message.role != 'user');
         return ChatBubble(
           message: message,
           character: widget.character,

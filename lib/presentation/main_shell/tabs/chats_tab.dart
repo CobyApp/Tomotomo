@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/app_supabase.dart';
 import '../../../core/widgets/on_app_resumed_mixin.dart';
+import '../../../domain/entities/chat_message.dart';
 import '../../../domain/entities/chat_room_summary.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
 import '../../../domain/repositories/chat_repository.dart';
@@ -172,6 +173,7 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
 
   Widget _chatRoomCard(BuildContext context, ChatRoomSummary r) {
     final scheme = Theme.of(context).colorScheme;
+    final timeText = _listTimeLabel(context, r.lastMessageAt);
     return Material(
       color: scheme.surface,
       borderRadius: BorderRadius.circular(20),
@@ -186,43 +188,77 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _roomLeading(r),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        r.title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              r.title,
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (timeText.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              timeText,
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                            ),
+                          ],
+                        ],
                       ),
-                      if (r.titleSecondary != null && r.titleSecondary!.trim().isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          r.titleSecondary!.trim(),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
-                        _subtitle(context, r),
+                        _messagePreview(context, r),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  String _messagePreview(BuildContext context, ChatRoomSummary r) {
+    final raw = r.lastMessageContent;
+    if (raw == null || raw.trim().isEmpty) return context.tr('chatsListNoPreview');
+    final t = raw.trim();
+    if (DmVoiceMessage.isVoiceContent(t)) return context.tr('dmVoiceMessageLabel');
+    return t;
+  }
+
+  /// Kakao/iMessage-style relative time on the list row.
+  String _listTimeLabel(BuildContext context, DateTime? t) {
+    if (t == null) return '';
+    final loc = Localizations.localeOf(context).toString();
+    final now = DateTime.now();
+    final d = t.toLocal();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final msgStart = DateTime(d.year, d.month, d.day);
+    final diffDays = todayStart.difference(msgStart).inDays;
+    if (diffDays == 0) return DateFormat.Hm(loc).format(d);
+    if (diffDays == 1) return context.tr('chatsTimeYesterday');
+    if (diffDays < 7) return DateFormat.E(loc).format(d);
+    if (d.year == now.year) return DateFormat.Md(loc).format(d);
+    return DateFormat.yMd(loc).format(d);
   }
 
   Future<bool?> _confirmDeleteRoom(BuildContext context, ChatRoomSummary r) {
@@ -283,13 +319,6 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
         child: _chatRoomCard(context, r),
       ),
     );
-  }
-
-  String _subtitle(BuildContext context, ChatRoomSummary r) {
-    final t = r.lastMessageAt;
-    if (t == null) return context.tr('chatsNewChat');
-    final loc = Localizations.localeOf(context).toString();
-    return DateFormat.yMMMd(loc).add_jm().format(t.toLocal());
   }
 
   Future<void> _openRoom(ChatRoomSummary room) async {

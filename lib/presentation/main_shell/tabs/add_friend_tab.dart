@@ -1,11 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/supabase/app_supabase.dart';
-import '../../../domain/entities/block_relation.dart';
 import '../../../domain/entities/character_record.dart';
 import '../../../domain/entities/character.dart';
 import '../../../domain/entities/user_profile_search_result.dart';
@@ -13,7 +11,6 @@ import '../../../domain/repositories/character_record_repository.dart';
 import '../../../domain/repositories/chat_repository.dart';
 import '../../../domain/repositories/friends_repository.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
-import '../../../domain/repositories/profile_repository.dart';
 import '../../chat/chat_screen.dart';
 import '../../locale/l10n_context.dart';
 
@@ -341,7 +338,7 @@ class _AddFriendPeoplePanelState extends State<AddFriendPeoplePanel> {
   }
 }
 
-/// Bottom sheet: user info + chat / add / remove / copy ID.
+/// Minimal sheet: avatar, display name, status, add-friend (or “already friend”).
 class FriendSearchUserProfileSheet extends StatefulWidget {
   const FriendSearchUserProfileSheet({
     super.key,
@@ -361,74 +358,11 @@ class FriendSearchUserProfileSheet extends StatefulWidget {
 class _FriendSearchUserProfileSheetState extends State<FriendSearchUserProfileSheet> {
   late bool _isFriend;
   bool _busy = false;
-  BlockRelation _block = BlockRelation.none;
-  bool _blockLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _isFriend = widget.initialIsFriend;
-    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_loadBlockRelation()));
-  }
-
-  Future<void> _loadBlockRelation() async {
-    try {
-      final rel = await context.read<FriendsRepository>().blockRelationWith(widget.profile.userId);
-      if (!mounted) return;
-      setState(() {
-        _block = rel;
-        _blockLoaded = true;
-      });
-    } catch (_) {
-      if (mounted) setState(() => _blockLoaded = true);
-    }
-  }
-
-  Future<void> _confirmBlock() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.tr('dmBlockConfirmTitle')),
-        content: Text(context.tr('dmBlockConfirmBody')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.tr('cancel'))),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.tr('dmStrangerBlock'))),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
-    setState(() => _busy = true);
-    try {
-      await context.read<FriendsRepository>().blockUser(widget.profile.userId);
-      if (!mounted) return;
-      setState(() {
-        _block = const BlockRelation(anyBlock: true, iBlockedThem: true, theyBlockedMe: false);
-        _busy = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('friendsSearchBlockedDone'))));
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-    }
-  }
-
-  Future<void> _unblockFromSheet() async {
-    setState(() => _busy = true);
-    try {
-      await context.read<FriendsRepository>().unblockUser(widget.profile.userId);
-      if (!mounted) return;
-      setState(() {
-        _block = BlockRelation.none;
-        _busy = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('dmUnblock'))));
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-    }
   }
 
   Future<void> _add() async {
@@ -447,193 +381,64 @@ class _FriendSearchUserProfileSheetState extends State<FriendSearchUserProfileSh
     }
   }
 
-  Future<void> _remove() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.tr('friendsRemoveConfirm')),
-        content: Text(widget.profile.title),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.tr('cancel'))),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.tr('friendsSearchRemoveFriend'))),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
-    setState(() => _busy = true);
-    try {
-      await context.read<FriendsRepository>().removeFriend(widget.profile.userId);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('friendsRemoved'))));
-      await widget.reloadFriendIds();
-      if (mounted) setState(() => _isFriend = false);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _openChat() async {
-    final rootCtx = context;
-    final chatRepo = rootCtx.read<ChatRepository>();
-    final aiRepo = rootCtx.read<AiChatRepository>();
-    final r = widget.profile;
-    try {
-      final roomId = await chatRepo.ensureDmRoom(r.userId);
-      if (!rootCtx.mounted) return;
-      final fetched = await rootCtx.read<ProfileRepository>().getProfile(r.userId);
-      if (!rootCtx.mounted) return;
-      final name = fetched?.displayName?.trim().isNotEmpty == true ? fetched!.displayName! : r.title;
-      final character = Character.forDirectMessage(
-        peerUserId: r.userId,
-        roomId: roomId,
-        displayName: name,
-        email: fetched?.email,
-        avatarUrl: fetched?.avatarUrl ?? r.avatarUrl,
-      );
-      Navigator.pop(rootCtx);
-      await Navigator.push<void>(
-        rootCtx,
-        MaterialPageRoute(
-          builder: (_) => ChatScreen(
-            character: character,
-            chatRepository: chatRepo,
-            aiChatRepository: aiRepo,
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!rootCtx.mounted) return;
-      ScaffoldMessenger.of(rootCtx).showSnackBar(
-        SnackBar(content: Text('${rootCtx.trRead('friendsDmOpenFailed')}: $e')),
-      );
-    }
-  }
-
-  void _copyId() {
-    Clipboard.setData(ClipboardData(text: widget.profile.userId));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('friendsIdCopied'))));
-  }
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final p = widget.profile;
     final initial = p.title.isNotEmpty ? p.title.substring(0, 1) : '?';
+    final status = p.statusMessage?.trim();
+    final statusText = status != null && status.isNotEmpty ? status : context.tr('friendsSheetStatusEmpty');
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(24, 8, 24, 24 + MediaQuery.viewInsetsOf(context).bottom),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Center(
             child: CircleAvatar(
-              radius: 40,
+              radius: 44,
               foregroundImage: p.avatarUrl != null && p.avatarUrl!.trim().isNotEmpty
                   ? NetworkImage(p.avatarUrl!.trim())
                   : null,
-              child: p.avatarUrl == null || p.avatarUrl!.trim().isEmpty ? Text(initial, style: const TextStyle(fontSize: 28)) : null,
+              child: p.avatarUrl == null || p.avatarUrl!.trim().isEmpty ? Text(initial, style: const TextStyle(fontSize: 30)) : null,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
             p.title,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          if (_isFriend) ...[
-            const SizedBox(height: 8),
-            Align(
-              child: Chip(
-                avatar: Icon(Icons.check_circle, size: 18, color: scheme.primary),
-                label: Text(context.tr('friendsAlreadyFriend')),
-              ),
-            ),
-          ],
-          if (p.statusMessage != null && p.statusMessage!.trim().isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              p.statusMessage!.trim(),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-          ],
-          const SizedBox(height: 20),
-          Text(
-            context.tr('friendsSearchUserId'),
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 4),
-          SelectableText(
-            p.userId,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _busy ? null : _copyId,
-            icon: const Icon(Icons.copy_rounded, size: 20),
-            label: Text(context.tr('friendsCopyId')),
+          Text(
+            statusText,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
           ),
-          const SizedBox(height: 20),
-          if (!_blockLoaded)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          const SizedBox(height: 28),
+          if (!_isFriend)
+            FilledButton(
+              onPressed: _busy ? null : _add,
+              child: _busy
+                  ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(context.tr('friendsAdd')),
             )
-          else ...[
-            if (_block.theyBlockedMe && !_block.iBlockedThem)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Text(
-                  context.tr('dmBlockedByThemBanner'),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
-                ),
-              ),
-            if (_block.iBlockedThem) ...[
-              Text(
-                context.tr('dmBlockedByMeBanner'),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.error, height: 1.35),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _busy ? null : _unblockFromSheet,
-                icon: const Icon(Icons.block_outlined),
-                label: Text(context.tr('dmUnblock')),
-              ),
-            ] else ...[
-              if (_isFriend) ...[
-                FilledButton.icon(
-                  onPressed: _busy ? null : _openChat,
-                  icon: const Icon(Icons.chat_bubble_outline_rounded),
-                  label: Text(context.tr('friendsSearchChat')),
-                ),
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  onPressed: _busy ? null : _remove,
-                  icon: const Icon(Icons.person_remove_outlined),
-                  label: Text(context.tr('friendsSearchRemoveFriend')),
-                ),
-              ] else
-                FilledButton.icon(
-                  onPressed: _busy ? null : _add,
-                  icon: const Icon(Icons.person_add_alt_1_outlined),
-                  label: Text(context.tr('friendsAdd')),
-                ),
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                onPressed: _busy ? null : _confirmBlock,
-                icon: const Icon(Icons.block_outlined),
-                label: Text(context.tr('dmStrangerBlock')),
-              ),
-            ],
-          ],
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: _busy ? null : () => Navigator.pop(context),
-            child: Text(context.tr('friendsSearchClose')),
-          ),
+          else
+            Text(
+              context.tr('friendsAlreadyFriend'),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: scheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
         ],
       ),
     );

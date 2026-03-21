@@ -1,3 +1,8 @@
+import 'dart:io';
+import 'dart:math';
+
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../core/supabase/app_supabase.dart';
 import '../../data/character/characters_data.dart' as builtin_chars;
 import '../../domain/entities/character.dart';
@@ -48,7 +53,33 @@ class SupabaseChatRepository implements ChatRepository {
         return o == null || !hiddenDmPeers.contains(o);
       }).toList();
     }
-    return await _enrichRoomsForDisplay(summaries, user.id);
+    summaries = await _enrichRoomsForDisplay(summaries, user.id);
+    return _attachLastMessagePreview(summaries);
+  }
+
+  /// Latest message per room (by `created_at`) for the chats list preview line.
+  Future<List<ChatRoomSummary>> _attachLastMessagePreview(List<ChatRoomSummary> rooms) async {
+    if (rooms.isEmpty) return rooms;
+    final ids = rooms.map((r) => r.roomId).toList();
+    try {
+      final res = await AppSupabase.client
+          .from('chat_messages')
+          .select('room_id, content, created_at')
+          .inFilter('room_id', ids)
+          .order('created_at', ascending: false);
+      final latest = <String, String>{};
+      for (final row in res as List<dynamic>) {
+        final m = Map<String, dynamic>.from(row as Map);
+        final rawRid = m['room_id'];
+        final rid = rawRid is String ? rawRid : rawRid?.toString();
+        if (rid == null || latest.containsKey(rid)) continue;
+        final c = m['content'];
+        latest[rid] = c is String ? c : c.toString();
+      }
+      return rooms.map((r) => r.copyWith(lastMessageContent: latest[r.roomId])).toList();
+    } catch (_) {
+      return rooms;
+    }
   }
 
   /// Peers involved in any block row with the current user (hide DM rooms with them).
@@ -108,7 +139,7 @@ class SupabaseChatRepository implements ChatRepository {
     if (dmOthers.isNotEmpty) {
       final profiles = await AppSupabase.client
           .from('profiles')
-          .select('id,display_name,email,avatar_url')
+          .select('id,display_name,email,avatar_url,status_message')
           .inFilter('id', dmOthers.toList());
       for (final p in profiles as List<dynamic>) {
         final m = Map<String, dynamic>.from(p as Map);
@@ -139,11 +170,15 @@ class SupabaseChatRepository implements ChatRepository {
         final dn = p['display_name'] as String?;
         final em = p['email'] as String?;
         final av = p['avatar_url'] as String?;
+        final st = p['status_message'] as String?;
         final label = dn != null && dn.trim().isNotEmpty ? dn.trim() : (em ?? o);
         final url = av != null && av.trim().isNotEmpty ? av.trim() : null;
-        final emailLine = (em != null && em.trim().isNotEmpty && em.trim() != label) ? em.trim() : null;
+        final statusLine = st != null && st.trim().isNotEmpty ? st.trim() : null;
+        final emailLine =
+            (em != null && em.trim().isNotEmpty && em.trim() != label) ? em.trim() : null;
+        final secondary = statusLine ?? emailLine;
         var u = s.copyWith(title: label, avatarNetworkUrl: url);
-        if (emailLine != null) u = u.copyWith(titleSecondary: emailLine);
+        if (secondary != null) u = u.copyWith(titleSecondary: secondary);
         return u;
       }
 
@@ -375,6 +410,55 @@ class SupabaseChatRepository implements ChatRepository {
     if (roomId == null || roomId.isEmpty) return;
     final sender = character.isDirectMessage ? (message.senderId ?? user.id) : null;
     await AppSupabase.client.from('chat_messages').insert(_messageToRow(roomId, message, senderIdForDm: sender));
+  }
+
+  static String _voiceMime(String ext) {
+    switch (ext.toLowerCase()) {
+      case 'm4a':
+      case 'mp4':
+        return 'audio/mp4';
+      case 'aac':
+        return 'audio/aac';
+      case 'wav':
+        return 'audio/wav';
+      default:
+        return 'audio/mp4';
+    }
+  }
+
+  static String _fileExtension(String path) {
+    final i = path.lastIndexOf('.');
+    if (i == -1) return 'm4a';
+    return path.substring(i + 1).toLowerCase();
+  }
+
+  @override
+  Future<void> sendDirectMessageVoiceNote(Character character, String localAudioPath) async {
+    final user = AppSupabase.auth.currentUser;
+    if (user == null || !character.isDirectMessage) return;
+    final roomId = character.directMessageRoomId;
+    if (roomId == null || roomId.isEmpty) return;
+
+    final file = File(localAudioPath);
+    if (!await file.exists()) return;
+
+    final ext = _fileExtension(localAudioPath);
+    final objectPath =
+        '${user.id}/$roomId/${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(0x7fffffff)}.$ext';
+    await AppSupabase.client.storage.from('dm_voice').upload(
+          objectPath,
+          file,
+          fileOptions: FileOptions(contentType: _voiceMime(ext), upsert: false),
+        );
+    final url = AppSupabase.client.storage.from('dm_voice').getPublicUrl(objectPath);
+
+    final msg = ChatMessage(
+      content: DmVoiceMessage.wrapPublicUrl(url),
+      role: 'user',
+      timestamp: DateTime.now(),
+      senderId: user.id,
+    );
+    await saveMessage(character, msg);
   }
 
   @override

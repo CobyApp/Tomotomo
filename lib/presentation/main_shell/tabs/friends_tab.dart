@@ -78,40 +78,103 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
     }
   }
 
-  Future<void> _openFriendChat(FriendSummary f) async {
+  Future<Character?> _dmCharacterForFriend(FriendSummary f) async {
     final chatRepo = context.read<ChatRepository>();
-    final aiRepo = context.read<AiChatRepository>();
     try {
       final roomId = await chatRepo.ensureDmRoom(f.friendId);
-      if (!mounted) return;
+      if (!mounted) return null;
       final profile = await context.read<ProfileRepository>().getProfile(f.friendId);
-      if (!mounted) return;
+      if (!mounted) return null;
       final name = profile?.displayName?.trim().isNotEmpty == true
           ? profile!.displayName!
           : f.title;
-      final character = Character.forDirectMessage(
+      return Character.forDirectMessage(
         peerUserId: f.friendId,
         roomId: roomId,
         displayName: name,
         email: profile?.email ?? f.email,
         avatarUrl: profile?.avatarUrl ?? f.avatarUrl,
       );
-      await Navigator.push<void>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChatScreen(
-            character: character,
-            chatRepository: chatRepo,
-            aiChatRepository: aiRepo,
-          ),
-        ),
-      );
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${context.tr('friendsDmOpenFailed')}: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${context.tr('friendsDmOpenFailed')}: $e')),
+        );
+      }
+      return null;
     }
+  }
+
+  Future<void> _openFriendChat(FriendSummary f) async {
+    final character = await _dmCharacterForFriend(f);
+    if (!mounted || character == null) return;
+    final chatRepo = context.read<ChatRepository>();
+    final aiRepo = context.read<AiChatRepository>();
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          character: character,
+          chatRepository: chatRepo,
+          aiChatRepository: aiRepo,
+        ),
+      ),
+    );
+  }
+
+  void _showFriendQuickSheet(FriendSummary f) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetCtx) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                f.title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(sheetCtx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(sheetCtx);
+                        unawaited(_openFriendChat(f));
+                      },
+                      icon: const Icon(Icons.chat_bubble_outline_rounded),
+                      label: Text(sheetCtx.tr('friendsSheetOpenChat')),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Theme.of(sheetCtx).colorScheme.errorContainer,
+                        foregroundColor: Theme.of(sheetCtx).colorScheme.onErrorContainer,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(sheetCtx);
+                        unawaited(_confirmRemove(f));
+                      },
+                      icon: const Icon(Icons.person_remove_outlined),
+                      label: Text(sheetCtx.tr('friendsSearchRemoveFriend')),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _openAiCharacterChat(Character character) async {
@@ -399,7 +462,7 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () => _openFriendChat(f),
+          onTap: () => _showFriendQuickSheet(f),
           child: Ink(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
@@ -438,10 +501,6 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
                         ),
                       ],
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.person_remove_outlined, color: scheme.onSurfaceVariant),
-                    onPressed: () => _confirmRemove(f),
                   ),
                 ],
               ),
