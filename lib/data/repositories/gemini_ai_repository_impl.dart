@@ -23,7 +23,8 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
       debugPrint('경고: GEMINI_API_KEY가 설정되지 않았습니다.');
     } else {
       _model = GenerativeModel(
-        model: 'gemini-2.5-flash',
+        // Cheapest stable multimodal text model in the current Gemini API lineup.
+        model: 'gemini-2.5-flash-lite',
         apiKey: _apiKey,
         generationConfig: GenerationConfig(
           responseMimeType: 'application/json',

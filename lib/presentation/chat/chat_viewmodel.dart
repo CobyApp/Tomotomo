@@ -9,6 +9,14 @@ import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
 
+/// Short assistant line matching the character’s main chat language (no stack traces or API text).
+String _aiChatErrorBubbleText(Character character) {
+  if (character.koreanNationalPersona) {
+    return '앗, 오류가 났어… 미안.';
+  }
+  return 'あ、エラーが出ちゃった…ごめん。';
+}
+
 class ChatViewModel extends ChangeNotifier {
   final Character character;
   final ChatRepository chatRepository;
@@ -27,6 +35,9 @@ class ChatViewModel extends ChangeNotifier {
 
   /// Character chat: skip realtime full reload while Gemini runs; flush once after.
   bool _pendingRealtimeReload = false;
+
+  /// After AI error bubble failed to persist, skip server refetches so Realtime does not wipe the local bubble.
+  bool _suppressMessageReloadFromServer = false;
 
   ChatViewModel({
     required this.character,
@@ -140,10 +151,15 @@ class ChatViewModel extends ChangeNotifier {
       _pendingRealtimeReload = true;
       return;
     }
+    if (_suppressMessageReloadFromServer) {
+      _pendingRealtimeReload = false;
+      return;
+    }
     await _reloadMessagesFromServer();
   }
 
   Future<void> _reloadMessagesFromServer() async {
+    if (_suppressMessageReloadFromServer) return;
     try {
       final list = await chatRepository.getMessages(character);
       _messages = list;
@@ -156,6 +172,7 @@ class ChatViewModel extends ChangeNotifier {
   void _flushPendingRealtimeReload() {
     if (!_pendingRealtimeReload) return;
     _pendingRealtimeReload = false;
+    if (_suppressMessageReloadFromServer) return;
     unawaited(_reloadMessagesFromServer());
   }
 
@@ -175,6 +192,8 @@ class ChatViewModel extends ChangeNotifier {
   }
 
   Future<void> _sendUserMessage(String userMessage) async {
+    _suppressMessageReloadFromServer = false;
+
     final uid = AppSupabase.auth.currentUser?.id;
     final userChatMessage = ChatMessage(
       content: userMessage,
@@ -195,26 +214,46 @@ class ChatViewModel extends ChangeNotifier {
     _isGenerating = true;
     notifyListeners();
 
+    /// When false, a deferred realtime reload would replace [_messages] and drop the
+    /// local-only AI error bubble (e.g. Supabase insert failed). Skip flush in that case.
+    var allowPendingRealtimeFlush = true;
+
     try {
       final aiMessage = await aiChatRepository.generateResponse(userMessage);
       _messages.add(aiMessage);
       await chatRepository.saveMessage(character, aiMessage);
       await _ensureRealtimeSubscription();
     } catch (e) {
-      _messages.add(ChatMessage(
-        content: '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.',
+      debugPrint('AI chat failed: $e');
+      final errorBubble = ChatMessage(
+        content: _aiChatErrorBubbleText(character),
         role: 'assistant',
         timestamp: DateTime.now(),
-      ));
+      );
+      _messages.add(errorBubble);
+      notifyListeners();
+      try {
+        await chatRepository.saveMessage(character, errorBubble);
+        await _ensureRealtimeSubscription();
+      } catch (saveErr) {
+        debugPrint('Failed to persist AI error message: $saveErr');
+        allowPendingRealtimeFlush = false;
+        _suppressMessageReloadFromServer = true;
+      }
     } finally {
       _isGenerating = false;
       notifyListeners();
-      _flushPendingRealtimeReload();
+      if (allowPendingRealtimeFlush) {
+        _flushPendingRealtimeReload();
+      } else {
+        _pendingRealtimeReload = false;
+      }
     }
   }
 
   Future<void> resetChat() async {
     try {
+      _suppressMessageReloadFromServer = false;
       _pendingRealtimeReload = false;
       await chatRepository.clearMessages(character);
       _messages.clear();
