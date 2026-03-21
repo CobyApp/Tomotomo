@@ -48,12 +48,27 @@ class ChatBubble extends StatelessWidget {
               backgroundImage: character.hasAvatar ? character.imageProvider : null,
               child: !character.hasAvatar
                   ? Text(
-                      character.name.isNotEmpty ? character.name.substring(0, 1) : '?',
+                      character.displayNamePrimary.isNotEmpty ? character.displayNamePrimary.substring(0, 1) : '?',
                       style: TextStyle(fontSize: 13, color: scheme.primary),
                     )
                   : null,
             ),
             const SizedBox(width: 10),
+          ],
+          if (isUser && onExplanationTap != null) ...[
+            Material(
+              color: scheme.primaryContainer.withValues(alpha: 0.5),
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onExplanationTap,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(Icons.info_outline_rounded, size: 18, color: scheme.primary),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
           ],
           Flexible(
             child: Container(

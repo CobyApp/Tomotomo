@@ -107,10 +107,11 @@ class CharacterListScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        character.name,
+                        character.displayNamePrimary,
                         style: const TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w700,
@@ -118,16 +119,18 @@ class CharacterListScreen extends StatelessWidget {
                           fontFamily: 'Pretendard',
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        character.nameJp,
-                        style: TextStyle(
-                          fontSize: 20,
-                          height: 1.2,
-                          color: Colors.grey[600],
-                          fontFamily: 'Pretendard',
+                      if (character.displayNameSecondary.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          character.displayNameSecondary,
+                          style: TextStyle(
+                            fontSize: 15,
+                            height: 1.2,
+                            color: Colors.grey[600],
+                            fontFamily: 'Pretendard',
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 20),

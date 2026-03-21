@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'character_record.dart';
+import 'chat_message.dart';
 
 class CharacterTrait {
   final String trait;
@@ -51,6 +52,12 @@ class Character {
   final bool isDirectMessage;
   final String? directMessageRoomId;
 
+  /// `ko`: grammar hints and vocabulary meanings in Korean. `ja`: full Japanese immersion (explanation + meanings in Japanese).
+  final String tutorLocale;
+
+  /// Korean-national friend: [ChatMessage.content] in Korean; study notes in Japanese; vocabulary highlights **Korean** phrases from the dialogue (gloss in Japanese).
+  final bool koreanNationalPersona;
+
   const Character({
     required this.id,
     required this.name,
@@ -78,11 +85,87 @@ class Character {
     required this.imagePath,
     this.isDirectMessage = false,
     this.directMessageRoomId,
+    this.tutorLocale = 'ko',
+    this.koreanNationalPersona = false,
   });
 
   String get displayImageUrl => imageUrl;
 
+  /// AI JSON: Korean explanation + Korean vocabulary meanings (Japanese dialogue).
+  bool get expectsKoreanStudyNotes =>
+      !isDirectMessage && !koreanNationalPersona && tutorLocale != 'ja';
+
+  /// AI JSON: Japanese explanation + Japanese glosses (Korean dialogue or immersion).
+  bool get expectsJapaneseStudyNotes =>
+      !isDirectMessage && (koreanNationalPersona || tutorLocale == 'ja');
+
+  /// Prefer Pretendard / Hangul-friendly font for [ChatMessage.content] in the expression sheet.
+  bool get assistantMessagePrefersHangulFont => isDirectMessage || koreanNationalPersona;
+
+  /// Notebook tab for vocabulary [+] saves: **script of the headword** — Korean words → `ko`, Japanese → `ja`.
+  String get defaultNotebookLangForVocabSave {
+    if (tutorLocale == 'ja') return 'ja';
+    if (koreanNationalPersona) return 'ko';
+    return 'ja';
+  }
+
+  /// How to read `vocabulary[].*` meaning fields from AI/DB JSON for this persona.
+  VocabularyMeaningPickMode get vocabularyMeaningPickMode {
+    if (isDirectMessage) return VocabularyMeaningPickMode.neutral;
+    if (tutorLocale == 'ja') return VocabularyMeaningPickMode.neutral;
+    if (koreanNationalPersona) return VocabularyMeaningPickMode.preferJapaneseGloss;
+    return VocabularyMeaningPickMode.preferKoreanGloss;
+  }
+
   bool get hasAvatar => imagePath.isNotEmpty;
+
+  /// Korean-national / DM: large line is Korean (or display name). Japanese persona: large line is Japanese ([nameJp]).
+  bool get _showsKoreanNamePrimary => isDirectMessage || koreanNationalPersona;
+
+  /// Primary name line for UI (chat header, list tiles, etc.).
+  String get displayNamePrimary {
+    if (isDirectMessage) return name;
+    return _showsKoreanNamePrimary ? name : nameJp;
+  }
+
+  /// Smaller bilingual subtitle; empty when there is no second script or it matches [displayNamePrimary].
+  String get displayNameSecondary {
+    if (isDirectMessage) {
+      final s = nameJp.trim();
+      if (s.isEmpty || s == name) return '';
+      return s;
+    }
+    final other = (_showsKoreanNamePrimary ? nameJp : name).trim();
+    if (other.isEmpty || other == displayNamePrimary) return '';
+    return other;
+  }
+
+  /// List-row titles for a Supabase `characters` row (same rules as [fromRecord] + [displayNamePrimary]).
+  static ({String primary, String secondary}) bilingualChatTitlesFromCharacterDb({
+    required String language,
+    required String dbName,
+    String? dbNameSecondary,
+  }) {
+    final isJaPersona = language == 'ja';
+    final String nameKoLine;
+    final String nameJaLine;
+    if (isJaPersona) {
+      final ja = dbName.trim();
+      final ko = dbNameSecondary?.trim();
+      nameJaLine = ja;
+      nameKoLine = (ko != null && ko.isNotEmpty) ? ko : ja;
+    } else {
+      final ko = dbName.trim();
+      final jp = dbNameSecondary?.trim();
+      nameKoLine = ko;
+      nameJaLine = (jp != null && jp.isNotEmpty) ? jp : ko;
+    }
+    final koreanNational = !isJaPersona;
+    final primary = koreanNational ? nameKoLine : nameJaLine;
+    final other = koreanNational ? nameJaLine : nameKoLine;
+    final secondary = (other.isEmpty || other == primary) ? '' : other;
+    return (primary: primary, secondary: secondary);
+  }
 
   bool get isNetworkImage => imagePath.startsWith('http');
 
@@ -125,27 +208,57 @@ class Character {
       imagePath: image,
       isDirectMessage: true,
       directMessageRoomId: roomId,
+      tutorLocale: 'ko',
+      koreanNationalPersona: false,
     );
   }
 
   /// Builds a Character for chat from a Supabase custom character record.
+  ///
+  /// [CharacterRecord.language]: `ja` → Japanese-speaking persona, Korean study notes in JSON.
+  /// `ko` → Korean-speaking persona (friend), Japanese study notes in JSON.
   static Character fromRecord(CharacterRecord r) {
-    final lang = r.language == 'ja' ? '일본어' : '한국어';
+    final isJaPersona = r.language == 'ja';
+    final levelLabel = isJaPersona ? '일본어' : '한국어';
     final image = r.avatarUrl ?? '';
     final descParts = <String>[
-      if (r.tagline != null && r.tagline!.trim().isNotEmpty) r.tagline!.trim(),
       if (r.speechStyle != null && r.speechStyle!.trim().isNotEmpty) r.speechStyle!.trim(),
     ];
+
+    // Align with built-in [Character] rows: [name] = Korean-line label, [nameJp] = Japanese script.
+    // DB for `ja` characters: primary [name] is Japanese; [name_secondary] is Korean (optional).
+    final String nameKoLine;
+    final String nameJaLine;
+    final String nameKanjiVal;
+    final String selfRef;
+    if (isJaPersona) {
+      final ja = r.name.trim();
+      final ko = r.nameSecondary?.trim();
+      nameJaLine = ja;
+      nameKoLine = (ko != null && ko.isNotEmpty) ? ko : ja;
+      nameKanjiVal = ja;
+      selfRef = ja;
+    } else {
+      final ko = r.name.trim();
+      final jp = r.nameSecondary?.trim();
+      nameKoLine = ko;
+      nameJaLine = (jp != null && jp.isNotEmpty) ? jp : ko;
+      nameKanjiVal = nameJaLine;
+      selfRef = nameJaLine;
+    }
+
     return Character(
       id: r.id,
-      name: r.name,
-      nameJp: r.nameSecondary ?? r.name,
-      nameKanji: r.nameSecondary ?? r.name,
-      level: lang,
+      name: nameKoLine,
+      nameJp: nameJaLine,
+      nameKanji: nameKanjiVal,
+      level: levelLabel,
       description: descParts.isEmpty ? '' : descParts.join('\n'),
       age: 0,
       schoolYear: '',
-      occupation: lang == '일본어' ? '일본어 학습 도우미' : '한국어 학습 도우미',
+      occupation: isJaPersona
+          ? '일본어 튜터 · 말풍선 일본어, 노트·단어 뜻 한국어'
+          : '한국어 튜터 · 말풍선 한국어, 노트·단어 설명 일본어',
       traits: const [CharacterTrait('친절함', 0.8)],
       interests: const [CharacterInterest(category: '언어', items: ['대화'])],
       speechStyle: r.speechStyle ?? '친근하게 대화합니다.',
@@ -156,13 +269,15 @@ class Character {
       eyeColor: '-',
       outfit: '-',
       accessories: [],
-      selfReference: r.nameSecondary ?? r.name,
+      selfReference: selfRef,
       commonPhrases: [],
       emotionalResponses: {},
       imageUrl: image,
       imagePath: image,
       isDirectMessage: false,
       directMessageRoomId: null,
+      tutorLocale: 'ko',
+      koreanNationalPersona: !isJaPersona,
     );
   }
 
@@ -202,6 +317,8 @@ class Character {
       imagePath: json['imagePath'] as String,
       isDirectMessage: json['isDirectMessage'] as bool? ?? false,
       directMessageRoomId: json['directMessageRoomId'] as String?,
+      tutorLocale: json['tutorLocale'] as String? ?? 'ko',
+      koreanNationalPersona: json['koreanNationalPersona'] as bool? ?? false,
     );
   }
 
@@ -233,6 +350,8 @@ class Character {
       'imagePath': imagePath,
       'isDirectMessage': isDirectMessage,
       'directMessageRoomId': directMessageRoomId,
+      'tutorLocale': tutorLocale,
+      'koreanNationalPersona': koreanNationalPersona,
     };
   }
 }

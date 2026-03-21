@@ -194,6 +194,15 @@ class _ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppR
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (r.titleSecondary != null && r.titleSecondary!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          r.titleSecondary!.trim(),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                       const SizedBox(height: 2),
                       Text(
                         _subtitle(context, r),
@@ -244,7 +253,7 @@ class _ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppR
             return true;
           } catch (_) {
             if (!context.mounted) return false;
-            messenger.showSnackBar(SnackBar(content: Text(context.tr('chatsRoomDeleteFailed'))));
+            messenger.showSnackBar(SnackBar(content: Text(context.trRead('chatsRoomDeleteFailed'))));
             return false;
           }
         },
@@ -254,7 +263,7 @@ class _ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppR
             _rooms.removeWhere((x) => x.roomId == r.roomId);
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.tr('chatsRoomDeleted'))),
+            SnackBar(content: Text(context.trRead('chatsRoomDeleted'))),
           );
         },
         background: Container(
@@ -288,7 +297,7 @@ class _ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppR
     if (!mounted) return;
     if (character == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('chatsLoadCharacterError'))),
+        SnackBar(content: Text(context.trRead('chatsLoadCharacterError'))),
       );
       return;
     }
@@ -311,12 +320,6 @@ class _ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppR
       appBar: AppBar(
         title: Text(context.tr('chatsTitle')),
         centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loading ? null : _load,
-          ),
-        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

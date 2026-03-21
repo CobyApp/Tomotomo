@@ -694,7 +694,7 @@ class _CharacterSearchPanelState extends State<_CharacterSearchPanel> {
                             final isMine = r.ownerId == widget.myUserId;
                             final badge =
                                 isMine ? context.tr('friendsCharacterBadgeMine') : context.tr('friendsCharacterBadgePublic');
-                            final tag = r.tagline?.trim();
+                            final detail = r.listDetailLine;
                             return ListTile(
                               leading: CircleAvatar(
                                 foregroundImage: r.avatarUrl != null && r.avatarUrl!.trim().isNotEmpty
@@ -704,7 +704,7 @@ class _CharacterSearchPanelState extends State<_CharacterSearchPanel> {
                               ),
                               title: Text(r.name),
                               subtitle: Text(
-                                tag != null && tag.isNotEmpty ? '$badge · $tag' : badge,
+                                detail.isNotEmpty ? '$badge · $detail' : badge,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: Theme.of(context).textTheme.bodySmall,

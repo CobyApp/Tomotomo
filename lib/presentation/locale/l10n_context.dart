@@ -9,4 +9,10 @@ extension L10nBuildContext on BuildContext {
     final code = watch<LocaleNotifier>().languageCode;
     return AppStrings.of(code, key, params: params);
   }
+
+  /// Use in [onPressed], [Future] callbacks, etc. — must not call [watch] outside [build].
+  String trRead(String key, {Map<String, String>? params}) {
+    final code = read<LocaleNotifier>().languageCode;
+    return AppStrings.of(code, key, params: params);
+  }
 }

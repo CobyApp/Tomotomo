@@ -2,6 +2,8 @@
 class ChatRoomSummary {
   final String roomId;
   final String title;
+  /// Optional second line (other script or DM email); list UI shows below [title].
+  final String? titleSecondary;
   final String? characterIdSupabase;
   final String? externalCharacterKey;
   final DateTime? lastMessageAt;
@@ -24,6 +26,7 @@ class ChatRoomSummary {
   const ChatRoomSummary({
     required this.roomId,
     required this.title,
+    this.titleSecondary,
     this.characterIdSupabase,
     this.externalCharacterKey,
     this.lastMessageAt,
@@ -44,12 +47,14 @@ class ChatRoomSummary {
 
   ChatRoomSummary copyWith({
     String? title,
+    String? titleSecondary,
     String? avatarNetworkUrl,
     String? avatarAssetPath,
   }) {
     return ChatRoomSummary(
       roomId: roomId,
       title: title ?? this.title,
+      titleSecondary: titleSecondary ?? this.titleSecondary,
       characterIdSupabase: characterIdSupabase,
       externalCharacterKey: externalCharacterKey,
       lastMessageAt: lastMessageAt,
@@ -66,6 +71,7 @@ class ChatRoomSummary {
     return ChatRoomSummary(
       roomId: row['id'] as String,
       title: row['title'] as String,
+      titleSecondary: null,
       characterIdSupabase: row['character_id'] as String?,
       externalCharacterKey: row['external_character_key'] as String?,
       lastMessageAt: row['last_message_at'] != null

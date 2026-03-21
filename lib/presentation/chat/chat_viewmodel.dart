@@ -50,10 +50,6 @@ class ChatViewModel extends ChangeNotifier {
   Future<void> _loadMessages() async {
     try {
       _messages = await chatRepository.getMessages(character);
-      // Welcome is UI-only until the user sends a message (avoids empty rooms in recent list).
-      if (!character.isDirectMessage && _messages.isEmpty) {
-        _messages.add(ChatMessage.welcomeFor(character));
-      }
       _chatRoomId = await chatRepository.getChatRoomId(character);
       _subscribeMessagesRealtime();
       notifyListeners();
@@ -163,10 +159,22 @@ class ChatViewModel extends ChangeNotifier {
     unawaited(_reloadMessagesFromServer());
   }
 
+  /// Sends [text] as the user message (same pipeline as typing in [messageController]).
+  /// Does not read or clear the text field — use for voice / external input.
+  Future<void> sendTextMessage(String text) async {
+    final userMessage = text.trim();
+    if (userMessage.isEmpty || _isGenerating) return;
+    await _sendUserMessage(userMessage);
+  }
+
   Future<void> sendMessage() async {
     final userMessage = messageController.text.trim();
     if (userMessage.isEmpty || _isGenerating) return;
+    messageController.clear();
+    await _sendUserMessage(userMessage);
+  }
 
+  Future<void> _sendUserMessage(String userMessage) async {
     final uid = AppSupabase.auth.currentUser?.id;
     final userChatMessage = ChatMessage(
       content: userMessage,
@@ -175,7 +183,6 @@ class ChatViewModel extends ChangeNotifier {
       senderId: character.isDirectMessage ? uid : null,
     );
 
-    messageController.clear();
     _messages.add(userChatMessage);
     await chatRepository.saveMessage(character, userChatMessage);
     await _ensureRealtimeSubscription();
@@ -215,7 +222,6 @@ class ChatViewModel extends ChangeNotifier {
       _isGenerating = false;
 
       if (!character.isDirectMessage) {
-        _messages.add(ChatMessage.welcomeFor(character));
         aiChatRepository.resetChat();
       }
       notifyListeners();

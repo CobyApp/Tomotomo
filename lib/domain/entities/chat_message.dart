@@ -1,4 +1,12 @@
-import 'character.dart';
+/// Which JSON keys to prefer when filling [Vocabulary.meaning] (LLMs often send both JA/KO fields).
+enum VocabularyMeaningPickMode {
+  /// Japanese-speaking tutor, Korean study notes: prefer Korean gloss keys; do not take `meaning_ja` before `meaning`.
+  preferKoreanGloss,
+  /// Korean friend, Japanese study notes: prefer Japanese gloss keys.
+  preferJapaneseGloss,
+  /// Japanese immersion or legacy/local cache: prefer generic `meaning`, then others.
+  neutral,
+}
 
 class ChatMessage {
   final String content;
@@ -9,21 +17,6 @@ class ChatMessage {
 
   /// Supabase `chat_messages.sender_id` for direct messages; null for AI chats.
   final String? senderId;
-
-  /// Default welcome message for a character. Single place for content and vocabulary.
-  static ChatMessage welcomeFor(Character character) {
-    return ChatMessage(
-      content: '${character.nameJp}です。よろしくお願いします！',
-      role: 'assistant',
-      timestamp: DateTime.now(),
-      explanation:
-          '기본적인 자기소개 표현입니다.\n- 〜です: ~입니다\n- よろしくお願いします: 잘 부탁드립니다',
-      vocabulary: [
-        Vocabulary(word: 'よろしく', reading: 'よろしく', meaning: '잘 부탁드립니다'),
-        Vocabulary(word: 'お願い', reading: 'おねがい', meaning: '부탁'),
-      ],
-    );
-  }
 
   ChatMessage({
     required this.content,
@@ -49,9 +42,16 @@ class ChatMessage {
         timestamp: DateTime.parse(json['timestamp']),
         explanation: json['explanation'] as String?,
         vocabulary: json['vocabulary'] != null
-            ? (json['vocabulary'] as List)
-                .map((v) => Vocabulary.fromJson(v as Map<String, dynamic>))
-                .toList()
+            ? () {
+                final out = <Vocabulary>[];
+                for (final v in json['vocabulary'] as List) {
+                  if (v is! Map) continue;
+                  final m = Map<String, dynamic>.from(v);
+                  final p = Vocabulary.tryParseLoose(m, meaningMode: VocabularyMeaningPickMode.neutral);
+                  if (p != null) out.add(p);
+                }
+                return out.isEmpty ? null : out;
+              }()
             : null,
         senderId: json['senderId'] as String?,
       );
@@ -77,10 +77,172 @@ class Vocabulary {
   }
 
   factory Vocabulary.fromJson(Map<String, dynamic> json) {
-    return Vocabulary(
-      word: json['word'] as String,
-      reading: json['reading'] as String?,
-      meaning: json['meaning'] as String,
-    );
+    final parsed = tryParseLoose(json);
+    if (parsed == null) {
+      throw FormatException('Vocabulary.fromJson: missing word/meaning: $json');
+    }
+    return parsed;
+  }
+
+  static bool _hasHangul(String s) => RegExp(r'[가-힣]').hasMatch(s);
+
+  static bool _hasKana(String s) => RegExp(r'[\u3040-\u30ff]').hasMatch(s);
+
+  static bool _hasCjkUnified(String s) => RegExp(r'[\u4e00-\u9fff]').hasMatch(s);
+
+  /// For Korean gloss mode: reject strings that look like Japanese (kana or kanji-only) without Hangul.
+  static bool _looksLikeKoreanVocabMeaning(String t) {
+    if (_hasHangul(t)) return true;
+    if (_hasKana(t)) return false;
+    if (_hasCjkUnified(t)) return false;
+    return true;
+  }
+
+  /// Accepts common alternate keys from LLM / legacy rows.
+  static Vocabulary? tryParseLoose(
+    Map<String, dynamic> json, {
+    VocabularyMeaningPickMode meaningMode = VocabularyMeaningPickMode.neutral,
+  }) {
+    String? pickString(List<String> keys) {
+      for (final k in keys) {
+        final v = json[k];
+        if (v == null) continue;
+        final t = v.toString().trim();
+        if (t.isNotEmpty) return t;
+      }
+      return null;
+    }
+
+    String? pickFirstWhere(List<String> keys, bool Function(String t) accept) {
+      for (final k in keys) {
+        final v = json[k];
+        if (v == null) continue;
+        final t = v.toString().trim();
+        if (t.isNotEmpty && accept(t)) return t;
+      }
+      return null;
+    }
+
+    final String? word = switch (meaningMode) {
+      VocabularyMeaningPickMode.preferJapaneseGloss => () {
+          const koKeys = [
+            'word_ko',
+            'wordKo',
+            'korean_word',
+            'phrase_ko',
+            'surface_ko',
+            'expression_ko',
+            'hangul',
+          ];
+          const generic = [
+            'word',
+            'term',
+            'expression',
+            'surface',
+            '単語',
+            'japanese',
+          ];
+          return pickString(koKeys) ??
+              pickFirstWhere(generic, _hasHangul) ??
+              pickString(generic);
+        }(),
+      VocabularyMeaningPickMode.preferKoreanGloss => pickString(const [
+          'word',
+          'term',
+          'expression',
+          '単語',
+          'japanese',
+          'surface',
+          'word_ko',
+          'wordKo',
+          'phrase_ko',
+          'surface_ko',
+        ]),
+      VocabularyMeaningPickMode.neutral => pickString(const [
+          'word',
+          'term',
+          'expression',
+          '単語',
+          'japanese',
+          'surface',
+          'word_ko',
+          'wordKo',
+          'phrase_ko',
+          'surface_ko',
+        ]),
+    };
+
+    final String? meaning = switch (meaningMode) {
+      VocabularyMeaningPickMode.preferKoreanGloss => () {
+          const strictKo = [
+            'meaning_ko',
+            'meaningKo',
+            'korean_meaning',
+            'gloss_ko',
+            'ko_meaning',
+            'hint_ko',
+          ];
+          const loose = [
+            'meaning',
+            'definition',
+            'gloss',
+            'translation',
+            'mean',
+            '뜻',
+          ];
+          const jaFallback = ['meaning_ja', 'meaningJa', 'gloss_ja'];
+          return pickString(strictKo) ??
+              pickFirstWhere(loose, _looksLikeKoreanVocabMeaning) ??
+              pickString(loose) ??
+              pickString(jaFallback);
+        }(),
+      VocabularyMeaningPickMode.preferJapaneseGloss => pickString(const [
+          'meaning_ja',
+          'meaningJa',
+          'gloss_ja',
+          'meaning',
+          'definition',
+          'gloss',
+          'translation',
+          'mean',
+          '뜻',
+          'meaning_ko',
+          'meaningKo',
+          'korean_meaning',
+          'gloss_ko',
+        ]),
+      VocabularyMeaningPickMode.neutral => pickString(const [
+          'meaning',
+          'definition',
+          'gloss',
+          'translation',
+          'mean',
+          '뜻',
+          'meaning_ko',
+          'meaningKo',
+          'korean_meaning',
+          'gloss_ko',
+          'meaning_ja',
+          'meaningJa',
+          'gloss_ja',
+        ]),
+    };
+    if (word == null || meaning == null) return null;
+
+    final reading = pickString(const [
+      'reading',
+      'read',
+      'yomi',
+      'hiragana',
+      'kana',
+      'pronunciation_ja',
+      'pronunciationJa',
+      'yomi_ja',
+      'katakana',
+      'よみ',
+      '読み',
+    ]);
+
+    return Vocabulary(word: word, reading: reading, meaning: meaning);
   }
 }

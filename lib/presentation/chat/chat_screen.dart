@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/chat_theme_data.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
+import '../locale/l10n_context.dart';
 import 'chat_viewmodel.dart';
+import 'voice_call_screen.dart';
 import 'widgets/chat_list.dart';
 import 'widgets/chat_input.dart';
 
@@ -72,6 +76,19 @@ class _ChatScreenState extends State<ChatScreen>
             scrollController: _scrollController,
             chatRoomId: viewModel.chatRoomId,
             onResetPressed: (context) => _showResetDialog(context, viewModel),
+            onVoiceCallPressed: () async {
+              await Navigator.push<void>(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => VoiceCallScreen(
+                    character: widget.character,
+                    chatRepository: context.read<ChatRepository>(),
+                    aiChatRepository: context.read<AiChatRepository>(),
+                  ),
+                ),
+              );
+              if (mounted) _viewModel.onAppResumedSync();
+            },
           );
         },
       ),
@@ -245,12 +262,14 @@ class _ChatScreenContent extends StatelessWidget {
   final ScrollController scrollController;
   final String? chatRoomId;
   final Function(BuildContext) onResetPressed;
+  final Future<void> Function() onVoiceCallPressed;
 
   const _ChatScreenContent({
     required this.character,
     required this.scrollController,
     required this.chatRoomId,
     required this.onResetPressed,
+    required this.onVoiceCallPressed,
   });
 
   void _scrollToBottom() {
@@ -289,7 +308,7 @@ class _ChatScreenContent extends StatelessWidget {
               backgroundImage: character.hasAvatar ? character.imageProvider : null,
               child: !character.hasAvatar
                   ? Text(
-                      character.name.isNotEmpty ? character.name.substring(0, 1) : '?',
+                      character.displayNamePrimary.isNotEmpty ? character.displayNamePrimary.substring(0, 1) : '?',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: scheme.primary),
                     )
                   : null,
@@ -301,23 +320,29 @@ class _ChatScreenContent extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    character.name,
+                    character.displayNamePrimary,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    character.nameJp,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  if (character.displayNameSecondary.isNotEmpty)
+                    Text(
+                      character.displayNameSecondary,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                 ],
               ),
             ),
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: context.tr('voiceCallTooltip'),
+            icon: Icon(Icons.phone_in_talk_rounded, color: scheme.primary),
+            onPressed: () => unawaited(onVoiceCallPressed()),
+          ),
           if (!character.isDirectMessage)
             IconButton(
               icon: Icon(Icons.refresh_rounded, color: scheme.primary),

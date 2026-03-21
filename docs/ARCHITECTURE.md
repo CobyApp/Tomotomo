@@ -34,10 +34,9 @@ Auth, profiles, custom characters + discover, Supabase-backed AI chat & DM, frie
 - `id` uuid PK
 - `owner_id` uuid FK profiles(id)
 - `name` text, `name_secondary` text (e.g. Japanese name)
-- `avatar_url` text, `background_url` text (Storage)
-- `speech_style` text (user/SNS paste or instructions)
-- `voice_provider` text, `voice_id` text (TTS; optional)
-- `language` text ('ko' | 'ja') — character speaks this; user learns it
+- `avatar_url` text (Storage)
+- `speech_style` text (persona / tone hints for the model)
+- `language` text ('ko' | 'ja') — **AI chat persona** for *Japanese study*: `ja` = Japanese-speaking character (bubble in Japanese, study notes in Korean); `ko` = Korean friend (bubble in Korean, study notes in Japanese). See `lib/data/repositories/gemini_prompts/`.
 - `is_public` boolean, `download_count` int
 - `created_at`, `updated_at` timestamptz
 
@@ -67,13 +66,13 @@ Auth, profiles, custom characters + discover, Supabase-backed AI chat & DM, frie
 - `vocabulary` jsonb
 - `created_at` timestamptz
 
-### public.saved_expressions
-- `id` uuid PK
-- `user_id` uuid
-- `source` text ('chat' | 'call')
-- `content` text, `explanation` text, `translation` text
-- `room_id` uuid nullable
-- `created_at` timestamptz
+### public.saved_expressions (word book)
+- Per **vocabulary row** saved from chat via `+` on each word in the explanation sheet — not the full popup.
+- `id` uuid PK, `user_id` uuid, `source` text ('chat' | 'call')
+- `notebook_lang` text (`ko` | `ja`) — Korean vs Japanese word-book segment
+- `content` text — headword; `translation` text — reading + gloss line
+- `explanation` text — legacy only (new saves leave null); see `20250321200000_saved_expressions_word_semantics.sql`
+- `room_id` uuid nullable, `created_at` timestamptz
 
 ### public.themes (user theme override)
 - `user_id` uuid PK
@@ -85,8 +84,8 @@ Auth, profiles, custom characters + discover, Supabase-backed AI chat & DM, frie
 
 ### Storage buckets
 - `avatars` — profile and character avatars
-- `backgrounds` — character backgrounds
-- RLS: public characters readable when is_public; upload by owner
+- `backgrounds` — optional legacy bucket (character backgrounds removed from app schema)
+- RLS: upload by owner path prefix
 
 ## Features (implementation order)
 
@@ -103,8 +102,8 @@ Auth, profiles, custom characters + discover, Supabase-backed AI chat & DM, frie
 - [x] Character list: my characters + public discover
 
 ### Phase 3 — Voice & UX
-- [ ] TTS/STT research and integration (e.g. ElevenLabs, Google, or device)
-- [ ] Call UI: real-time conversation with on-screen expressions/translations
+- [x] Device STT + TTS (`speech_to_text`, `flutter_tts`): **Voice call screen** from AI character chat (hold mic → same Supabase messages as text chat; assistant line read aloud in Japanese)
+- [ ] Rich call UI (waveform, expression sheet during call)
 - [ ] Call summary and save expressions
 
 ### Phase 4 — Polish

@@ -12,6 +12,7 @@ import 'domain/repositories/friends_repository.dart';
 import 'presentation/auth/auth_gate.dart';
 import 'presentation/locale/locale_notifier.dart';
 import 'presentation/theme/theme_notifier.dart';
+import 'presentation/notebook/word_book_refresh_notifier.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -28,6 +29,7 @@ class App extends StatelessWidget {
         ChangeNotifierProvider(create: (c) => LocaleNotifier(c.read<ProfileRepository>())),
         Provider<CharacterRecordRepository>.value(value: characterRecordRepository),
         Provider<SavedExpressionRepository>.value(value: savedExpressionRepository),
+        ChangeNotifierProvider(create: (_) => WordBookRefreshNotifier()),
         Provider<FriendsRepository>.value(value: friendsRepository),
       ],
       child: Builder(

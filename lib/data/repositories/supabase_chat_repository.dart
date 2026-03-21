@@ -91,16 +91,16 @@ class SupabaseChatRepository implements ChatRepository {
       }
     }
 
-    final charAvatarById = <String, String?>{};
+    final charMetaById = <String, Map<String, dynamic>>{};
     if (charUuids.isNotEmpty) {
       final rows = await AppSupabase.client
           .from('characters')
-          .select('id,avatar_url')
+          .select('id,avatar_url,name,name_secondary,language')
           .inFilter('id', charUuids.toList());
       for (final row in rows as List<dynamic>) {
         final m = Map<String, dynamic>.from(row as Map);
         final id = m['id'] is String ? m['id'] as String : m['id'].toString();
-        charAvatarById[id] = m['avatar_url'] as String?;
+        charMetaById[id] = m;
       }
     }
 
@@ -115,14 +115,32 @@ class SupabaseChatRepository implements ChatRepository {
         final av = p['avatar_url'] as String?;
         final label = dn != null && dn.trim().isNotEmpty ? dn.trim() : (em ?? o);
         final url = av != null && av.trim().isNotEmpty ? av.trim() : null;
-        return s.copyWith(title: label, avatarNetworkUrl: url);
+        final emailLine = (em != null && em.trim().isNotEmpty && em.trim() != label) ? em.trim() : null;
+        var u = s.copyWith(title: label, avatarNetworkUrl: url);
+        if (emailLine != null) u = u.copyWith(titleSecondary: emailLine);
+        return u;
       }
 
       final cid = s.characterIdSupabase;
       if (cid != null && cid.isNotEmpty) {
-        final url = charAvatarById[cid];
-        if (url != null && url.trim().isNotEmpty) {
-          return s.copyWith(avatarNetworkUrl: url.trim());
+        final m = charMetaById[cid];
+        if (m != null) {
+          final rawName = m['name'];
+          final dbName = rawName is String ? rawName : (rawName?.toString() ?? s.title);
+          final secRaw = m['name_secondary'];
+          final dbSec = secRaw is String ? secRaw : secRaw?.toString();
+          final langRaw = m['language'];
+          final lang = langRaw is String ? langRaw : (langRaw?.toString() ?? 'ja');
+          final titles = Character.bilingualChatTitlesFromCharacterDb(
+            language: lang,
+            dbName: dbName,
+            dbNameSecondary: dbSec,
+          );
+          final av = m['avatar_url'];
+          final url = av is String && av.trim().isNotEmpty ? av.trim() : null;
+          var u = s.copyWith(title: titles.primary, avatarNetworkUrl: url);
+          if (titles.secondary.isNotEmpty) u = u.copyWith(titleSecondary: titles.secondary);
+          return u;
         }
         return s;
       }
@@ -132,10 +150,14 @@ class SupabaseChatRepository implements ChatRepository {
         for (final c in builtin_chars.characters) {
           if (c.id == ext) {
             final path = c.imagePath.trim();
+            var u = s.copyWith(title: c.displayNamePrimary);
+            if (c.displayNameSecondary.isNotEmpty) u = u.copyWith(titleSecondary: c.displayNameSecondary);
             if (path.startsWith('http://') || path.startsWith('https://')) {
-              return s.copyWith(avatarNetworkUrl: path);
+              u = u.copyWith(avatarNetworkUrl: path);
+            } else {
+              u = u.copyWith(avatarAssetPath: path);
             }
-            return s.copyWith(avatarAssetPath: path);
+            return u;
           }
         }
       }
@@ -187,7 +209,7 @@ class SupabaseChatRepository implements ChatRepository {
   Future<String> _ensureRoomId(Character character) async {
     final user = AppSupabase.auth.currentUser;
     if (user == null) throw Exception('Not signed in');
-    final title = character.name;
+    final title = character.displayNamePrimary;
     final id = character.id;
 
     if (_isUuid(id)) {
@@ -274,17 +296,23 @@ class SupabaseChatRepository implements ChatRepository {
         .select('*')
         .eq('room_id', roomId)
         .order('created_at', ascending: true);
-    return (res as List<dynamic>).map(_rowToMessage).toList();
+    return (res as List<dynamic>).map((e) => _rowToMessage(e, character)).toList();
   }
 
-  ChatMessage _rowToMessage(dynamic e) {
+  ChatMessage _rowToMessage(dynamic e, Character character) {
     final row = Map<String, dynamic>.from(e as Map);
     final vocab = row['vocabulary'];
+    final mode = character.vocabularyMeaningPickMode;
     List<Vocabulary>? vocabulary;
     if (vocab is List) {
-      vocabulary = vocab
-          .map((v) => Vocabulary.fromJson(Map<String, dynamic>.from(v as Map)))
-          .toList();
+      final list = <Vocabulary>[];
+      for (final v in vocab) {
+        if (v is! Map) continue;
+        final m = Map<String, dynamic>.from(v);
+        final parsed = Vocabulary.tryParseLoose(m, meaningMode: mode);
+        if (parsed != null) list.add(parsed);
+      }
+      vocabulary = list.isEmpty ? null : list;
     }
     final sid = row['sender_id'];
     return ChatMessage(

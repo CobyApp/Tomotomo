@@ -8,7 +8,7 @@ import '../theme/theme_notifier.dart';
 import 'tabs/friends_tab.dart';
 import 'tabs/chats_tab.dart';
 import 'tabs/settings_tab.dart';
-import '../notebook/expressions_notebook_screen.dart';
+import '../notebook/word_book_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -19,10 +19,18 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0;
+  final GlobalKey<WordBookScreenState> _wordBookKey = GlobalKey<WordBookScreenState>();
+  late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    _pages = [
+      const FriendsTab(),
+      const ChatsTab(),
+      WordBookScreen(key: _wordBookKey),
+      const SettingsTab(),
+    ];
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureProfile());
   }
 
@@ -42,23 +50,23 @@ class _MainShellState extends State<MainShell> {
     } catch (_) {}
   }
 
-  static const List<Widget> _tabs = [
-    FriendsTab(),
-    ChatsTab(),
-    ExpressionsNotebookScreen(),
-    SettingsTab(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: _tabs,
+        children: _pages,
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: (i) {
+          setState(() => _index = i);
+          if (i == 2) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _wordBookKey.currentState?.reloadWhenTabSelected();
+            });
+          }
+        },
         destinations: [
           NavigationDestination(
             icon: const Icon(Icons.people_outline),

@@ -33,6 +33,10 @@
 	</dict>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>캐릭터 아바타와 배경 이미지를 선택하기 위해 사진 라이브러리 접근이 필요합니다.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>AIキャラクターとの音声通話で、あなたの声を文字に変換するためにマイクを使用します。</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>音声をテキストに変換し、チャットと同じ会話として保存するためにSpeech Recognitionを使用します。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

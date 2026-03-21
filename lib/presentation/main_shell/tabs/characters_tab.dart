@@ -89,9 +89,7 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
         name: r.name,
         nameSecondary: r.nameSecondary,
         avatarUrl: r.avatarUrl,
-        backgroundUrl: r.backgroundUrl,
         speechStyle: r.speechStyle,
-        tagline: r.tagline,
         language: r.language,
         isPublic: false,
       );
@@ -168,6 +166,12 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
     );
   }
 
+  String _recordSubtitle(BuildContext context, CharacterRecord r) {
+    final line = r.listDetailLine;
+    if (line.isNotEmpty) return line;
+    return r.language == 'ja' ? context.tr('langJa') : context.tr('langKo');
+  }
+
   Widget _recordsSection(String title, List<CharacterRecord> records, {bool isMine = false}) {
     if (records.isEmpty && !isMine) return const SizedBox.shrink();
     return Column(
@@ -223,9 +227,7 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
         ),
         title: Text(r.name),
         subtitle: Text(
-          r.tagline != null && r.tagline!.trim().isNotEmpty
-              ? r.tagline!.trim()
-              : (r.nameSecondary ?? (r.language == 'ja' ? context.tr('langJa') : context.tr('langKo'))),
+          _recordSubtitle(context, r),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
@@ -319,8 +321,8 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
         leading: CircleAvatar(
           backgroundImage: c.imageProvider,
         ),
-        title: Text(c.name),
-        subtitle: Text(c.nameJp),
+        title: Text(c.displayNamePrimary),
+        subtitle: c.displayNameSecondary.isNotEmpty ? Text(c.displayNameSecondary) : null,
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
           Navigator.push(
