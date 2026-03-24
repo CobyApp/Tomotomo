@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/ui/ui.dart';
 import '../../../core/supabase/app_supabase.dart';
 import '../../auth/auth_state.dart';
 import '../../locale/l10n_context.dart';
@@ -14,109 +15,110 @@ class SettingsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = AppSupabase.auth.currentUser;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.tr('settingsTitle')),
-        centerTitle: false,
-      ),
+    final scheme = Theme.of(context).colorScheme;
+
+    return AppPageScaffold(
+      title: context.tr('settingsTitle'),
       body: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.pageH,
+          AppSpacing.pageTop,
+          AppSpacing.pageH,
+          AppSpacing.pageBottom,
+        ),
         children: [
           if (user != null) ...[
-            ListTile(
-              leading: const Icon(Icons.email_outlined),
-              title: Text(context.tr('settingsEmail')),
-              subtitle: Text(user.email ?? ''),
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_outlined),
-              title: Text(context.tr('settingsEditProfile')),
-              subtitle: Text(context.tr('settingsEditProfileSubtitle')),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ProfileEditScreen(),
-                  ),
-                );
-              },
+            AppSettingsPanel(
+              children: [
+                AppSettingsNavTile(
+                  icon: Icons.email_outlined,
+                  title: context.tr('settingsEmail'),
+                  subtitle: user.email ?? '',
+                  showChevron: false,
+                ),
+                AppSettingsNavTile(
+                  icon: Icons.person_outlined,
+                  title: context.tr('settingsEditProfile'),
+                  subtitle: context.tr('settingsEditProfileSubtitle'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ProfileEditScreen()),
+                    );
+                  },
+                ),
+              ],
             ),
           ],
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.palette_outlined),
-            title: Text(context.tr('settingsTheme')),
-            subtitle: Text(context.tr('settingsThemeSubtitle')),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ThemeSettingsScreen(),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: Text(context.tr('settingsAppLanguage')),
-            subtitle: Text(context.tr('settingsAppLanguageSubtitle')),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const LanguageSettingsScreen(),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.block_outlined),
-            title: Text(context.tr('settingsBlockedUsers')),
-            subtitle: Text(context.tr('settingsBlockedUsersSubtitle')),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const BlockedUsersScreen(),
-                ),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
-            title: Text(
-              context.tr('settingsLogout'),
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.error,
+          AppSettingsPanel(
+            children: [
+              AppSettingsNavTile(
+                icon: Icons.palette_outlined,
+                title: context.tr('settingsTheme'),
+                subtitle: context.tr('settingsThemeSubtitle'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ThemeSettingsScreen()),
+                  );
+                },
               ),
-            ),
-            onTap: () async {
-              final ok = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: Text(context.tr('settingsLogoutConfirmTitle')),
-                  content: Text(context.tr('settingsLogoutConfirmBody')),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: Text(context.tr('cancel')),
+              AppSettingsNavTile(
+                icon: Icons.language_rounded,
+                title: context.tr('settingsAppLanguage'),
+                subtitle: context.tr('settingsAppLanguageSubtitle'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LanguageSettingsScreen()),
+                  );
+                },
+              ),
+              AppSettingsNavTile(
+                icon: Icons.block_outlined,
+                title: context.tr('settingsBlockedUsers'),
+                subtitle: context.tr('settingsBlockedUsersSubtitle'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const BlockedUsersScreen()),
+                  );
+                },
+              ),
+            ],
+          ),
+          AppSettingsPanel(
+            children: [
+              AppSettingsNavTile(
+                icon: Icons.logout_rounded,
+                title: context.tr('settingsLogout'),
+                iconColor: scheme.error,
+                titleColor: scheme.error,
+                showChevron: false,
+                onTap: () async {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(context.tr('settingsLogoutConfirmTitle')),
+                      content: Text(context.tr('settingsLogoutConfirmBody')),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(context.tr('cancel')),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(context.tr('settingsLogout')),
+                        ),
+                      ],
                     ),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: Text(context.tr('settingsLogout')),
-                    ),
-                  ],
-                ),
-              );
-              if (ok == true && context.mounted) {
-                await context.read<AppAuthState>().signOut();
-              }
-            },
+                  );
+                  if (ok == true && context.mounted) {
+                    await context.read<AppAuthState>().signOut();
+                  }
+                },
+              ),
+            ],
           ),
         ],
       ),

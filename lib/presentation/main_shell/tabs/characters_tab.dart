@@ -9,6 +9,7 @@ import '../../../domain/entities/character_record.dart';
 import '../../../domain/repositories/chat_repository.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
 import '../../../domain/repositories/character_record_repository.dart';
+import '../../../core/ui/ui.dart';
 import '../../../data/character/characters_data.dart';
 import '../../chat/chat_screen.dart';
 import '../../character_form/create_character_screen.dart';
@@ -110,47 +111,14 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.tr('charactersTitle')),
-        centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loading ? null : _load,
-          ),
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_error!, textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
-                        FilledButton(
-                          onPressed: _load,
-                          child: Text(context.tr('retry')),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    children: [
-                      _recordsSection(context.tr('charactersMy'), _myCharacters, isMine: true),
-                      _recordsSection(context.tr('charactersDiscover'), _publicCharacters, isMine: false),
-                      _builtInSection(context.tr('charactersBuiltin'), characters),
-                    ],
-                  ),
-                ),
+    return AppPageScaffold(
+      title: context.tr('charactersTitle'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh_rounded),
+          onPressed: _loading ? null : () => unawaited(_load()),
+        ),
+      ],
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final created = await Navigator.push<bool>(
@@ -159,10 +127,34 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
               builder: (_) => const CreateCharacterScreen(),
             ),
           );
-          if (created == true) _load();
+          if (created == true) unawaited(_load());
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded),
       ),
+      body: _loading
+          ? const AppLoadingBody()
+          : _error != null
+              ? AppErrorBody(
+                  message: _error!,
+                  onRetry: _load,
+                  retryLabel: context.tr('retry'),
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.pageH,
+                      12,
+                      AppSpacing.pageH,
+                      AppSpacing.pageBottom,
+                    ),
+                    children: [
+                      _recordsSection(context.tr('charactersMy'), _myCharacters, isMine: true),
+                      _recordsSection(context.tr('charactersDiscover'), _publicCharacters, isMine: false),
+                      _builtInSection(context.tr('charactersBuiltin'), characters),
+                    ],
+                  ),
+                ),
     );
   }
 
@@ -179,13 +171,7 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
-                ),
-          ),
+          child: Text(title, style: AppTextStyles.sectionLabel(context)),
         ),
         ...records.map((r) => _recordTile(r, isMine: isMine)),
         const SizedBox(height: 24),
@@ -199,13 +185,7 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
-                ),
-          ),
+          child: Text(title, style: AppTextStyles.sectionLabel(context)),
         ),
         ...builtIn.map((c) => _builtInTile(c)),
         const SizedBox(height: 24),
@@ -214,129 +194,120 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
   }
 
   Widget _recordTile(CharacterRecord r, {bool isMine = false}) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage: r.avatarUrl != null && r.avatarUrl!.isNotEmpty
-              ? NetworkImage(r.avatarUrl!)
-              : null,
-          child: r.avatarUrl == null || r.avatarUrl!.isEmpty
-              ? const Icon(Icons.face)
-              : null,
-        ),
-        title: Text(r.name),
-        subtitle: Text(
-          _recordSubtitle(context, r),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isMine)
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert),
-                onSelected: (value) async {
-                  if (value == 'edit') {
-                    final updated = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => EditCharacterScreen(record: r),
-                      ),
-                    );
-                    if (updated == true) _load();
-                  } else if (value == 'delete') {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: Text(context.tr('charactersDeleteTitle')),
-                        content: Text(context.tr('charactersDeleteBody', params: {'name': r.name})),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: Text(context.tr('cancel')),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: Text(context.tr('charactersDelete')),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirm != true || !mounted) return;
-                    try {
-                      await context.read<CharacterRecordRepository>().deleteCharacter(r.id, r.ownerId);
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('charactersDeleted'))));
-                      _load();
-                    } catch (e) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${context.tr('charactersDeleteFailed')}: $e')),
-                      );
-                    }
-                  }
-                },
-                itemBuilder: (ctx) => [
-                  PopupMenuItem(value: 'edit', child: Text(context.tr('charactersEdit'))),
-                  PopupMenuItem(value: 'delete', child: Text(context.tr('charactersDelete'))),
-                ],
-              )
-            else
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.add_circle_outline),
-                tooltip: context.tr('charactersAddToMine'),
-                onSelected: (value) async {
-                  if (value == 'add') await _addPublicCharacterToMine(r);
-                },
-                itemBuilder: (ctx) => [
-                  PopupMenuItem(value: 'add', child: Text(context.tr('charactersAddToMine'))),
-                ],
-              ),
-            const Icon(Icons.chevron_right),
-          ],
-        ),
-        onTap: () {
-          final character = Character.fromRecord(r);
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatScreen(
-                character: character,
-                chatRepository: context.read<ChatRepository>(),
-                aiChatRepository: context.read<AiChatRepository>(),
-              ),
-            ),
-          );
-        },
+    return AppListRow(
+      leading: CircleAvatar(
+        radius: AppSizes.listAvatar,
+        backgroundImage: r.avatarUrl != null && r.avatarUrl!.isNotEmpty ? NetworkImage(r.avatarUrl!) : null,
+        child: r.avatarUrl == null || r.avatarUrl!.isEmpty
+            ? Icon(Icons.face_rounded, size: 22, color: Theme.of(context).colorScheme.onSurfaceVariant)
+            : null,
       ),
+      title: r.name,
+      subtitle: _recordSubtitle(context, r),
+      subtitleMaxLines: 2,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isMine)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded),
+              onSelected: (value) async {
+                if (value == 'edit') {
+                  final updated = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => EditCharacterScreen(record: r),
+                    ),
+                  );
+                  if (updated == true) unawaited(_load());
+                } else if (value == 'delete') {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(context.tr('charactersDeleteTitle')),
+                      content: Text(context.tr('charactersDeleteBody', params: {'name': r.name})),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(context.tr('cancel')),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text(context.tr('charactersDelete')),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm != true || !mounted) return;
+                  try {
+                    await context.read<CharacterRecordRepository>().deleteCharacter(r.id, r.ownerId);
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('charactersDeleted'))));
+                    unawaited(_load());
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${context.tr('charactersDeleteFailed')}: $e')),
+                    );
+                  }
+                }
+              },
+              itemBuilder: (ctx) => [
+                PopupMenuItem(value: 'edit', child: Text(context.tr('charactersEdit'))),
+                PopupMenuItem(value: 'delete', child: Text(context.tr('charactersDelete'))),
+              ],
+            )
+          else
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.add_circle_outline_rounded),
+              tooltip: context.tr('charactersAddToMine'),
+              onSelected: (value) async {
+                if (value == 'add') await _addPublicCharacterToMine(r);
+              },
+              itemBuilder: (ctx) => [
+                PopupMenuItem(value: 'add', child: Text(context.tr('charactersAddToMine'))),
+              ],
+            ),
+          Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        ],
+      ),
+      onTap: () {
+        final character = Character.fromRecord(r);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(
+              character: character,
+              chatRepository: context.read<ChatRepository>(),
+              aiChatRepository: context.read<AiChatRepository>(),
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _builtInTile(Character c) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage: c.imageProvider,
-        ),
-        title: Text(c.displayNamePrimary),
-        subtitle: c.displayNameSecondary.isNotEmpty ? Text(c.displayNameSecondary) : null,
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatScreen(
-                character: c,
-                chatRepository: context.read<ChatRepository>(),
-                aiChatRepository: context.read<AiChatRepository>(),
-              ),
-            ),
-          );
-        },
+    return AppListRow(
+      leading: CircleAvatar(
+        radius: AppSizes.listAvatar,
+        backgroundImage: c.imageProvider,
       ),
+      title: c.displayNamePrimary,
+      subtitle: c.displayNameSecondary.isNotEmpty ? c.displayNameSecondary : null,
+      trailing: Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(
+              character: c,
+              chatRepository: context.read<ChatRepository>(),
+              aiChatRepository: context.read<AiChatRepository>(),
+            ),
+          ),
+        );
+      },
     );
   }
 }

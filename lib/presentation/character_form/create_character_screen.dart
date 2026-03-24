@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/ui/ui.dart';
 import '../locale/l10n_context.dart';
 import 'custom_character_editor_body.dart';
 
@@ -9,11 +10,9 @@ class CreateCharacterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.tr('createCharacterTitle')),
-        centerTitle: false,
-      ),
+    return AppPageScaffold(
+      title: context.tr('createCharacterTitle'),
+      transparentBackground: false,
       body: const CustomCharacterEditorBody(),
     );
   }

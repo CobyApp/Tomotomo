@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/storage/character_storage.dart';
 import '../../../core/supabase/app_supabase.dart';
+import '../../../core/ui/ui.dart';
 import '../../../domain/entities/character_record.dart';
 import '../../../domain/repositories/character_record_repository.dart';
 import '../locale/l10n_context.dart';
@@ -188,7 +189,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     return Form(
       key: _formKey,
       child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 16, AppSpacing.pageH, AppSpacing.pageBottom),
         children: [
           if (_error != null) ...[
             Card(
@@ -203,10 +204,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             ),
             const SizedBox(height: 16),
           ],
-          Text(
-            context.tr('characterTutorType'),
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-          ),
+          Text(context.tr('characterTutorType'), style: AppTextStyles.sectionLabel(context)),
           const SizedBox(height: 8),
           SegmentedButton<String>(
             segments: [
@@ -230,7 +228,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           const SizedBox(height: 6),
           Text(
             _language == 'ja' ? context.tr('characterTutorJaHelp') : context.tr('characterTutorKoHelp'),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade700),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
           ),
           const SizedBox(height: 20),
           TextFormField(
@@ -264,10 +262,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             maxLines: 3,
           ),
           const SizedBox(height: 20),
-          Text(
-            context.tr('characterAvatarSection'),
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
+          Text(context.tr('characterAvatarSection'), style: AppTextStyles.sectionLabel(context)),
           const SizedBox(height: 8),
           Row(
             children: [

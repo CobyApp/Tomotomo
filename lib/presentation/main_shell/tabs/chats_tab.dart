@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/app_supabase.dart';
+import '../../../core/ui/ui.dart';
 import '../../../core/widgets/on_app_resumed_mixin.dart';
 import '../../../domain/entities/chat_message.dart';
 import '../../../domain/entities/chat_room_summary.dart';
@@ -154,7 +155,7 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
     super.dispose();
   }
 
-  Widget _roomLeading(ChatRoomSummary r, {double radius = 26}) {
+  Widget _roomLeading(ChatRoomSummary r, {double radius = AppSizes.listAvatar}) {
     final initial = r.title.isNotEmpty ? r.title.substring(0, 1) : '?';
     final net = r.avatarNetworkUrl?.trim();
     if (net != null && net.isNotEmpty) {
@@ -174,65 +175,44 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
   Widget _chatRoomCard(BuildContext context, ChatRoomSummary r) {
     final scheme = Theme.of(context).colorScheme;
     final timeText = _listTimeLabel(context, r.lastMessageAt);
-    return Material(
-      color: scheme.surface,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => _openRoom(r),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _roomLeading(r),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              r.title,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (timeText.isNotEmpty) ...[
-                            const SizedBox(width: 8),
-                            Text(
-                              timeText,
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: scheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                            ),
-                          ],
-                        ],
+    return AppListRowCustom(
+      leading: _roomLeading(r),
+      onTap: () => _openRoom(r),
+      marginBottom: 0,
+      middle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  r.title,
+                  style: AppTextStyles.listTitle(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (timeText.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Text(
+                  timeText,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _messagePreview(context, r),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
                 ),
               ],
-            ),
+            ],
           ),
-        ),
+          const SizedBox(height: 4),
+          Text(
+            _messagePreview(context, r),
+            style: AppTextStyles.listSubtitle(context),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
@@ -312,7 +292,7 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
           padding: const EdgeInsets.only(right: 22),
           decoration: BoxDecoration(
             color: scheme.errorContainer,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadii.card),
           ),
           child: Icon(Icons.delete_outline_rounded, color: scheme.onErrorContainer, size: 28),
         ),
@@ -350,52 +330,31 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.tr('chatsTitle')),
-        centerTitle: false,
-      ),
+    return AppPageScaffold(
+      title: context.tr('chatsTitle'),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoadingBody()
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_error!, textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
-                        FilledButton(onPressed: _load, child: Text(context.tr('retry'))),
-                      ],
-                    ),
-                  ),
+              ? AppErrorBody(
+                  message: _error!,
+                  onRetry: _load,
+                  retryLabel: context.tr('retry'),
                 )
               : _rooms.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey.shade400),
-                          const SizedBox(height: 16),
-                          Text(
-                            context.tr('chatsEmpty'),
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            context.tr('chatsEmptyHint'),
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Colors.grey.shade600,
-                                ),
-                          ),
-                        ],
-                      ),
+                  ? AppEmptyState(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      title: context.tr('chatsEmpty'),
+                      subtitle: context.tr('chatsEmptyHint'),
                     )
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.pageH,
+                          12,
+                          AppSpacing.pageH,
+                          AppSpacing.pageBottom,
+                        ),
                         itemCount: _rooms.length + 1,
                         itemBuilder: (context, i) {
                           if (i == 0) {
@@ -405,6 +364,7 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
                                 context.tr('chatsDeleteSwipeHint'),
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      height: 1.35,
                                     ),
                               ),
                             );

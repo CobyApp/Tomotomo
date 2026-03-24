@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/supabase/app_supabase.dart';
+import '../../../core/ui/ui.dart';
 import '../../../core/widgets/on_app_resumed_mixin.dart';
 import '../../../data/character/characters_data.dart';
 import '../../../domain/entities/character.dart';
@@ -122,19 +123,24 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
     );
   }
 
-  void _showFriendQuickSheet(FriendSummary f) {
+  /// Same bottom sheet for people, built-in AI, and my characters: chat + remove (friend / character / info).
+  void _showFriendsTabActionSheet({
+    required String title,
+    required Future<void> Function() openChat,
+    required Future<void> Function() removeAction,
+  }) {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (sheetCtx) {
         return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 8, AppSpacing.pageH, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                f.title,
+                title,
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -145,9 +151,9 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {
+                      onPressed: () async {
                         Navigator.pop(sheetCtx);
-                        unawaited(_openFriendChat(f));
+                        await openChat();
                       },
                       icon: const Icon(Icons.chat_bubble_outline_rounded),
                       label: Text(sheetCtx.tr('friendsSheetOpenChat')),
@@ -160,9 +166,9 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
                         backgroundColor: Theme.of(sheetCtx).colorScheme.errorContainer,
                         foregroundColor: Theme.of(sheetCtx).colorScheme.onErrorContainer,
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         Navigator.pop(sheetCtx);
-                        unawaited(_confirmRemove(f));
+                        await removeAction();
                       },
                       icon: const Icon(Icons.person_remove_outlined),
                       label: Text(sheetCtx.tr('friendsSearchRemoveFriend')),
@@ -175,6 +181,51 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
         );
       },
     );
+  }
+
+  Future<void> _showBuiltinCannotRemoveDialog() async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.tr('friendsBuiltinCannotRemoveTitle')),
+        content: Text(context.tr('friendsBuiltinCannotRemoveBody')),
+        actions: [
+          FilledButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('confirm'))),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteMyCharacter(CharacterRecord r) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.tr('charactersDeleteTitle')),
+        content: Text(context.tr('charactersDeleteBody', params: {'name': r.name})),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.tr('cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.tr('charactersDelete'))),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final user = AppSupabase.auth.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('loginRequired'))));
+      return;
+    }
+    try {
+      await context.read<CharacterRecordRepository>().deleteCharacter(r.id, r.ownerId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('charactersDeleted'))));
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${context.tr('charactersDeleteFailed')}: $e')),
+      );
+    }
   }
 
   Future<void> _openAiCharacterChat(Character character) async {
@@ -222,61 +273,49 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.tr('tabFriends')),
-        centerTitle: false,
-      ),
+    return AppPageScaffold(
+      title: context.tr('tabFriends'),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoadingBody()
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_error!, textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
-                        FilledButton(onPressed: _load, child: Text(context.tr('retry'))),
-                      ],
-                    ),
-                  ),
+              ? AppErrorBody(
+                  message: _error!,
+                  onRetry: _load,
+                  retryLabel: context.tr('retry'),
                 )
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.pageH,
+                      12,
+                      AppSpacing.pageH,
+                      AppSpacing.pageBottom,
+                    ),
                     children: [
-                      _collapsibleSectionHeader(
-                        context,
+                      AppSectionHeader(
                         title: context.tr('friendsSectionLocalCharacters'),
                         expanded: _localCharactersExpanded,
+                        expandLabel: context.tr('friendsSectionExpand'),
+                        collapseLabel: context.tr('friendsSectionCollapse'),
                         onToggle: () => setState(() => _localCharactersExpanded = !_localCharactersExpanded),
                       ),
                       if (_localCharactersExpanded) ...[
-                        ...characters.map((c) => _builtInCharacterRow(c)),
+                        ...characters.map(_builtInCharacterRow),
                         ..._myCharacters.map(_myCharacterRow),
                       ],
-                      const SizedBox(height: 8),
-                      _collapsibleSectionHeader(
-                        context,
+                      SizedBox(height: AppSpacing.sectionAfter),
+                      AppSectionHeader(
                         title: context.tr('friendsSectionPeople'),
                         expanded: _peopleExpanded,
+                        expandLabel: context.tr('friendsSectionExpand'),
+                        collapseLabel: context.tr('friendsSectionCollapse'),
                         onToggle: () => setState(() => _peopleExpanded = !_peopleExpanded),
                       ),
                       if (_peopleExpanded) ...[
                         if (_friends.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(4, 0, 4, 16),
-                            child: Text(
-                              context.tr('friendsSectionPeopleEmpty'),
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                            ),
-                          )
+                          AppEmptyHint(text: context.tr('friendsSectionPeopleEmpty'))
                         else
                           ..._friends.map(_friendTile),
                       ],
@@ -286,228 +325,60 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
     );
   }
 
-  Widget _collapsibleSectionHeader(
-    BuildContext context, {
-    required String title,
-    required bool expanded,
-    required VoidCallback onToggle,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(left: 0, right: 0, bottom: 12, top: 4),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onToggle,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.2,
-                        ),
-                  ),
-                ),
-                Icon(
-                  expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-                  color: scheme.onSurfaceVariant,
-                  size: 26,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  expanded ? context.tr('friendsSectionCollapse') : context.tr('friendsSectionExpand'),
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: scheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _builtInCharacterRow(Character c) {
-    final scheme = Theme.of(context).colorScheme;
     final subtitle = c.displayNameSecondary;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: scheme.surface,
-        elevation: 0,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () => _openAiCharacterChat(c),
-          child: Ink(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  CircleAvatar(radius: 26, backgroundImage: c.imageProvider),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          c.displayNamePrimary,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (subtitle.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            subtitle,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.smart_toy_outlined, color: scheme.tertiary),
-                ],
-              ),
-            ),
+    return AppListRow(
+      leading: CircleAvatar(radius: AppSizes.listAvatar, backgroundImage: c.imageProvider),
+      title: c.displayNamePrimary,
+      subtitle: subtitle.isNotEmpty ? subtitle : null,
+      subtitleMaxLines: 1,
+      trailing: Icon(Icons.smart_toy_outlined, color: Theme.of(context).colorScheme.tertiary),
+      onTap: () => _showFriendsTabActionSheet(
+            title: c.displayNamePrimary,
+            openChat: () => _openAiCharacterChat(c),
+            removeAction: _showBuiltinCannotRemoveDialog,
           ),
-        ),
-      ),
     );
   }
 
   Widget _myCharacterRow(CharacterRecord r) {
-    final scheme = Theme.of(context).colorScheme;
     final initial = r.name.isNotEmpty ? r.name.substring(0, 1) : '?';
     final sub = r.listDetailLine.isNotEmpty
         ? r.listDetailLine
         : (r.language == 'ja' ? context.tr('langJa') : context.tr('langKo'));
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: scheme.surface,
-        elevation: 0,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () => _openRecordChat(r),
-          child: Ink(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 26,
-                    foregroundImage: r.avatarUrl != null && r.avatarUrl!.trim().isNotEmpty
-                        ? NetworkImage(r.avatarUrl!.trim())
-                        : null,
-                    child: r.avatarUrl == null || r.avatarUrl!.trim().isEmpty ? Text(initial, style: const TextStyle(fontSize: 18)) : null,
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          r.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          sub,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.smart_toy_outlined, color: scheme.tertiary),
-                ],
-              ),
-            ),
-          ),
-        ),
+    return AppListRow(
+      leading: CircleAvatar(
+        radius: AppSizes.listAvatar,
+        foregroundImage: r.avatarUrl != null && r.avatarUrl!.trim().isNotEmpty ? NetworkImage(r.avatarUrl!.trim()) : null,
+        child: r.avatarUrl == null || r.avatarUrl!.trim().isEmpty ? Text(initial, style: const TextStyle(fontSize: 18)) : null,
       ),
+      title: r.name,
+      subtitle: sub,
+      trailing: Icon(Icons.smart_toy_outlined, color: Theme.of(context).colorScheme.tertiary),
+      onTap: () => _showFriendsTabActionSheet(
+            title: r.name,
+            openChat: () => _openRecordChat(r),
+            removeAction: () => _confirmDeleteMyCharacter(r),
+          ),
     );
   }
 
   Widget _friendTile(FriendSummary f) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: scheme.surface,
-        elevation: 0,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () => _showFriendQuickSheet(f),
-          child: Ink(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 26,
-                    foregroundImage: f.avatarUrl != null && f.avatarUrl!.trim().isNotEmpty
-                        ? NetworkImage(f.avatarUrl!.trim())
-                        : null,
-                    child: f.avatarUrl == null || f.avatarUrl!.trim().isEmpty
-                        ? Text(f.title.isNotEmpty ? f.title.substring(0, 1) : '?', style: const TextStyle(fontSize: 18))
-                        : null,
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          f.title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          f.subtitleLine,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+    return AppListRow(
+      leading: CircleAvatar(
+        radius: AppSizes.listAvatar,
+        foregroundImage: f.avatarUrl != null && f.avatarUrl!.trim().isNotEmpty ? NetworkImage(f.avatarUrl!.trim()) : null,
+        child: f.avatarUrl == null || f.avatarUrl!.trim().isEmpty
+            ? Text(f.title.isNotEmpty ? f.title.substring(0, 1) : '?', style: const TextStyle(fontSize: 18))
+            : null,
       ),
+      title: f.title,
+      subtitle: f.subtitleLine,
+      onTap: () => _showFriendsTabActionSheet(
+            title: f.title,
+            openChat: () => _openFriendChat(f),
+            removeAction: () => _confirmRemove(f),
+          ),
     );
   }
 }

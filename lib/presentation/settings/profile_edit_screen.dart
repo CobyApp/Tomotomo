@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/storage/character_storage.dart';
 import '../../core/supabase/app_supabase.dart';
+import '../../core/ui/ui.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../locale/l10n_context.dart';
@@ -164,68 +165,43 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final user = AppSupabase.auth.currentUser;
     final scheme = Theme.of(context).colorScheme;
 
+    final Widget body;
+    final List<Widget>? actions;
+
     if (_loading) {
-      return Scaffold(
-        appBar: AppBar(title: Text(context.tr('profileEditTitle')), centerTitle: false),
-        body: const Center(child: CircularProgressIndicator()),
+      body = const AppLoadingBody();
+      actions = null;
+    } else if (user == null) {
+      body = Center(child: Text(context.tr('loginRequired')));
+      actions = null;
+    } else if (_profile == null) {
+      body = AppErrorBody(
+        message: _error == 'missing' ? context.tr('profileEditLoadError') : (_error ?? context.tr('profileEditLoadError')),
+        onRetry: () => unawaited(_load()),
+        retryLabel: context.tr('retry'),
       );
-    }
-
-    if (user == null) {
-      return Scaffold(
-        appBar: AppBar(title: Text(context.tr('profileEditTitle')), centerTitle: false),
-        body: Center(child: Text(context.tr('loginRequired'))),
-      );
-    }
-
-    if (_profile == null) {
-      return Scaffold(
-        appBar: AppBar(title: Text(context.tr('profileEditTitle')), centerTitle: false),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _error == 'missing' ? context.tr('profileEditLoadError') : (_error ?? context.tr('profileEditLoadError')),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                FilledButton(onPressed: () => unawaited(_load()), child: Text(context.tr('retry'))),
-              ],
-            ),
-          ),
+      actions = null;
+    } else {
+      final profile = _profile!;
+      final hasPhoto = _avatarUrl != null && _avatarUrl!.trim().isNotEmpty;
+      actions = [
+        TextButton(
+          onPressed: _saving ? null : _save,
+          child: _saving
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
+                )
+              : Text(context.tr('save')),
         ),
-      );
-    }
-
-    final profile = _profile!;
-    final hasPhoto = _avatarUrl != null && _avatarUrl!.trim().isNotEmpty;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.tr('profileEditTitle')),
-        centerTitle: false,
-        actions: [
-          TextButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
-                  )
-                : Text(context.tr('save')),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      ];
+      body = ListView(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 16, AppSpacing.pageH, AppSpacing.pageBottom),
         children: [
           Text(
             context.tr('profileEditSubtitle'),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.4),
           ),
           const SizedBox(height: 24),
           if (_error != null) ...[
@@ -321,7 +297,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ],
-      ),
+      );
+    }
+
+    return AppPageScaffold(
+      title: context.tr('profileEditTitle'),
+      transparentBackground: false,
+      actions: actions,
+      body: body,
     );
   }
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/chat_theme_data.dart';
+import '../../core/ui/ui.dart';
 import '../../domain/entities/block_relation.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/repositories/chat_repository.dart';
@@ -171,111 +172,21 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   void _showResetDialog(BuildContext context, ChatViewModel viewModel) {
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: Text(context.tr('chatResetTitle')),
+        content: Text(context.tr('chatResetWarning'), style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(height: 1.4)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _resetChat(context, viewModel);
+            },
+            child: Text(context.tr('chatResetConfirm')),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: widget.character.primaryColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.refresh,
-                  size: 36,
-                  color: widget.character.primaryColor,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                '대화 초기화',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  color: widget.character.primaryColor,
-                  fontFamily: 'Pretendard',
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!, width: 1),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, size: 18, color: Colors.grey[600]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '삭제된 대화는 복구할 수 없습니다',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                          height: 1.4,
-                          fontFamily: 'Pretendard',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text(
-                      '취소',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600], fontFamily: 'Pretendard'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _resetChat(context, viewModel);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: widget.character.primaryColor,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      '초기화',
-                      style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Pretendard'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -285,27 +196,9 @@ class _ChatScreenState extends State<ChatScreen>
     _scrollToBottom();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: widget.character.primaryColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text(
-                '대화가 초기화되었습니다',
-                style: TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'Pretendard'),
-              ),
-            ],
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        content: Text(context.tr('chatResetDoneSnackbar')),
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 96, left: 16, right: 16),
+        margin: const EdgeInsets.fromLTRB(AppSpacing.pageH, 0, AppSpacing.pageH, 96),
       ),
     );
   }
@@ -387,6 +280,7 @@ class _ChatScreenContent extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
+        centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: scheme.onSurface, size: 20),
           onPressed: () => Navigator.pop(context),
@@ -412,14 +306,14 @@ class _ChatScreenContent extends StatelessWidget {
                 children: [
                   Text(
                     character.displayNamePrimary,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    style: AppTextStyles.listTitle(context),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (character.displayNameSecondary.isNotEmpty)
                     Text(
                       character.displayNameSecondary,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                      style: AppTextStyles.listSubtitle(context),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

@@ -26,7 +26,31 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <intent-filter>
+                <action android:name="es.antonborri.home_widget.action.LAUNCH" />
+            </intent-filter>
         </activity>
+
+        <receiver
+            android:name=".NotebookWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_notebook_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/notebook_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".NotebookWidgetActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.dime.tomotomo.action.NOTEBOOK_WIDGET_LANG_KO" />
+                <action android:name="com.dime.tomotomo.action.NOTEBOOK_WIDGET_LANG_JA" />
+            </intent-filter>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

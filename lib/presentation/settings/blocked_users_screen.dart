@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/ui/ui.dart';
 import '../../domain/entities/blocked_user_summary.dart';
 import '../../domain/repositories/friends_repository.dart';
 import '../locale/l10n_context.dart';
@@ -59,57 +60,52 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.tr('blockedUsersTitle')),
-        centerTitle: false,
-      ),
+    return AppPageScaffold(
+      title: context.tr('blockedUsersTitle'),
+      transparentBackground: false,
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoadingBody()
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_error!, textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
-                        FilledButton(onPressed: _load, child: Text(context.tr('retry'))),
-                      ],
-                    ),
-                  ),
+              ? AppErrorBody(
+                  message: _error!,
+                  onRetry: _load,
+                  retryLabel: context.tr('retry'),
                 )
               : _list.isEmpty
-                  ? Center(child: Text(context.tr('blockedUsersEmpty')))
+                  ? AppEmptyState(
+                      icon: Icons.block_outlined,
+                      title: context.tr('blockedUsersEmpty'),
+                      subtitle: context.tr('settingsBlockedUsersSubtitle'),
+                    )
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.pageH,
+                          12,
+                          AppSpacing.pageH,
+                          AppSpacing.pageBottom,
+                        ),
                         itemCount: _list.length,
                         itemBuilder: (ctx, i) {
                           final u = _list[i];
                           final initial = u.title.isNotEmpty ? u.title.substring(0, 1) : '?';
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                foregroundImage: u.avatarUrl != null && u.avatarUrl!.trim().isNotEmpty
-                                    ? NetworkImage(u.avatarUrl!.trim())
-                                    : null,
-                                child: u.avatarUrl == null || u.avatarUrl!.trim().isEmpty ? Text(initial) : null,
-                              ),
-                              title: Text(u.title),
-                              subtitle: Text(
-                                u.userId,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              trailing: TextButton(
-                                onPressed: () => _unblock(u),
-                                child: Text(context.tr('blockedUsersUnblock')),
-                              ),
+                          return AppListRow(
+                            marginBottom: AppSpacing.listGap,
+                            onTap: null,
+                            leading: CircleAvatar(
+                              radius: AppSizes.listAvatar,
+                              foregroundImage: u.avatarUrl != null && u.avatarUrl!.trim().isNotEmpty
+                                  ? NetworkImage(u.avatarUrl!.trim())
+                                  : null,
+                              child: u.avatarUrl == null || u.avatarUrl!.trim().isEmpty ? Text(initial) : null,
+                            ),
+                            title: u.title,
+                            subtitle: u.userId,
+                            subtitleMaxLines: 1,
+                            trailing: TextButton(
+                              onPressed: () => _unblock(u),
+                              child: Text(context.tr('blockedUsersUnblock')),
                             ),
                           );
                         },

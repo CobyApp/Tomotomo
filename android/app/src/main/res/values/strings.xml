@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_notebook_title">단어장 · 単語帳</string>
+    <string name="widget_notebook_description">저장한 단어를 홈 화면에서 확인합니다</string>
+    <string name="widget_lang_ko">한국어</string>
+    <string name="widget_lang_ja">日本語</string>
+    <string name="widget_notebook_empty_hint">저장한 단어가 없습니다. 앱에서 채팅 설명의 ＋로 추가하세요.</string>
+    <string name="widget_login_hint">앱에서 로그인하면 단어장이 표시됩니다.</string>
+</resources>

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/storage/character_storage.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/ui/ui.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
@@ -109,23 +111,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 48),
-                Text(
-                  context.tr('signUpTitle'),
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppTheme.shellGradientTop(theme.colorScheme),
+              theme.colorScheme.surfaceContainerLowest,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageH),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 36),
+                  Text(
+                    context.tr('signUpTitle'),
+                    style: AppTextStyles.pageTitle(context).copyWith(fontSize: 26),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 48),
+                  const SizedBox(height: 32),
                 TextFormField(
                   controller: _displayNameController,
                   textCapitalization: TextCapitalization.words,
@@ -151,7 +162,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   textCapitalization: TextCapitalization.sentences,
                 ),
                 const SizedBox(height: 16),
-                Text(context.tr('signUpProfilePhoto'), style: theme.textTheme.titleSmall),
+                Text(context.tr('signUpProfilePhoto'), style: AppTextStyles.sectionLabel(context)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -252,10 +263,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   onPressed: () => context.read<AppAuthState>().toggleSignUp(),
                   child: Text(context.tr('loginLink')),
                 ),
+                SizedBox(height: AppSpacing.pageBottom),
               ],
             ),
           ),
         ),
+      ),
       ),
     );
   }

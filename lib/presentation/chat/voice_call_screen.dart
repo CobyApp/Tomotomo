@@ -7,6 +7,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/supabase/app_supabase.dart';
+import '../../core/ui/ui.dart';
 import '../../core/tts/tts_language_resolver.dart';
 import '../../core/theme/chat_theme_data.dart';
 import '../../domain/entities/character.dart';
@@ -386,11 +387,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> with WidgetsBindingOb
       appBar: AppBar(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
+        centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.close_rounded, color: scheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(context.tr('voiceCallTitle')),
+        title: Text(context.tr('voiceCallTitle'), style: AppTextStyles.pageTitle(context)),
       ),
       body: ListenableBuilder(
         listenable: _viewModel,
@@ -458,7 +460,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> with WidgetsBindingOb
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 8, AppSpacing.pageH, AppSpacing.pageBottom),
                 child: Column(
                   children: [
                     Text(

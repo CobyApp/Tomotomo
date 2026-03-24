@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/supabase/app_supabase.dart';
+import '../../../core/ui/ui.dart';
 import '../../../domain/entities/character_record.dart';
 import '../../../domain/entities/character.dart';
 import '../../../domain/entities/user_profile_search_result.dart';
@@ -111,23 +112,20 @@ class _AddFriendTabState extends State<AddFriendTab> with SingleTickerProviderSt
     final friendsRepo = context.read<FriendsRepository>();
     final charRepo = context.read<CharacterRecordRepository>();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.tr('tabAddFriend')),
-        centerTitle: false,
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: context.tr('friendsSearchTabPeople'), icon: const Icon(Icons.person_outlined, size: 20)),
-            Tab(text: context.tr('friendsSearchTabCharacters'), icon: const Icon(Icons.face_outlined, size: 20)),
-          ],
-        ),
+    return AppPageScaffold(
+      title: context.tr('tabAddFriend'),
+      bottom: TabBar(
+        controller: _tabController,
+        tabs: [
+          Tab(text: context.tr('friendsSearchTabPeople'), icon: const Icon(Icons.person_outlined, size: 20)),
+          Tab(text: context.tr('friendsSearchTabCharacters'), icon: const Icon(Icons.face_outlined, size: 20)),
+        ],
       ),
       body: _loadingIds
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoadingBody()
           : TabBarView(
               controller: _tabController,
-              children: [
+              children: <Widget>[
                 AddFriendPeoplePanel(
                   myUserId: myId,
                   existingFriendIds: _existingFriendIds,

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/home_widget/notebook_home_widget_sync.dart';
+import '../../core/ui/ui.dart';
 import '../../core/widgets/on_app_resumed_mixin.dart';
 import '../../domain/entities/saved_expression.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
@@ -94,6 +96,7 @@ class WordBookScreenState extends State<WordBookScreen>
         _items = lang == 'ko' ? koList : jaList;
         _loading = false;
       });
+      _syncHomeWidgetFromServer();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -123,6 +126,7 @@ class WordBookScreenState extends State<WordBookScreen>
         _items = list;
         _loading = false;
       });
+      _syncHomeWidgetFromServer();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -136,6 +140,13 @@ class WordBookScreenState extends State<WordBookScreen>
     if (lang == _notebookLang) return;
     setState(() => _notebookLang = lang);
     unawaited(_load());
+  }
+
+  void _syncHomeWidgetFromServer() {
+    if (!_langInitialized || !mounted) return;
+    final repo = context.read<SavedExpressionRepository>();
+    final code = context.read<LocaleNotifier>().languageCode;
+    unawaited(syncNotebookToHomeWidget(repo, defaultLangIfUnset: code == 'ja' ? 'ja' : 'ko'));
   }
 
   Future<void> _confirmDelete(SavedExpression e) async {
@@ -159,6 +170,7 @@ class WordBookScreenState extends State<WordBookScreen>
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(deletedMsg)));
       await _load(showSpinner: false);
+      _syncHomeWidgetFromServer();
     } catch (err) {
       if (!mounted) return;
       messenger.showSnackBar(
@@ -172,19 +184,19 @@ class WordBookScreenState extends State<WordBookScreen>
     final loc = Localizations.localeOf(context).toString();
     final scheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.tr('notebookTitle')),
-        centerTitle: false,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loading ? null : () => unawaited(_load())),
-        ],
-      ),
+    return AppPageScaffold(
+      title: context.tr('notebookTitle'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh_rounded),
+          onPressed: _loading ? null : () => unawaited(_load()),
+        ),
+      ],
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 8, AppSpacing.pageH, 8),
             child: SegmentedButton<String>(
               segments: [
                 ButtonSegment<String>(
@@ -207,47 +219,25 @@ class WordBookScreenState extends State<WordBookScreen>
           ),
           Expanded(
             child: !_langInitialized || _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? const AppLoadingBody()
                 : _error != null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(_error!, textAlign: TextAlign.center),
-                              const SizedBox(height: 16),
-                              FilledButton(onPressed: () => unawaited(_load()), child: Text(context.tr('retry'))),
-                            ],
-                          ),
-                        ),
+                    ? AppErrorBody(
+                        message: _error!,
+                        onRetry: () => unawaited(_load()),
+                        retryLabel: context.tr('retry'),
                       )
                     : _items.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.menu_book_outlined, size: 64, color: Colors.grey.shade400),
-                                  const SizedBox(height: 16),
-                                  Text(context.tr('notebookEmpty'), style: Theme.of(context).textTheme.titleLarge),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    _notebookLang == 'ko'
-                                        ? context.tr('notebookEmptyHintKo')
-                                        : context.tr('notebookEmptyHintJa'),
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
-                                  ),
-                                ],
-                              ),
-                            ),
+                        ? AppEmptyState(
+                            icon: Icons.menu_book_outlined,
+                            title: context.tr('notebookEmpty'),
+                            subtitle: _notebookLang == 'ko'
+                                ? context.tr('notebookEmptyHintKo')
+                                : context.tr('notebookEmptyHintJa'),
                           )
                         : RefreshIndicator(
                             onRefresh: _load,
                             child: ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 8, AppSpacing.pageH, 8),
                               itemCount: _items.length,
                               itemBuilder: (context, i) {
                                 final e = _items[i];
@@ -258,12 +248,12 @@ class WordBookScreenState extends State<WordBookScreen>
                                 final hasGloss = gloss != null && gloss.isNotEmpty;
 
                                 return Card(
-                                  margin: const EdgeInsets.only(bottom: 10),
+                                  margin: const EdgeInsets.only(bottom: AppSpacing.listGap),
                                   child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                     title: Text(
                                       e.content ?? '—',
-                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 17),
+                                      style: AppTextStyles.listTitle(context).copyWith(fontSize: 17),
                                     ),
                                     subtitle: Padding(
                                       padding: const EdgeInsets.only(top: 6),
@@ -303,7 +293,7 @@ class WordBookScreenState extends State<WordBookScreen>
                                               Expanded(
                                                 child: Text(
                                                   dateStr,
-                                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                                  style: AppTextStyles.listSubtitle(context).copyWith(fontSize: 12),
                                                   overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
@@ -313,10 +303,9 @@ class WordBookScreenState extends State<WordBookScreen>
                                             const SizedBox(height: 8),
                                             Text(
                                               context.tr('notebookLegacyNoteLabel'),
-                                              style: TextStyle(
+                                              style: AppTextStyles.listSubtitle(context).copyWith(
                                                 fontSize: 11,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.grey.shade600,
+                                                fontWeight: FontWeight.w700,
                                               ),
                                             ),
                                             const SizedBox(height: 4),
@@ -324,7 +313,7 @@ class WordBookScreenState extends State<WordBookScreen>
                                               legacyBlock,
                                               maxLines: 6,
                                               overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(fontSize: 13, height: 1.4, color: Colors.grey.shade700),
+                                              style: AppTextStyles.listSubtitle(context).copyWith(fontSize: 13),
                                             ),
                                           ],
                                         ],

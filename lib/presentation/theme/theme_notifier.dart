@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/chat_theme_data.dart';
 import '../../domain/entities/user_theme.dart';
 import '../../domain/repositories/theme_repository.dart';
 
@@ -13,24 +14,17 @@ class ThemeNotifier extends ChangeNotifier {
 
   UserTheme? get overrides => _overrides;
 
-  bool get _hasOverrides =>
-      _overrides != null &&
-      (_overrides!.accent != null ||
-          _overrides!.chatBubbleUser != null ||
-          _overrides!.chatBubbleBot != null ||
-          _overrides!.chatBg != null);
-
   ThemeData get theme {
-    if (!_hasOverrides) {
-      return AppTheme.light;
-    }
-    return AppTheme.buildWithOverrides(
-      AppTheme.light,
-      accent: _overrides!.accent,
-      chatBubbleUser: _overrides!.chatBubbleUser,
-      chatBubbleBot: _overrides!.chatBubbleBot,
-      chatBg: _overrides!.chatBg,
+    final o = _overrides;
+    final seed = (o != null && o.accent != null && o.accent!.trim().isNotEmpty)
+        ? AppTheme.parseAccentHex(o.accent)
+        : AppTheme.seedColor;
+    final chat = ChatThemeData.fromUserTheme(
+      chatBubbleUser: o?.chatBubbleUser,
+      chatBubbleBot: o?.chatBubbleBot,
+      chatBg: o?.chatBg,
     );
+    return AppTheme.buildLightTheme(seedColor: seed, chatExtension: chat);
   }
 
   Future<void> load(String? userId) async {
