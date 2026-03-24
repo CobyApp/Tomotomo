@@ -15,6 +15,11 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		7F2A8B9C1CF9000F007C120A /* NotebookWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F2A8B9C1CF9000F007C1202 /* NotebookWidget.swift */; };
+		7F2A8B9C1CF9000F007C120B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7F2A8B9C1CF9000F007C1208 /* Assets.xcassets */; };
+		7F2A8B9C1CF9000F007C120C /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7F2A8B9C1CF9000F007C1206 /* WidgetKit.framework */; };
+		7F2A8B9C1CF9000F007C120D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7F2A8B9C1CF9000F007C1207 /* SwiftUI.framework */; };
+		7F2A8B9C1CF9000F007C120E /* NotebookWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7F2A8B9C1CF9000F007C1205 /* NotebookWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,9 +30,27 @@
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
 		};
+		7F2A8B9C1CF9000F007C1210 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7F2A8B9C1CF9000F007C1215 /* NotebookWidgetExtension */;
+			remoteInfo = NotebookWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		7F2A8B9C1CF9000F007C120F /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				7F2A8B9C1CF9000F007C120E /* NotebookWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9705A1C41CF9048500538489 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -60,6 +83,15 @@
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F62AE92A7FCEA9545F0A529F /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
+		7F2A8B9C1CF9000F007C1201 /* Extension.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Extension.xcconfig; sourceTree = "<group>"; };
+		7F2A8B9C1CF9000F007C1202 /* NotebookWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookWidget.swift; sourceTree = "<group>"; };
+		7F2A8B9C1CF9000F007C1203 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7F2A8B9C1CF9000F007C1204 /* NotebookWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NotebookWidgetExtension.entitlements; sourceTree = "<group>"; };
+		7F2A8B9C1CF9000F007C1205 /* NotebookWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotebookWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7F2A8B9C1CF9000F007C1206 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		7F2A8B9C1CF9000F007C1207 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		7F2A8B9C1CF9000F007C1208 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		7F2A8B9C1CF9000F007C1209 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +100,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				7C3EA482D04C5F43E1ED39FA /* Pods_Runner.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7F2A8B9C1CF9000F007C1212 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F2A8B9C1CF9000F007C120D /* SwiftUI.framework in Frameworks */,
+				7F2A8B9C1CF9000F007C120C /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,6 +139,7 @@
 			children = (
 				9740EEB11CF90186004384FC /* Flutter */,
 				97C146F01CF9000F007C117D /* Runner */,
+				7F2A8B9C1CF9000F007C121A /* NotebookWidgetExtension */,
 				97C146EF1CF9000F007C117D /* Products */,
 				331C8082294A63A400263BE5 /* RunnerTests */,
 				FB1F23B3D9AFD50151A7BE83 /* Pods */,
@@ -109,6 +151,7 @@
 			isa = PBXGroup;
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
+				7F2A8B9C1CF9000F007C1205 /* NotebookWidgetExtension.appex */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
 			);
 			name = Products;
@@ -117,6 +160,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				7F2A8B9C1CF9000F007C1209 /* Runner.entitlements */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
@@ -132,9 +176,23 @@
 		E9C3CEBEB7652B8F5E3587FB /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				7F2A8B9C1CF9000F007C1206 /* WidgetKit.framework */,
+				7F2A8B9C1CF9000F007C1207 /* SwiftUI.framework */,
 				615456D43481D364F3B21616 /* Pods_Runner.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		7F2A8B9C1CF9000F007C121A /* NotebookWidgetExtension */ = {
+			isa = PBXGroup;
+			children = (
+				7F2A8B9C1CF9000F007C1202 /* NotebookWidget.swift */,
+				7F2A8B9C1CF9000F007C1208 /* Assets.xcassets */,
+				7F2A8B9C1CF9000F007C1203 /* Info.plist */,
+				7F2A8B9C1CF9000F007C1204 /* NotebookWidgetExtension.entitlements */,
+				7F2A8B9C1CF9000F007C1201 /* Extension.xcconfig */,
+			);
+			path = NotebookWidgetExtension;
 			sourceTree = "<group>";
 		};
 		FB1F23B3D9AFD50151A7BE83 /* Pods */ = {
@@ -167,6 +225,23 @@
 			productReference = 331C8081294A63A400263BE5 /* RunnerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		7F2A8B9C1CF9000F007C1215 /* NotebookWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7F2A8B9C1CF9000F007C1216 /* Build configuration list for PBXNativeTarget "NotebookWidgetExtension" */;
+			buildPhases = (
+				7F2A8B9C1CF9000F007C1214 /* Sources */,
+				7F2A8B9C1CF9000F007C1213 /* Resources */,
+				7F2A8B9C1CF9000F007C1212 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NotebookWidgetExtension;
+			productName = NotebookWidgetExtension;
+			productReference = 7F2A8B9C1CF9000F007C1205 /* NotebookWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		97C146ED1CF9000F007C117D /* Runner */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
@@ -177,12 +252,14 @@
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
+				7F2A8B9C1CF9000F007C120F /* Embed Foundation Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				6587D99F57CA7D797B8973ED /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				7F2A8B9C1CF9000F007C1211 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
@@ -202,6 +279,9 @@
 					331C8080294A63A400263BE5 = {
 						CreatedOnToolsVersion = 14.0;
 						TestTargetID = 97C146ED1CF9000F007C117D;
+					};
+					7F2A8B9C1CF9000F007C1215 = {
+						CreatedOnToolsVersion = 15.0;
 					};
 					97C146ED1CF9000F007C117D = {
 						CreatedOnToolsVersion = 7.3.1;
@@ -223,12 +303,21 @@
 			projectRoot = "";
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
+				7F2A8B9C1CF9000F007C1215 /* NotebookWidgetExtension */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		7F2A8B9C1CF9000F007C1213 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F2A8B9C1CF9000F007C120B /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		331C807F294A63A400263BE5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -323,6 +412,14 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		7F2A8B9C1CF9000F007C1214 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F2A8B9C1CF9000F007C120A /* NotebookWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		331C807D294A63A400263BE5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -347,6 +444,11 @@
 			isa = PBXTargetDependency;
 			target = 97C146ED1CF9000F007C117D /* Runner */;
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
+		};
+		7F2A8B9C1CF9000F007C1211 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7F2A8B9C1CF9000F007C1215 /* NotebookWidgetExtension */;
+			targetProxy = 7F2A8B9C1CF9000F007C1210 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -428,6 +530,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = 3Y8YH8GWMM;
 				ENABLE_BITCODE = NO;
@@ -615,6 +718,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = 3Y8YH8GWMM;
 				ENABLE_BITCODE = NO;
@@ -645,6 +749,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = 3Y8YH8GWMM;
 				ENABLE_BITCODE = NO;
@@ -667,6 +772,97 @@
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
+		};
+		7F2A8B9C1CF9000F007C1217 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7F2A8B9C1CF9000F007C1201 /* Extension.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_ENTITLEMENTS = NotebookWidgetExtension/NotebookWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 3Y8YH8GWMM;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NotebookWidgetExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NotebookWidget;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dime.tomotomo.NotebookWidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		7F2A8B9C1CF9000F007C1218 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7F2A8B9C1CF9000F007C1201 /* Extension.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_ENTITLEMENTS = NotebookWidgetExtension/NotebookWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 3Y8YH8GWMM;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NotebookWidgetExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NotebookWidget;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dime.tomotomo.NotebookWidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		7F2A8B9C1CF9000F007C1219 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7F2A8B9C1CF9000F007C1201 /* Extension.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_ENTITLEMENTS = NotebookWidgetExtension/NotebookWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 3Y8YH8GWMM;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NotebookWidgetExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NotebookWidget;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dime.tomotomo.NotebookWidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Profile;
 		};
 /* End XCBuildConfiguration section */
 
@@ -697,6 +893,16 @@
 				97C147061CF9000F007C117D /* Debug */,
 				97C147071CF9000F007C117D /* Release */,
 				249021D4217E4FDB00AE95B9 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7F2A8B9C1CF9000F007C1216 /* Build configuration list for PBXNativeTarget "NotebookWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7F2A8B9C1CF9000F007C1217 /* Debug */,
+				7F2A8B9C1CF9000F007C1218 /* Release */,
+				7F2A8B9C1CF9000F007C1219 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

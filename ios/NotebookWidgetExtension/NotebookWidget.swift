@@ -1,5 +1,4 @@
-// Reference copy for a Widget Extension target (not built until you add the target in Xcode).
-// Widget kind MUST be "NotebookWidget" to match HomeWidget.updateWidget(iOSName:).
+// Widget kind MUST be "NotebookWidget" (matches HomeWidget.updateWidget iOSName).
 
 import SwiftUI
 import WidgetKit
@@ -63,7 +62,7 @@ struct NotebookWidgetView: View {
         .font(.headline)
       Text(entry.lang == "ja" ? "日本語" : "한국어")
         .font(.caption)
-        .foregroundStyle(.secondary)
+        .foregroundColor(.secondary)
       if entry.loggedOut {
         Text("앱에서 로그인하면 표시됩니다")
           .font(.caption)
@@ -84,15 +83,21 @@ struct NotebookWidgetView: View {
 }
 
 @main
+struct NotebookWidgetBundle: WidgetBundle {
+  var body: some Widget {
+    NotebookWidget()
+  }
+}
+
 struct NotebookWidget: Widget {
   let kind: String = "NotebookWidget"
 
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: kind, provider: NotebookProvider()) { entry in
       NotebookWidgetView(entry: entry)
-        .containerBackground(.fill.tertiary, for: .widget)
     }
     .configurationDisplayName("단어장 / 単語帳")
     .description("저장한 단어를 홈 화면에 표시합니다.")
+    .supportedFamilies([.systemSmall, .systemMedium])
   }
 }
