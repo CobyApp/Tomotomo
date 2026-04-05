@@ -37,7 +37,7 @@ class AppListRow extends StatelessWidget {
           child: Ink(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadii.card),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.38)),
+              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.25)),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -115,7 +115,7 @@ class AppListRowCustom extends StatelessWidget {
           child: Ink(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadii.card),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.38)),
+              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.25)),
             ),
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 14, vertical: verticalPadding),

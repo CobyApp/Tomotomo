@@ -6,7 +6,23 @@ class AppLoadingBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
+    final seed = Theme.of(context).colorScheme.primary;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 44,
+            height: 44,
+            child: CircularProgressIndicator(
+              strokeWidth: 3.5,
+              color: seed,
+              strokeCap: StrokeCap.round,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -61,32 +77,60 @@ class AppEmptyState extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.emoji,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final String? emoji;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 64, color: scheme.outline),
-          const SizedBox(height: 16),
-          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    scheme.primaryContainer,
+                    scheme.secondaryContainer,
+                  ],
+                ),
+              ),
+              child: Center(
+                child: emoji != null
+                    ? Text(emoji!, style: const TextStyle(fontSize: 38))
+                    : Icon(icon, size: 40, color: scheme.primary),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.4),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

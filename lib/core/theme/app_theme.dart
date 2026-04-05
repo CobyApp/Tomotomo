@@ -7,8 +7,8 @@ class AppTheme {
 
   static const String fontFamily = 'Pretendard';
 
-  /// Default brand seed when the user has no accent override (indigo-violet, Gen-Z friendly).
-  static const Color seedColor = Color(0xFF6366F1);
+  /// Default brand seed — soft rose pink, kawaii & friendly.
+  static const Color seedColor = Color(0xFFFF6B9D);
 
   static Color parseAccentHex(String? hex) {
     if (hex == null || hex.isEmpty) return seedColor;
@@ -24,7 +24,7 @@ class AppTheme {
 
   /// Bottom color for shell gradient.
   static Color shellGradientBottom(ColorScheme scheme) {
-    return Color.alphaBlend(scheme.primary.withValues(alpha: 0.035), scheme.surface);
+    return Color.alphaBlend(scheme.tertiary.withValues(alpha: 0.05), scheme.surface);
   }
 
   /// Full light theme; [seedColor] drives ColorScheme. Chat bubbles/bg from [chatExtension].
@@ -111,52 +111,54 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
           textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700, fontSize: 15),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          side: BorderSide(color: scheme.outline.withValues(alpha: 0.35)),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          side: BorderSide(color: scheme.outline.withValues(alpha: 0.40)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scheme.surfaceContainerHigh,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.28)),
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.25)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           borderSide: BorderSide(color: seed, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           borderSide: BorderSide(color: scheme.error),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: 0.6)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: 0.55)),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        elevation: 2,
-        focusElevation: 4,
-        highlightElevation: 4,
+        elevation: 3,
+        focusElevation: 5,
+        highlightElevation: 5,
         backgroundColor: seed,
         foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        extendedPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
       ),
       dividerTheme: DividerThemeData(
         color: scheme.outlineVariant.withValues(alpha: 0.35),
@@ -180,8 +182,12 @@ class AppTheme {
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.30)),
       ),
       textTheme: TextTheme(
         displayLarge: const TextStyle(fontFamily: fontFamily),

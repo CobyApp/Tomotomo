@@ -10,13 +10,15 @@ abstract final class AppSpacing {
 }
 
 abstract final class AppRadii {
-  static const double card = 20;
-  static const double sheet = 24;
+  static const double card = 24;
+  static const double cardSmall = 18;
+  static const double sheet = 28;
   static const double pill = 999;
 }
 
 abstract final class AppSizes {
   static const double listAvatar = 26;
+  static const double listAvatarLg = 32;
   static const double navIcon = 24;
 }
 
