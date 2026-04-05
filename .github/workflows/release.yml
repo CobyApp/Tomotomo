@@ -1,7 +1,7 @@
 name: Release Build & Deploy
 # 프로덕션 빌드: release 브랜치 → 프로덕션 서버
 # Android: AAB → Google Play Production
-# iOS: IPA → App Store Connect
+# iOS: IPA → App Store Connect (API Key 자동 서명)
 
 on:
   push:
@@ -81,6 +81,7 @@ jobs:
 
   # ─────────────────────────────────────────────
   # iOS: IPA 빌드 → App Store Connect
+  # App Store Connect API Key로 자동 서명 (인증서/프로파일 자동 관리)
   # ─────────────────────────────────────────────
   build-ios:
     name: 🍎 iOS Build & Deploy
@@ -112,74 +113,15 @@ jobs:
             [ $i -lt 3 ] && echo "⚠️ 실패, 10초 후 재시도..." && sleep 10
           done
 
-      - name: Setup Certificates & Provisioning Profile
-        if: env.APPLE_CERTIFICATE_BASE64 != ''
+      - name: Setup App Store Connect API Key
         env:
-          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
         run: |
-          # 키체인 설정
-          security create-keychain -p "" build.keychain || true
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "" build.keychain
-          security set-keychain-settings -t 3600 -u build.keychain
-
-          # 인증서 import
-          echo "$APPLE_CERTIFICATE_BASE64" | base64 -d > cert.p12
-          security import cert.p12 -k build.keychain \
-            -P "$APPLE_CERTIFICATE_PASSWORD" \
-            -T /usr/bin/codesign || exit 1
-          security set-key-partition-list \
-            -S apple-tool:,apple:,codesign: -s -k "" build.keychain || true
-
-          # 프로비저닝 프로파일 설치
-          if [ -n "$APPLE_PROVISIONING_PROFILE_BASE64" ]; then
-            echo "$APPLE_PROVISIONING_PROFILE_BASE64" | base64 -d > profile.mobileprovision
-
-            TEMP_PLIST=$(mktemp)
-            security cms -D -i profile.mobileprovision > "$TEMP_PLIST"
-            PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" "$TEMP_PLIST")
-            PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print Name" "$TEMP_PLIST" 2>/dev/null || echo "")
-            PROFILE_TEAM_ID=$(/usr/libexec/PlistBuddy -c "Print TeamIdentifier:0" "$TEMP_PLIST" 2>/dev/null || echo "")
-            rm -f "$TEMP_PLIST"
-
-            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-            cp profile.mobileprovision \
-              ~/Library/MobileDevice/Provisioning\ Profiles/$PROFILE_UUID.mobileprovision
-            chmod 644 \
-              ~/Library/MobileDevice/Provisioning\ Profiles/$PROFILE_UUID.mobileprovision
-
-            # ExportOptions 업데이트
-            /usr/libexec/PlistBuddy -c \
-              "Delete :provisioningProfiles" ios/ExportOptions-prod.plist 2>/dev/null || true
-            /usr/libexec/PlistBuddy -c \
-              "Add :provisioningProfiles dict" ios/ExportOptions-prod.plist
-            /usr/libexec/PlistBuddy -c \
-              "Add :provisioningProfiles:com.dime.tomotomo string $PROFILE_UUID" \
-              ios/ExportOptions-prod.plist
-
-            /usr/libexec/PlistBuddy -c \
-              "Set :signingStyle manual" ios/ExportOptions-prod.plist 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c \
-              "Add :signingStyle string manual" ios/ExportOptions-prod.plist
-
-            /usr/libexec/PlistBuddy -c \
-              "Set :teamID $PROFILE_TEAM_ID" ios/ExportOptions-prod.plist 2>/dev/null || \
-            /usr/libexec/PlistBuddy -c \
-              "Add :teamID string $PROFILE_TEAM_ID" ios/ExportOptions-prod.plist
-
-            # Xcode 프로젝트 서명 방식 변경
-            sed -i '' \
-              's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' \
-              ios/Runner.xcodeproj/project.pbxproj || true
-            sed -i '' \
-              's/CODE_SIGN_IDENTITY = "Apple Development";/CODE_SIGN_IDENTITY = "Apple Distribution";/g' \
-              ios/Runner.xcodeproj/project.pbxproj || true
-            sed -i '' \
-              "s/PROVISIONING_PROFILE_SPECIFIER = \"\";/PROVISIONING_PROFILE_SPECIFIER = \"$PROFILE_NAME\";/g" \
-              ios/Runner.xcodeproj/project.pbxproj || true
-          fi
+          mkdir -p ~/private_keys
+          printf '%s' "$APP_STORE_CONNECT_API_KEY" > ~/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
+          chmod 600 ~/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
+          echo "✅ API 키 설정 완료: AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
 
       - name: Calculate Build Number
         id: build_number
@@ -188,13 +130,48 @@ jobs:
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           echo "📦 릴리즈 빌드 번호: $BUILD_NUMBER"
 
-      - name: Build IPA (Production)
+      - name: Flutter Build iOS (no codesign)
         run: |
-          flutter build ipa --release \
-            --build-name=1.0.${{ github.run_number }} \
-            --build-number=${{ steps.build_number.outputs.build_number }} \
-            --dart-define=API_ENV=prod \
-            --export-options-plist=ios/ExportOptions-prod.plist
+          flutter build ios --release \
+            --no-codesign \
+            --dart-define=API_ENV=prod
+
+      - name: Xcode Archive
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          API_KEY_PATH=~/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
+
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -archivePath $RUNNER_TEMP/Runner.xcarchive \
+            -destination "generic/platform=iOS" \
+            FLUTTER_BUILD_NUMBER=${{ steps.build_number.outputs.build_number }} \
+            FLUTTER_BUILD_NAME=1.0.${{ github.run_number }} \
+            archive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$API_KEY_PATH" \
+            -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_ID" \
+            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
+
+      - name: Xcode Export IPA
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          API_KEY_PATH=~/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
+
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/Runner.xcarchive \
+            -exportPath build/ios/ipa \
+            -exportOptionsPlist ios/ExportOptions-prod.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$API_KEY_PATH" \
+            -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_ID" \
+            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
@@ -204,18 +181,10 @@ jobs:
           retention-days: 90
 
       - name: Upload to App Store Connect
-        if: env.APP_STORE_CONNECT_API_KEY_ID != ''
         env:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
         run: |
-          mkdir -p ~/private_keys
-          echo "$APP_STORE_CONNECT_API_KEY" > \
-            ~/private_keys/AuthKey_$APP_STORE_CONNECT_API_KEY_ID.p8
-          chmod 600 \
-            ~/private_keys/AuthKey_$APP_STORE_CONNECT_API_KEY_ID.p8
-
           IPA_FILE=$(find build/ios/ipa -name "*.ipa" | head -1)
           echo "📤 업로드 파일: $IPA_FILE"
 
