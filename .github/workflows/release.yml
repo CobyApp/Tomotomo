@@ -87,6 +87,8 @@ jobs:
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
           track: production
           status: completed
+          # Required when Play Console blocks auto-submit-for-review; commit succeeds, then send for review in UI
+          changesNotSentForReview: true
 
   # ─────────────────────────────────────────────
   # iOS: IPA 빌드 → App Store Connect
