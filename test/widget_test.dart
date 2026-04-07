@@ -12,7 +12,7 @@ import 'package:provider/provider.dart';
 
 void main() {
   testWidgets('Login screen shows title and login button', (WidgetTester tester) async {
-    setupInjection(geminiApiKey: 'test-key');
+    setupInjection(ollamaBaseUrl: 'http://127.0.0.1:9');
 
     await tester.pumpWidget(
       MaterialApp(

@@ -33,7 +33,10 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _load();
+    });
   }
 
   @override

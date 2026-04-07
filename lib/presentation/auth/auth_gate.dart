@@ -11,23 +11,20 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AppAuthState()..init(),
-      child: Consumer<AppAuthState>(
-        builder: (context, state, _) {
-          if (state.isLoading) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          if (state.user == null) {
-            return state.showSignUp
-                ? const SignUpScreen()
-                : const LoginScreen();
-          }
-          return const MainShell();
-        },
-      ),
+    return Consumer<AppAuthState>(
+      builder: (context, state, _) {
+        if (state.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (state.user == null) {
+          return state.showSignUp
+              ? const SignUpScreen()
+              : const LoginScreen();
+        }
+        return const MainShell();
+      },
     );
   }
 }

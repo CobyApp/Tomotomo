@@ -34,7 +34,7 @@ class ChatViewModel extends ChangeNotifier {
   static const int _maxMessagesResubscribeAttempts = 6;
   bool _disposed = false;
 
-  /// Character chat: skip realtime full reload while Gemini runs; flush once after.
+  /// Character chat: skip realtime full reload while AI generation runs; flush once after.
   bool _pendingRealtimeReload = false;
 
   /// After AI error bubble failed to persist, skip server refetches so Realtime does not wipe the local bubble.

@@ -1,7 +1,11 @@
+import 'dart:io' show Platform;
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'app_tokens.dart';
+
+bool get _iosBlurCrashWorkaround => !kIsWeb && Platform.isIOS;
 
 class NavItemData {
   const NavItemData({
@@ -34,43 +38,47 @@ class AppGlassNavBar extends StatelessWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     final padBottom = bottomInset > 0 ? 10.0 : 18.0;
 
+    final panel = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        color: scheme.surface.withValues(alpha: _iosBlurCrashWorkaround ? 0.92 : 0.72),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.35),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.primary.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        child: Row(
+          children: List.generate(items.length, (i) {
+            return Expanded(
+              child: _NavCell(
+                data: items[i],
+                selected: i == currentIndex,
+                onTap: () => onSelect(i),
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+
     return Padding(
       padding: EdgeInsets.fromLTRB(18, 0, 18, padBottom),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(32),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(32),
-              color: scheme.surface.withValues(alpha: 0.72),
-              border: Border.all(
-                color: scheme.outlineVariant.withValues(alpha: 0.35),
+        child: _iosBlurCrashWorkaround
+            ? panel
+            : BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: panel,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: scheme.primary.withValues(alpha: 0.08),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: Row(
-                children: List.generate(items.length, (i) {
-                  return Expanded(
-                    child: _NavCell(
-                      data: items[i],
-                      selected: i == currentIndex,
-                      onTap: () => onSelect(i),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

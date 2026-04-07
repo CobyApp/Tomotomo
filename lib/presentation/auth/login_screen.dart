@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/ui/ui.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
@@ -127,17 +126,30 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      'トモトモ',
-                      style: AppTextStyles.pageTitle(context).copyWith(
-                        fontSize: 30,
-                        letterSpacing: 2,
-                        foreground: Paint()
-                          ..shader = LinearGradient(
+                    // Avoid TextStyle.foreground + Paint.createShader on title: has caused
+                    // EXC_BAD_ACCESS on some iOS/Skia device builds; ShaderMask is a safer gradient path.
+                    Center(
+                      child: ShaderMask(
+                        blendMode: BlendMode.srcIn,
+                        shaderCallback: (bounds) {
+                          final w = bounds.width <= 0 ? 1.0 : bounds.width;
+                          final h = bounds.height <= 0 ? 1.0 : bounds.height;
+                          return LinearGradient(
                             colors: [scheme.primary, scheme.tertiary],
-                          ).createShader(const Rect.fromLTWH(0, 0, 200, 40)),
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ).createShader(Rect.fromLTWH(0, 0, w, h));
+                        },
+                        child: Text(
+                          'トモトモ',
+                          style: AppTextStyles.pageTitle(context).copyWith(
+                            fontSize: 30,
+                            letterSpacing: 2,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 6),
                     Text(

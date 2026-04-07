@@ -6,7 +6,7 @@ import '../../domain/repositories/theme_repository.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
 import '../../domain/repositories/friends_repository.dart';
 import '../../data/repositories/supabase_chat_repository.dart';
-import '../../data/repositories/gemini_ai_repository_impl.dart';
+import '../../data/repositories/ollama_ai_repository_impl.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import '../../data/repositories/character_record_repository_impl.dart';
 import '../../data/repositories/theme_repository_impl.dart';
@@ -14,10 +14,16 @@ import '../../data/repositories/saved_expression_repository_impl.dart';
 import '../../data/repositories/friends_repository_impl.dart';
 
 /// Registers app-wide dependencies. Single place for DI (Dependency Inversion).
-/// [geminiApiKey] optional; pass in tests to avoid loading dotenv. In production, load dotenv first and leave null.
-void setupInjection({String? geminiApiKey}) {
+/// Optional [ollamaBaseUrl] / [ollamaModel] override dotenv (use in tests).
+void setupInjection({
+  String? ollamaBaseUrl,
+  String? ollamaModel,
+}) {
   chatRepository = SupabaseChatRepository();
-  aiChatRepository = GeminiAiRepositoryImpl(apiKey: geminiApiKey);
+  aiChatRepository = OllamaAiRepositoryImpl(
+    baseUrl: ollamaBaseUrl,
+    model: ollamaModel,
+  );
   profileRepository = ProfileRepositoryImpl();
   characterRecordRepository = CharacterRecordRepositoryImpl();
   themeRepository = ThemeRepositoryImpl();

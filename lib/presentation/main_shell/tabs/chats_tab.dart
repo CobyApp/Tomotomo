@@ -47,8 +47,8 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _subscribeChatRoomsRealtime();
+      _load();
     });
-    _load();
   }
 
   @override

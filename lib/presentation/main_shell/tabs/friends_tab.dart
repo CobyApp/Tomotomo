@@ -41,7 +41,10 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _load();
+    });
   }
 
   @override

@@ -69,8 +69,8 @@ List<Vocabulary>? _parseVocabularyField(
   return out.isEmpty ? null : out;
 }
 
-/// Maps Gemini (or similar) JSON to [ChatMessage] with alternate key names.
-ChatMessage chatMessageFromGeminiMap(
+/// Maps LLM JSON payload to [ChatMessage] with alternate key names.
+ChatMessage chatMessageFromAiJsonMap(
   Map<String, dynamic> json,
   Character character, {
   VocabularyMeaningPickMode? vocabularyMeaningPickModeOverride,

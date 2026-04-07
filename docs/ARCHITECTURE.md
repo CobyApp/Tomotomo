@@ -8,7 +8,7 @@ Auth, profiles, custom characters + discover, Supabase-backed AI chat & DM, frie
 
 ## App lifecycle
 - Main tabs (**Friends**, **Chats**, **Characters**) use `OnAppResumedMixin` (`lib/core/widgets/on_app_resumed_mixin.dart`): on `AppLifecycleState.resumed`, run a **silent** list reload to catch changes missed while backgrounded (complements Realtime).
-- **Chat screen** (`ChatScreen`): `didChangeAppLifecycleState` calls `ChatViewModel.onAppResumedSync()` (debounced reload; defers while Gemini is generating, same as Realtime).
+- **Chat screen** (`ChatScreen`): `didChangeAppLifecycleState` calls `ChatViewModel.onAppResumedSync()` (debounced reload; defers while the AI request is in flight, same as Realtime).
 
 ## Bottom navigation (4 tabs)
 1. **Friends** — Friend list (Supabase `friends` + RPC); add by UUID; tap → DM (`ensure_dm_room` + shared `chat_rooms` row)
@@ -36,7 +36,7 @@ Auth, profiles, custom characters + discover, Supabase-backed AI chat & DM, frie
 - `name` text, `name_secondary` text (e.g. Japanese name)
 - `avatar_url` text (Storage)
 - `speech_style` text (persona / tone hints for the model)
-- `language` text ('ko' | 'ja') — **AI chat persona** for *Japanese study*: `ja` = Japanese-speaking character (bubble in Japanese, study notes in Korean); `ko` = Korean friend (bubble in Korean, study notes in Japanese). See `lib/data/repositories/gemini_prompts/`.
+- `language` text ('ko' | 'ja') — **AI chat persona** for *Japanese study*: `ja` = Japanese-speaking character (bubble in Japanese, study notes in Korean); `ko` = Korean friend (bubble in Korean, study notes in Japanese). See `lib/data/repositories/ai_prompts/`.
 - `is_public` boolean, `download_count` int
 - `created_at`, `updated_at` timestamptz
 
@@ -60,7 +60,7 @@ Auth, profiles, custom characters + discover, Supabase-backed AI chat & DM, frie
 - `id` uuid PK
 - `sender_id` uuid (DM human messages; null for AI character chat)
 - `room_id` uuid FK
-- **Realtime**: add table to `supabase_realtime` publication; see `20250320600000_chat_messages_realtime.sql`. Subscriptions listen for **all** row events (insert/update/delete) and refetch messages; character (AI) chats defer reload while Gemini is generating. Channel **timedOut/channelError** triggers backoff resubscribe (chat screen + chats tab list).
+- **Realtime**: add table to `supabase_realtime` publication; see `20250320600000_chat_messages_realtime.sql`. Subscriptions listen for **all** row events (insert/update/delete) and refetch messages; character (AI) chats defer reload while an AI response is being generated. Channel **timedOut/channelError** triggers backoff resubscribe (chat screen + chats tab list).
 - `role` text (AI: `user` | `assistant` with `sender_id` null; DM: `user` with `sender_id` = author)
 - `content` text, `explanation` text
 - `vocabulary` jsonb

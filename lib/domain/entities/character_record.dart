@@ -1,7 +1,7 @@
 /// Custom character stored in Supabase (`public.characters`).
 ///
 /// **Tutor mode** ([language]): `ja` → Japanese bubble + Korean study notes (learn Japanese).
-/// `ko` → Korean bubble + Japanese study notes (learn Korean). Mirror opposites; see Gemini prompts.
+/// `ko` → Korean bubble + Japanese study notes (learn Korean). Mirror opposites; see `ai_prompts/`.
 ///
 /// **Names**: [name] is the primary display script for that mode (`ja` → Japanese line, `ko` → Korean).
 /// [nameSecondary] is the optional other script (e.g. Hangul for a `ja` tutor).

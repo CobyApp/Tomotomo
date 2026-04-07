@@ -4,7 +4,8 @@
     <application
         android:label="토모토모"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
         <activity
             android:name="com.dime.tomotomo.MainActivity"
             android:exported="true"
