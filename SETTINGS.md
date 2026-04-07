@@ -11,9 +11,9 @@
 
 | 키 | 설명 | 발급/설정 |
 |----|------|------------|
-| `OLLAMA_BASE_URL` | Ollama 호환 API 베이스 URL (예: `http://taba.asia:11434`). 끝의 `/`는 생략 가능. | 본인 서버 또는 로컬 Ollama |
-| `OLLAMA_MODEL` | 사용할 모델 태그 (예: `gemma4:e2b`). | `ollama list` 등으로 확인 |
-| `OLLAMA_NUM_CTX` / `OLLAMA_NUM_PREDICT` / `OLLAMA_TEMPERATURE` | 선택. 미설정 시 앱 기본값은 **속도 우선**(`2048` / `512` / `0.15`). | 답·JSON이 잘리면 `OLLAMA_NUM_PREDICT`를 `768`~`1024` 등으로, 대화 맥락이 부족하면 `OLLAMA_NUM_CTX`를 `4096` 등으로 올리면 됨 (서버·GPU 한도 내) |
+| `GEMINI_API_KEY` | Google Gemini API 키 (필수). | [Google AI Studio](https://aistudio.google.com/apikey) 등 |
+| `GEMINI_MODEL` | 모델 ID (기본 `gemini-2.5-flash`). | `gemini-2.5-flash-lite`(가볍게), `gemini-2.5-pro`(고품질). **2.0 계열은 [deprecated](https://ai.google.dev/gemini-api/docs/deprecations)** 예정이므로 2.5 권장 |
+| `GEMINI_TEMPERATURE` / `GEMINI_MAX_OUTPUT_TOKENS` | 선택. 미설정 시 앱 기본값 `0.2` / `1024`. | JSON이 잘리면 `GEMINI_MAX_OUTPUT_TOKENS`를 `2048` 등으로 올리기 |
 | `SUPABASE_URL` | Supabase 프로젝트 URL. 회원/캐릭터/채팅 등에 사용됩니다. | [Supabase](https://supabase.com) 프로젝트 설정 > API |
 | `SUPABASE_PUBLISHABLE_KEY` | Supabase Publishable 키 (클라이언트용, RLS 적용). Legacy anon 키 대신 사용. | Settings > API > **Publishable and secret API keys** 탭 |
 
@@ -39,7 +39,7 @@
 **사용법**
 ```bash
 cp .env.example .env
-# .env 파일을 열어 OLLAMA_BASE_URL, OLLAMA_MODEL 등을 본인 환경에 맞게 수정
+# .env 파일을 열어 GEMINI_API_KEY, GEMINI_MODEL 등을 본인 환경에 맞게 수정
 ```
 
 `.env`는 `.gitignore`에 포함되어 있어 저장소에 올라가지 않습니다.
@@ -123,7 +123,7 @@ flutter clean && flutter pub get && (cd ios && pod install && cd ..) && flutter 
 
 | 용도 | 필요한 설정 |
 |------|-------------|
-| 로컬 실행 (iOS/Android 디버그) | `.env` 에 `OLLAMA_BASE_URL`, `OLLAMA_MODEL`(선택), `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` 설정 |
+| 로컬 실행 (iOS/Android 디버그) | `.env` 에 `GEMINI_API_KEY`, `GEMINI_MODEL`(선택), `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` 설정 |
 | Android 릴리즈 빌드 | `.env` + `android/key.properties` |
 | iOS 릴리즈 빌드 | `.env` (Xcode 서명은 Xcode에서 설정) |
 
