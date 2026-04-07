@@ -126,30 +126,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Avoid TextStyle.foreground + Paint.createShader on title: has caused
-                    // EXC_BAD_ACCESS on some iOS/Skia device builds; ShaderMask is a safer gradient path.
-                    Center(
-                      child: ShaderMask(
-                        blendMode: BlendMode.srcIn,
-                        shaderCallback: (bounds) {
-                          final w = bounds.width <= 0 ? 1.0 : bounds.width;
-                          final h = bounds.height <= 0 ? 1.0 : bounds.height;
-                          return LinearGradient(
-                            colors: [scheme.primary, scheme.tertiary],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ).createShader(Rect.fromLTWH(0, 0, w, h));
-                        },
-                        child: Text(
-                          'トモトモ',
-                          style: AppTextStyles.pageTitle(context).copyWith(
-                            fontSize: 30,
-                            letterSpacing: 2,
-                            color: Colors.white,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
+                    // No ShaderMask / text shaders on iOS: still hit EXC_BAD_ACCESS on some devices.
+                    Text(
+                      'トモトモ',
+                      style: AppTextStyles.pageTitle(context).copyWith(
+                        fontSize: 30,
+                        letterSpacing: 2,
+                        color: scheme.primary,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 6),
                     Text(

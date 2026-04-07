@@ -13,7 +13,7 @@
 |----|------|------------|
 | `OLLAMA_BASE_URL` | Ollama 호환 API 베이스 URL (예: `http://taba.asia:11434`). 끝의 `/`는 생략 가능. | 본인 서버 또는 로컬 Ollama |
 | `OLLAMA_MODEL` | 사용할 모델 태그 (예: `gemma4:e2b`). | `ollama list` 등으로 확인 |
-| `OLLAMA_NUM_CTX` / `OLLAMA_NUM_PREDICT` / `OLLAMA_TEMPERATURE` | 선택. 미설정 시 앱 기본값(`8192` / `8192` / `0.2`). | 더 긴 답변이 필요하면 `OLLAMA_NUM_PREDICT`를 예: `16384`까지 올릴 수 있음 (서버·모델 한도 내) |
+| `OLLAMA_NUM_CTX` / `OLLAMA_NUM_PREDICT` / `OLLAMA_TEMPERATURE` | 선택. 미설정 시 앱 기본값(`8192` / `2048` / `0.2`). | 더 긴 답변이 필요하면 `.env`에서 `OLLAMA_NUM_PREDICT`를 예: `8192` 이상으로 올리면 됨 (서버·모델·GPU 한도 내) |
 | `SUPABASE_URL` | Supabase 프로젝트 URL. 회원/캐릭터/채팅 등에 사용됩니다. | [Supabase](https://supabase.com) 프로젝트 설정 > API |
 | `SUPABASE_PUBLISHABLE_KEY` | Supabase Publishable 키 (클라이언트용, RLS 적용). Legacy anon 키 대신 사용. | Settings > API > **Publishable and secret API keys** 탭 |
 
@@ -132,7 +132,7 @@ flutter clean && flutter pub get && (cd ios && pod install && cd ..) && flutter 
 - **iOS 임베딩**: `UIApplicationSceneManifest` 없이 **`UIMainStoryboardFile` = Main** + `AppDelegate`에서 `GeneratedPluginRegistrant.register(with: self)` 만 사용 (레거시 단일 윈도 경로).
 - **Pods**: `use_frameworks! :linkage => :static`.
 - **Impeller 끔**: `Info.plist` 의 `FLTEnableImpeller` = false.
-- **UI**: 로그인 타이틀의 `TextStyle.foreground` + `Paint.createShader` 제거, iOS 에서 하단 `BackdropFilter` 블러 생략(반투명 솔리드).
+- **UI**: 로그인 타이틀은 셰이더 없이 단색만; 전역 테마는 `InkSparkle` 대신 `InkRipple`(스파클 셰이더가 iOS에서 크래시 보고됨); iOS 에서 하단 `BackdropFilter` 블러 생략.
 - **`home_widget`**: `setAppGroupId` 는 첫 프레임 이후(`App`의 `addPostFrameCallback`).
 
 그래도 동일하면 **`flutter run --profile`** / **`flutter run --release`** 로 비교하세요. Apple이 UIScene 강제하기 전까지는 위 레거시 경로가 실기기 안정성에 유리한 경우가 많습니다.

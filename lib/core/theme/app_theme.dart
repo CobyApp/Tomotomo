@@ -52,7 +52,8 @@ class AppTheme {
       fontFamily: fontFamily,
       colorScheme: scheme,
       scaffoldBackgroundColor: scaffoldTint,
-      splashFactory: InkSparkle.splashFactory,
+      // InkSparkle uses a shader path that has triggered EXC_BAD_ACCESS on some iOS devices (Skia).
+      splashFactory: InkRipple.splashFactory,
       appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,

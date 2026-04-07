@@ -67,8 +67,8 @@ class OllamaAiRepositoryImpl implements AiChatRepository {
 
     return {
       'num_ctx': parseIntEnv('OLLAMA_NUM_CTX') ?? 8192,
-      // Large default so long JSON (chat + DM analysis) is not cut off; override via OLLAMA_NUM_PREDICT.
-      'num_predict': parseIntEnv('OLLAMA_NUM_PREDICT') ?? 8192,
+      // Default aligned with typical Ollama curl; raise via OLLAMA_NUM_PREDICT for longer JSON replies.
+      'num_predict': parseIntEnv('OLLAMA_NUM_PREDICT') ?? 2048,
       'temperature': parseDoubleEnv('OLLAMA_TEMPERATURE') ?? 0.2,
     };
   }
