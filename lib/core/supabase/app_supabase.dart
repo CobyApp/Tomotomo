@@ -13,7 +13,15 @@ class AppSupabase {
     if (url.isEmpty || publishableKey.isEmpty) {
       throw Exception('SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY must be set in .env');
     }
-    await Supabase.initialize(url: url, anonKey: publishableKey);
+    await Supabase.initialize(
+      url: url,
+      anonKey: publishableKey,
+      authOptions: const FlutterAuthClientOptions(
+        autoRefreshToken: true,
+      ),
+    );
+    // SDK starts recoverSession asynchronously; a short yield helps first-frame auth reads.
+    await Future<void>.delayed(const Duration(milliseconds: 50));
     _initialized = true;
   }
 

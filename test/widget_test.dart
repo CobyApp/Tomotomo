@@ -21,7 +21,7 @@ void main() {
           providers: [
             ChangeNotifierProvider(create: (_) => LocaleNotifier(profileRepository)),
             ChangeNotifierProvider<AppAuthState>(
-              create: (_) => AppAuthState()..init(),
+              create: (_) => AppAuthState(),
             ),
           ],
           child: const LoginScreen(),

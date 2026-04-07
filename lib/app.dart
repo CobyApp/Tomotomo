@@ -39,7 +39,7 @@ class _AppState extends State<App> {
     return MultiProvider(
       providers: [
         /// Above [MaterialApp] so theme/locale rebuilds do not dispose/recreate auth state.
-        ChangeNotifierProvider(create: (_) => AppAuthState()..init()),
+        ChangeNotifierProvider(create: (_) => AppAuthState()),
         Provider<ThemeRepository>.value(value: themeRepository),
         ChangeNotifierProvider(create: (c) => ThemeNotifier(c.read<ThemeRepository>())),
         Provider<ChatRepository>.value(value: chatRepository),

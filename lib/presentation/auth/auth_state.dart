@@ -1,8 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../core/supabase/app_supabase.dart';
 
+/// Auth UI state. Waits briefly after startup so Supabase can finish async
+/// [recoverSession] before deciding logged-out vs logged-in (session persistence).
 class AppAuthState extends ChangeNotifier {
+  AppAuthState() {
+    unawaited(_bootstrap());
+  }
+
+  StreamSubscription<AuthState>? _authSubscription;
   User? _user;
   bool _isLoading = true;
   bool _showSignUp = false;
@@ -12,18 +22,32 @@ class AppAuthState extends ChangeNotifier {
   bool get showSignUp => _showSignUp;
   bool get isLoggedIn => _user != null;
 
-  void init() {
+  Future<void> _bootstrap() async {
     try {
-      _user = AppSupabase.auth.currentUser;
-      AppSupabase.auth.onAuthStateChange.listen((data) {
+      _authSubscription = AppSupabase.auth.onAuthStateChange.listen((data) {
         _user = data.session?.user;
         notifyListeners();
       });
+
+      await Future<void>.delayed(Duration.zero);
+      _user = AppSupabase.auth.currentUser;
+
+      if (_user == null) {
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        _user = AppSupabase.auth.currentUser;
+      }
     } catch (_) {
       _user = null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    _isLoading = false;
-    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   void toggleSignUp() {
