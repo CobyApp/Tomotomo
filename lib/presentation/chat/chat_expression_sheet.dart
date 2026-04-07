@@ -13,11 +13,15 @@ import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../notebook/word_book_refresh_notifier.dart';
 
-Future<void> _launchExpressionReportEmail(
+Future<void> _launchChatMessageReportEmail(
   BuildContext context, {
   required ChatMessage message,
-  required DmUtteranceScript? dmScript,
+  required Character character,
 }) async {
+  final rootLang = context.read<LocaleNotifier>().languageCode;
+  final dmScript = character.isDirectMessage
+      ? resolveDmUtteranceScript(message.content, appLanguageCode: rootLang)
+      : null;
   final tr = context.tr;
   final subject = tr('expressionDmReportSubject');
   final bodyPrefix = dmScript == DmUtteranceScript.koreanHeavy
@@ -46,6 +50,38 @@ Future<void> _launchExpressionReportEmail(
   } catch (e) {
     debugPrint('Failed to launch email: $e');
   }
+}
+
+/// Long-press on a chat bubble: ask, then open the report mail draft.
+Future<void> confirmAndReportChatMessage(
+  BuildContext context, {
+  required ChatMessage message,
+  required Character character,
+}) async {
+  final tr = context.tr;
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(tr('chatReportDialogTitle')),
+      content: Text(tr('chatReportDialogBody')),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text(tr('chatReportCancel')),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: Text(tr('chatReportConfirm')),
+        ),
+      ],
+    ),
+  );
+  if (ok != true || !context.mounted) return;
+  await _launchChatMessageReportEmail(
+    context,
+    message: message,
+    character: character,
+  );
 }
 
 /// Bottom sheet: message, per-word [+] saves **that word only** (headword + gloss) to the word book.
@@ -86,33 +122,16 @@ Future<void> showChatExpressionSheet(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(0, 6, 4, 0),
-            child: Column(
-              children: [
-                Center(
-                  child: Container(
-                    width: 32,
-                    height: 3,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: Center(
+              child: Container(
+                width: 32,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    tooltip: sheetContext.tr('expressionReportTooltip'),
-                    icon: Icon(Icons.flag_outlined, color: Colors.red.shade700, size: 22),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => _launchExpressionReportEmail(
-                      sheetContext,
-                      message: message,
-                      dmScript: dmScript,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
           const Divider(height: 1),

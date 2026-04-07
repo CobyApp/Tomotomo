@@ -64,6 +64,11 @@ class _ChatListState extends State<ChatList> {
                     chatRoomId: widget.chatRoomId,
                   )
               : null,
+          onLongPressReport: () => confirmAndReportChatMessage(
+                context,
+                message: message,
+                character: widget.character,
+              ),
         );
       },
     );

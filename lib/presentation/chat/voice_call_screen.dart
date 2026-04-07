@@ -455,6 +455,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> with WidgetsBindingOb
                                 chatRoomId: _viewModel.chatRoomId,
                               )
                           : null,
+                      onLongPressReport: () => confirmAndReportChatMessage(
+                            context,
+                            message: m,
+                            character: widget.character,
+                          ),
                     );
                   },
                 ),
@@ -570,6 +575,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> with WidgetsBindingOb
                       chatRoomId: _viewModel.chatRoomId,
                     )
                 : null,
+            onLongPressReport: () => confirmAndReportChatMessage(
+                  context,
+                  message: live,
+                  character: widget.character,
+                ),
           ),
         ),
         Padding(

@@ -11,6 +11,8 @@ class ChatBubble extends StatelessWidget {
   final Character character;
   final bool isUser;
   final VoidCallback? onExplanationTap;
+  /// Long-press the bubble to open report confirmation (optional).
+  final VoidCallback? onLongPressReport;
 
   const ChatBubble({
     super.key,
@@ -18,6 +20,7 @@ class ChatBubble extends StatelessWidget {
     required this.character,
     required this.isUser,
     this.onExplanationTap,
+    this.onLongPressReport,
   });
 
   @override
@@ -28,6 +31,7 @@ class ChatBubble extends StatelessWidget {
         url: voiceUrl,
         character: character,
         isUser: isUser,
+        onLongPressReport: onLongPressReport,
       );
     }
 
@@ -83,29 +87,33 @@ class ChatBubble extends StatelessWidget {
             const SizedBox(width: 6),
           ],
           Flexible(
-            child: Container(
-              decoration: BoxDecoration(
-                color: isUser ? userBubbleColor : botBubbleColor,
-                borderRadius: bubbleRadius,
-                border: isUser
-                    ? null
-                    : Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 12,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Text(
-                  message.content,
-                  style: TextStyle(
-                    fontSize: 15.5,
-                    height: 1.45,
-                    color: isUser ? userTextColor : botTextColor,
+            child: GestureDetector(
+              onLongPress: onLongPressReport,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isUser ? userBubbleColor : botBubbleColor,
+                  borderRadius: bubbleRadius,
+                  border: isUser
+                      ? null
+                      : Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Text(
+                    message.content,
+                    style: TextStyle(
+                      fontSize: 15.5,
+                      height: 1.45,
+                      color: isUser ? userTextColor : botTextColor,
+                    ),
                   ),
                 ),
               ),
@@ -136,11 +144,13 @@ class _DmVoiceBubbleRow extends StatefulWidget {
   final String url;
   final Character character;
   final bool isUser;
+  final VoidCallback? onLongPressReport;
 
   const _DmVoiceBubbleRow({
     required this.url,
     required this.character,
     required this.isUser,
+    this.onLongPressReport,
   });
 
   @override
@@ -220,39 +230,43 @@ class _DmVoiceBubbleRowState extends State<_DmVoiceBubbleRow> {
             child: InkWell(
               onTap: _toggle,
               borderRadius: bubbleRadius,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  borderRadius: bubbleRadius,
-                  border: widget.isUser
-                      ? null
-                      : Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      playing ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                      color: fg,
-                      size: 28,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      context.tr('dmVoiceMessageLabel'),
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: fg,
+              child: GestureDetector(
+                onLongPress: widget.onLongPressReport,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: bubbleRadius,
+                    border: widget.isUser
+                        ? null
+                        : Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 2),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        playing ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                        color: fg,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        context.tr('dmVoiceMessageLabel'),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: fg,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
