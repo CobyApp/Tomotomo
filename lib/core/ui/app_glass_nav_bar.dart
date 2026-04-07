@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'app_tokens.dart';
 
 bool get _iosBlurCrashWorkaround => !kIsWeb && Platform.isIOS;
@@ -95,7 +97,7 @@ class AppGlassNavBar extends StatelessWidget {
   }
 }
 
-class _NavCell extends StatelessWidget {
+class _NavCell extends StatefulWidget {
   const _NavCell({
     required this.data,
     required this.selected,
@@ -107,36 +109,84 @@ class _NavCell extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_NavCell> createState() => _NavCellState();
+}
+
+class _NavCellState extends State<_NavCell> with SingleTickerProviderStateMixin {
+  late final AnimationController _press;
+
+  @override
+  void initState() {
+    super.initState();
+    _press = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 160),
+    );
+  }
+
+  @override
+  void dispose() {
+    _press.dispose();
+    super.dispose();
+  }
+
+  void _onTap() {
+    HapticFeedback.selectionClick();
+    widget.onTap();
+    unawaited(
+      _press.forward(from: 0).then((_) async {
+        if (mounted) await _press.reverse();
+      }),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final primary = scheme.primary;
+    final iconMuted = scheme.onSurfaceVariant.withValues(alpha: 0.62);
 
     return Material(
       color: Colors.transparent,
       child: Semantics(
-        label: data.label,
+        label: widget.data.label,
         button: true,
-        selected: selected,
+        selected: widget.selected,
         child: Tooltip(
-          message: data.label,
+          message: widget.data.label,
+          waitDuration: const Duration(milliseconds: 450),
           child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(26),
-            splashColor: primary.withValues(alpha: 0.12),
+            onTap: _onTap,
+            borderRadius: BorderRadius.circular(24),
+            splashColor: primary.withValues(alpha: 0.06),
+            highlightColor: Colors.transparent,
+            splashFactory: InkRipple.splashFactory,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: selected ? primary.withValues(alpha: 0.14) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: Icon(
-                  selected ? data.selectedIcon : data.icon,
-                  size: AppSizes.navIcon,
-                  color: selected ? primary : scheme.onSurfaceVariant,
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: AnimatedBuilder(
+                animation: _press,
+                builder: (context, child) {
+                  final t = Curves.easeOutCubic.transform(_press.value);
+                  final scale = 1.0 - 0.07 * t;
+                  return Transform.scale(
+                    scale: scale,
+                    alignment: Alignment.center,
+                    child: child,
+                  );
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: widget.selected ? primary.withValues(alpha: 0.07) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    widget.selected ? widget.data.selectedIcon : widget.data.icon,
+                    size: AppSizes.navIcon,
+                    color: widget.selected ? primary : iconMuted,
+                  ),
                 ),
               ),
             ),

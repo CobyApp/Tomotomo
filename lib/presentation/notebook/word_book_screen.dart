@@ -148,43 +148,164 @@ class WordBookScreenState extends State<WordBookScreen>
     unawaited(syncNotebookToHomeWidget(repo, defaultLangIfUnset: code == 'ja' ? 'ja' : 'ko'));
   }
 
-  Future<bool> _confirmDeleteDismiss(SavedExpression e) async {
-    final ok = await showDialog<bool>(
+  /// Same flow as [ChatsTab._confirmDeleteRoom]: dialog only; API runs in [Dismissible.confirmDismiss].
+  /// Same shape as [_vocabTranslationLine] in chat: `reading — meaning` when both exist.
+  (String? reading, String meaning) _parseNotebookTranslation(String? translation) {
+    final t = translation?.trim() ?? '';
+    if (t.isEmpty) return (null, '');
+    const sep = ' — ';
+    final i = t.indexOf(sep);
+    if (i < 0) return (null, t);
+    final r = t.substring(0, i).trim();
+    final m = t.substring(i + sep.length).trim();
+    if (m.isEmpty) return (null, t);
+    return (r.isEmpty ? null : r, m);
+  }
+
+  Future<bool?> _confirmDeleteExpression(BuildContext context, SavedExpression e) {
+    return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(ctx.trRead('notebookDeleteTitle')),
-        content: Text(ctx.trRead('notebookDeleteConfirm')),
+        title: Text(ctx.tr('notebookDeleteTitle')),
+        content: Text(ctx.tr('notebookDeleteConfirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.trRead('cancel'))),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx.trRead('charactersDelete'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.tr('cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx.tr('confirm'))),
         ],
       ),
     );
-    if (ok != true || !mounted) return false;
-    try {
-      await context.read<SavedExpressionRepository>().delete(e.id);
-      return true;
-    } catch (err) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${context.trRead('notebookDeleteFailed')}\n$err')),
-        );
-      }
-      return false;
-    }
   }
 
-  Future<void> _afterSwipeDelete() async {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('notebookWordDeleted'))));
-    await _load(showSpinner: false);
-    _syncHomeWidgetFromServer();
+  Widget _dismissibleWordRow(BuildContext context, SavedExpression e) {
+    final scheme = Theme.of(context).colorScheme;
+    final legacyBlock = e.explanation?.trim();
+    final hasLegacy = legacyBlock != null && legacyBlock.isNotEmpty;
+    final (reading, meaningBody) = _parseNotebookTranslation(e.translation);
+    final hasGlossLine = meaningBody.isNotEmpty;
+    final word = (e.content ?? '').trim().isEmpty ? '—' : e.content!.trim();
+    final usePretendard = e.notebookLang == 'ko';
+
+    // Mirrors chat expression sheet: headline word, optional (reading), then gloss line.
+    final wordStyle = TextStyle(
+      fontSize: 15,
+      height: 1.45,
+      fontWeight: FontWeight.w600,
+      color: scheme.onSurface,
+      fontFamily: usePretendard ? 'Pretendard' : null,
+    );
+    final readingStyle = TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      color: scheme.onSurfaceVariant,
+      fontFamily: usePretendard ? 'Pretendard' : null,
+    );
+    final meaningStyle = TextStyle(
+      fontSize: 13,
+      height: 1.4,
+      color: scheme.onSurfaceVariant,
+      fontFamily: usePretendard ? 'Pretendard' : null,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.listGap),
+      child: Dismissible(
+        key: ValueKey<String>('notebook_${e.id}'),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (direction) async {
+          final ok = await _confirmDeleteExpression(context, e);
+          if (!context.mounted || ok != true) return false;
+          final messenger = ScaffoldMessenger.of(context);
+          try {
+            await context.read<SavedExpressionRepository>().delete(e.id);
+            if (!context.mounted) return false;
+            return true;
+          } catch (_) {
+            if (!context.mounted) return false;
+            messenger.showSnackBar(SnackBar(content: Text(context.trRead('notebookDeleteFailed'))));
+            return false;
+          }
+        },
+        onDismissed: (_) {
+          if (!mounted) return;
+          setState(() {
+            _items.removeWhere((x) => x.id == e.id);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.trRead('notebookWordDeleted'))),
+          );
+          _syncHomeWidgetFromServer();
+        },
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 22),
+          decoration: BoxDecoration(
+            color: scheme.errorContainer,
+            borderRadius: BorderRadius.circular(AppRadii.card),
+          ),
+          child: Icon(Icons.delete_outline_rounded, color: scheme.onErrorContainer, size: 28),
+        ),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text.rich(
+                TextSpan(
+                  style: wordStyle,
+                  children: [
+                    TextSpan(text: word),
+                    if (reading != null && reading.isNotEmpty)
+                      TextSpan(text: ' ($reading)', style: readingStyle),
+                  ],
+                ),
+              ),
+              if (hasGlossLine) ...[
+                const SizedBox(height: 3),
+                Text(meaningBody, style: meaningStyle),
+              ],
+              if (hasLegacy) ...[
+                const SizedBox(height: 10),
+                Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.5)),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr('notebookLegacyNoteLabel'),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurfaceVariant,
+                    fontFamily: usePretendard ? 'Pretendard' : null,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  legacyBlock,
+                  maxLines: 6,
+                  overflow: TextOverflow.ellipsis,
+                  style: meaningStyle,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return AppPageScaffold(
       title: context.tr('notebookTitle'),
       actions: [
@@ -238,77 +359,27 @@ class WordBookScreenState extends State<WordBookScreen>
                         : RefreshIndicator(
                             onRefresh: _load,
                             child: ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 8, AppSpacing.pageH, 8),
-                              itemCount: _items.length,
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.pageH,
+                                8,
+                                AppSpacing.pageH,
+                                AppSpacing.pageBottom,
+                              ),
+                              itemCount: _items.length + 1,
                               itemBuilder: (context, i) {
-                                final e = _items[i];
-                                final legacyBlock = e.explanation?.trim();
-                                final hasLegacy = legacyBlock != null && legacyBlock.isNotEmpty;
-                                final gloss = e.translation?.trim();
-                                final hasGloss = gloss != null && gloss.isNotEmpty;
-
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: AppSpacing.listGap),
-                                  child: Dismissible(
-                                    key: ValueKey('notebook_${e.id}'),
-                                    direction: DismissDirection.endToStart,
-                                    confirmDismiss: (_) => _confirmDeleteDismiss(e),
-                                    onDismissed: (_) => unawaited(_afterSwipeDelete()),
-                                    background: Container(
-                                      alignment: Alignment.centerRight,
-                                      padding: const EdgeInsets.only(right: 20),
-                                      decoration: BoxDecoration(
-                                        color: scheme.errorContainer,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    child: Card(
-                                      margin: EdgeInsets.zero,
-                                      child: ListTile(
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                        title: Text(
-                                          e.content ?? '—',
-                                          style: AppTextStyles.listTitle(context).copyWith(fontSize: 17),
-                                        ),
-                                        subtitle: Padding(
-                                          padding: const EdgeInsets.only(top: 6),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              if (hasGloss)
-                                                Text(
-                                                  gloss,
-                                                  style: TextStyle(
-                                                    height: 1.45,
-                                                    color: scheme.primary,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                              if (hasLegacy) ...[
-                                                if (hasGloss) const SizedBox(height: 8),
-                                                Text(
-                                                  context.tr('notebookLegacyNoteLabel'),
-                                                  style: AppTextStyles.listSubtitle(context).copyWith(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  legacyBlock,
-                                                  maxLines: 6,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: AppTextStyles.listSubtitle(context).copyWith(fontSize: 13),
-                                                ),
-                                              ],
-                                            ],
+                                if (i == 0) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: Text(
+                                      context.tr('chatsDeleteSwipeHint'),
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            height: 1.35,
                                           ),
-                                        ),
-                                        isThreeLine: hasLegacy || hasGloss,
-                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
+                                }
+                                return _dismissibleWordRow(context, _items[i - 1]);
                               },
                             ),
                           ),
