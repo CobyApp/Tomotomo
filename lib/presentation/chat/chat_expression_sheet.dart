@@ -13,41 +13,38 @@ import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../notebook/word_book_refresh_notifier.dart';
 
-String _expressionSheetTitle(String Function(String key) tr) {
-  return tr('expressionExplanationTitle');
-}
-
-String _expressionVocabHeading(Character c, String Function(String key) tr) {
-  if (c.tutorLocale == 'ja') return tr('expressionSectionVocabJaImmersion');
-  if (c.koreanNationalPersona) return tr('expressionSectionVocabKoToJaNote');
-  return tr('expressionSectionVocabJaToKo');
-}
-
-String _expressionVocabHintLine(Character c, String Function(String key) tr) {
-  if (c.tutorLocale == 'ja') return tr('expressionVocabAddHintImmersion');
-  if (c.koreanNationalPersona) return tr('expressionVocabAddHintKoFriend');
-  return tr('expressionVocabAddHintKoNotebook');
-}
-
-String _dmVocabHeading(DmUtteranceScript s, String Function(String key) tr) {
-  switch (s) {
-    case DmUtteranceScript.japaneseHeavy:
-      return tr('expressionSectionVocabJaToKo');
-    case DmUtteranceScript.koreanHeavy:
-      return tr('expressionSectionVocabKoToJaNote');
-    case DmUtteranceScript.ambiguous:
-      return tr('expressionSectionVocabulary');
-  }
-}
-
-String _dmVocabHint(DmUtteranceScript s, String Function(String key) tr) {
-  switch (s) {
-    case DmUtteranceScript.japaneseHeavy:
-      return tr('expressionVocabAddHintKoNotebook');
-    case DmUtteranceScript.koreanHeavy:
-      return tr('expressionVocabAddHintKoFriend');
-    case DmUtteranceScript.ambiguous:
-      return tr('expressionVocabAddHint');
+Future<void> _launchExpressionReportEmail(
+  BuildContext context, {
+  required ChatMessage message,
+  required DmUtteranceScript? dmScript,
+}) async {
+  final tr = context.tr;
+  final subject = tr('expressionDmReportSubject');
+  final bodyPrefix = dmScript == DmUtteranceScript.koreanHeavy
+      ? tr('expressionDmReportBodyPrefixJa')
+      : tr('expressionDmReportBodyPrefixKo');
+  final body = '$bodyPrefix${message.content}\n\n${tr('expressionDmReportReasonLabel')}\n';
+  final Uri emailLaunchUri = Uri(
+    scheme: 'mailto',
+    path: 'dime0801001@gmail.com',
+    queryParameters: {'subject': subject, 'body': body},
+  );
+  try {
+    final result = await launchUrl(
+      emailLaunchUri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!result) {
+      final gmailUri = Uri.parse(
+        'https://mail.google.com/mail/?view=cm&fs=1&to=dime0801001@gmail.com&su=$subject&body=$body',
+      );
+      await launchUrl(
+        gmailUri,
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  } catch (e) {
+    debugPrint('Failed to launch email: $e');
   }
 }
 
@@ -69,89 +66,56 @@ Future<void> showChatExpressionSheet(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (sheetContext) => Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
             offset: const Offset(0, -2),
           ),
         ],
       ),
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
+        maxHeight: MediaQuery.of(context).size.height * 0.72,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: character.primaryColor.withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Row(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 6, 4, 0),
+            child: Column(
               children: [
-                Expanded(
-                  child: Text(
-                    _expressionSheetTitle(sheetContext.tr),
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: character.primaryColor,
-                      fontFamily: 'Pretendard',
-                      height: 1.25,
+                Center(
+                  child: Container(
+                    width: 32,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                Align(
+                  alignment: Alignment.centerRight,
                   child: IconButton(
-                    icon: const Icon(Icons.flag, color: Colors.red, size: 20),
-                    onPressed: () async {
-                      final subject = sheetContext.tr('expressionDmReportSubject');
-                      final bodyPrefix = dmScript == DmUtteranceScript.koreanHeavy
-                          ? sheetContext.tr('expressionDmReportBodyPrefixJa')
-                          : sheetContext.tr('expressionDmReportBodyPrefixKo');
-                      final body = '$bodyPrefix${message.content}\n\n${sheetContext.tr('expressionDmReportReasonLabel')}\n';
-                      final Uri emailLaunchUri = Uri(
-                        scheme: 'mailto',
-                        path: 'dime0801001@gmail.com',
-                        queryParameters: {'subject': subject, 'body': body},
-                      );
-                      try {
-                        final result = await launchUrl(
-                          emailLaunchUri,
-                          mode: LaunchMode.externalApplication,
-                        );
-                        if (!result) {
-                          final gmailUri = Uri.parse(
-                            'https://mail.google.com/mail/?view=cm&fs=1&to=dime0801001@gmail.com&su=$subject&body=$body',
-                          );
-                          await launchUrl(
-                            gmailUri,
-                            mode: LaunchMode.externalApplication,
-                          );
-                        }
-                      } catch (e) {
-                        debugPrint('Failed to launch email: $e');
-                      }
-                    },
-                    padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(),
+                    tooltip: sheetContext.tr('expressionReportTooltip'),
+                    icon: Icon(Icons.flag_outlined, color: Colors.red.shade700, size: 22),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => _launchExpressionReportEmail(
+                      sheetContext,
+                      message: message,
+                      dmScript: dmScript,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+          const Divider(height: 1),
           Flexible(
             child: _ExpressionSheetBody(
               message: message,
@@ -237,21 +201,8 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
 
   List<Vocabulary>? get _effectiveVocabulary => _dmAnalysis?.vocabulary ?? widget.message.vocabulary;
 
-  /// Vocabulary gloss line uses Hangul (needs Pretendard) vs Japanese-only.
   bool get _vocabMeaningUsesHangul {
     if (!widget.character.isDirectMessage) return widget.character.expectsKoreanStudyNotes;
-    return widget.dmScript == DmUtteranceScript.japaneseHeavy;
-  }
-
-  bool get _meaningStyleHangul => _vocabMeaningUsesHangul;
-
-  bool get _koPhraseVocabLayout {
-    return widget.character.koreanNationalPersona ||
-        (widget.character.isDirectMessage && widget.dmScript == DmUtteranceScript.koreanHeavy);
-  }
-
-  bool get _showJaSurfaceMeaningLabel {
-    if (!widget.character.isDirectMessage) return true;
     return widget.dmScript == DmUtteranceScript.japaneseHeavy;
   }
 
@@ -309,81 +260,49 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final character = widget.character;
     final tr = sheetContext.tr;
     final dm = widget.dmScript;
-    final vocabHeading =
-        character.isDirectMessage && dm != null ? _dmVocabHeading(dm, tr) : _expressionVocabHeading(character, tr);
-    final vocabHint =
-        character.isDirectMessage && dm != null ? _dmVocabHint(dm, tr) : _expressionVocabHintLine(character, tr);
 
     final messageStyle = TextStyle(
       fontSize: 15,
-      height: 1.55,
-      color: Colors.grey[800],
+      height: 1.45,
+      color: Colors.grey.shade800,
       fontFamily: character.assistantMessagePrefersHangulFont ? 'Pretendard' : null,
     );
     final meaningStyle = TextStyle(
-      fontSize: 14,
-      color: Colors.grey[700],
-      height: 1.5,
-      fontFamily: _meaningStyleHangul ? 'Pretendard' : null,
+      fontSize: 13,
+      height: 1.4,
+      color: Colors.grey.shade700,
+      fontFamily: _vocabMeaningUsesHangul ? 'Pretendard' : null,
     );
+    final vocabWordUsesPretendard = character.koreanNationalPersona ||
+        (character.isDirectMessage && dm == DmUtteranceScript.koreanHeavy);
     final wordStyle = TextStyle(
-      fontSize: 17,
+      fontSize: 15,
       fontWeight: FontWeight.w600,
-      color: Colors.grey[900],
-    );
-    final koreanGlossHeadlineStyle = TextStyle(
-      fontSize: 17,
-      fontWeight: FontWeight.w600,
-      height: 1.45,
-      color: Colors.grey[900],
-      fontFamily: 'Pretendard',
+      color: Colors.grey.shade900,
+      fontFamily: vocabWordUsesPretendard ? 'Pretendard' : null,
     );
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      padding: const EdgeInsets.fromLTRB(16, 10, 8, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            tr('expressionSectionUtterance'),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.6,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Text(message.content, style: messageStyle),
-          ),
+          Text(message.content, style: messageStyle),
           if (character.isDirectMessage && dm != null) ...[
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
             if (_dmLoading)
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.2, color: character.primaryColor),
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: character.primaryColor),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       tr('expressionDmLoadingVocab'),
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.45,
-                        color: Colors.grey.shade800,
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
                     ),
                   ),
                 ],
@@ -394,191 +313,131 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                 children: [
                   Text(
                     '${tr('expressionDmFailedVocab')}\n$_dmError',
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.45,
-                      color: Colors.red.shade800,
-                    ),
+                    style: TextStyle(fontSize: 12, height: 1.35, color: Colors.red.shade800),
                   ),
-                  const SizedBox(height: 10),
                   TextButton.icon(
                     onPressed: _loadDmAnalysis,
                     icon: const Icon(Icons.refresh_rounded, size: 18),
                     label: Text(tr('expressionDmRetry')),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                    ),
                   ),
                 ],
               ),
           ],
-          const SizedBox(height: 22),
-          Text(
-            vocabHeading,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: character.primaryColor,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            vocabHint,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.35),
-          ),
-          const SizedBox(height: 12),
-          if (_effectiveVocabulary != null && _effectiveVocabulary!.isNotEmpty)
+          if (_effectiveVocabulary != null && _effectiveVocabulary!.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
             ..._effectiveVocabulary!.asMap().entries.map((e) {
               final i = e.key;
               final vocab = e.value;
               final done = _savedWordIndices.contains(i);
+              final hasReading = vocab.reading != null && vocab.reading!.trim().isNotEmpty;
+
               return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (_koPhraseVocabLayout) ...[
-                                Text(vocab.word, style: koreanGlossHeadlineStyle),
-                                if (vocab.reading != null && vocab.reading!.trim().isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '(${vocab.reading})',
+                padding: EdgeInsets.only(bottom: i < _effectiveVocabulary!.length - 1 ? 10 : 0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text.rich(
+                            TextSpan(
+                              style: wordStyle,
+                              children: [
+                                TextSpan(text: vocab.word),
+                                if (hasReading)
+                                  TextSpan(
+                                    text: ' (${vocab.reading})',
                                     style: TextStyle(
+                                      fontWeight: FontWeight.w400,
                                       fontSize: 14,
-                                      color: Colors.grey[600],
+                                      color: Colors.grey.shade600,
                                     ),
                                   ),
-                                ],
-                                const SizedBox(height: 10),
-                                Text(
-                                  tr('expressionVocabJaMeaningForKoPhrase'),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  vocab.meaning,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[800],
-                                    height: 1.5,
-                                  ),
-                                ),
-                              ] else ...[
-                                Wrap(
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  spacing: 8,
-                                  runSpacing: 4,
-                                  children: [
-                                    Text(vocab.word, style: wordStyle),
-                                    if (vocab.reading != null && vocab.reading!.isNotEmpty)
-                                      Text(
-                                        '(${vocab.reading})',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                if (_showJaSurfaceMeaningLabel) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    character.expectsKoreanStudyNotes
-                                        ? tr('expressionVocabLineMeaningKo')
-                                        : tr('expressionVocabLineMeaningJa'),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(height: 6),
-                                Text(vocab.meaning, style: meaningStyle),
                               ],
-                            ],
+                            ),
                           ),
-                        ),
-                        Tooltip(
-                          message: done
-                              ? tr('expressionWordSavedTooltip')
-                              : _savingIndices.contains(i)
-                                  ? tr('expressionWordSavingTooltip')
-                                  : tr('addWordToNotebookTooltip'),
-                          child: SizedBox(
-                            width: 40,
-                            height: 40,
-                            child: _savingIndices.contains(i)
-                                ? Center(
-                                    child: SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.5,
-                                        color: character.primaryColor,
-                                      ),
-                                    ),
-                                  )
-                                : IconButton(
-                                    visualDensity: VisualDensity.compact,
-                                    padding: EdgeInsets.zero,
-                                    onPressed: done ? null : () => _saveWordToNotebook(i, vocab),
-                                    icon: Icon(
-                                      done ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
-                                      size: 28,
-                                      color: done ? Colors.green.shade700 : character.primaryColor,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ],
+                          const SizedBox(height: 3),
+                          Text(vocab.meaning, style: meaningStyle),
+                        ],
+                      ),
                     ),
-                  ),
+                    Tooltip(
+                      message: done
+                          ? tr('expressionWordSavedTooltip')
+                          : _savingIndices.contains(i)
+                              ? tr('expressionWordSavingTooltip')
+                              : tr('addWordToNotebookTooltip'),
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: _savingIndices.contains(i)
+                            ? Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: character.primaryColor,
+                                  ),
+                                ),
+                              )
+                            : IconButton(
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                onPressed: done ? null : () => _saveWordToNotebook(i, vocab),
+                                icon: Icon(
+                                  done ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+                                  size: 26,
+                                  color: done ? Colors.green.shade700 : character.primaryColor,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
               );
-            })
-          else if (character.isDirectMessage && dm != null && (_dmLoading || _dmError != null))
+            }),
+          ] else if (character.isDirectMessage && dm != null && (_dmLoading || _dmError != null))
             const SizedBox.shrink()
           else if (character.isDirectMessage && dm != null)
-            Text(
-              dm == DmUtteranceScript.koreanHeavy ? tr('expressionMissingVocabularyJa') : tr('expressionMissingVocabulary'),
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.45,
-                color: Colors.orange.shade800,
-                fontFamily: dm == DmUtteranceScript.japaneseHeavy ? 'Pretendard' : null,
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                dm == DmUtteranceScript.koreanHeavy ? tr('expressionMissingVocabularyJa') : tr('expressionMissingVocabulary'),
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.35,
+                  color: Colors.orange.shade800,
+                  fontFamily: dm == DmUtteranceScript.japaneseHeavy ? 'Pretendard' : null,
+                ),
               ),
             )
           else if (character.expectsKoreanStudyNotes)
-            Text(
-              tr('expressionMissingVocabulary'),
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.45,
-                color: Colors.orange.shade800,
-                fontFamily: 'Pretendard',
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                tr('expressionMissingVocabulary'),
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.35,
+                  color: Colors.orange.shade800,
+                  fontFamily: 'Pretendard',
+                ),
               ),
             )
           else if (character.expectsJapaneseStudyNotes)
-            Text(
-              tr('expressionMissingVocabularyJa'),
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.45,
-                color: Colors.orange.shade800,
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                tr('expressionMissingVocabularyJa'),
+                style: TextStyle(fontSize: 13, height: 1.35, color: Colors.orange.shade800),
               ),
             ),
         ],

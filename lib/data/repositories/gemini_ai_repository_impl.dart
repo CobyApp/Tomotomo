@@ -11,27 +11,38 @@ import 'ai_response_parser.dart';
 import 'ai_system_prompt_builder.dart';
 
 /// [AiChatRepository] backed by Google Gemini (Generative Language API).
+///
+/// Uses [generateContent] with a **sliding history window** instead of an
+/// ever-growing [ChatSession], so latency does not explode on long threads.
 class GeminiAiRepositoryImpl implements AiChatRepository {
   GeminiAiRepositoryImpl({
     String? apiKey,
     String? model,
     double? temperature,
     int? maxOutputTokens,
+    int? maxChatHistoryContents,
   })  : _apiKeyOverride = apiKey,
         _modelOverride = model,
         _temperatureOverride = temperature,
-        _maxOutputTokensOverride = maxOutputTokens;
+        _maxOutputTokensOverride = maxOutputTokens,
+        _maxChatHistoryContentsOverride = maxChatHistoryContents;
 
   final String? _apiKeyOverride;
   final String? _modelOverride;
   final double? _temperatureOverride;
   final int? _maxOutputTokensOverride;
+  final int? _maxChatHistoryContentsOverride;
 
   Character? _currentCharacter;
   GenerativeModel? _chatModel;
-  ChatSession? _chat;
+
+  /// Prior turns: alternating user / model [Content] (JSON assistant lines).
+  final List<Content> _history = [];
 
   static const Duration _timeout = Duration(seconds: 120);
+
+  /// Cap how many [Content] blocks (user+model pairs × 2) we send per request.
+  static const int _defaultMaxChatHistoryContents = 24;
 
   static String? _env(String key) {
     if (!dotenv.isInitialized) return null;
@@ -42,8 +53,9 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
 
   String get _apiKey => (_apiKeyOverride ?? _env('GEMINI_API_KEY') ?? '').trim();
 
+  /// Default: lowest-cost text tier on paid Standard; see SETTINGS.md.
   String get _modelName =>
-      (_modelOverride ?? _env('GEMINI_MODEL') ?? 'gemini-2.5-flash').trim();
+      (_modelOverride ?? _env('GEMINI_MODEL') ?? 'gemini-2.5-flash-lite').trim();
 
   double get _temperature {
     final tempOverride = _temperatureOverride;
@@ -64,7 +76,19 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
       final v = int.tryParse(p);
       if (v != null && v > 0) return v;
     }
-    return 1024;
+    // Short JSON replies: smaller cap → model stops sooner → feels faster.
+    return 512;
+  }
+
+  int get _maxChatHistoryContents {
+    final o = _maxChatHistoryContentsOverride;
+    if (o != null && o >= 2) return o;
+    final p = _env('GEMINI_MAX_CHAT_CONTENTS');
+    if (p != null) {
+      final v = int.tryParse(p);
+      if (v != null && v >= 2) return v;
+    }
+    return _defaultMaxChatHistoryContents;
   }
 
   void _ensureApiKey() {
@@ -98,6 +122,26 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
     );
   }
 
+  /// Recent history only so each API call stays small (faster TTFT + generation).
+  List<Content> _historyWindowForRequest() {
+    final cap = _maxChatHistoryContents;
+    if (_history.length <= cap) return List<Content>.from(_history);
+    var slice = _history.sublist(_history.length - cap);
+    // Prompt must start with a user turn; drop leading model chunk if any.
+    while (slice.isNotEmpty && slice.first.role != 'user') {
+      slice = slice.sublist(1);
+    }
+    return slice;
+  }
+
+  static Content _normalizeModelContent(Candidate candidate) {
+    final c = candidate.content;
+    if (c.role == null) {
+      return Content.model(c.parts);
+    }
+    return c;
+  }
+
   Future<String> _responseText(Future<GenerateContentResponse> future) async {
     final response = await future.timeout(_timeout);
     final text = response.text;
@@ -113,13 +157,12 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
 
     _currentCharacter = character;
     _chatModel = null;
-    _chat = null;
+    _history.clear();
     if (character.isDirectMessage) {
       return;
     }
 
     _chatModel = _buildChatModel(character);
-    _chat = _chatModel!.startChat();
   }
 
   @override
@@ -131,12 +174,27 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
       if (_currentCharacter == null) {
         throw Exception('AI 서비스가 초기화되지 않았습니다.');
       }
-      if (_chat == null) {
+      if (_chatModel == null) {
         throw Exception('AI 세션이 초기화되지 않았습니다.');
       }
 
-      final raw = await _responseText(_chat!.sendMessage(Content.text(userMessage)));
-      final jsonResponse = extractJsonObject(raw);
+      final userContent = Content.text(userMessage);
+      final prompt = [..._historyWindowForRequest(), userContent];
+
+      final genResponse = await _chatModel!.generateContent(prompt).timeout(_timeout);
+      final rawText = genResponse.text;
+      if (rawText == null || rawText.trim().isEmpty) {
+        throw Exception('Empty Gemini response (check safety filters or model name).');
+      }
+      final jsonResponse = extractJsonObject(rawText.trim());
+
+      final cands = genResponse.candidates;
+      if (cands.isEmpty) {
+        throw Exception('Gemini returned no candidates');
+      }
+      _history.add(userContent);
+      _history.add(_normalizeModelContent(cands.first));
+
       return chatMessageFromAiJsonMap(jsonResponse, _currentCharacter!);
     } catch (e) {
       debugPrint('AI 응답 오류: $e');
@@ -184,12 +242,12 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
     final currentCharacter = _currentCharacter!;
     if (currentCharacter.isDirectMessage) {
       _chatModel = null;
-      _chat = null;
+      _history.clear();
       _currentCharacter = null;
       return;
     }
     _chatModel = null;
-    _chat = null;
+    _history.clear();
     _currentCharacter = null;
     initializeForCharacter(currentCharacter);
   }

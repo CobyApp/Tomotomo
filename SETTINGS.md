@@ -12,8 +12,9 @@
 | 키 | 설명 | 발급/설정 |
 |----|------|------------|
 | `GEMINI_API_KEY` | Google Gemini API 키 (필수). | [Google AI Studio](https://aistudio.google.com/apikey) 등 |
-| `GEMINI_MODEL` | 모델 ID (기본 `gemini-2.5-flash`). | `gemini-2.5-flash-lite`(가볍게), `gemini-2.5-pro`(고품질). **2.0 계열은 [deprecated](https://ai.google.dev/gemini-api/docs/deprecations)** 예정이므로 2.5 권장 |
-| `GEMINI_TEMPERATURE` / `GEMINI_MAX_OUTPUT_TOKENS` | 선택. 미설정 시 앱 기본값 `0.2` / `1024`. | JSON이 잘리면 `GEMINI_MAX_OUTPUT_TOKENS`를 `2048` 등으로 올리기 |
+| `GEMINI_MODEL` | 모델 ID (앱 기본값 `gemini-2.5-flash-lite`). | [공식 가격](https://ai.google.dev/gemini-api/docs/pricing) 기준 텍스트 Standard 요금은 보통 `gemini-2.5-flash-lite`가 가장 낮고, 그다음 `gemini-3.1-flash-lite-preview`, `gemini-2.5-flash` 순입니다. **2.0 계열은 [deprecated](https://ai.google.dev/gemini-api/docs/deprecations)** 예정입니다. |
+| `GEMINI_TEMPERATURE` / `GEMINI_MAX_OUTPUT_TOKENS` | 선택. 미설정 시 앱 기본값 `0.2` / `512` (짧은 JSON 위주로 응답을 빨리 끝내기). | JSON이 잘리면 `768`~`1024` 등으로 올리기 |
+| `GEMINI_MAX_CHAT_CONTENTS` | 선택. 한 번의 API 요청에 포함하는 최근 대화 [Content] 개수(기본 `24`). | 채팅이 길수록 값을 `16` 등으로 줄이면 요청이 가벼워져 체감 속도에 도움이 될 수 있음 |
 | `SUPABASE_URL` | Supabase 프로젝트 URL. 회원/캐릭터/채팅 등에 사용됩니다. | [Supabase](https://supabase.com) 프로젝트 설정 > API |
 | `SUPABASE_PUBLISHABLE_KEY` | Supabase Publishable 키 (클라이언트용, RLS 적용). Legacy anon 키 대신 사용. | Settings > API > **Publishable and secret API keys** 탭 |
 
@@ -60,6 +61,13 @@ cp .env.example .env
   3. Wi‑Fi/셀룰러·VPN·iOS 시뮬레이터 네트워크 재시도.
 
 `.env` 수정 후에는 앱을 **완전히 종료했다가 다시 실행**해야 `flutter_dotenv`가 다시 읽습니다.
+
+#### AI 응답이 느릴 때 (Gemini)
+
+- **원인**: 휴대폰 → Google API 왕복(네트워크) + 모델 추론 시간. 앱이 “느리다”고 느끼는 대부분은 이 구간입니다.
+- **모델**: 기본이 `gemini-2.5-flash-lite`입니다. 품질이 아쉽으면 `gemini-2.5-flash` 등으로 올려 보세요 ([가격표](https://ai.google.dev/gemini-api/docs/pricing)).
+- **대화 길이**: 앱은 최근 턴만내도록 제한합니다. 그래도 느리면 `GEMINI_MAX_CHAT_CONTENTS=16` 처럼 줄여 보세요.
+- **저장**: 답변이 나온 뒤 Supabase에 메시지를 저장하는 단계는 보통 수백 ms 수준이며, 체감 지연의 대부분은 API 응답 전까지입니다.
 
 #### 가입만 실패할 때 (연결은 됨)
 
