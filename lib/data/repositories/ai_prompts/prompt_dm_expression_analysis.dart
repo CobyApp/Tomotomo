@@ -12,7 +12,7 @@ Task: Extract study vocabulary from this Japanese(-heavy) message and output **o
 2) "vocabulary" → array of 2–5 items. Each item:
    - "word" → Japanese surface (kanji/kana) from the message
    - "reading" → hiragana only
-   - "meaning_ko" → Korean gloss only (no Japanese in meaning_ko)
+   - "meaning_ko" → Korean gloss only (no Japanese in meaning_ko). **Depth**: ~14–40 Hangul characters per item; include a short note on usage, nuance, or typical situation—**not** a bare synonym list.
 
 Keys required at root: "content", "vocabulary" only. Do not include "explanation".
 
@@ -41,7 +41,7 @@ Task: Extract study vocabulary from this Korean(-heavy) message and output **one
 2) "vocabulary" → array of 2–5 items. Each item:
    - "word" → Korean (Hangul) phrase from the message
    - "reading" → optional katakana pronunciation for Japanese learners, or omit
-   - "meaning_ja" → Japanese gloss only (no Hangul in meaning_ja)
+   - "meaning_ja" → Japanese gloss only (no Hangul in meaning_ja). **Depth**: ~22–45 full-width Japanese characters per item; add usage, nuance, or situation in one short phrase—**not** a long paragraph or a single-word gloss.
 
 Keys required at root: "content", "vocabulary" only. Do not include "explanation".
 

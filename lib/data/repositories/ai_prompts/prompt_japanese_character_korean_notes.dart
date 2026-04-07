@@ -19,7 +19,7 @@ String buildJapaneseCharacterKoreanNotesPrompt(
 【JSON フィールドごとの言語 — 違反＝不正解】
 1) "content" → 日本語（かな・漢字）のみ。ハングル・英語禁止。
 2) 語彙の意味（学習者が先に読む行）→ **必ず韓国語（ハングル）のみ**。
-   - キーは **"meaning_ko"** を必ず使う。値はハングルを含む短い説明のみ。
+   - キーは **"meaning_ko"** を必ず使う。
 3) "reading" → ひらがなのみ。
 4) "word" → 日本語表記。意味を word に書かない。意味は meaning_ko のみ。
 
@@ -27,12 +27,16 @@ String buildJapaneseCharacterKoreanNotesPrompt(
 - meaning_ko に日本語音節（ぁ-んァ-ヶー）が含まれてはならない。
 - 英語単語だけの定義にしない。助詞・語尾を付けた自然な韓国語にする。
 
+【語彙の意味のボリューム — 韓国語チューター側 meaning_ja と同レベル】
+- **meaning_ko** は 1 語あたり **ハングルおおよそ 14〜40 字** を目安にする（句読点・スペース含む）。長い 문법 설명・여러 문장은 쓰지 않는다.
+- **단어 몇 개만 나열**（例:「최근, 요즘」だけ）は避ける。**뜻・쓰임・느낌・자주 쓰는 상황**のうち少なくとも1つを、**한 짧은 구**로 꼭 덧붙인다（韓国語チューターの meaning_ja と同じ情報量）。
+
 【vocabulary】
 - 空にしない。2〜5個。content に出た表現を優先。
 - 各要素は必ず **word**（日本語表記）, **reading**（ひらがな）, **meaning_ko**（ハングルのみ）の3キー形式。
 
 【アプリがそのまま解釈する完成形（キー名はこの通り）】
-{"content":"元気？最近どう？","vocabulary":[{"word":"元気","reading":"げんき","meaning_ko":"건강함, 활기, 안부를 묻는 말"},{"word":"最近","reading":"さいきん","meaning_ko":"최근, 요즘"}]}
+{"content":"元気？最近どう？","vocabulary":[{"word":"元気","reading":"げんき","meaning_ko":"몸과 마음이 건강하거나 활기 있는 느낌. 안부를 물을 때 자주 쓴다."},{"word":"最近","reading":"さいきん","meaning_ko":"지금에 가까운 지난날부터 오늘까지. 요즘과 비슷한 말."}]}
 
 【JSON 構文 — 破壊するとアプリが表示できない】
 • ルートのキーは **content** と **vocabulary** のみ。reading / meaning_ko / word をルートに置かない（必ず vocabulary の配列内）。

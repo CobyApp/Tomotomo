@@ -102,44 +102,35 @@ class _NavCell extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(26),
-        splashColor: primary.withValues(alpha: 0.12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: selected ? primary.withValues(alpha: 0.14) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: Icon(
-                  selected ? data.selectedIcon : data.icon,
-                  size: AppSizes.navIcon,
-                  color: selected ? primary : scheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                data.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  height: 1.1,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  letterSpacing: selected ? -0.1 : 0,
-                  color: selected ? primary : scheme.onSurfaceVariant,
+      child: Semantics(
+        label: data.label,
+        button: true,
+        selected: selected,
+        child: Tooltip(
+          message: data.label,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(26),
+            splashColor: primary.withValues(alpha: 0.12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: selected ? primary.withValues(alpha: 0.14) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Icon(
+                    selected ? data.selectedIcon : data.icon,
+                    size: AppSizes.navIcon,
+                    color: selected ? primary : scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/home_widget/notebook_home_widget_sync.dart';
@@ -149,7 +148,7 @@ class WordBookScreenState extends State<WordBookScreen>
     unawaited(syncNotebookToHomeWidget(repo, defaultLangIfUnset: code == 'ja' ? 'ja' : 'ko'));
   }
 
-  Future<void> _confirmDelete(SavedExpression e) async {
+  Future<bool> _confirmDeleteDismiss(SavedExpression e) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -161,27 +160,29 @@ class WordBookScreenState extends State<WordBookScreen>
         ],
       ),
     );
-    if (ok != true || !mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    final deletedMsg = context.trRead('notebookWordDeleted');
-    final deleteFailedPrefix = context.trRead('notebookDeleteFailed');
+    if (ok != true || !mounted) return false;
     try {
       await context.read<SavedExpressionRepository>().delete(e.id);
-      if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(deletedMsg)));
-      await _load(showSpinner: false);
-      _syncHomeWidgetFromServer();
+      return true;
     } catch (err) {
-      if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('$deleteFailedPrefix\n$err')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${context.trRead('notebookDeleteFailed')}\n$err')),
+        );
+      }
+      return false;
     }
+  }
+
+  Future<void> _afterSwipeDelete() async {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('notebookWordDeleted'))));
+    await _load(showSpinner: false);
+    _syncHomeWidgetFromServer();
   }
 
   @override
   Widget build(BuildContext context) {
-    final loc = Localizations.localeOf(context).toString();
     final scheme = Theme.of(context).colorScheme;
 
     return AppPageScaffold(
@@ -241,89 +242,71 @@ class WordBookScreenState extends State<WordBookScreen>
                               itemCount: _items.length,
                               itemBuilder: (context, i) {
                                 final e = _items[i];
-                                final dateStr = DateFormat.yMMMd(loc).add_jm().format(e.createdAt.toLocal());
                                 final legacyBlock = e.explanation?.trim();
                                 final hasLegacy = legacyBlock != null && legacyBlock.isNotEmpty;
                                 final gloss = e.translation?.trim();
                                 final hasGloss = gloss != null && gloss.isNotEmpty;
 
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: AppSpacing.listGap),
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                    title: Text(
-                                      e.content ?? '—',
-                                      style: AppTextStyles.listTitle(context).copyWith(fontSize: 17),
-                                    ),
-                                    subtitle: Padding(
-                                      padding: const EdgeInsets.only(top: 6),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          if (hasGloss)
-                                            Text(
-                                              gloss,
-                                              style: TextStyle(
-                                                height: 1.45,
-                                                color: scheme.primary,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          const SizedBox(height: 4),
-                                          Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                margin: const EdgeInsets.only(right: 8),
-                                                decoration: BoxDecoration(
-                                                  color: scheme.primaryContainer.withValues(alpha: 0.6),
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                                child: Text(
-                                                  e.notebookLang == 'ja'
-                                                      ? context.tr('notebookLangJa')
-                                                      : context.tr('notebookLangKo'),
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: scheme.onPrimaryContainer,
-                                                  ),
-                                                ),
-                                              ),
-                                              Expanded(
-                                                child: Text(
-                                                  dateStr,
-                                                  style: AppTextStyles.listSubtitle(context).copyWith(fontSize: 12),
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          if (hasLegacy) ...[
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              context.tr('notebookLegacyNoteLabel'),
-                                              style: AppTextStyles.listSubtitle(context).copyWith(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              legacyBlock,
-                                              maxLines: 6,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: AppTextStyles.listSubtitle(context).copyWith(fontSize: 13),
-                                            ),
-                                          ],
-                                        ],
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: AppSpacing.listGap),
+                                  child: Dismissible(
+                                    key: ValueKey('notebook_${e.id}'),
+                                    direction: DismissDirection.endToStart,
+                                    confirmDismiss: (_) => _confirmDeleteDismiss(e),
+                                    onDismissed: (_) => unawaited(_afterSwipeDelete()),
+                                    background: Container(
+                                      alignment: Alignment.centerRight,
+                                      padding: const EdgeInsets.only(right: 20),
+                                      decoration: BoxDecoration(
+                                        color: scheme.errorContainer,
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.delete_outline),
-                                      onPressed: () => _confirmDelete(e),
+                                    child: Card(
+                                      margin: EdgeInsets.zero,
+                                      child: ListTile(
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                        title: Text(
+                                          e.content ?? '—',
+                                          style: AppTextStyles.listTitle(context).copyWith(fontSize: 17),
+                                        ),
+                                        subtitle: Padding(
+                                          padding: const EdgeInsets.only(top: 6),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              if (hasGloss)
+                                                Text(
+                                                  gloss,
+                                                  style: TextStyle(
+                                                    height: 1.45,
+                                                    color: scheme.primary,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              if (hasLegacy) ...[
+                                                if (hasGloss) const SizedBox(height: 8),
+                                                Text(
+                                                  context.tr('notebookLegacyNoteLabel'),
+                                                  style: AppTextStyles.listSubtitle(context).copyWith(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  legacyBlock,
+                                                  maxLines: 6,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: AppTextStyles.listSubtitle(context).copyWith(fontSize: 13),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                        isThreeLine: hasLegacy || hasGloss,
+                                      ),
                                     ),
-                                    isThreeLine: hasLegacy || hasGloss,
                                   ),
                                 );
                               },
