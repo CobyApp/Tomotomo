@@ -66,10 +66,11 @@ class OllamaAiRepositoryImpl implements AiChatRepository {
     }
 
     return {
-      'num_ctx': parseIntEnv('OLLAMA_NUM_CTX') ?? 8192,
-      // Default aligned with typical Ollama curl; raise via OLLAMA_NUM_PREDICT for longer JSON replies.
-      'num_predict': parseIntEnv('OLLAMA_NUM_PREDICT') ?? 2048,
-      'temperature': parseDoubleEnv('OLLAMA_TEMPERATURE') ?? 0.2,
+      // Smaller ctx / predict = faster time-to-first-token and shorter generations (gemma4:e2b 등 소형 모델용).
+      // Raise OLLAMA_NUM_CTX if long chat history + system prompt no longer fits; raise OLLAMA_NUM_PREDICT if JSON is truncated.
+      'num_ctx': parseIntEnv('OLLAMA_NUM_CTX') ?? 2048,
+      'num_predict': parseIntEnv('OLLAMA_NUM_PREDICT') ?? 512,
+      'temperature': parseDoubleEnv('OLLAMA_TEMPERATURE') ?? 0.15,
     };
   }
 

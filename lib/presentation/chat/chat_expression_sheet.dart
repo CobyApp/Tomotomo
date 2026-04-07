@@ -17,18 +17,6 @@ String _expressionSheetTitle(String Function(String key) tr) {
   return tr('expressionExplanationTitle');
 }
 
-String _expressionExplanationHeading(Character c, String Function(String key) tr) {
-  if (c.tutorLocale == 'ja') return tr('expressionSectionExplanationJaImmersion');
-  if (c.koreanNationalPersona) return tr('expressionSectionExplanationJaNote');
-  return tr('expressionSectionExplanationKoNote');
-}
-
-String? _expressionNoteBadgeKey(Character c) {
-  if (c.expectsKoreanStudyNotes) return 'expressionBadgeLangKo';
-  if (c.expectsJapaneseStudyNotes) return 'expressionBadgeLangJa';
-  return null;
-}
-
 String _expressionVocabHeading(Character c, String Function(String key) tr) {
   if (c.tutorLocale == 'ja') return tr('expressionSectionVocabJaImmersion');
   if (c.koreanNationalPersona) return tr('expressionSectionVocabKoToJaNote');
@@ -39,28 +27,6 @@ String _expressionVocabHintLine(Character c, String Function(String key) tr) {
   if (c.tutorLocale == 'ja') return tr('expressionVocabAddHintImmersion');
   if (c.koreanNationalPersona) return tr('expressionVocabAddHintKoFriend');
   return tr('expressionVocabAddHintKoNotebook');
-}
-
-String _dmExplanationHeading(DmUtteranceScript s, String Function(String key) tr) {
-  switch (s) {
-    case DmUtteranceScript.japaneseHeavy:
-      return tr('expressionSectionExplanationKoNote');
-    case DmUtteranceScript.koreanHeavy:
-      return tr('expressionSectionExplanationJaNote');
-    case DmUtteranceScript.ambiguous:
-      return tr('expressionSectionExplanation');
-  }
-}
-
-String? _dmBadgeKey(DmUtteranceScript s) {
-  switch (s) {
-    case DmUtteranceScript.japaneseHeavy:
-      return 'expressionBadgeLangKo';
-    case DmUtteranceScript.koreanHeavy:
-      return 'expressionBadgeLangJa';
-    case DmUtteranceScript.ambiguous:
-      return null;
-  }
 }
 
 String _dmVocabHeading(DmUtteranceScript s, String Function(String key) tr) {
@@ -85,19 +51,7 @@ String _dmVocabHint(DmUtteranceScript s, String Function(String key) tr) {
   }
 }
 
-String _dmGeneratingLine(DmUtteranceScript s, String Function(String key) tr) {
-  return s == DmUtteranceScript.koreanHeavy ? tr('expressionDmGeneratingJaNotes') : tr('expressionDmGeneratingKoNotes');
-}
-
-String _dmFailedLine(DmUtteranceScript s, String Function(String key) tr) {
-  return s == DmUtteranceScript.koreanHeavy ? tr('expressionDmFailedJaNotes') : tr('expressionDmFailedKoNotes');
-}
-
-String _dmMissingAfterFailLine(DmUtteranceScript s, String Function(String key) tr) {
-  return s == DmUtteranceScript.koreanHeavy ? tr('expressionDmMissingAfterFailJa') : tr('expressionDmMissingAfterFailKo');
-}
-
-/// Bottom sheet: message, explanation, per-word [+] saves **that word only** (headword + gloss) to the word book.
+/// Bottom sheet: message, per-word [+] saves **that word only** (headword + gloss) to the word book.
 Future<void> showChatExpressionSheet(
   BuildContext context, {
   required ChatMessage message,
@@ -281,20 +235,15 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     }
   }
 
-  String? get _effectiveExplanation {
-    final fromAi = _dmAnalysis?.explanation?.trim();
-    if (fromAi != null && fromAi.isNotEmpty) return fromAi;
-    return widget.message.explanation?.trim();
-  }
-
   List<Vocabulary>? get _effectiveVocabulary => _dmAnalysis?.vocabulary ?? widget.message.vocabulary;
 
-  bool get _explanationUsesHangul {
+  /// Vocabulary gloss line uses Hangul (needs Pretendard) vs Japanese-only.
+  bool get _vocabMeaningUsesHangul {
     if (!widget.character.isDirectMessage) return widget.character.expectsKoreanStudyNotes;
     return widget.dmScript == DmUtteranceScript.japaneseHeavy;
   }
 
-  bool get _meaningStyleHangul => _explanationUsesHangul;
+  bool get _meaningStyleHangul => _vocabMeaningUsesHangul;
 
   bool get _koPhraseVocabLayout {
     return widget.character.koreanNationalPersona ||
@@ -360,11 +309,6 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final character = widget.character;
     final tr = sheetContext.tr;
     final dm = widget.dmScript;
-    final badgeKey =
-        character.isDirectMessage && dm != null ? _dmBadgeKey(dm) : _expressionNoteBadgeKey(character);
-    final explanationHeading = character.isDirectMessage && dm != null
-        ? _dmExplanationHeading(dm, tr)
-        : _expressionExplanationHeading(character, tr);
     final vocabHeading =
         character.isDirectMessage && dm != null ? _dmVocabHeading(dm, tr) : _expressionVocabHeading(character, tr);
     final vocabHint =
@@ -375,12 +319,6 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       height: 1.55,
       color: Colors.grey[800],
       fontFamily: character.assistantMessagePrefersHangulFont ? 'Pretendard' : null,
-    );
-    final explanationStyle = TextStyle(
-      fontSize: 15,
-      height: 1.55,
-      color: Colors.grey[800],
-      fontFamily: _explanationUsesHangul ? 'Pretendard' : null,
     );
     final meaningStyle = TextStyle(
       fontSize: 14,
@@ -426,149 +364,51 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
             ),
             child: Text(message.content, style: messageStyle),
           ),
-          const SizedBox(height: 22),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  explanationHeading,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: character.primaryColor,
+          if (character.isDirectMessage && dm != null) ...[
+            const SizedBox(height: 18),
+            if (_dmLoading)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2.2, color: character.primaryColor),
                   ),
-                ),
-              ),
-              if (badgeKey != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: character.primaryColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    tr(badgeKey),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: character.primaryColor,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Builder(
-            builder: (ctx) {
-              if (character.isDirectMessage && dm != null && _dmLoading) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2.2, color: character.primaryColor),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _dmGeneratingLine(dm, tr),
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: 1.45,
-                          color: Colors.grey.shade800,
-                          fontFamily: dm == DmUtteranceScript.koreanHeavy ? null : 'Pretendard',
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }
-              if (character.isDirectMessage && dm != null && _dmError != null) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${_dmFailedLine(dm, tr)}\n$_dmError',
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.45,
-                        color: Colors.red.shade800,
-                        fontFamily: dm == DmUtteranceScript.japaneseHeavy ? 'Pretendard' : null,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextButton.icon(
-                      onPressed: _loadDmAnalysis,
-                      icon: const Icon(Icons.refresh_rounded, size: 18),
-                      label: Text(tr('expressionDmRetry')),
-                    ),
-                  ],
-                );
-              }
-
-              final exp = _effectiveExplanation;
-              if (exp != null && exp.isNotEmpty) {
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: character.primaryColor.withValues(alpha: 0.2)),
-                  ),
-                  child: Text(exp, style: explanationStyle),
-                );
-              }
-              if (character.isDirectMessage && dm != null) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _dmMissingAfterFailLine(dm, tr),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      tr('expressionDmLoadingVocab'),
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.45,
-                        color: Colors.orange.shade800,
-                        fontFamily: dm == DmUtteranceScript.japaneseHeavy ? 'Pretendard' : null,
+                        color: Colors.grey.shade800,
                       ),
                     ),
-                    TextButton.icon(
-                      onPressed: _loadDmAnalysis,
-                      icon: const Icon(Icons.refresh_rounded, size: 18),
-                      label: Text(tr('expressionDmRetry')),
+                  ),
+                ],
+              ),
+            if (_dmError != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${tr('expressionDmFailedVocab')}\n$_dmError',
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.45,
+                      color: Colors.red.shade800,
                     ),
-                  ],
-                );
-              }
-              if (character.expectsKoreanStudyNotes) {
-                return Text(
-                  tr('expressionMissingStudyNote'),
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.45,
-                    color: Colors.orange.shade800,
-                    fontFamily: 'Pretendard',
                   ),
-                );
-              }
-              if (character.expectsJapaneseStudyNotes) {
-                return Text(
-                  tr('expressionMissingStudyNoteJa'),
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.45,
-                    color: Colors.orange.shade800,
+                  const SizedBox(height: 10),
+                  TextButton.icon(
+                    onPressed: _loadDmAnalysis,
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    label: Text(tr('expressionDmRetry')),
                   ),
-                );
-              }
-              return Text(
-                '—',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-              );
-            },
-          ),
+                ],
+              ),
+          ],
           const SizedBox(height: 22),
           Text(
             vocabHeading,

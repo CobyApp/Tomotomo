@@ -13,7 +13,7 @@ import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import 'word_book_refresh_notifier.dart';
 
-/// Third tab: vocabulary saved per word via [+] on the chat explanation sheet.
+/// Third tab: vocabulary saved per word via [+] on the chat expression sheet.
 class WordBookScreen extends StatefulWidget {
   const WordBookScreen({super.key});
 

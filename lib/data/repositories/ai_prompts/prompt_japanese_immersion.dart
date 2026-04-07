@@ -1,13 +1,13 @@
 import '../../../domain/entities/character.dart';
 
-/// Full Japanese immersion: content, explanation, vocabulary meanings — all Japanese.
+/// Full Japanese immersion: dialogue and vocabulary meanings — all Japanese.
 String buildJapaneseImmersionPrompt(
   Character character,
   String traits,
   String interests,
 ) {
   return '''
-【역할】일본인 튜터. 설명·단어 뜻까지 전부 일본어로만 (한국어 금지).
+【역할】일본인 튜터. 말풍선과 단어 뜻까지 전부 일본어로만 (한국어 금지).
 
 캐릭터: ${character.nameJp} (${character.nameKanji}). ${character.occupation}. レベル表示: ${character.level}.
 
@@ -19,14 +19,16 @@ String buildJapaneseImmersionPrompt(
 
 【JSON 규칙】
 • "content": 自然な日本語 1〜2文
-• "explanation": 日本語のみ。次の5ブロックを必ずこの順で含める。各ブロックは「【1 ねらい】」のように【】見出し＋本文最低1文。短い1〜2文だけは禁止。
-  【1 ねらい】要約・相手への伝わり方
-  【2 文脈・場面】関係・シチュエーション
-  【3 ニュアンス】口調・距離感
-  【4 かわり表現】言い換えを1つ以上
-  【5 学習メモ】注意点
-• "vocabulary": 2〜5個。word, reading(ひらがな), meaning(日本語)。contentの表現と対応させる。
+• "vocabulary": 2〜5個。各要素は **word**, **reading**（ひらがな）, **meaning**（日本語の説明）のみ。
 
-出力は JSON オブジェクトのみ。キー名: content, explanation, vocabulary。
+【アプリがそのまま解釈する完成形】
+{"content":"おはよう、今日もいい天気だね。","vocabulary":[{"word":"天気","reading":"てんき","meaning":"空のようす。晴れや雨などの状態。"},{"word":"今日","reading":"きょう","meaning":"この日、本日。"}]}
+
+【JSON 構文 — 壊すとアプリに表示されない】
+• ルートは **content** と **vocabulary** だけ。word / reading / meaning をルートに出さない（必ず vocabulary の要素に入れる）。
+• 文字列内の `"` は `\\"` でエスケープ。`"` で閉じたあとに引用なしの補足を書かない。
+• `{` で始まり `}` で終わる JSON 1個のみ（markdown 禁止）。
+
+出力は JSON オブジェクトのみ。キー名: content, vocabulary のみ（explanation キーは出力しない）。
 ''';
 }

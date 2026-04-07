@@ -52,10 +52,10 @@ class Character {
   final bool isDirectMessage;
   final String? directMessageRoomId;
 
-  /// `ko`: grammar hints and vocabulary meanings in Korean. `ja`: full Japanese immersion (explanation + meanings in Japanese).
+  /// `ko`: vocabulary meanings in Korean for Japanese dialogue. `ja`: full Japanese immersion (meanings in Japanese).
   final String tutorLocale;
 
-  /// Korean-national friend: [ChatMessage.content] in Korean; study notes in Japanese; vocabulary highlights **Korean** phrases from the dialogue (gloss in Japanese).
+  /// Korean-national friend: [ChatMessage.content] in Korean; vocabulary highlights **Korean** phrases (gloss in Japanese).
   final bool koreanNationalPersona;
 
   const Character({
@@ -91,11 +91,11 @@ class Character {
 
   String get displayImageUrl => imageUrl;
 
-  /// AI JSON: Korean explanation + Korean vocabulary meanings (Japanese dialogue).
+  /// AI JSON: Korean vocabulary meanings (Japanese dialogue).
   bool get expectsKoreanStudyNotes =>
       !isDirectMessage && !koreanNationalPersona && tutorLocale != 'ja';
 
-  /// AI JSON: Japanese explanation + Japanese glosses (Korean dialogue or immersion).
+  /// AI JSON: Japanese glosses (Korean dialogue or immersion).
   bool get expectsJapaneseStudyNotes =>
       !isDirectMessage && (koreanNationalPersona || tutorLocale == 'ja');
 
@@ -215,8 +215,8 @@ class Character {
 
   /// Builds a Character for chat from a Supabase custom character record.
   ///
-  /// [CharacterRecord.language]: `ja` → Japanese-speaking persona, Korean study notes in JSON.
-  /// `ko` → Korean-speaking persona (friend), Japanese study notes in JSON.
+  /// [CharacterRecord.language]: `ja` → Japanese-speaking persona, Korean glosses on vocabulary in JSON.
+  /// `ko` → Korean-speaking persona (friend), Japanese glosses on vocabulary in JSON.
   static Character fromRecord(CharacterRecord r) {
     final isJaPersona = r.language == 'ja';
     final levelLabel = isJaPersona ? '일본어' : '한국어';
@@ -257,8 +257,8 @@ class Character {
       age: 0,
       schoolYear: '',
       occupation: isJaPersona
-          ? '일본어 튜터 · 말풍선 일본어, 노트·단어 뜻 한국어'
-          : '한국어 튜터 · 말풍선 한국어, 노트·단어 설명 일본어',
+          ? '일본어 튜터 · 말풍선 일본어, 단어 뜻 한국어'
+          : '한국어 튜터 · 말풍선 한국어, 단어 뜻 일본어',
       traits: const [CharacterTrait('친절함', 0.8)],
       interests: const [CharacterInterest(category: '언어', items: ['대화'])],
       speechStyle: r.speechStyle ?? '친근하게 대화합니다.',

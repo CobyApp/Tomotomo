@@ -13,7 +13,7 @@
 |----|------|------------|
 | `OLLAMA_BASE_URL` | Ollama 호환 API 베이스 URL (예: `http://taba.asia:11434`). 끝의 `/`는 생략 가능. | 본인 서버 또는 로컬 Ollama |
 | `OLLAMA_MODEL` | 사용할 모델 태그 (예: `gemma4:e2b`). | `ollama list` 등으로 확인 |
-| `OLLAMA_NUM_CTX` / `OLLAMA_NUM_PREDICT` / `OLLAMA_TEMPERATURE` | 선택. 미설정 시 앱 기본값(`8192` / `2048` / `0.2`). | 더 긴 답변이 필요하면 `.env`에서 `OLLAMA_NUM_PREDICT`를 예: `8192` 이상으로 올리면 됨 (서버·모델·GPU 한도 내) |
+| `OLLAMA_NUM_CTX` / `OLLAMA_NUM_PREDICT` / `OLLAMA_TEMPERATURE` | 선택. 미설정 시 앱 기본값은 **속도 우선**(`2048` / `512` / `0.15`). | 답·JSON이 잘리면 `OLLAMA_NUM_PREDICT`를 `768`~`1024` 등으로, 대화 맥락이 부족하면 `OLLAMA_NUM_CTX`를 `4096` 등으로 올리면 됨 (서버·GPU 한도 내) |
 | `SUPABASE_URL` | Supabase 프로젝트 URL. 회원/캐릭터/채팅 등에 사용됩니다. | [Supabase](https://supabase.com) 프로젝트 설정 > API |
 | `SUPABASE_PUBLISHABLE_KEY` | Supabase Publishable 키 (클라이언트용, RLS 적용). Legacy anon 키 대신 사용. | Settings > API > **Publishable and secret API keys** 탭 |
 
@@ -34,18 +34,7 @@
 
 > 프로덕션 서비스에서는 스팸·가짜 계정 방지를 위해 이메일 확인을 켜 두는 경우가 많습니다. 개발·테스트 단계에서만 끄는 것을 권장합니다.
 
-**캐릭터 사진 업로드**를 쓰려면 Supabase Storage 버킷이 필요합니다.  
-`supabase/migrations/20250320100000_storage_buckets.sql` 내용을 대시보드 **SQL Editor**에서 실행해 `avatars`, `backgrounds` 버킷과 RLS를 생성하세요.
-
-**채팅 동기화**를 쓰려면 `20250320200000_chat_rooms_external_key.sql`도 실행해 `chat_rooms.external_character_key`와 유니크 인덱스를 추가하세요 (기본 캐릭터 id는 UUID가 아님).
-
-**친구 탭**을 쓰려면 `20250320400000_friends_rpc.sql`을 실행해 `list_my_friends`, `add_friend`, `remove_friend` RPC를 생성하세요. 닉네임 검색·캐릭터 탭은 `202503208…`, `202503209…`도 필요합니다.
-
-**친구 DM(1:1 채팅)** 을 쓰려면 `20250320500000_dm_chat.sql`을 실행해 `chat_rooms.room_type` / `peer_user_id`, `chat_messages.sender_id`, RLS, `ensure_dm_room` RPC를 적용하세요.
-
-**DM 실시간 수신**을 쓰려면 `20250320600000_chat_messages_realtime.sql`을 실행해 `chat_messages`를 `supabase_realtime` publication에 추가하세요. (대시보드 **Database → Publications**에서 `chat_messages`에 Realtime을 켜도 동일합니다.)
-
-**채팅 탭 목록 실시간 갱신**을 쓰려면 `20250320700000_chat_rooms_realtime.sql`로 `chat_rooms`도 같은 publication에 추가하세요.
+**Supabase DB·Storage·Realtime**은 `supabase/migrations/20250320000000_full_schema.sql` 한 파일에 모아 두었습니다. `supabase db push`로 적용하거나, 파일 전체를 대시보드 **SQL Editor**에서 한 번 실행하면 됩니다 (`avatars`, `backgrounds`, `dm_voice` 버킷, RPC, Realtime publication 포함).
 
 **사용법**
 ```bash
@@ -55,21 +44,12 @@ cp .env.example .env
 
 `.env`는 `.gitignore`에 포함되어 있어 저장소에 올라가지 않습니다.
 
-### Supabase SQL 적용 순서 (신규 프로젝트)
+### Supabase SQL 적용 (신규 프로젝트)
 
-대시보드 **SQL Editor**에서 아래 순서로 실행하는 것을 권장합니다 (이미 적용된 파일은 건너뛰면 됩니다).
+1. `supabase/migrations/20250320000000_full_schema.sql` 한 번 적용 (`supabase db push` 또는 SQL Editor 전체 실행).  
+2. 이미 예전 분할 마이그레이션으로 DB를 만든 프로젝트는 **이 파일을 다시 실행하지 마세요** (객체 중복). 스키마를 맞추려면 새 프로젝트로 옮기거나 수동으로 정리해야 합니다.
 
-1. `20250320000000_initial_schema.sql` — 스키마·RLS 기본
-2. `20250320100000_storage_buckets.sql` — Storage (아바타/배경)
-3. `20250320200000_chat_rooms_external_key.sql` — 기본 캐릭터 채팅 키
-4. `20250320400000_friends_rpc.sql` — 친구 RPC
-5. `20250320500000_dm_chat.sql` — 친구 DM·`sender_id`·RLS
-6. `20250320600000_chat_messages_realtime.sql` — 메시지 Realtime
-7. `20250320700000_chat_rooms_realtime.sql` — 채팅방 목록 Realtime
-8. `20250320800000_profile_status_character_tagline_search.sql` — 프로필 상태 메시지·캐릭터 tagline·가입 메타데이터 트리거·친구 목록 확장·닉네임 검색 RPC (`search_profiles_by_nickname`)
-9. `20250320900000_search_accessible_characters.sql` — 내 캐릭터·공개 캐릭터 이름 검색 RPC (`search_accessible_characters`, 친구 탭 캐릭터 탭용)
-
-이 순서까지 적용하면 **인증·캐릭터·AI 채팅·친구·DM·목록/메시지 실시간·앱 복귀 시 동기화**까지 앱이 기대하는 백엔드가 갖춰집니다. 이후는 푸시 알림·음성채팅·이메일로 친구 찾기 등을 단계적으로 붙이면 됩니다.
+이 스키마를 적용하면 **인증·캐릭터·AI 채팅·친구·DM·차단·단어장·Storage·채팅 Realtime**까지 앱이 기대하는 백엔드가 갖춰집니다.
 
 #### 로그인/가입 시 `Failed host lookup: '…supabase.co'`
 
