@@ -420,7 +420,7 @@ class CharactersTabState extends State<CharactersTab>
 
   Widget _builtInCard(Character c) {
     final scheme = Theme.of(context).colorScheme;
-    final builtinIntroKey = builtinCharacterIntroKey(c.id);
+    final builtinShortKey = builtinCharacterShortKey(c.id);
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -501,17 +501,17 @@ class CharactersTabState extends State<CharactersTab>
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    if (builtinIntroKey != null) ...[
+                    if (builtinShortKey != null) ...[
                       const SizedBox(height: 6),
                       Text(
-                        context.tr(builtinIntroKey),
+                        context.tr(builtinShortKey),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: scheme.onSurfaceVariant.withValues(alpha: 0.95),
                               height: 1.3,
                               fontSize: 11,
                             ),
                         textAlign: TextAlign.center,
-                        maxLines: 3,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],

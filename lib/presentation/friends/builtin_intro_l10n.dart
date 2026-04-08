@@ -1,10 +1,10 @@
-/// L10n keys for built-in character self-intro copy ([AppStrings]).
-String? builtinCharacterIntroKey(String characterId) {
+/// L10n keys for built-in tutor one-line blurb (~20 chars, [AppStrings] per app language).
+String? builtinCharacterShortKey(String characterId) {
   switch (characterId) {
     case 'yuna':
-      return 'friendsBuiltinIntroYuna';
+      return 'friendsBuiltinShortYuna';
     case 'junho':
-      return 'friendsBuiltinIntroJunho';
+      return 'friendsBuiltinShortJunho';
     default:
       return null;
   }

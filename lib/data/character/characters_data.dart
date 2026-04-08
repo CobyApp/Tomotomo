@@ -101,8 +101,8 @@ const Map<String, String> _characterSpeechStyles = {
 
 /// Short list subtitle (~20 chars, Korean UI line).
 const Map<String, String> _characterTaglines = {
-  'yuna': '일본어 같이해요! 수다 떨며 배워요✨',
-  'junho': '현장에서 통하는 한국어, 차분히 도와줄게',
+  'yuna': '일본어·수다 하며 같이 배워요!',
+  'junho': '실무 한국어, 차분히 도와줄게요',
 };
 
 final List<Character> characters = [

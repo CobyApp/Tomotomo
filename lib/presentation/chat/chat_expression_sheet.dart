@@ -32,73 +32,62 @@ Future<void> showChatExpressionSheet(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
+    useSafeArea: false,
+    enableDrag: false,
     builder: (sheetContext) {
       final scheme = Theme.of(sheetContext).colorScheme;
-      final h = MediaQuery.sizeOf(sheetContext).height;
-      final bottomInset = MediaQuery.paddingOf(sheetContext).bottom;
-      return Padding(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.sheetSide,
-          0,
-          AppSpacing.sheetSide,
-          bottomInset > 0 ? 0 : AppSpacing.sheetBottom,
-        ),
-        child: SizedBox(
-          height: h,
-          child: DraggableScrollableSheet(
-            initialChildSize: 0.86,
-            minChildSize: 0.36,
-            maxChildSize: 0.96,
-            expand: false,
-            builder: (ctx, scrollController) {
-              return DecoratedBox(
-                decoration: BoxDecoration(
-                  color: scheme.surface,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.card)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 20,
-                      offset: const Offset(0, -4),
+      final mq = MediaQuery.of(sheetContext);
+      final h = mq.size.height;
+      final w = mq.size.width;
+
+      return SizedBox(
+        height: h,
+        width: w,
+        child: DraggableScrollableSheet(
+          initialChildSize: 0.92,
+          minChildSize: 0.22,
+          maxChildSize: 1.0,
+          expand: false,
+          snap: true,
+          snapSizes: const <double>[0.22, 0.92],
+          builder: (ctx, scrollController) {
+            return Material(
+              color: scheme.surface,
+              elevation: 12,
+              shadowColor: Colors.black26,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: scheme.outlineVariant.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(2.5),
+                      ),
                     ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.card)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: 10),
-                      Center(
-                        child: Container(
-                          width: 36,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: scheme.outlineVariant.withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(bottom: bottomInset > 0 ? bottomInset : AppSpacing.sheetBottom),
-                          child: _ExpressionSheetBody(
-                            scrollController: scrollController,
-                            message: message,
-                            character: character,
-                            chatRoomId: chatRoomId,
-                            messenger: messenger,
-                            dmScript: dmScript,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
-                ),
-              );
-            },
-          ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: _ExpressionSheetBody(
+                      scrollController: scrollController,
+                      message: message,
+                      character: character,
+                      chatRoomId: chatRoomId,
+                      messenger: messenger,
+                      dmScript: dmScript,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       );
     },
@@ -385,9 +374,11 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       );
     }
 
+    final bottomPad = MediaQuery.paddingOf(sheetContext).bottom;
     return ListView(
       controller: widget.scrollController,
-      padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 14, AppSpacing.pageH, 28),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(AppSpacing.pageH, 6, AppSpacing.pageH, 28 + bottomPad),
       children: [
         DecoratedBox(
           decoration: BoxDecoration(

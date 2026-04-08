@@ -156,7 +156,6 @@ class _ChatScreenState extends State<ChatScreen>
             character: widget.character,
             scrollController: _scrollController,
             chatRoomId: viewModel.chatRoomId,
-            onResetPressed: (ctx) => _showResetDialog(ctx, viewModel),
             onReportRoom: (ctx) => confirmAndReportChatRoom(
                   ctx,
                   character: widget.character,
@@ -175,38 +174,6 @@ class _ChatScreenState extends State<ChatScreen>
             messageHintOverride: canSendDm ? null : context.trRead('dmInputBlockedHint'),
           );
         },
-      ),
-    );
-  }
-
-  void _showResetDialog(BuildContext context, ChatViewModel viewModel) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.tr('chatResetTitle')),
-        content: Text(context.tr('chatResetWarning'), style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(height: 1.4)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('cancel'))),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _resetChat(context, viewModel);
-            },
-            child: Text(context.tr('chatResetConfirm')),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _resetChat(BuildContext context, ChatViewModel viewModel) {
-    viewModel.resetChat();
-    _scrollToBottom();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.tr('chatResetDoneSnackbar')),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(AppSpacing.pageH, 0, AppSpacing.pageH, 96),
       ),
     );
   }
@@ -268,7 +235,6 @@ class _ChatScreenContent extends StatelessWidget {
   final Character character;
   final ScrollController scrollController;
   final String? chatRoomId;
-  final void Function(BuildContext context) onResetPressed;
   final Future<void> Function(BuildContext context) onReportRoom;
   final Future<void> Function(BuildContext context) onLeaveRoom;
   final bool showDmStrangerBanner;
@@ -286,7 +252,6 @@ class _ChatScreenContent extends StatelessWidget {
     required this.character,
     required this.scrollController,
     required this.chatRoomId,
-    required this.onResetPressed,
     required this.onReportRoom,
     required this.onLeaveRoom,
     required this.showDmStrangerBanner,
@@ -381,9 +346,6 @@ class _ChatScreenContent extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.cardSmall)),
             onSelected: (value) async {
               switch (value) {
-                case 'reset':
-                  if (!character.isDirectMessage) onResetPressed(context);
-                  break;
                 case 'report':
                   await onReportRoom(context);
                   break;
@@ -402,17 +364,6 @@ class _ChatScreenContent extends StatelessWidget {
               final tr = ctx.tr;
               final isDm = character.isDirectMessage;
               return <PopupMenuEntry<String>>[
-                if (!isDm)
-                  PopupMenuItem<String>(
-                    value: 'reset',
-                    child: Row(
-                      children: [
-                        Icon(Icons.restart_alt_rounded, size: 22, color: scheme.onSurface),
-                        const SizedBox(width: 12),
-                        Expanded(child: Text(tr('chatMenuReset'))),
-                      ],
-                    ),
-                  ),
                 PopupMenuItem<String>(
                   value: 'report',
                   child: Row(

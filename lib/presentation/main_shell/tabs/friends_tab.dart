@@ -18,7 +18,9 @@ import '../../../domain/repositories/profile_repository.dart';
 import '../../character_form/create_character_screen.dart';
 import '../../chat/chat_screen.dart';
 import '../../friends/builtin_character_profile_sheet.dart';
+import '../../friends/builtin_intro_l10n.dart';
 import '../../friends/friend_profile_sheet.dart';
+import '../../friends/tutor_character_profile_sheet.dart';
 import '../../locale/l10n_context.dart';
 import 'add_friend_tab.dart';
 import 'characters_tab.dart';
@@ -128,66 +130,6 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
           aiChatRepository: aiRepo,
         ),
       ),
-    );
-  }
-
-  /// Same bottom sheet for people, built-in AI, and my characters: chat + remove (friend / character / info).
-  void _showFriendsTabActionSheet({
-    required String title,
-    required Future<void> Function() openChat,
-    required Future<void> Function() removeAction,
-  }) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetCtx) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 8, AppSpacing.pageH, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(sheetCtx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        Navigator.pop(sheetCtx);
-                        await openChat();
-                      },
-                      icon: const Icon(Icons.chat_bubble_outline_rounded),
-                      label: Text(sheetCtx.tr('friendsSheetOpenChat')),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Theme.of(sheetCtx).colorScheme.errorContainer,
-                        foregroundColor: Theme.of(sheetCtx).colorScheme.onErrorContainer,
-                      ),
-                      onPressed: () async {
-                        Navigator.pop(sheetCtx);
-                        await removeAction();
-                      },
-                      icon: const Icon(Icons.person_remove_outlined),
-                      label: Text(sheetCtx.tr('friendsSearchRemoveFriend')),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -362,8 +304,10 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
 
   Widget _builtInCharacterRow(Character c) {
     final secondary = c.displayNameSecondary;
+    final shortKey = builtinCharacterShortKey(c.id);
+    final shortLine = shortKey != null ? context.tr(shortKey) : c.tagline;
     final subtitle = [
-      if (c.tagline.isNotEmpty) c.tagline,
+      if (shortLine.isNotEmpty) shortLine,
       if (secondary.isNotEmpty) secondary,
     ].join('\n');
     return AppListRow(
@@ -386,7 +330,7 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
   Widget _myCharacterRow(CharacterRecord r) {
     final initial = r.name.isNotEmpty ? r.name.substring(0, 1) : '?';
     final sub = r.listDetailLine.isNotEmpty
-        ? r.listDetailLine
+        ? (r.listDetailLine.length > 28 ? '${r.listDetailLine.substring(0, 27)}…' : r.listDetailLine)
         : (r.language == 'ja' ? context.tr('langJa') : context.tr('langKo'));
     return AppListRow(
       leading: CircleAvatar(
@@ -397,10 +341,13 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
       title: r.name,
       subtitle: sub,
       trailing: Icon(Icons.smart_toy_outlined, color: Theme.of(context).colorScheme.tertiary),
-      onTap: () => _showFriendsTabActionSheet(
-            title: r.name,
-            openChat: () => _openRecordChat(r),
-            removeAction: () => _confirmDeleteMyCharacter(r),
+      onTap: () => unawaited(
+            showMyTutorProfileSheet(
+              context,
+              record: r,
+              onOpenChat: () => _openRecordChat(r),
+              onDelete: () => _confirmDeleteMyCharacter(r),
+            ),
           ),
     );
   }

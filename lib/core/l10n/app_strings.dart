@@ -314,11 +314,8 @@ class AppStrings {
     'friendsSearchBlockedDone': '차단했습니다. 채팅 목록에서 숨겨집니다.',
     'friendsSheetStatusEmpty': '상태 메시지가 없어요.',
     'friendsProfileLearningLine': '학습 언어 · {lang}',
-    'friendsBuiltinSelfIntroHeading': '자기소개',
-    'friendsBuiltinIntroYuna':
-        '명랑하고 수다스러운 고등학생이에요. 새로운 것에 관심이 많고, 살짝 덜렁대지만 귀여운 성격으로 주변을 밝게 만드는 분위기 메이커랍니다. 일본어로 말풍선을 채우고, 단어와 설명은 한국어로 도와드려요.',
-    'friendsBuiltinIntroJunho':
-        '서울 IT 스타트업에서 일하는 백엔드 개발자예요. 일본 출장과 애니·만화 덕후 경험이 있어 한국어 회화를 차분하게 도와드립니다. 말풍선은 한국어, 단어 뜻과 노트는 일본어로 정리돼요.',
+    'friendsBuiltinShortYuna': '일본어·수다 하며 같이 배워요!',
+    'friendsBuiltinShortJunho': '실무 한국어, 차분히 도와줄게요',
     'dmStrangerBanner': '아직 내 친구 목록에 없는 사용자입니다. 메시지는 볼 수 있어요.',
     'dmStrangerAddFriend': '친구 추가',
     'dmStrangerBlock': '차단',
@@ -675,11 +672,8 @@ class AppStrings {
     'friendsSearchBlockedDone': 'ブロックしました。チャット一覧から隠れます。',
     'friendsSheetStatusEmpty': 'ステータスメッセージはありません。',
     'friendsProfileLearningLine': '学習言語 · {lang}',
-    'friendsBuiltinSelfIntroHeading': '自己紹介',
-    'friendsBuiltinIntroYuna':
-        '明るくおしゃべりな高校生。新しいことが好きで、ちょっとドジだけど周りを明るくするムードメーカーです。吹き出しは日本語、単語や解説は韓国語でサポートします。',
-    'friendsBuiltinIntroJunho':
-        'ソウルのITスタートアップで働くバックエンドエンジニア。出張やアニメが趣味で、韓国語の会話を落ち着いてサポートします。吹き出しは韓国語、語彙の意味は日本語です。',
+    'friendsBuiltinShortYuna': '日本語、おしゃべりしながら学ぼ！',
+    'friendsBuiltinShortJunho': '現場で使える韓国語をサポート',
     'dmStrangerBanner': 'まだ友だち一覧にいないユーザーです。メッセージは読めます。',
     'dmStrangerAddFriend': '友だちに追加',
     'dmStrangerBlock': 'ブロック',
