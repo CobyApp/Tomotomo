@@ -28,6 +28,8 @@ class Character {
   final String nameJp;
   final String nameKanji;
   final String level;
+  /// Short one-line subtitle for lists (~20 chars); empty for DM.
+  final String tagline;
   final String description;
   final int age;
   final String schoolYear;
@@ -64,6 +66,7 @@ class Character {
     required this.nameJp,
     required this.nameKanji,
     required this.level,
+    this.tagline = '',
     required this.description,
     required this.age,
     required this.schoolYear,
@@ -187,6 +190,7 @@ class Character {
       nameJp: email ?? displayName,
       nameKanji: displayName,
       level: '—',
+      tagline: '',
       description: '',
       age: 0,
       schoolYear: '',
@@ -222,6 +226,7 @@ class Character {
     final levelLabel = isJaPersona ? '일본어' : '한국어';
     final image = r.avatarUrl ?? '';
     final descParts = <String>[
+      if (r.tagline != null && r.tagline!.trim().isNotEmpty) r.tagline!.trim(),
       if (r.speechStyle != null && r.speechStyle!.trim().isNotEmpty) r.speechStyle!.trim(),
     ];
 
@@ -253,6 +258,7 @@ class Character {
       nameJp: nameJaLine,
       nameKanji: nameKanjiVal,
       level: levelLabel,
+      tagline: r.tagline?.trim() ?? '',
       description: descParts.isEmpty ? '' : descParts.join('\n'),
       age: 0,
       schoolYear: '',
@@ -288,6 +294,7 @@ class Character {
       nameJp: json['nameJp'] as String,
       nameKanji: json['nameKanji'] as String,
       level: json['level'] as String,
+      tagline: json['tagline'] as String? ?? '',
       description: json['description'] as String,
       age: json['age'] as int,
       schoolYear: json['schoolYear'] as String,
@@ -329,6 +336,7 @@ class Character {
       'nameJp': nameJp,
       'nameKanji': nameKanji,
       'level': level,
+      'tagline': tagline,
       'description': description,
       'age': age,
       'schoolYear': schoolYear,

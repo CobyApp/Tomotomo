@@ -5,6 +5,9 @@ abstract class CharacterRecordRepository {
   Future<List<CharacterRecord>> getPublicCharacters({String? language});
   Future<CharacterRecord?> getCharacter(String id);
 
+  /// My character row forked from [sourceCharacterId], if any (one per source per user).
+  Future<CharacterRecord?> getMyCloneOfSource(String sourceCharacterId, String ownerId);
+
   /// Characters the user may chat with: own + public, name matches [query] (min 2 chars).
   Future<List<CharacterRecord>> searchAccessibleCharacters(String query, {int limit});
 

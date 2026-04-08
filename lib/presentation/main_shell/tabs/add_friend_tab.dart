@@ -60,10 +60,72 @@ class _AddFriendTabState extends State<AddFriendTab> with SingleTickerProviderSt
     }
   }
 
+  /// Same as tutor discover: chat uses a row in my library ([cloned_from_id] = [public.id]), not the remote id.
+  Future<CharacterRecord?> _ensureForkForSharedCharacter(CharacterRecord public) async {
+    final user = AppSupabase.auth.currentUser;
+    if (user == null) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('loginRequired'))));
+      return null;
+    }
+    final repo = context.read<CharacterRecordRepository>();
+    final pointsRepo = context.read<PointsRepository>();
+    final pointsNotifier = context.read<PointsBalanceNotifier>();
+    final existing = await repo.getMyCloneOfSource(public.id, user.id);
+    if (existing != null) return existing;
+
+    final spend = await pointsRepo.spendPoints(10, 'public_character_download');
+    if (!spend.ok) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('pointsInsufficient'))));
+      return null;
+    }
+    if (!mounted) return null;
+    pointsNotifier.setBalance(spend.balance);
+
+    final copy = CharacterRecord.draft(
+      ownerId: user.id,
+      name: public.name,
+      nameSecondary: public.nameSecondary,
+      avatarUrl: public.avatarUrl,
+      tagline: public.tagline,
+      speechStyle: public.speechStyle,
+      language: public.language,
+      isPublic: false,
+      clonedFromId: public.id,
+    );
+    try {
+      final created = await repo.createCharacter(copy);
+      await repo.incrementDownloadCount(public.id);
+      return created;
+    } catch (e) {
+      final again = await repo.getMyCloneOfSource(public.id, user.id);
+      if (again != null) return again;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${context.trRead('charactersAddFailed')}: $e')),
+        );
+      }
+      return null;
+    }
+  }
+
   Future<void> _openCharacterChat(CharacterRecord r) async {
+    final user = AppSupabase.auth.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('loginRequired'))));
+      return;
+    }
+    CharacterRecord row = r;
+    if (r.ownerId != user.id) {
+      final forked = await _ensureForkForSharedCharacter(r);
+      if (!mounted || forked == null) return;
+      row = forked;
+    }
     final chatRepo = context.read<ChatRepository>();
     final aiRepo = context.read<AiChatRepository>();
-    final character = Character.fromRecord(r);
+    final character = Character.fromRecord(row);
     await Navigator.push<void>(
       context,
       MaterialPageRoute(
@@ -85,27 +147,47 @@ class _AddFriendTabState extends State<AddFriendTab> with SingleTickerProviderSt
       return;
     }
     if (r.ownerId == user.id) return;
+    final repo = context.read<CharacterRecordRepository>();
+    final pointsRepo = context.read<PointsRepository>();
+    final pointsNotifier = context.read<PointsBalanceNotifier>();
+    final existing = await repo.getMyCloneOfSource(r.id, user.id);
+    if (existing != null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('charactersAlreadyForked'))));
+      return;
+    }
     try {
-      final spend = await context.read<PointsRepository>().spendPoints(10, 'public_character_download');
+      final spend = await pointsRepo.spendPoints(10, 'public_character_download');
       if (!spend.ok) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('pointsInsufficient'))));
         return;
       }
       if (!mounted) return;
-      context.read<PointsBalanceNotifier>().setBalance(spend.balance);
-      final repo = context.read<CharacterRecordRepository>();
+      pointsNotifier.setBalance(spend.balance);
       final copy = CharacterRecord.draft(
         ownerId: user.id,
         name: r.name,
         nameSecondary: r.nameSecondary,
         avatarUrl: r.avatarUrl,
+        tagline: r.tagline,
         speechStyle: r.speechStyle,
         language: r.language,
         isPublic: false,
+        clonedFromId: r.id,
       );
-      await repo.createCharacter(copy);
-      await repo.incrementDownloadCount(r.id);
+      try {
+        await repo.createCharacter(copy);
+        await repo.incrementDownloadCount(r.id);
+      } catch (_) {
+        final again = await repo.getMyCloneOfSource(r.id, user.id);
+        if (again != null) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('charactersAlreadyForked'))));
+          return;
+        }
+        rethrow;
+      }
       if (!mounted) return;
       final msg = context.trRead('charactersAdded', params: {'name': r.name});
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));

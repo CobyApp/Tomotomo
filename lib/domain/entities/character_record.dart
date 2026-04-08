@@ -13,9 +13,13 @@ class CharacterRecord {
   final String name;
   final String? nameSecondary;
   final String? avatarUrl;
+  /// One-line list subtitle (~20 chars); not the full AI memo ([speechStyle]).
+  final String? tagline;
   final String? speechStyle;
   final String language;
   final bool isPublic;
+  /// Source public character id when this row was forked into the owner's library.
+  final String? clonedFromId;
   final int downloadCount;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -26,20 +30,28 @@ class CharacterRecord {
     required this.name,
     this.nameSecondary,
     this.avatarUrl,
+    this.tagline,
     this.speechStyle,
     this.language = 'ja',
     this.isPublic = false,
+    this.clonedFromId,
     this.downloadCount = 0,
     required this.createdAt,
     required this.updatedAt,
   });
 
-  /// Text for list subtitles: [speechStyle], else [nameSecondary], else empty (caller may show language).
+  /// Text for list subtitles: [tagline], else [nameSecondary], else first line of [speechStyle], else empty.
   String get listDetailLine {
-    final m = speechStyle?.trim();
-    if (m != null && m.isNotEmpty) return m;
+    final tag = tagline?.trim();
+    if (tag != null && tag.isNotEmpty) return tag;
     final s = nameSecondary?.trim();
     if (s != null && s.isNotEmpty) return s;
+    final m = speechStyle?.trim();
+    if (m != null && m.isNotEmpty) {
+      final first = m.split(RegExp(r'\r?\n')).first.trim();
+      if (first.length > 48) return '${first.substring(0, 45)}…';
+      return first;
+    }
     return '';
   }
 
@@ -49,9 +61,11 @@ class CharacterRecord {
     required String name,
     String? nameSecondary,
     String? avatarUrl,
+    String? tagline,
     String? speechStyle,
     String language = 'ja',
     bool isPublic = false,
+    String? clonedFromId,
   }) {
     final now = DateTime.now();
     return CharacterRecord(
@@ -60,9 +74,11 @@ class CharacterRecord {
       name: name,
       nameSecondary: nameSecondary,
       avatarUrl: avatarUrl,
+      tagline: tagline,
       speechStyle: speechStyle,
       language: language,
       isPublic: isPublic,
+      clonedFromId: clonedFromId,
       downloadCount: 0,
       createdAt: now,
       updatedAt: now,
@@ -76,9 +92,11 @@ class CharacterRecord {
       name: json['name'] as String,
       nameSecondary: json['name_secondary'] as String?,
       avatarUrl: json['avatar_url'] as String?,
+      tagline: json['tagline'] as String?,
       speechStyle: json['speech_style'] as String?,
       language: json['language'] as String? ?? 'ja',
       isPublic: json['is_public'] as bool? ?? false,
+      clonedFromId: json['cloned_from_id'] as String?,
       downloadCount: json['download_count'] as int? ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
@@ -92,9 +110,11 @@ class CharacterRecord {
       'name': name,
       'name_secondary': nameSecondary,
       'avatar_url': avatarUrl,
+      'tagline': tagline,
       'speech_style': speechStyle,
       'language': language,
       'is_public': isPublic,
+      'cloned_from_id': clonedFromId,
       'download_count': downloadCount,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),

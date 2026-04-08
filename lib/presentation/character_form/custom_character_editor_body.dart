@@ -29,6 +29,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _nameSecondaryController = TextEditingController();
+  final _taglineController = TextEditingController();
   final _memoController = TextEditingController();
   final _xUrlController = TextEditingController();
   final _xPasteController = TextEditingController();
@@ -51,6 +52,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     if (r != null) {
       _nameController.text = r.name;
       _nameSecondaryController.text = r.nameSecondary ?? '';
+      _taglineController.text = r.tagline?.trim() ?? '';
       _memoController.text = r.speechStyle?.trim() ?? '';
       _language = r.language;
       _isPublic = r.isPublic;
@@ -62,6 +64,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   void dispose() {
     _nameController.dispose();
     _nameSecondaryController.dispose();
+    _taglineController.dispose();
     _memoController.dispose();
     _xUrlController.dispose();
     _xPasteController.dispose();
@@ -72,6 +75,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     setState(() {
       _nameController.text = s.name;
       _nameSecondaryController.text = s.nameSecondary ?? '';
+      _taglineController.text = s.tagline?.trim() ?? '';
       _memoController.text = s.speechStyle ?? '';
       _language = s.language == 'ko' ? 'ko' : 'ja';
       final u = s.avatarUrl?.trim();
@@ -176,6 +180,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       _saving = true;
     });
     final memo = _memoController.text.trim();
+    final tagline = _taglineController.text.trim();
     final secondary = _nameSecondaryController.text.trim();
     try {
       final repo = context.read<CharacterRecordRepository>();
@@ -195,6 +200,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           ownerId: user.id,
           name: name,
           nameSecondary: secondary.isEmpty ? null : secondary,
+          tagline: tagline.isEmpty ? null : tagline,
           speechStyle: memo.isEmpty ? null : memo,
           avatarUrl: _avatarUrl,
           language: _language,
@@ -207,10 +213,12 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           ownerId: existing.ownerId,
           name: name,
           nameSecondary: secondary.isEmpty ? null : secondary,
+          tagline: tagline.isEmpty ? null : tagline,
           speechStyle: memo.isEmpty ? null : memo,
           avatarUrl: _avatarUrl,
           language: _language,
           isPublic: _isPublic,
+          clonedFromId: existing.clonedFromId,
           downloadCount: existing.downloadCount,
           createdAt: existing.createdAt,
           updatedAt: DateTime.now(),
@@ -541,6 +549,16 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                     hintText: _hintAltName(context),
                     prefixIcon: Icon(Icons.translate_rounded, color: scheme.primary),
                   ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _taglineController,
+                  decoration: InputDecoration(
+                    labelText: context.tr('characterTaglineLabel'),
+                    hintText: context.tr('characterTaglineHint'),
+                    prefixIcon: Icon(Icons.format_quote_rounded, color: scheme.primary),
+                  ),
+                  maxLength: 40,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(

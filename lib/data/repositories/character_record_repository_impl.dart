@@ -53,6 +53,18 @@ class CharacterRecordRepositoryImpl implements CharacterRecordRepository {
   }
 
   @override
+  Future<CharacterRecord?> getMyCloneOfSource(String sourceCharacterId, String ownerId) async {
+    final res = await AppSupabase.client
+        .from('characters')
+        .select('*')
+        .eq('owner_id', ownerId)
+        .eq('cloned_from_id', sourceCharacterId)
+        .maybeSingle();
+    if (res == null) return null;
+    return CharacterRecord.fromJson(Map<String, dynamic>.from(res as Map));
+  }
+
+  @override
   Future<CharacterRecord> createCharacter(CharacterRecord character) async {
     final payload = character.toJson()
       ..remove('id')
@@ -69,6 +81,7 @@ class CharacterRecordRepositoryImpl implements CharacterRecordRepository {
       'name': character.name,
       'name_secondary': character.nameSecondary,
       'avatar_url': character.avatarUrl,
+      'tagline': character.tagline,
       'speech_style': character.speechStyle,
       'language': character.language,
       'is_public': character.isPublic,

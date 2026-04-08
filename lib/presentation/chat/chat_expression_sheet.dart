@@ -34,55 +34,108 @@ Future<void> showChatExpressionSheet(
     isScrollControlled: true,
     builder: (sheetContext) {
       final scheme = Theme.of(sheetContext).colorScheme;
-      return Container(
-        margin: const EdgeInsets.fromLTRB(
-          AppSpacing.sheetSide,
-          0,
-          AppSpacing.sheetSide,
-          AppSpacing.sheetBottom,
-        ),
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: BorderRadius.circular(AppRadii.cardSmall),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.72,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 4),
-              child: Center(
-                child: Container(
-                  width: 32,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: scheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
+      final h = MediaQuery.sizeOf(sheetContext).height;
+      final bottomInset = MediaQuery.paddingOf(sheetContext).bottom;
+      return Padding(
+        padding: EdgeInsets.only(left: 8, right: 8, bottom: bottomInset > 0 ? 0 : AppSpacing.sheetBottom),
+        child: SizedBox(
+          height: h,
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.88,
+            minChildSize: 0.38,
+            maxChildSize: 0.98,
+            expand: false,
+            builder: (ctx, scrollController) {
+              final topBlend = Color.lerp(scheme.primaryContainer, scheme.surface, 0.42)!;
+              return DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [topBlend, scheme.surface],
+                  ),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 22,
+                      offset: const Offset(0, -6),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 10),
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: scheme.outlineVariant.withValues(alpha: 0.55),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+                        child: Row(
+                          children: [
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: scheme.primaryContainer.withValues(alpha: 0.72),
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(11),
+                                child: Icon(Icons.menu_book_rounded, color: scheme.primary, size: 24),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    sheetContext.tr('expressionSheetHeaderTitle'),
+                                    style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: -0.3,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    sheetContext.tr('expressionExplanationTitle'),
+                                    style: Theme.of(sheetContext).textTheme.labelSmall?.copyWith(
+                                          color: scheme.onSurfaceVariant,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Divider(height: 1, thickness: 1, color: scheme.outlineVariant.withValues(alpha: 0.35)),
+                      Expanded(
+                        child: _ExpressionSheetBody(
+                          scrollController: scrollController,
+                          message: message,
+                          character: character,
+                          chatRoomId: chatRoomId,
+                          messenger: messenger,
+                          dmScript: dmScript,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ),
-            Divider(height: 1, color: scheme.outlineVariant),
-            Flexible(
-              child: _ExpressionSheetBody(
-                message: message,
-                character: character,
-                chatRoomId: chatRoomId,
-                messenger: messenger,
-                dmScript: dmScript,
-              ),
-            ),
-          ],
+              );
+            },
+          ),
         ),
       );
     },
@@ -98,6 +151,7 @@ String _vocabTranslationLine(Vocabulary v) {
 }
 
 class _ExpressionSheetBody extends StatefulWidget {
+  final ScrollController scrollController;
   final ChatMessage message;
   final Character character;
   final String? chatRoomId;
@@ -105,6 +159,7 @@ class _ExpressionSheetBody extends StatefulWidget {
   final DmUtteranceScript? dmScript;
 
   const _ExpressionSheetBody({
+    required this.scrollController,
     required this.message,
     required this.character,
     required this.chatRoomId,
@@ -304,35 +359,36 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final scheme = Theme.of(sheetContext).colorScheme;
 
     final messageStyle = TextStyle(
-      fontSize: 15,
-      height: 1.45,
+      fontSize: 17,
+      height: 1.5,
       color: scheme.onSurface,
+      fontWeight: FontWeight.w500,
       fontFamily: character.assistantMessagePrefersHangulFont ? 'Pretendard' : null,
     );
     final meaningStyle = TextStyle(
-      fontSize: 13,
-      height: 1.4,
+      fontSize: 14,
+      height: 1.42,
       color: scheme.onSurfaceVariant,
       fontFamily: _vocabMeaningUsesHangul ? 'Pretendard' : null,
     );
     final sectionLabelStyle = TextStyle(
-      fontSize: 12,
+      fontSize: 13,
       height: 1.2,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w700,
       color: scheme.primary,
-      letterSpacing: 0.2,
+      letterSpacing: 0.15,
     );
     final sectionBodyStyle = TextStyle(
-      fontSize: 14,
-      height: 1.45,
+      fontSize: 15,
+      height: 1.5,
       color: scheme.onSurface,
       fontFamily: character.assistantMessagePrefersHangulFont ? 'Pretendard' : null,
     );
     final vocabWordUsesPretendard = character.koreanNationalPersona ||
         (character.isDirectMessage && dm == DmUtteranceScript.koreanHeavy);
     final wordStyle = TextStyle(
-      fontSize: 15,
-      fontWeight: FontWeight.w600,
+      fontSize: 16,
+      fontWeight: FontWeight.w700,
       color: scheme.onSurface,
       fontFamily: vocabWordUsesPretendard ? 'Pretendard' : null,
     );
@@ -366,12 +422,25 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       );
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 10, AppSpacing.pageH, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(message.content, style: messageStyle),
+    return ListView(
+      controller: widget.scrollController,
+      padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 14, AppSpacing.pageH, 28),
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.25)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Text(message.content, style: messageStyle),
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
           if (fetchLine) ...[
             const SizedBox(height: 12),
             if (_lineFetchLoading)
@@ -386,7 +455,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                   Expanded(
                     child: Text(
                       tr('expressionAnalysisLoading'),
-                      style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+                      style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant),
                     ),
                   ),
                 ],
@@ -397,7 +466,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                 children: [
                   Text(
                     '${tr('expressionAnalysisFailed')}\n$_lineFetchError',
-                    style: TextStyle(fontSize: 12, height: 1.35, color: scheme.error),
+                    style: TextStyle(fontSize: 13, height: 1.4, color: scheme.error),
                   ),
                   TextButton.icon(
                     onPressed: _loadLineAnalysis,
@@ -434,7 +503,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
               final hasReading = vocab.reading != null && vocab.reading!.trim().isNotEmpty;
 
               return Padding(
-                padding: EdgeInsets.only(bottom: i < _effectiveVocabulary!.length - 1 ? 10 : 0),
+                padding: EdgeInsets.only(bottom: i < _effectiveVocabulary!.length - 1 ? 12 : 0),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -451,7 +520,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                                   TextSpan(
                                     text: ' (${vocab.reading})',
                                     style: TextStyle(
-                                      fontWeight: FontWeight.w400,
+                                      fontWeight: FontWeight.w500,
                                       fontSize: 14,
                                       color: scheme.onSurfaceVariant,
                                     ),
@@ -471,13 +540,13 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                               ? tr('expressionWordSavingTooltip')
                               : tr('addWordToNotebookTooltip'),
                       child: SizedBox(
-                        width: 40,
-                        height: 40,
+                        width: 44,
+                        height: 44,
                         child: _savingIndices.contains(i)
                             ? Center(
                                 child: SizedBox(
-                                  width: 20,
-                                  height: 20,
+                                  width: 22,
+                                  height: 22,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     color: character.primaryColor,
@@ -489,8 +558,8 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                                 padding: EdgeInsets.zero,
                                 onPressed: done ? null : () => _saveWordToNotebook(i, vocab),
                                 icon: Icon(
-                                  done ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
-                                  size: 26,
+                                  done ? Icons.check_circle_rounded : Icons.add_circle_rounded,
+                                  size: 28,
                                   color: done ? Colors.green.shade700 : character.primaryColor,
                                 ),
                               ),
@@ -504,12 +573,12 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
             const SizedBox.shrink()
           else if (character.isDirectMessage && dm != null)
             Padding(
-              padding: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsets.only(top: 12),
               child: Text(
                 dm == DmUtteranceScript.koreanHeavy ? tr('expressionMissingVocabularyJa') : tr('expressionMissingVocabulary'),
                 style: TextStyle(
-                  fontSize: 13,
-                  height: 1.35,
+                  fontSize: 14,
+                  height: 1.4,
                   color: scheme.tertiary,
                   fontFamily: dm == DmUtteranceScript.japaneseHeavy ? 'Pretendard' : null,
                 ),
@@ -517,12 +586,12 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
             )
           else if (character.expectsKoreanStudyNotes)
             Padding(
-              padding: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsets.only(top: 12),
               child: Text(
                 tr('expressionMissingVocabulary'),
                 style: TextStyle(
-                  fontSize: 13,
-                  height: 1.35,
+                  fontSize: 14,
+                  height: 1.4,
                   color: scheme.tertiary,
                   fontFamily: 'Pretendard',
                 ),
@@ -530,14 +599,15 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
             )
           else if (character.expectsJapaneseStudyNotes)
             Padding(
-              padding: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsets.only(top: 12),
               child: Text(
                 tr('expressionMissingVocabularyJa'),
-                style: TextStyle(fontSize: 13, height: 1.35, color: scheme.tertiary),
+                style: TextStyle(fontSize: 14, height: 1.4, color: scheme.tertiary),
               ),
             ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 }

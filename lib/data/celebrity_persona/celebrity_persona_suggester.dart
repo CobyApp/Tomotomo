@@ -4,12 +4,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 import '../../core/x_profile/x_profile_reader.dart';
+import '../repositories/gemini_retry.dart';
 
 /// Suggested fields for a custom tutor from X / pasted profile text.
 class CelebrityPersonaSuggestion {
   const CelebrityPersonaSuggestion({
     required this.name,
     this.nameSecondary,
+    this.tagline,
     this.speechStyle,
     required this.language,
     this.avatarUrl,
@@ -18,6 +20,8 @@ class CelebrityPersonaSuggestion {
   /// Primary display name for [language] mode (JA tutor → Japanese line; KO tutor → Korean).
   final String name;
   final String? nameSecondary;
+  /// ~20 characters for list subtitle under the name (DB `tagline`).
+  final String? tagline;
   /// Bio + tone instructions for the AI (stored in DB `speech_style`).
   final String? speechStyle;
   /// `ja` or `ko`
@@ -70,6 +74,10 @@ class CelebrityPersonaSuggester {
         description:
             '2–5 short sentences: neutral intro for the tutor (paraphrase; do not paste long copyrighted text verbatim).',
       ),
+      'tagline': Schema.string(
+        description:
+            'Single-line public self-intro for list UI under the name: about 18–24 characters (count characters in the persona language, ja or ko per language). Paraphrase from bio; warm and concise; no hashtags, no newlines, no @handles.',
+      ),
       'speech_style': Schema.string(
         description:
             'Concise instructions for the AI: sentence endings (ですます/だね/반말), politeness, emoji habits, first-person (僕/俺/私/나), dialect, tone.',
@@ -80,7 +88,7 @@ class CelebrityPersonaSuggester {
             'If the input contains a clear https://pbs.twimg.com/profile_images/... URL, copy it exactly; else null.',
       ),
     },
-    requiredProperties: ['language', 'bio', 'speech_style'],
+    requiredProperties: ['language', 'bio', 'tagline', 'speech_style'],
   );
 
   static String? _handleFromCanonicalUrl(String? url) {
@@ -117,6 +125,16 @@ class CelebrityPersonaSuggester {
     final t = s?.trim();
     if (t == null || t.isEmpty) return null;
     return t;
+  }
+
+  /// Keeps list subtitle short (Unicode-safe).
+  static String _clampTagline(String? raw, {int maxChars = 28}) {
+    var t = raw?.trim().replaceAll(RegExp(r'[\r\n#]'), ' ') ?? '';
+    t = t.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (t.isEmpty) return '';
+    final runes = t.runes;
+    if (runes.length <= maxChars) return t;
+    return '${String.fromCharCodes(runes.take(maxChars - 1))}…';
   }
 
   static String _composeSpeechStyle({
@@ -191,6 +209,7 @@ class CelebrityPersonaSuggester {
         '- name_ja: Japanese writing only for that field; name_ko: Hangul only. If only one script appears in the input, fill that field and leave the other null.\n'
         '- language: ja if the person mainly posts in Japanese; ko if mainly Korean; if mixed, pick the dominant language for tutoring bubbles.\n'
         '- bio: short paraphrased persona intro (role, vibe, topics). No long quotes.\n'
+        '- tagline: one line ~20 characters for UI list under the name (same language as tutoring bubbles). Not the long memo.\n'
         '- speech_style: actionable directives for the model (語尾, 敬語/タメ口, 一人称, emoji, 方言, Korean 반말/존댓말, etc.).\n'
         '- profile_image_url: only if a literal https://pbs.twimg.com/profile_images/... URL appears in the input; else null. Never invent URLs.\n'
         '- Do not claim real-world verification; this is a stylized template.',
@@ -205,7 +224,10 @@ class CelebrityPersonaSuggester {
         '$trimmed\n'
         '---';
 
-    final res = await model.generateContent([Content.text(prompt)]);
+    final res = await withGeminiRetry(
+      () => model.generateContent([Content.text(prompt)]),
+      perAttemptTimeout: const Duration(seconds: 120),
+    );
     final t = res.text?.trim();
     if (t == null || t.isEmpty) {
       throw Exception('Empty AI response');
@@ -254,6 +276,10 @@ class CelebrityPersonaSuggester {
     final bio = (map['bio'] as String?)?.trim() ?? '';
     final speech = (map['speech_style'] as String?)?.trim() ?? '';
     final combinedStyle = _composeSpeechStyle(language: lang, bio: bio, speechStyle: speech);
+    var line = _clampTagline(map['tagline'] as String?);
+    if (line.isEmpty) {
+      line = _clampTagline(bio.split(RegExp(r'[。．.!?\n]')).first);
+    }
 
     final geminiImg = (map['profile_image_url'] as String?)?.trim();
     final avatar = _pickAvatarUrl(fromGemini: geminiImg, fromPage: pageImageUrl, rawText: trimmed);
@@ -261,6 +287,7 @@ class CelebrityPersonaSuggester {
     return CelebrityPersonaSuggestion(
       name: primary,
       nameSecondary: secondary,
+      tagline: line.isEmpty ? null : line,
       speechStyle: combinedStyle,
       language: lang,
       avatarUrl: avatar,

@@ -48,9 +48,10 @@ cp .env.example .env
 ### Supabase SQL 적용 (신규 프로젝트)
 
 1. `supabase/migrations/20250320000000_full_schema.sql` 한 번 적용 (`supabase db push` 또는 SQL Editor 전체 실행).  
-2. 이미 예전 분할 마이그레이션으로 DB를 만든 프로젝트는 **이 파일을 다시 실행하지 마세요** (객체 중복). 스키마를 맞추려면 새 프로젝트로 옮기거나 수동으로 정리해야 합니다.
+2. 이후 추가 마이그레이션도 **같은 방식으로** 적용하세요. 예: 포인트·RPC(`spend_points` 등)는 `20250407120000_increment_public_character_download.sql`, `20250408120000_points_and_expression_cache.sql`. 이걸 원격에 안 올리면 앱에서 `could not find the function public.spend_points` 같은 오류가 납니다.  
+3. 이미 예전 분할 마이그레이션으로 DB를 만든 프로젝트는 **풀 스키마 파일을 다시 실행하지 마세요** (객체 중복). 스키마를 맞추려면 새 프로젝트로 옮기거나 수동으로 정리해야 합니다.
 
-이 스키마를 적용하면 **인증·캐릭터·AI 채팅·친구·DM·차단·단어장·Storage·채팅 Realtime**까지 앱이 기대하는 백엔드가 갖춰집니다.
+기본 스키마를 적용하면 **인증·캐릭터·AI 채팅·친구·DM·차단·단어장·Storage·채팅 Realtime**까지 앱이 기대하는 백엔드가 갖춰집니다. 포인트 기능은 위 추가 마이그레이션까지 적용된 뒤에 동작합니다.
 
 #### 로그인/가입 시 `Failed host lookup: '…supabase.co'`
 
@@ -154,6 +155,20 @@ Xcode / `flutter run` 으로 설치할 때 **`Failed to verify code signature of
 **추가로**
 
 - 주기적으로 **`flutter upgrade`** (stable) — 엔진/도구 수정이 올라올 수 있음.
+
+#### Profile은 되는데 `Did not find a Dart VM Service advertised` 만 날 때
+
+빌드·설치는 끝났는데(로그에 `Installing and launching` 이 오래 걸린 뒤) **호스트가 실기기의 VM Service URL을 mDNS 등으로 못 찾는 경우**입니다. JIT 크래시와는 별개입니다.
+
+| 시도 | 설명 |
+|------|------|
+| **USB 연결** | 무선 디버깅만 쓰면 멀티캐스트/mDNS가 막히는 환경이 많습니다. 케이블로 연결 후 다시 실행해 보세요. |
+| **VPN 끄기** | Mac VPN이 로컬 mDNS를 망가뜨리는 경우가 있습니다. |
+| **릴리즈로만 올리기** | 터미널: `RUN_MODE=release ./run_on_iphone.sh` — VM Service에 안 붙고 **설치·실행만** 하면 될 때 적합합니다. |
+| **USB 기기만 대상** | `FLUTTER_DEVICE_CONNECTION=attached ./run_on_iphone.sh` (무선 페어링만 쓰는 기기는 이 모드에서 안 잡힐 수 있음) |
+| **스크립트 기본값** | `./run_on_iphone.sh` 는 `--no-dds` 를 넣어 두었습니다. 일부 iOS 조합에서 붙기 실패를 줄입니다. |
+
+공식 가이드: [UIScene / 도구 쪽 안내](https://flutter.dev/to/uiscene-migration) 는 별도이며, 위 메시지는 **디버거 연결 실패**에 가깝습니다.
 
 #### 그 밖에 시도해 둔 앱/프로젝트 안정화 (요약)
 

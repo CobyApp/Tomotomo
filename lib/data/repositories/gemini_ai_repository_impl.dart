@@ -9,6 +9,7 @@ import '../../domain/repositories/ai_chat_repository.dart';
 import 'ai_prompts/prompt_dm_expression_analysis.dart';
 import 'ai_response_parser.dart';
 import 'ai_system_prompt_builder.dart';
+import 'gemini_retry.dart';
 
 /// [AiChatRepository] backed by Google Gemini (Generative Language API).
 ///
@@ -142,8 +143,11 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
     return c;
   }
 
-  Future<String> _responseText(Future<GenerateContentResponse> future) async {
-    final response = await future.timeout(_timeout);
+  Future<String> _responseTextFromContent(GenerativeModel model, List<Content> contents) async {
+    final response = await withGeminiRetry(
+      () => model.generateContent(contents),
+      perAttemptTimeout: _timeout,
+    );
     final text = response.text;
     if (text == null || text.trim().isEmpty) {
       throw Exception('Empty Gemini response (check safety filters or model name).');
@@ -181,7 +185,10 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
       final userContent = Content.text(userMessage);
       final prompt = [..._historyWindowForRequest(), userContent];
 
-      final genResponse = await _chatModel!.generateContent(prompt).timeout(_timeout);
+      final genResponse = await withGeminiRetry(
+        () => _chatModel!.generateContent(prompt),
+        perAttemptTimeout: _timeout,
+      );
       final rawText = genResponse.text;
       if (rawText == null || rawText.trim().isEmpty) {
         throw Exception('Empty Gemini response (check safety filters or model name).');
@@ -221,9 +228,7 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
 
     try {
       final model = _buildDmModel();
-      final raw = await _responseText(
-        model.generateContent([Content.text(prompt)]),
-      );
+      final raw = await _responseTextFromContent(model, [Content.text(prompt)]);
       final jsonResponse = extractJsonObject(raw);
       return chatMessageFromAiJsonMap(
         jsonResponse,

@@ -17,6 +17,7 @@ import '../../chat/chat_screen.dart';
 import '../../character_form/create_character_screen.dart';
 import '../../character_form/edit_character_screen.dart';
 import '../../locale/l10n_context.dart';
+import '../../tutor_studio/public_character_sheet.dart';
 
 /// My characters (Supabase) + Discover (public) + Built-in characters.
 class CharactersTab extends StatefulWidget {
@@ -26,7 +27,8 @@ class CharactersTab extends StatefulWidget {
   CharactersTabState createState() => CharactersTabState();
 }
 
-class CharactersTabState extends State<CharactersTab> with WidgetsBindingObserver, OnAppResumedMixin {
+class CharactersTabState extends State<CharactersTab>
+    with WidgetsBindingObserver, OnAppResumedMixin, SingleTickerProviderStateMixin {
   /// Called when the bottom nav selects the Tutors / characters tab.
   void reloadFromTabSelection() {
     unawaited(_load(silent: true));
@@ -38,14 +40,25 @@ class CharactersTabState extends State<CharactersTab> with WidgetsBindingObserve
   String _publicFilter = 'all';
   bool _loading = true;
   String? _error;
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _load();
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -100,50 +113,119 @@ class CharactersTabState extends State<CharactersTab> with WidgetsBindingObserve
   }
 
   String _publicDiscoverSubtitle(CharacterRecord r) {
-    final base = _recordSubtitle(context, r);
+    final tag = r.tagline?.trim();
+    final base = (tag != null && tag.isNotEmpty) ? tag : _recordSubtitle(context, r);
     final dl = context.tr('charactersDownloadsLabel', params: {'count': '${r.downloadCount}'});
     return '$base · $dl';
   }
 
-  /// Copies a public character to the current user's list (and increments download count).
-  Future<void> _addPublicCharacterToMine(CharacterRecord r) async {
+  void _pushChatWithRecord(CharacterRecord r) {
+    final character = Character.fromRecord(r);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          character: character,
+          chatRepository: context.read<ChatRepository>(),
+          aiChatRepository: context.read<AiChatRepository>(),
+        ),
+      ),
+    );
+  }
+
+  void _openPublicCharacterSheet(CharacterRecord r) {
+    unawaited(
+      showPublicCharacterSheet(
+        context,
+        record: r,
+        subtitleLine: _publicDiscoverSubtitle(r),
+        onStartChat: () => _startChatFromPublic(r),
+        onAddToMine: () => _addPublicCharacterToMine(r),
+      ),
+    );
+  }
+
+  /// Own library row forked from [public]; creates one (10P) if missing. Chat always uses this id, not [public.id].
+  Future<CharacterRecord?> _ensureMyForkOfPublic(CharacterRecord public) async {
     final user = AppSupabase.auth.currentUser;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('loginRequired'))));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('loginRequired'))));
+      }
+      return null;
+    }
+    final repo = context.read<CharacterRecordRepository>();
+    final pointsRepo = context.read<PointsRepository>();
+    final pointsNotifier = context.read<PointsBalanceNotifier>();
+    final existing = await repo.getMyCloneOfSource(public.id, user.id);
+    if (existing != null) return existing;
+
+    final spend = await pointsRepo.spendPoints(10, 'public_character_download');
+    if (!spend.ok) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('pointsInsufficient'))));
+      }
+      return null;
+    }
+    if (!mounted) return null;
+    pointsNotifier.setBalance(spend.balance);
+
+    final copy = CharacterRecord.draft(
+      ownerId: user.id,
+      name: public.name,
+      nameSecondary: public.nameSecondary,
+      avatarUrl: public.avatarUrl,
+      tagline: public.tagline,
+      speechStyle: public.speechStyle,
+      language: public.language,
+      isPublic: false,
+      clonedFromId: public.id,
+    );
+    try {
+      final created = await repo.createCharacter(copy);
+      await repo.incrementDownloadCount(public.id);
+      return created;
+    } catch (e) {
+      final again = await repo.getMyCloneOfSource(public.id, user.id);
+      if (again != null) return again;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${context.tr('charactersAddFailed')}: $e')),
+        );
+      }
+      return null;
+    }
+  }
+
+  Future<void> _startChatFromPublic(CharacterRecord public) async {
+    final mine = await _ensureMyForkOfPublic(public);
+    if (!mounted || mine == null) return;
+    _pushChatWithRecord(mine);
+  }
+
+  /// Adds a fork of [public] to the library (10P once per source); no-op if already forked.
+  Future<void> _addPublicCharacterToMine(CharacterRecord public) async {
+    final user = AppSupabase.auth.currentUser;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('loginRequired'))));
+      }
       return;
     }
-    try {
-      final spend = await context.read<PointsRepository>().spendPoints(10, 'public_character_download');
-      if (!spend.ok) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('pointsInsufficient'))));
-        return;
+    final repo = context.read<CharacterRecordRepository>();
+    final existing = await repo.getMyCloneOfSource(public.id, user.id);
+    if (existing != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('charactersAlreadyForked'))));
       }
-      if (!mounted) return;
-      context.read<PointsBalanceNotifier>().setBalance(spend.balance);
-      final repo = context.read<CharacterRecordRepository>();
-      final copy = CharacterRecord.draft(
-        ownerId: user.id,
-        name: r.name,
-        nameSecondary: r.nameSecondary,
-        avatarUrl: r.avatarUrl,
-        speechStyle: r.speechStyle,
-        language: r.language,
-        isPublic: false,
-      );
-      await repo.createCharacter(copy);
-      await repo.incrementDownloadCount(r.id);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('charactersAdded', params: {'name': r.name}))),
-      );
-      _load();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${context.tr('charactersAddFailed')}: $e')),
-      );
+      return;
     }
+    final created = await _ensureMyForkOfPublic(public);
+    if (!mounted || created == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.tr('charactersAdded', params: {'name': public.name}))),
+    );
+    unawaited(_load());
   }
 
   // ── avatar 헬퍼 ────────────────────────────────────────────
@@ -184,6 +266,16 @@ class CharactersTabState extends State<CharactersTab> with WidgetsBindingObserve
     return AppPageScaffold(
       title: context.tr('charactersTitle'),
       showPointsChip: true,
+      bottom: _loading || _error != null
+          ? null
+          : TabBar(
+              controller: _tabController,
+              tabs: [
+                Tab(text: context.tr('charactersMy')),
+                Tab(text: context.tr('charactersDiscover')),
+                Tab(text: context.tr('charactersBuiltin')),
+              ],
+            ),
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh_rounded),
@@ -191,97 +283,95 @@ class CharactersTabState extends State<CharactersTab> with WidgetsBindingObserve
           onPressed: _loading ? null : () => unawaited(_load()),
         ),
       ],
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final created = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(builder: (_) => const CreateCharacterScreen()),
-          );
-          if (created == true) unawaited(_load());
-        },
-        icon: const Icon(Icons.add_rounded),
-        label: Text(context.tr('create')),
-      ),
+      floatingActionButton: _loading || _error != null || _tabController.index != 0
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () async {
+                final created = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreateCharacterScreen()),
+                );
+                if (created == true) unawaited(_load());
+              },
+              icon: const Icon(Icons.add_rounded),
+              label: Text(context.tr('create')),
+            ),
       body: _loading
           ? const AppLoadingBody()
           : _error != null
               ? AppErrorBody(message: _error!, onRetry: _load, retryLabel: context.tr('retry'))
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.pageH, 12, AppSpacing.pageH, 100,
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 12, AppSpacing.pageH, 100),
+                        children: [_mySection(scheme)],
+                      ),
                     ),
-                    children: [
-                      _mySection(scheme),
-                      _sectionHeader(
-                        icon: Icons.public_rounded,
-                        title: context.tr('charactersDiscover'),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        context.tr('charactersDiscoverHint'),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                              height: 1.35,
-                            ),
-                      ),
-                      const SizedBox(height: 12),
-                      SegmentedButton<String>(
-                        segments: [
-                          ButtonSegment<String>(
-                            value: 'all',
-                            label: Text(context.tr('charactersFilterAll')),
+                    RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 12, AppSpacing.pageH, 100),
+                        children: [
+                          Text(
+                            context.tr('charactersDiscoverHint'),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                  height: 1.35,
+                                ),
                           ),
-                          ButtonSegment<String>(
-                            value: 'ja',
-                            label: Text(context.tr('langJa')),
+                          const SizedBox(height: 12),
+                          SegmentedButton<String>(
+                            segments: [
+                              ButtonSegment<String>(
+                                value: 'all',
+                                label: Text(context.tr('charactersFilterAll')),
+                              ),
+                              ButtonSegment<String>(
+                                value: 'ja',
+                                label: Text(context.tr('langJa')),
+                              ),
+                              ButtonSegment<String>(
+                                value: 'ko',
+                                label: Text(context.tr('langKo')),
+                              ),
+                            ],
+                            selected: {_publicFilter},
+                            onSelectionChanged: (s) {
+                              if (s.isEmpty) return;
+                              setState(() => _publicFilter = s.first);
+                            },
                           ),
-                          ButtonSegment<String>(
-                            value: 'ko',
-                            label: Text(context.tr('langKo')),
-                          ),
+                          const SizedBox(height: 12),
+                          if (_visiblePublicList().isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 24, bottom: 20),
+                              child: AppEmptyHint(text: context.tr('charactersDiscoverEmpty')),
+                            )
+                          else
+                            ..._visiblePublicList().map((r) => _recordTile(r, isMine: false, isPublicDiscover: true)),
                         ],
-                        selected: {_publicFilter},
-                        onSelectionChanged: (s) {
-                          if (s.isEmpty) return;
-                          setState(() => _publicFilter = s.first);
-                        },
                       ),
-                      const SizedBox(height: 12),
-                      if (_visiblePublicList().isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
-                          child: AppEmptyHint(text: context.tr('charactersDiscoverEmpty')),
-                        )
-                      else ...[
-                        ..._visiblePublicList().map((r) => _recordTile(r, isMine: false, isPublicDiscover: true)),
-                        const SizedBox(height: 24),
-                      ],
-                      _sectionHeader(
-                        icon: Icons.stars_rounded,
-                        title: context.tr('charactersBuiltin'),
+                    ),
+                    RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 12, AppSpacing.pageH, 100),
+                        children: [
+                          Text(
+                            context.tr('charactersBuiltin'),
+                            style: AppTextStyles.sectionLabel(context),
+                          ),
+                          const SizedBox(height: 12),
+                          _builtInGrid(),
+                          const SizedBox(height: 8),
+                        ],
                       ),
-                      const SizedBox(height: 10),
-                      _builtInGrid(),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-    );
-  }
-
-  Widget _sectionHeader({required IconData icon, required String title}) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: scheme.primary.withValues(alpha: 0.75)),
-          const SizedBox(width: 8),
-          Text(title, style: AppTextStyles.sectionLabel(context)),
-        ],
-      ),
     );
   }
 
@@ -289,10 +379,6 @@ class CharactersTabState extends State<CharactersTab> with WidgetsBindingObserve
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionHeader(
-          icon: Icons.face_retouching_natural_rounded,
-          title: context.tr('charactersMy'),
-        ),
         const SizedBox(height: 10),
         if (_myCharacters.isEmpty)
           Padding(
@@ -322,7 +408,7 @@ class CharactersTabState extends State<CharactersTab> with WidgetsBindingObserve
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.85,
+        childAspectRatio: 0.78,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -396,6 +482,20 @@ class CharactersTabState extends State<CharactersTab> with WidgetsBindingObserve
                             ),
                         textAlign: TextAlign.center,
                         maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    if (c.tagline.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        c.tagline,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                              height: 1.25,
+                              fontWeight: FontWeight.w500,
+                            ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -475,28 +575,16 @@ class CharactersTabState extends State<CharactersTab> with WidgetsBindingObserve
               },
               editLabel: context.tr('charactersEdit'),
               deleteLabel: context.tr('charactersDelete'),
-            )
-          else
-            IconButton(
-              icon: Icon(Icons.download_outlined, color: scheme.primary),
-              tooltip: context.tr('charactersAddToMine'),
-              onPressed: () => _addPublicCharacterToMine(r),
             ),
           Icon(Icons.chevron_right_rounded, color: scheme.outlineVariant),
         ],
       ),
       onTap: () {
-        final character = Character.fromRecord(r);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ChatScreen(
-              character: character,
-              chatRepository: context.read<ChatRepository>(),
-              aiChatRepository: context.read<AiChatRepository>(),
-            ),
-          ),
-        );
+        if (isPublicDiscover) {
+          _openPublicCharacterSheet(r);
+        } else {
+          _pushChatWithRecord(r);
+        }
       },
     );
   }

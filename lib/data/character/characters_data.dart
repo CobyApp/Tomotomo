@@ -99,6 +99,12 @@ const Map<String, String> _characterSpeechStyles = {
   'junho': '落ち着いたタメ口, 〜だよな, 〜じゃん, たまに冗談',
 };
 
+/// Short list subtitle (~20 chars, Korean UI line).
+const Map<String, String> _characterTaglines = {
+  'yuna': '일본어 같이해요! 수다 떨며 배워요✨',
+  'junho': '현장에서 통하는 한국어, 차분히 도와줄게',
+};
+
 final List<Character> characters = [
   Character(
     id: 'yuna',
@@ -106,6 +112,7 @@ final List<Character> characters = [
     nameJp: 'ゆうな',
     nameKanji: '天音 ゆうな',
     level: '초급',
+    tagline: _characterTaglines['yuna']!,
     description:
         '명랑하고 수다스러운 고등학생. 새로운 것에 흥미가 많고, 다소 덜렁대지만 귀여운 성격으로 주변을 웃게 만드는 분위기 메이커입니다.',
     age: 17,
@@ -136,6 +143,7 @@ final List<Character> characters = [
     nameJp: 'ジュンホ',
     nameKanji: '朴 俊浩',
     level: '중급',
+    tagline: _characterTaglines['junho']!,
     description:
         '서울 IT 스타트업에서 일하는 개발자. 일본 출장·애니 덕후 경험이 있어 한국어 회화를 도와 주고, 설명·노트는 日本語로 답니다. 단어장에는 말풍선의 한국어 표현이 올라가고 의미는 일본어로 적힙니다.',
     age: 29,

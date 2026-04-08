@@ -9,6 +9,7 @@ import '../../settings/blocked_users_screen.dart';
 import '../../settings/language_settings_screen.dart';
 import '../../settings/profile_edit_screen.dart';
 import '../../settings/theme_settings_screen.dart';
+import '../../points/points_usage_screen.dart';
 
 class SettingsTab extends StatelessWidget {
   const SettingsTab({super.key});
@@ -46,7 +47,13 @@ class SettingsTab extends StatelessWidget {
                       icon: Icons.stars_outlined,
                       title: context.tr('settingsPointsBalance'),
                       subtitle: '${context.tr('settingsPointsBalanceSubtitle')}$suffix',
-                      showChevron: false,
+                      showChevron: true,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(builder: (_) => const PointsUsageScreen()),
+                        );
+                      },
                     );
                   },
                 ),
