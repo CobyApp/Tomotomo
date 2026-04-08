@@ -75,13 +75,24 @@ class ChatViewModel extends ChangeNotifier {
 
   /// Live updates for this room: inserts (incl. peer / other device), deletes (reset elsewhere).
   /// For AI chats, reload is deferred while [_isGenerating] to avoid wiping in-flight UI.
+  Future<void> _tearDownMessagesChannel() async {
+    final ch = _messagesChannel;
+    _messagesChannel = null;
+    if (ch != null) {
+      await AppSupabase.client.removeChannel(ch);
+    }
+  }
+
   void _subscribeMessagesRealtime() {
     if (_disposed) return;
     final roomId = _chatRoomId;
     if (roomId == null || roomId.isEmpty) return;
 
-    unawaited(_messagesChannel != null ? AppSupabase.client.removeChannel(_messagesChannel!) : Future.value());
+    final old = _messagesChannel;
     _messagesChannel = null;
+    if (old != null) {
+      unawaited(AppSupabase.client.removeChannel(old));
+    }
 
     final channel = AppSupabase.client.channel('public:chat_messages:room:$roomId');
     channel
@@ -303,16 +314,44 @@ class ChatViewModel extends ChangeNotifier {
     }
   }
 
+  /// Deletes the Supabase room (and messages) and clears local state. Caller should pop the screen.
+  Future<void> leaveRoom() async {
+    if (_disposed) return;
+    _reloadDebounce?.cancel();
+    _messagesResubscribeTimer?.cancel();
+    _messagesResubscribeTimer = null;
+    await _tearDownMessagesChannel();
+
+    var roomId = _chatRoomId;
+    roomId ??= await chatRepository.getChatRoomId(character);
+
+    if (roomId != null && roomId.isNotEmpty) {
+      try {
+        await chatRepository.deleteRoom(roomId);
+      } catch (e) {
+        debugPrint('leaveRoom delete failed: $e');
+        rethrow;
+      }
+    }
+
+    _suppressMessageReloadFromServer = false;
+    _pendingRealtimeReload = false;
+    _messages.clear();
+    _chatRoomId = null;
+    messageController.clear();
+    _isGenerating = false;
+    if (!character.isDirectMessage) {
+      aiChatRepository.resetChat();
+    }
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _disposed = true;
     _reloadDebounce?.cancel();
     _messagesResubscribeTimer?.cancel();
-    final ch = _messagesChannel;
-    if (ch != null) {
-      unawaited(AppSupabase.client.removeChannel(ch));
-      _messagesChannel = null;
-    }
+    unawaited(_tearDownMessagesChannel());
     messageController.dispose();
     super.dispose();
   }

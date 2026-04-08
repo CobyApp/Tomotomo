@@ -17,6 +17,8 @@ import '../../../domain/repositories/friends_repository.dart';
 import '../../../domain/repositories/profile_repository.dart';
 import '../../character_form/create_character_screen.dart';
 import '../../chat/chat_screen.dart';
+import '../../friends/builtin_character_profile_sheet.dart';
+import '../../friends/friend_profile_sheet.dart';
 import '../../locale/l10n_context.dart';
 import 'add_friend_tab.dart';
 import 'characters_tab.dart';
@@ -359,17 +361,24 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
   }
 
   Widget _builtInCharacterRow(Character c) {
-    final subtitle = c.displayNameSecondary;
+    final secondary = c.displayNameSecondary;
+    final subtitle = [
+      if (c.tagline.isNotEmpty) c.tagline,
+      if (secondary.isNotEmpty) secondary,
+    ].join('\n');
     return AppListRow(
       leading: CircleAvatar(radius: AppSizes.listAvatar, backgroundImage: c.imageProvider),
       title: c.displayNamePrimary,
       subtitle: subtitle.isNotEmpty ? subtitle : null,
-      subtitleMaxLines: 1,
+      subtitleMaxLines: 3,
       trailing: Icon(Icons.smart_toy_outlined, color: Theme.of(context).colorScheme.tertiary),
-      onTap: () => _showFriendsTabActionSheet(
-            title: c.displayNamePrimary,
-            openChat: () => _openAiCharacterChat(c),
-            removeAction: _showBuiltinCannotRemoveDialog,
+      onTap: () => unawaited(
+            showBuiltinCharacterProfileSheet(
+              context,
+              character: c,
+              onOpenChat: () => _openAiCharacterChat(c),
+              onRemoveAttempt: _showBuiltinCannotRemoveDialog,
+            ),
           ),
     );
   }
@@ -407,10 +416,13 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
       ),
       title: f.title,
       subtitle: f.subtitleLine,
-      onTap: () => _showFriendsTabActionSheet(
-            title: f.title,
-            openChat: () => _openFriendChat(f),
-            removeAction: () => _confirmRemove(f),
+      onTap: () => unawaited(
+            showFriendProfileSheet(
+              context,
+              friend: f,
+              onOpenChat: () => _openFriendChat(f),
+              onRemoveFriend: () => _confirmRemove(f),
+            ),
           ),
     );
   }

@@ -17,6 +17,7 @@ import '../../chat/chat_screen.dart';
 import '../../character_form/create_character_screen.dart';
 import '../../character_form/edit_character_screen.dart';
 import '../../locale/l10n_context.dart';
+import '../../friends/builtin_intro_l10n.dart';
 import '../../tutor_studio/public_character_sheet.dart';
 
 /// My characters (Supabase) + Discover (public) + Built-in characters.
@@ -408,7 +409,7 @@ class CharactersTabState extends State<CharactersTab>
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.78,
+        childAspectRatio: 0.68,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -419,6 +420,7 @@ class CharactersTabState extends State<CharactersTab>
 
   Widget _builtInCard(Character c) {
     final scheme = Theme.of(context).colorScheme;
+    final builtinIntroKey = builtinCharacterIntroKey(c.id);
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -496,6 +498,20 @@ class CharactersTabState extends State<CharactersTab>
                             ),
                         textAlign: TextAlign.center,
                         maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    if (builtinIntroKey != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        context.tr(builtinIntroKey),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant.withValues(alpha: 0.95),
+                              height: 1.3,
+                              fontSize: 11,
+                            ),
+                        textAlign: TextAlign.center,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],

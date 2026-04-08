@@ -11,6 +11,7 @@ import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
 import '../../domain/repositories/friends_repository.dart';
 import '../locale/l10n_context.dart';
+import 'chat_message_report.dart';
 import 'chat_viewmodel.dart';
 import 'widgets/chat_list.dart';
 import 'widgets/chat_input.dart';
@@ -155,10 +156,18 @@ class _ChatScreenState extends State<ChatScreen>
             character: widget.character,
             scrollController: _scrollController,
             chatRoomId: viewModel.chatRoomId,
-            onResetPressed: (context) => _showResetDialog(context, viewModel),
+            onResetPressed: (ctx) => _showResetDialog(ctx, viewModel),
+            onReportRoom: (ctx) => confirmAndReportChatRoom(
+                  ctx,
+                  character: widget.character,
+                  chatRoomId: viewModel.chatRoomId,
+                ),
+            onLeaveRoom: (ctx) => _confirmLeaveRoom(ctx, viewModel),
             showDmStrangerBanner: showStrangerBanner,
             showDmBlockedByMeBanner: showBlockedByMe,
             showDmBlockedByThemBanner: showBlockedByThem,
+            dmShowBlockInMenu: isDm && _dmSocialLoaded && !_dmBlock.iBlockedThem && !_dmBlock.theyBlockedMe,
+            dmShowUnblockInMenu: isDm && _dmSocialLoaded && _dmBlock.iBlockedThem,
             onDmAddFriend: _dmAddFriend,
             onDmBlock: _dmConfirmBlock,
             onDmUnblock: _dmUnblock,
@@ -202,6 +211,37 @@ class _ChatScreenState extends State<ChatScreen>
     );
   }
 
+  Future<void> _confirmLeaveRoom(BuildContext context, ChatViewModel viewModel) async {
+    final isDm = widget.character.isDirectMessage;
+    final name = widget.character.displayNamePrimary;
+    final bodyKey = isDm ? 'chatsDeleteBodyDm' : 'chatsDeleteBodyCharacter';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.tr('chatsDeleteTitle')),
+        content: Text(context.tr(bodyKey, params: {'name': name})),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.tr('cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.tr('confirm'))),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await viewModel.leaveRoom();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('chatsRoomDeleted'))),
+      );
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('chatsRoomDeleteFailed'))),
+      );
+    }
+  }
+
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
@@ -228,10 +268,14 @@ class _ChatScreenContent extends StatelessWidget {
   final Character character;
   final ScrollController scrollController;
   final String? chatRoomId;
-  final Function(BuildContext) onResetPressed;
+  final void Function(BuildContext context) onResetPressed;
+  final Future<void> Function(BuildContext context) onReportRoom;
+  final Future<void> Function(BuildContext context) onLeaveRoom;
   final bool showDmStrangerBanner;
   final bool showDmBlockedByMeBanner;
   final bool showDmBlockedByThemBanner;
+  final bool dmShowBlockInMenu;
+  final bool dmShowUnblockInMenu;
   final Future<void> Function() onDmAddFriend;
   final Future<void> Function() onDmBlock;
   final Future<void> Function() onDmUnblock;
@@ -243,9 +287,13 @@ class _ChatScreenContent extends StatelessWidget {
     required this.scrollController,
     required this.chatRoomId,
     required this.onResetPressed,
+    required this.onReportRoom,
+    required this.onLeaveRoom,
     required this.showDmStrangerBanner,
     required this.showDmBlockedByMeBanner,
     required this.showDmBlockedByThemBanner,
+    required this.dmShowBlockInMenu,
+    required this.dmShowUnblockInMenu,
     required this.onDmAddFriend,
     required this.onDmBlock,
     required this.onDmUnblock,
@@ -326,11 +374,93 @@ class _ChatScreenContent extends StatelessWidget {
         ),
         actions: [
           const PointsToolbarChip(),
-          if (!character.isDirectMessage)
-            IconButton(
-              icon: Icon(Icons.refresh_rounded, color: scheme.primary),
-              onPressed: () => onResetPressed(context),
-            ),
+          PopupMenuButton<String>(
+            tooltip: context.tr('chatMoreMenuTooltip'),
+            icon: Icon(Icons.more_horiz_rounded, color: scheme.onSurface),
+            offset: const Offset(0, 40),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.cardSmall)),
+            onSelected: (value) async {
+              switch (value) {
+                case 'reset':
+                  if (!character.isDirectMessage) onResetPressed(context);
+                  break;
+                case 'report':
+                  await onReportRoom(context);
+                  break;
+                case 'block':
+                  await onDmBlock();
+                  break;
+                case 'unblock':
+                  await onDmUnblock();
+                  break;
+                case 'leave':
+                  await onLeaveRoom(context);
+                  break;
+              }
+            },
+            itemBuilder: (ctx) {
+              final tr = ctx.tr;
+              final isDm = character.isDirectMessage;
+              return <PopupMenuEntry<String>>[
+                if (!isDm)
+                  PopupMenuItem<String>(
+                    value: 'reset',
+                    child: Row(
+                      children: [
+                        Icon(Icons.restart_alt_rounded, size: 22, color: scheme.onSurface),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(tr('chatMenuReset'))),
+                      ],
+                    ),
+                  ),
+                PopupMenuItem<String>(
+                  value: 'report',
+                  child: Row(
+                    children: [
+                      Icon(Icons.flag_outlined, size: 22, color: scheme.onSurface),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(tr('chatMenuReport'))),
+                    ],
+                  ),
+                ),
+                if (isDm && dmShowBlockInMenu)
+                  PopupMenuItem<String>(
+                    value: 'block',
+                    child: Row(
+                      children: [
+                        Icon(Icons.block_rounded, size: 22, color: scheme.error),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(tr('chatMenuBlock'), style: TextStyle(color: scheme.error)),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (isDm && dmShowUnblockInMenu)
+                  PopupMenuItem<String>(
+                    value: 'unblock',
+                    child: Row(
+                      children: [
+                        Icon(Icons.lock_open_rounded, size: 22, color: scheme.onSurface),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(tr('chatMenuUnblock'))),
+                      ],
+                    ),
+                  ),
+                const PopupMenuDivider(),
+                PopupMenuItem<String>(
+                  value: 'leave',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout_rounded, size: 22, color: scheme.onSurface),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(tr('chatMenuLeave'))),
+                    ],
+                  ),
+                ),
+              ];
+            },
+          ),
         ],
       ),
       body: GestureDetector(

@@ -37,97 +37,60 @@ Future<void> showChatExpressionSheet(
       final h = MediaQuery.sizeOf(sheetContext).height;
       final bottomInset = MediaQuery.paddingOf(sheetContext).bottom;
       return Padding(
-        padding: EdgeInsets.only(left: 8, right: 8, bottom: bottomInset > 0 ? 0 : AppSpacing.sheetBottom),
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.sheetSide,
+          0,
+          AppSpacing.sheetSide,
+          bottomInset > 0 ? 0 : AppSpacing.sheetBottom,
+        ),
         child: SizedBox(
           height: h,
           child: DraggableScrollableSheet(
-            initialChildSize: 0.88,
-            minChildSize: 0.38,
-            maxChildSize: 0.98,
+            initialChildSize: 0.86,
+            minChildSize: 0.36,
+            maxChildSize: 0.96,
             expand: false,
             builder: (ctx, scrollController) {
-              final topBlend = Color.lerp(scheme.primaryContainer, scheme.surface, 0.42)!;
               return DecoratedBox(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [topBlend, scheme.surface],
-                  ),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  color: scheme.surface,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.card)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 22,
-                      offset: const Offset(0, -6),
+                      blurRadius: 20,
+                      offset: const Offset(0, -4),
                     ),
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.card)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 10),
                       Center(
                         child: Container(
-                          width: 40,
-                          height: 5,
+                          width: 36,
+                          height: 4,
                           decoration: BoxDecoration(
-                            color: scheme.outlineVariant.withValues(alpha: 0.55),
-                            borderRadius: BorderRadius.circular(3),
+                            color: scheme.outlineVariant.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
-                        child: Row(
-                          children: [
-                            DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: scheme.primaryContainer.withValues(alpha: 0.72),
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(11),
-                                child: Icon(Icons.menu_book_rounded, color: scheme.primary, size: 24),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    sheetContext.tr('expressionSheetHeaderTitle'),
-                                    style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: -0.3,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    sheetContext.tr('expressionExplanationTitle'),
-                                    style: Theme.of(sheetContext).textTheme.labelSmall?.copyWith(
-                                          color: scheme.onSurfaceVariant,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Divider(height: 1, thickness: 1, color: scheme.outlineVariant.withValues(alpha: 0.35)),
+                      const SizedBox(height: 6),
                       Expanded(
-                        child: _ExpressionSheetBody(
-                          scrollController: scrollController,
-                          message: message,
-                          character: character,
-                          chatRoomId: chatRoomId,
-                          messenger: messenger,
-                          dmScript: dmScript,
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: bottomInset > 0 ? bottomInset : AppSpacing.sheetBottom),
+                          child: _ExpressionSheetBody(
+                            scrollController: scrollController,
+                            message: message,
+                            character: character,
+                            chatRoomId: chatRoomId,
+                            messenger: messenger,
+                            dmScript: dmScript,
+                          ),
                         ),
                       ),
                     ],
@@ -428,8 +391,8 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       children: [
         DecoratedBox(
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
-            borderRadius: BorderRadius.circular(18),
+            color: scheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppRadii.cardSmall),
             border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.25)),
           ),
           child: Padding(
