@@ -95,8 +95,9 @@ class CharacterRecordRepositoryImpl implements CharacterRecordRepository {
 
   @override
   Future<void> incrementDownloadCount(String id) async {
-    final row = await AppSupabase.client.from('characters').select('*').eq('id', id).single();
-    final count = (Map<String, dynamic>.from(row as Map))['download_count'] as int? ?? 0;
-    await AppSupabase.client.from('characters').update({'download_count': count + 1}).eq('id', id);
+    await AppSupabase.client.rpc(
+      'increment_public_character_download_count',
+      params: {'target_id': id},
+    );
   }
 }

@@ -9,6 +9,7 @@ import 'domain/repositories/character_record_repository.dart';
 import 'domain/repositories/theme_repository.dart';
 import 'domain/repositories/saved_expression_repository.dart';
 import 'domain/repositories/friends_repository.dart';
+import 'data/celebrity_persona/celebrity_persona_suggester.dart';
 import 'core/home_widget/notebook_home_widget_sync.dart';
 import 'presentation/auth/auth_gate.dart';
 import 'presentation/auth/auth_state.dart';
@@ -50,6 +51,7 @@ class _AppState extends State<App> {
         Provider<SavedExpressionRepository>.value(value: savedExpressionRepository),
         ChangeNotifierProvider(create: (_) => WordBookRefreshNotifier()),
         Provider<FriendsRepository>.value(value: friendsRepository),
+        Provider<CelebrityPersonaSuggester>.value(value: celebrityPersonaSuggester),
       ],
       child: Builder(
         builder: (context) {

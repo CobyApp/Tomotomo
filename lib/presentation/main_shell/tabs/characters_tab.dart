@@ -21,12 +21,19 @@ class CharactersTab extends StatefulWidget {
   const CharactersTab({super.key});
 
   @override
-  State<CharactersTab> createState() => _CharactersTabState();
+  CharactersTabState createState() => CharactersTabState();
 }
 
-class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserver, OnAppResumedMixin {
+class CharactersTabState extends State<CharactersTab> with WidgetsBindingObserver, OnAppResumedMixin {
+  /// Called when the bottom nav selects the Tutors / characters tab.
+  void reloadFromTabSelection() {
+    unawaited(_load(silent: true));
+  }
+
   List<CharacterRecord> _myCharacters = [];
-  List<CharacterRecord> _publicCharacters = [];
+  List<CharacterRecord> _publicCharactersRaw = [];
+  /// `all` | `ja` | `ko` — filters [discover] list client-side.
+  String _publicFilter = 'all';
   bool _loading = true;
   String? _error;
 
@@ -49,7 +56,7 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
       setState(() {
         _loading = false;
         _myCharacters = [];
-        _publicCharacters = [];
+        _publicCharactersRaw = [];
       });
       return;
     }
@@ -66,7 +73,7 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
       if (!mounted) return;
       setState(() {
         _myCharacters = my;
-        _publicCharacters = public;
+        _publicCharactersRaw = public;
         _loading = false;
         _error = null;
       });
@@ -77,6 +84,23 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
         _loading = false;
       });
     }
+  }
+
+  List<CharacterRecord> _visiblePublicList() {
+    final uid = AppSupabase.auth.currentUser?.id;
+    var list = _publicCharactersRaw.where((r) => uid == null || r.ownerId != uid).toList();
+    if (_publicFilter == 'ja') {
+      list = list.where((r) => r.language == 'ja').toList();
+    } else if (_publicFilter == 'ko') {
+      list = list.where((r) => r.language == 'ko').toList();
+    }
+    return list;
+  }
+
+  String _publicDiscoverSubtitle(CharacterRecord r) {
+    final base = _recordSubtitle(context, r);
+    final dl = context.tr('charactersDownloadsLabel', params: {'count': '${r.downloadCount}'});
+    return '$base · $dl';
   }
 
   /// Copies a public character to the current user's list (and increments download count).
@@ -179,13 +203,54 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
                     ),
                     children: [
                       _mySection(scheme),
-                      if (_publicCharacters.isNotEmpty) ...[
-                        _sectionHeader('🌐  ${context.tr('charactersDiscover')}'),
-                        const SizedBox(height: 10),
-                        ..._publicCharacters.map((r) => _recordTile(r, isMine: false)),
+                      _sectionHeader(
+                        icon: Icons.public_rounded,
+                        title: context.tr('charactersDiscover'),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        context.tr('charactersDiscoverHint'),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                              height: 1.35,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      SegmentedButton<String>(
+                        segments: [
+                          ButtonSegment<String>(
+                            value: 'all',
+                            label: Text(context.tr('charactersFilterAll')),
+                          ),
+                          ButtonSegment<String>(
+                            value: 'ja',
+                            label: Text(context.tr('langJa')),
+                          ),
+                          ButtonSegment<String>(
+                            value: 'ko',
+                            label: Text(context.tr('langKo')),
+                          ),
+                        ],
+                        selected: {_publicFilter},
+                        onSelectionChanged: (s) {
+                          if (s.isEmpty) return;
+                          setState(() => _publicFilter = s.first);
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      if (_visiblePublicList().isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: AppEmptyHint(text: context.tr('charactersDiscoverEmpty')),
+                        )
+                      else ...[
+                        ..._visiblePublicList().map((r) => _recordTile(r, isMine: false, isPublicDiscover: true)),
                         const SizedBox(height: 24),
                       ],
-                      _sectionHeader('✨  ${context.tr('charactersBuiltin')}'),
+                      _sectionHeader(
+                        icon: Icons.stars_rounded,
+                        title: context.tr('charactersBuiltin'),
+                      ),
                       const SizedBox(height: 10),
                       _builtInGrid(),
                       const SizedBox(height: 8),
@@ -195,10 +260,17 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
     );
   }
 
-  Widget _sectionHeader(String text) {
+  Widget _sectionHeader({required IconData icon, required String title}) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Text(text, style: AppTextStyles.sectionLabel(context)),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: scheme.primary.withValues(alpha: 0.75)),
+          const SizedBox(width: 8),
+          Text(title, style: AppTextStyles.sectionLabel(context)),
+        ],
+      ),
     );
   }
 
@@ -206,7 +278,10 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionHeader('👤  ${context.tr('charactersMy')}'),
+        _sectionHeader(
+          icon: Icons.face_retouching_natural_rounded,
+          title: context.tr('charactersMy'),
+        ),
         const SizedBox(height: 10),
         if (_myCharacters.isEmpty)
           Padding(
@@ -345,12 +420,12 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
     return r.language == 'ja' ? context.tr('langJa') : context.tr('langKo');
   }
 
-  Widget _recordTile(CharacterRecord r, {bool isMine = false}) {
+  Widget _recordTile(CharacterRecord r, {bool isMine = false, bool isPublicDiscover = false}) {
     final scheme = Theme.of(context).colorScheme;
     return AppListRow(
       leading: _avatarWidget(r.avatarUrl, r.name, radius: AppSizes.listAvatarLg),
       title: r.name,
-      subtitle: _recordSubtitle(context, r),
+      subtitle: isPublicDiscover ? _publicDiscoverSubtitle(r) : _recordSubtitle(context, r),
       subtitleMaxLines: 2,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -392,7 +467,7 @@ class _CharactersTabState extends State<CharactersTab> with WidgetsBindingObserv
             )
           else
             IconButton(
-              icon: Icon(Icons.add_circle_outline_rounded, color: scheme.primary),
+              icon: Icon(Icons.download_outlined, color: scheme.primary),
               tooltip: context.tr('charactersAddToMine'),
               onPressed: () => _addPublicCharacterToMine(r),
             ),
@@ -438,7 +513,6 @@ class _EmptyMyCharacterCard extends StatelessWidget {
           color: scheme.primaryContainer.withValues(alpha: 0.18),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 36,
@@ -450,12 +524,14 @@ class _EmptyMyCharacterCard extends StatelessWidget {
               child: Icon(Icons.add_rounded, color: scheme.primary),
             ),
             const SizedBox(width: 12),
-            Text(
-              '나만의 캐릭터 만들기 ✨',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
+            Expanded(
+              child: Text(
+                context.tr('charactersEmptyMyCta'),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
             ),
           ],
         ),

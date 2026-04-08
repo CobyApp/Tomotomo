@@ -35,14 +35,29 @@ class AppErrorBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.pageH),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 16),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: scheme.errorContainer.withValues(alpha: 0.45),
+              ),
+              child: Icon(Icons.cloud_off_rounded, size: 36, color: scheme.error),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45, color: scheme.onSurface),
+            ),
+            const SizedBox(height: 20),
             FilledButton(onPressed: onRetry, child: Text(retryLabel)),
           ],
         ),

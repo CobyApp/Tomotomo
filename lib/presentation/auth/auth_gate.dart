@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/ui/ui.dart';
 import 'auth_state.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
@@ -14,9 +15,7 @@ class AuthGate extends StatelessWidget {
     return Consumer<AppAuthState>(
       builder: (context, state, _) {
         if (state.isLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const AppAuthLoadingView();
         }
         if (state.user == null) {
           return state.showSignUp

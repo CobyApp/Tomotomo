@@ -18,17 +18,15 @@ class CharacterListScreen extends StatelessWidget {
 
     return AppPageScaffold(
       title: context.tr('characterBrowseTitle'),
+      subtitle: context.tr('characterBrowseSubtitle'),
       transparentBackground: false,
-      body: ColoredBox(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: ListView.builder(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 16, AppSpacing.pageH, AppSpacing.pageBottom),
-          itemCount: characters.length,
-          itemBuilder: (context, index) {
-            final character = characters[index];
-            return _buildCharacterCard(context, character, scheme, textTheme);
-          },
-        ),
+      body: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 16, AppSpacing.pageH, AppSpacing.pageBottom),
+        itemCount: characters.length,
+        itemBuilder: (context, index) {
+          final character = characters[index];
+          return _buildCharacterCard(context, character, scheme, textTheme);
+        },
       ),
     );
   }

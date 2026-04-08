@@ -12,6 +12,7 @@ class CreateCharacterScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppPageScaffold(
       title: context.tr('createCharacterTitle'),
+      subtitle: context.tr('createCharacterSubtitle'),
       transparentBackground: false,
       body: const CustomCharacterEditorBody(),
     );

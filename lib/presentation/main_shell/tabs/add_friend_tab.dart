@@ -253,7 +253,7 @@ class _AddFriendPeoplePanelState extends State<AddFriendPeoplePanel> {
                   decoration: InputDecoration(
                     labelText: context.tr('friendsSearchNicknameLabel'),
                     hintText: context.tr('friendsSearchNicknameHint'),
-                    border: const OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person_search_rounded, color: scheme.primary),
                   ),
                   textCapitalization: TextCapitalization.words,
                   onSubmitted: (_) => _runSearch(),
@@ -285,7 +285,10 @@ class _AddFriendPeoplePanelState extends State<AddFriendPeoplePanel> {
                         child: Text(
                           context.tr('friendsSearchPrompt'),
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                                height: 1.4,
+                              ),
                         ),
                       )
                     : _results.isEmpty
@@ -293,7 +296,10 @@ class _AddFriendPeoplePanelState extends State<AddFriendPeoplePanel> {
                             child: Text(
                               context.tr('friendsSearchEmpty'),
                               textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                    height: 1.4,
+                                  ),
                             ),
                           )
                         : ListView.builder(
@@ -316,7 +322,7 @@ class _AddFriendPeoplePanelState extends State<AddFriendPeoplePanel> {
                                         isFriend
                                             ? context.tr('friendsAlreadyFriend')
                                             : context.tr('friendsSearchUserSubtitle'),
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
                                       ),
                                 trailing: isFriend
                                     ? Icon(Icons.check_circle, color: scheme.primary)
@@ -508,6 +514,7 @@ class _AddFriendCharacterPanelState extends State<AddFriendCharacterPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Column(
@@ -521,7 +528,7 @@ class _AddFriendCharacterPanelState extends State<AddFriendCharacterPanel> {
                   decoration: InputDecoration(
                     labelText: context.tr('friendsSearchCharacterLabel'),
                     hintText: context.tr('friendsSearchCharacterHint'),
-                    border: const OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.face_retouching_natural_rounded, color: scheme.primary),
                   ),
                   textCapitalization: TextCapitalization.words,
                   onSubmitted: (_) => _runSearch(),
@@ -553,7 +560,10 @@ class _AddFriendCharacterPanelState extends State<AddFriendCharacterPanel> {
                         child: Text(
                           context.tr('friendsSearchCharacterPrompt'),
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                                height: 1.4,
+                              ),
                         ),
                       )
                     : _results.isEmpty
@@ -561,7 +571,10 @@ class _AddFriendCharacterPanelState extends State<AddFriendCharacterPanel> {
                             child: Text(
                               context.tr('friendsSearchEmpty'),
                               textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                    height: 1.4,
+                                  ),
                             ),
                           )
                         : ListView.builder(

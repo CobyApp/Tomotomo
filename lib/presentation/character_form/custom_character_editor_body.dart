@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../core/storage/character_storage.dart';
 import '../../../core/supabase/app_supabase.dart';
 import '../../../core/ui/ui.dart';
+import '../../../data/celebrity_persona/celebrity_persona_suggester.dart';
 import '../../../domain/entities/character_record.dart';
 import '../../../domain/repositories/character_record_repository.dart';
 import '../locale/l10n_context.dart';
@@ -27,11 +28,15 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   final _nameController = TextEditingController();
   final _nameSecondaryController = TextEditingController();
   final _memoController = TextEditingController();
+  final _xUrlController = TextEditingController();
+  final _xPasteController = TextEditingController();
 
   String _language = 'ja';
   bool _isPublic = false;
   bool _saving = false;
   bool _uploadingAvatar = false;
+  bool _importUrlBusy = false;
+  bool _importPasteBusy = false;
   String? _error;
   String? _avatarUrl;
 
@@ -56,8 +61,71 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     _nameController.dispose();
     _nameSecondaryController.dispose();
     _memoController.dispose();
+    _xUrlController.dispose();
+    _xPasteController.dispose();
     super.dispose();
   }
+
+  void _applyPersonaSuggestion(CelebrityPersonaSuggestion s) {
+    setState(() {
+      _nameController.text = s.name;
+      _nameSecondaryController.text = s.nameSecondary ?? '';
+      _memoController.text = s.speechStyle ?? '';
+      _language = s.language == 'ko' ? 'ko' : 'ja';
+    });
+  }
+
+  Future<void> _importPersonaFromXUrl() async {
+    final url = _xUrlController.text.trim();
+    if (url.isEmpty) {
+      setState(() => _error = context.tr('characterImportFromXUrlRequired'));
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _error = null;
+      _importUrlBusy = true;
+    });
+    try {
+      final suggester = context.read<CelebrityPersonaSuggester>();
+      final s = await suggester.suggestFromXProfileUrl(url);
+      if (!mounted) return;
+      _applyPersonaSuggestion(s);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('characterImportFromXDone'))));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = '${context.tr('characterImportFromXError')} $e');
+    } finally {
+      if (mounted) setState(() => _importUrlBusy = false);
+    }
+  }
+
+  Future<void> _importPersonaFromPaste() async {
+    final raw = _xPasteController.text.trim();
+    if (raw.length < 20) {
+      setState(() => _error = context.tr('characterImportFromXPasteHint'));
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _error = null;
+      _importPasteBusy = true;
+    });
+    try {
+      final suggester = context.read<CelebrityPersonaSuggester>();
+      final s = await suggester.suggestFromProfileText(raw);
+      if (!mounted) return;
+      _applyPersonaSuggestion(s);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('characterImportFromXDone'))));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = '${context.tr('characterImportFromXError')} $e');
+    } finally {
+      if (mounted) setState(() => _importPasteBusy = false);
+    }
+  }
+
+  bool get _anyPersonaImportBusy => _importUrlBusy || _importPasteBusy;
 
   Future<void> _save() async {
     if (_saving) return;
@@ -292,9 +360,84 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           ],
           const SizedBox(height: 28),
 
+          if (_existing == null) ...[
+            _SectionCard(
+              icon: Icons.link_rounded,
+              title: context.tr('characterImportFromXTitle'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    context.tr('characterImportFromXLegal'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          height: 1.35,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _xUrlController,
+                    enabled: !_anyPersonaImportBusy,
+                    decoration: InputDecoration(
+                      labelText: context.tr('characterImportFromXHint'),
+                      prefixIcon: Icon(Icons.tag_rounded, color: scheme.primary),
+                    ),
+                    keyboardType: TextInputType.url,
+                    autocorrect: false,
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: _anyPersonaImportBusy ? null : _importPersonaFromXUrl,
+                    icon: _importUrlBusy
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
+                          )
+                        : const Icon(Icons.auto_fix_high_rounded),
+                    label: Text(
+                      _importUrlBusy ? context.tr('characterImportFromXBusy') : context.tr('characterImportFromXButton'),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    context.tr('characterImportFromXPaste'),
+                    style: AppTextStyles.sectionLabel(context).copyWith(fontSize: 13),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _xPasteController,
+                    enabled: !_anyPersonaImportBusy,
+                    maxLines: 5,
+                    minLines: 3,
+                    decoration: InputDecoration(
+                      hintText: context.tr('characterImportFromXPasteHint'),
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: _anyPersonaImportBusy ? null : _importPersonaFromPaste,
+                    icon: _importPasteBusy
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
+                          )
+                        : const Icon(Icons.content_paste_rounded),
+                    label: Text(
+                      _importPasteBusy ? context.tr('characterImportFromXBusy') : context.tr('characterImportFromXManualButton'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
           // ── 튜터 타입 ─────────────────────────────────────
           _SectionCard(
-            emoji: '🌏',
+            icon: Icons.translate_rounded,
             title: context.tr('characterTutorType'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -302,15 +445,15 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                 Row(
                   children: [
                     _LangChip(
+                      codeLabel: 'JA',
                       label: context.tr('characterTutorJaShort'),
-                      emoji: '🇯🇵',
                       selected: _language == 'ja',
                       onTap: () => setState(() => _language = 'ja'),
                     ),
                     const SizedBox(width: 10),
                     _LangChip(
+                      codeLabel: 'KO',
                       label: context.tr('characterTutorKoShort'),
-                      emoji: '🇰🇷',
                       selected: _language == 'ko',
                       onTap: () => setState(() => _language = 'ko'),
                     ),
@@ -338,8 +481,8 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
 
           // ── 이름 & 메모 ───────────────────────────────────
           _SectionCard(
-            emoji: '✏️',
-            title: context.tr('createCharacterTitle'),
+            icon: Icons.person_outline_rounded,
+            title: context.tr('characterEditorProfileSection'),
             child: Column(
               children: [
                 TextFormField(
@@ -410,7 +553,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
-                _isPublic ? '다른 사용자들도 이 캐릭터를 이용할 수 있어요' : '나만 볼 수 있어요',
+                _isPublic ? context.tr('characterPublicOnSubtitle') : context.tr('characterPublicOffSubtitle'),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
               value: _isPublic,
@@ -448,8 +591,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
 
 // ── 섹션 카드 ────────────────────────────────────────────────
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.emoji, required this.title, required this.child});
-  final String emoji;
+  const _SectionCard({required this.icon, required this.title, required this.child});
+
+  final IconData icon;
   final String title;
   final Widget child;
 
@@ -459,14 +603,14 @@ class _SectionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
+        color: scheme.surfaceContainerLow.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.25)),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.28)),
         boxShadow: [
           BoxShadow(
-            color: scheme.primary.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
+            color: scheme.primary.withValues(alpha: 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -475,9 +619,9 @@ class _SectionCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 17)),
-              const SizedBox(width: 8),
-              Text(title, style: AppTextStyles.sectionLabel(context)),
+              Icon(icon, size: 22, color: scheme.primary.withValues(alpha: 0.9)),
+              const SizedBox(width: 10),
+              Expanded(child: Text(title, style: AppTextStyles.sectionLabel(context))),
             ],
           ),
           const SizedBox(height: 14),
@@ -490,9 +634,15 @@ class _SectionCard extends StatelessWidget {
 
 // ── 언어 선택 칩 ──────────────────────────────────────────────
 class _LangChip extends StatelessWidget {
-  const _LangChip({required this.label, required this.emoji, required this.selected, required this.onTap});
+  const _LangChip({
+    required this.codeLabel,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String codeLabel;
   final String label;
-  final String emoji;
   final bool selected;
   final VoidCallback onTap;
 
@@ -504,19 +654,37 @@ class _LangChip extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadii.pill),
           color: selected ? scheme.primary : scheme.surfaceContainerHighest,
+          border: Border.all(
+            color: selected ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.35),
+          ),
           boxShadow: selected
-              ? [BoxShadow(color: scheme.primary.withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 3))]
+              ? [BoxShadow(color: scheme.primary.withValues(alpha: 0.22), blurRadius: 10, offset: const Offset(0, 3))]
               : [],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 16)),
-            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: selected ? Colors.white.withValues(alpha: 0.22) : scheme.surfaceContainerHigh,
+              ),
+              child: Text(
+                codeLabel,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                  letterSpacing: 0.4,
+                  color: selected ? Colors.white : scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(

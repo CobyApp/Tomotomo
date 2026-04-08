@@ -54,6 +54,7 @@ class AppSettingsNavTile extends StatelessWidget {
     this.iconColor,
     this.titleColor,
     this.showChevron = true,
+    this.trailing,
   });
 
   final IconData icon;
@@ -63,6 +64,7 @@ class AppSettingsNavTile extends StatelessWidget {
   final Color? iconColor;
   final Color? titleColor;
   final bool showChevron;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +95,7 @@ class AppSettingsNavTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             )
           : null,
-      trailing: showChevron ? Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant) : null,
+      trailing: trailing ?? (showChevron ? Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant) : null),
       onTap: onTap,
     );
   }

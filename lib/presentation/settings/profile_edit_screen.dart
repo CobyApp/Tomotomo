@@ -199,11 +199,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       body = ListView(
         padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 16, AppSpacing.pageH, AppSpacing.pageBottom),
         children: [
-          Text(
-            context.tr('profileEditSubtitle'),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.4),
-          ),
-          const SizedBox(height: 24),
           if (_error != null) ...[
             Card(
               color: scheme.errorContainer,
@@ -302,6 +297,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
     return AppPageScaffold(
       title: context.tr('profileEditTitle'),
+      subtitle: context.tr('profileEditSubtitle'),
       transparentBackground: false,
       actions: actions,
       body: body,

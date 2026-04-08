@@ -248,14 +248,14 @@ class WordBookScreenState extends State<WordBookScreen>
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+            color: scheme.surfaceContainerLow.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(AppRadii.card),
+            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.35)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 2),
+                color: scheme.primary.withValues(alpha: 0.05),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -318,25 +318,38 @@ class WordBookScreenState extends State<WordBookScreen>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 8, AppSpacing.pageH, 8),
-            child: SegmentedButton<String>(
-              segments: [
-                ButtonSegment<String>(
-                  value: 'ko',
-                  label: Text(context.tr('notebookLangKo')),
-                  icon: const Icon(Icons.language, size: 18),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 8, AppSpacing.pageH, 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SegmentedButton<String>(
+                  segments: [
+                    ButtonSegment<String>(
+                      value: 'ko',
+                      label: Text(context.tr('notebookLangKo')),
+                      icon: const Icon(Icons.language, size: 18),
+                    ),
+                    ButtonSegment<String>(
+                      value: 'ja',
+                      label: Text(context.tr('notebookLangJa')),
+                      icon: const Icon(Icons.translate_rounded, size: 18),
+                    ),
+                  ],
+                  selected: {_notebookLang},
+                  onSelectionChanged: (s) {
+                    if (s.isEmpty) return;
+                    _onNotebookLangChanged(s.first);
+                  },
                 ),
-                ButtonSegment<String>(
-                  value: 'ja',
-                  label: Text(context.tr('notebookLangJa')),
-                  icon: const Icon(Icons.translate_rounded, size: 18),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr('notebookSubtitle'),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.35,
+                      ),
                 ),
               ],
-              selected: {_notebookLang},
-              onSelectionChanged: (s) {
-                if (s.isEmpty) return;
-                _onNotebookLangChanged(s.first);
-              },
             ),
           ),
           Expanded(

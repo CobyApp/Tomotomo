@@ -12,6 +12,7 @@ import '../../data/repositories/character_record_repository_impl.dart';
 import '../../data/repositories/theme_repository_impl.dart';
 import '../../data/repositories/saved_expression_repository_impl.dart';
 import '../../data/repositories/friends_repository_impl.dart';
+import '../../data/celebrity_persona/celebrity_persona_suggester.dart';
 
 /// Registers app-wide dependencies. Single place for DI (Dependency Inversion).
 /// Optional overrides for tests (avoid real API keys / network).
@@ -33,6 +34,10 @@ void setupInjection({
   themeRepository = ThemeRepositoryImpl();
   savedExpressionRepository = SavedExpressionRepositoryImpl();
   friendsRepository = FriendsRepositoryImpl();
+  celebrityPersonaSuggester = CelebrityPersonaSuggester(
+    apiKey: geminiApiKey,
+    model: geminiModel,
+  );
 }
 
 /// Set by [setupInjection]. Used by [App] to provide to widget tree.
@@ -43,3 +48,4 @@ late CharacterRecordRepository characterRecordRepository;
 late ThemeRepository themeRepository;
 late SavedExpressionRepository savedExpressionRepository;
 late FriendsRepository friendsRepository;
+late CelebrityPersonaSuggester celebrityPersonaSuggester;

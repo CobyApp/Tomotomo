@@ -62,6 +62,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
   Widget build(BuildContext context) {
     return AppPageScaffold(
       title: context.tr('blockedUsersTitle'),
+      subtitle: context.tr('settingsBlockedUsersSubtitle'),
       transparentBackground: false,
       body: _loading
           ? const AppLoadingBody()

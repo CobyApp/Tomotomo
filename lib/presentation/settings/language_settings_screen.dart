@@ -14,6 +14,7 @@ class LanguageSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppPageScaffold(
       title: context.tr('languageTitle'),
+      subtitle: context.tr('languageSubtitle'),
       transparentBackground: false,
       body: FutureBuilder<Profile?>(
         future: _loadProfile(context),
@@ -25,28 +26,29 @@ class LanguageSettingsScreen extends StatelessWidget {
           if (profile == null) {
             return Center(child: Text(context.tr('loginRequired')));
           }
+          final scheme = Theme.of(context).colorScheme;
           return ListView(
             padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 16, AppSpacing.pageH, AppSpacing.pageBottom),
             children: [
-              Text(
-                context.tr('languageSubtitle'),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      height: 1.4,
-                    ),
-              ),
-              const SizedBox(height: 16),
               AppSettingsPanel(
                 dividerIndent: 16,
                 children: [
-                  ListTile(
-                    title: Text(context.tr('langKorean'), style: AppTextStyles.listTitle(context)),
-                    trailing: profile.appLanguage == 'ko' ? Icon(Icons.check_rounded, color: Theme.of(context).colorScheme.primary) : null,
+                  AppSettingsNavTile(
+                    icon: Icons.translate_rounded,
+                    title: context.tr('langKorean'),
+                    showChevron: false,
+                    trailing: profile.appLanguage == 'ko'
+                        ? Icon(Icons.check_circle_rounded, color: scheme.primary, size: 24)
+                        : null,
                     onTap: () => _set(context, 'ko', profile),
                   ),
-                  ListTile(
-                    title: Text(context.tr('langJapanese'), style: AppTextStyles.listTitle(context)),
-                    trailing: profile.appLanguage == 'ja' ? Icon(Icons.check_rounded, color: Theme.of(context).colorScheme.primary) : null,
+                  AppSettingsNavTile(
+                    icon: Icons.language_rounded,
+                    title: context.tr('langJapanese'),
+                    showChevron: false,
+                    trailing: profile.appLanguage == 'ja'
+                        ? Icon(Icons.check_circle_rounded, color: scheme.primary, size: 24)
+                        : null,
                     onTap: () => _set(context, 'ja', profile),
                   ),
                 ],

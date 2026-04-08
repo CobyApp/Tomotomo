@@ -35,6 +35,7 @@ class ThemeSettingsScreen extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return AppPageScaffold(
       title: context.tr('themeTitle'),
+      subtitle: context.tr('themeSectionSubtitle'),
       transparentBackground: false,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 8, AppSpacing.pageH, AppSpacing.pageBottom),
@@ -44,14 +45,6 @@ class ThemeSettingsScreen extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: scheme.onSurface,
-                ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            context.tr('themeSectionSubtitle'),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  height: 1.35,
                 ),
           ),
           const SizedBox(height: 20),
@@ -188,7 +181,7 @@ class _PresetCard extends StatelessWidget {
 
     return Material(
       color: scheme.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(AppRadii.card),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -196,7 +189,7 @@ class _PresetCard extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(AppRadii.card),
             border: Border.all(
               color: selected ? accent : scheme.outlineVariant.withValues(alpha: 0.35),
               width: selected ? 2.5 : 1,

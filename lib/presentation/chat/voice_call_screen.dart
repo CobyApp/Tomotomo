@@ -387,6 +387,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> with WidgetsBindingOb
       appBar: AppBar(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shadowColor: scheme.shadow.withValues(alpha: 0.12),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        ),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.close_rounded, color: scheme.onSurface),

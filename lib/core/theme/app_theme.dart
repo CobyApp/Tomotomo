@@ -19,12 +19,12 @@ class AppTheme {
 
   /// Top color for shell gradient (used by [MainShell]).
   static Color shellGradientTop(ColorScheme scheme) {
-    return Color.alphaBlend(scheme.primary.withValues(alpha: 0.072), scheme.surface);
+    return Color.alphaBlend(scheme.primary.withValues(alpha: 0.09), scheme.surface);
   }
 
   /// Bottom color for shell gradient.
   static Color shellGradientBottom(ColorScheme scheme) {
-    return Color.alphaBlend(scheme.tertiary.withValues(alpha: 0.05), scheme.surface);
+    return Color.alphaBlend(scheme.tertiary.withValues(alpha: 0.07), scheme.surface);
   }
 
   /// Full light theme; [seedColor] drives ColorScheme. Chat bubbles/bg from [chatExtension].
@@ -69,6 +69,18 @@ class AppTheme {
           color: scheme.onSurface,
           fontFamily: fontFamily,
         ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        dividerColor: Colors.transparent,
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: scheme.onSurface,
+        unselectedLabelColor: scheme.onSurfaceVariant.withValues(alpha: 0.85),
+        indicator: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: seed.withValues(alpha: 0.14),
+        ),
+        labelStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800, fontSize: 13),
+        unselectedLabelStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w600, fontSize: 13),
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 64,

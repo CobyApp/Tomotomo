@@ -15,8 +15,11 @@ import '../../../domain/repositories/character_record_repository.dart';
 import '../../../domain/repositories/chat_repository.dart';
 import '../../../domain/repositories/friends_repository.dart';
 import '../../../domain/repositories/profile_repository.dart';
+import '../../character_form/create_character_screen.dart';
 import '../../chat/chat_screen.dart';
 import '../../locale/l10n_context.dart';
+import 'add_friend_tab.dart';
+import 'characters_tab.dart';
 
 class FriendsTab extends StatefulWidget {
   const FriendsTab({super.key});
@@ -278,6 +281,17 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
   Widget build(BuildContext context) {
     return AppPageScaffold(
       title: context.tr('tabFriends'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.person_search_rounded),
+          tooltip: context.tr('tabAddFriend'),
+          onPressed: () {
+            Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(builder: (_) => const AddFriendTab()),
+            );
+          },
+        ),
+      ],
       body: _loading
           ? const AppLoadingBody()
           : _error != null
@@ -297,6 +311,21 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
                       AppSpacing.pageBottom,
                     ),
                     children: [
+                      _TutorStudioEntryCard(
+                        onOpenStudio: () {
+                          Navigator.of(context).push<void>(
+                            MaterialPageRoute<void>(builder: (_) => const CharactersTab()),
+                          );
+                        },
+                        onCreateDirect: () async {
+                          final created = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(builder: (_) => const CreateCharacterScreen()),
+                          );
+                          if (created == true && mounted) unawaited(_load(silent: true));
+                        },
+                      ),
+                      const SizedBox(height: 4),
                       AppSectionHeader(
                         title: context.tr('friendsSectionLocalCharacters'),
                         expanded: _localCharactersExpanded,
@@ -382,6 +411,82 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
             openChat: () => _openFriendChat(f),
             removeAction: () => _confirmRemove(f),
           ),
+    );
+  }
+}
+
+class _TutorStudioEntryCard extends StatelessWidget {
+  const _TutorStudioEntryCard({
+    required this.onOpenStudio,
+    required this.onCreateDirect,
+  });
+
+  final VoidCallback onOpenStudio;
+  final VoidCallback onCreateDirect;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onOpenStudio,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadii.card),
+            border: Border.all(color: scheme.primary.withValues(alpha: 0.22)),
+          ),
+          padding: const EdgeInsets.fromLTRB(14, 14, 8, 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: scheme.primaryContainer.withValues(alpha: 0.55),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.auto_awesome_rounded, color: scheme.primary, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.tr('friendsTutorStudioBannerTitle'),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      context.tr('friendsTutorStudioBannerSubtitle'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.fromLTRB(0, 4, 8, 0),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: onCreateDirect,
+                        child: Text(context.tr('friendsTutorStudioCreateShortcut')),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Icon(Icons.chevron_right_rounded, color: scheme.outlineVariant),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

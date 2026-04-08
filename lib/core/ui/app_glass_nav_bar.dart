@@ -63,10 +63,12 @@ class AppGlassNavBar extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: List.generate(items.length, (i) {
+              final iconSize = items.length > 5 ? 22.0 : AppSizes.navIcon;
               return Expanded(
                 child: _NavCell(
                   data: items[i],
                   selected: i == currentIndex,
+                  iconSize: iconSize,
                   onTap: () => onSelect(i),
                 ),
               );
@@ -101,11 +103,13 @@ class _NavCell extends StatefulWidget {
   const _NavCell({
     required this.data,
     required this.selected,
+    required this.iconSize,
     required this.onTap,
   });
 
   final NavItemData data;
   final bool selected;
+  final double iconSize;
   final VoidCallback onTap;
 
   @override
@@ -184,7 +188,7 @@ class _NavCellState extends State<_NavCell> with SingleTickerProviderStateMixin 
                   ),
                   child: Icon(
                     widget.selected ? widget.data.selectedIcon : widget.data.icon,
-                    size: AppSizes.navIcon,
+                    size: widget.iconSize,
                     color: widget.selected ? primary : iconMuted,
                   ),
                 ),

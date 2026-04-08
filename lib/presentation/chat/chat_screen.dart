@@ -280,6 +280,11 @@ class _ChatScreenContent extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shadowColor: scheme.shadow.withValues(alpha: 0.12),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        ),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: scheme.onSurface, size: 20),
