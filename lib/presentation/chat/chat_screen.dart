@@ -11,7 +11,6 @@ import '../../domain/repositories/ai_chat_repository.dart';
 import '../../domain/repositories/friends_repository.dart';
 import '../locale/l10n_context.dart';
 import 'chat_viewmodel.dart';
-import 'voice_call_screen.dart';
 import 'widgets/chat_list.dart';
 import 'widgets/chat_input.dart';
 
@@ -145,7 +144,6 @@ class _ChatScreenState extends State<ChatScreen>
     final showBlockedByMe = isDm && _dmSocialLoaded && _dmBlock.iBlockedThem;
     final showBlockedByThem = isDm && _dmSocialLoaded && _dmBlock.theyBlockedMe;
     final canSendDm = !isDm || !_dmBlock.anyBlock;
-    final voiceOk = !isDm || !_dmBlock.anyBlock;
 
     return ChangeNotifierProvider<ChatViewModel>.value(
       value: _viewModel,
@@ -156,7 +154,6 @@ class _ChatScreenState extends State<ChatScreen>
             scrollController: _scrollController,
             chatRoomId: viewModel.chatRoomId,
             onResetPressed: (context) => _showResetDialog(context, viewModel),
-            voiceActionsEnabled: voiceOk,
             showDmStrangerBanner: showStrangerBanner,
             showDmBlockedByMeBanner: showBlockedByMe,
             showDmBlockedByThemBanner: showBlockedByThem,
@@ -230,7 +227,6 @@ class _ChatScreenContent extends StatelessWidget {
   final ScrollController scrollController;
   final String? chatRoomId;
   final Function(BuildContext) onResetPressed;
-  final bool voiceActionsEnabled;
   final bool showDmStrangerBanner;
   final bool showDmBlockedByMeBanner;
   final bool showDmBlockedByThemBanner;
@@ -245,7 +241,6 @@ class _ChatScreenContent extends StatelessWidget {
     required this.scrollController,
     required this.chatRoomId,
     required this.onResetPressed,
-    required this.voiceActionsEnabled,
     required this.showDmStrangerBanner,
     required this.showDmBlockedByMeBanner,
     required this.showDmBlockedByThemBanner,
@@ -365,7 +360,6 @@ class _ChatScreenContent extends StatelessWidget {
             ),
             Consumer<ChatViewModel>(
               builder: (context, viewModel, child) {
-                final isDm = character.isDirectMessage;
                 return ChatInput(
                   controller: viewModel.messageController,
                   onSend: () {
@@ -377,34 +371,6 @@ class _ChatScreenContent extends StatelessWidget {
                   character: character,
                   canSendMessage: canSendMessage && !viewModel.isGenerating,
                   hintOverride: messageHintOverride,
-                  voiceActionsEnabled: voiceActionsEnabled,
-                  dmHoldToRecordVoice: isDm && canSendMessage && voiceActionsEnabled,
-                  onAiVoiceChatTap: !isDm && voiceActionsEnabled
-                      ? () async {
-                          await Navigator.push<void>(
-                            context,
-                            MaterialPageRoute<void>(
-                              builder: (_) => VoiceCallScreen(
-                                character: character,
-                                chatRepository: context.read<ChatRepository>(),
-                                aiChatRepository: context.read<AiChatRepository>(),
-                              ),
-                            ),
-                          );
-                          if (context.mounted) viewModel.onAppResumedSync();
-                        }
-                      : null,
-                  onDmVoiceRecorded: isDm && canSendMessage && voiceActionsEnabled
-                      ? (path) async {
-                          final err = await viewModel.sendDmVoiceFile(path);
-                          if (!context.mounted) return;
-                          if (err != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('${context.tr('dmVoiceSendFailed')} $err')),
-                            );
-                          }
-                        }
-                      : null,
                 );
               },
             ),

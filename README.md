@@ -44,9 +44,12 @@
    - Google AI API 키 설정
 
 4. 앱 실행
-   ```bash
-   flutter run
-   ```
+   - **iPhone 실기기로 연결해서 돌릴 때 (iOS 26 등): `flutter run` 쓰지 마세요.** 디버그 JIT 때문에 `EXC_BAD_ACCESS (code=50)` 로 바로 죙니다. 아래 중 하나만 쓰세요.
+     ```bash
+     ./run_on_iphone.sh
+     ```
+     또는 `make ios` (= `flutter run --profile`). 설명은 `SETTINGS.md`.
+   - **시뮬레이터·Android** 등: 평소대로 `flutter run` 가능.
 
 ## 빌드 방법
 

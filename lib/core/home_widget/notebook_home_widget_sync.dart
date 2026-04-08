@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -5,6 +6,7 @@ import 'package:home_widget/home_widget.dart';
 
 import '../../domain/entities/saved_expression.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
+import '../platform/ios_post_layout_frames.dart';
 import '../supabase/app_supabase.dart';
 
 /// iOS: add a Widget Extension in Xcode, enable App Group [kNotebookWidgetAppGroup] on Runner + extension,
@@ -17,12 +19,26 @@ const String _keyPayloadJa = 'notebook_widget_payload_ja';
 
 const int _maxItems = 8;
 
-/// Call once at startup (before [syncNotebookToHomeWidget]) on iOS.
-Future<void> initNotebookHomeWidget() async {
+/// Ensures App Group is set once on iOS. [syncNotebookToHomeWidget] calls this.
+Future<void>? _iosAppGroupOnce;
+
+Future<void> _ensureIosAppGroupReady() async {
   if (!Platform.isIOS) return;
-  try {
-    await HomeWidget.setAppGroupId(kNotebookWidgetAppGroup);
-  } catch (_) {}
+  if (_iosAppGroupOnce != null) return _iosAppGroupOnce!;
+  _iosAppGroupOnce = () async {
+    try {
+      await HomeWidget.setAppGroupId(kNotebookWidgetAppGroup);
+      await waitIosPostLayoutFrames(frames: 1);
+    } catch (_) {
+      _iosAppGroupOnce = null;
+    }
+  }();
+  return _iosAppGroupOnce!;
+}
+
+/// Optional explicit init; [syncNotebookToHomeWidget] already calls [_ensureIosAppGroupReady].
+Future<void> initNotebookHomeWidget() async {
+  await _ensureIosAppGroupReady();
 }
 
 /// Push word-book data to the home screen widget. Preserves KO/JA choice unless unset.
@@ -31,6 +47,8 @@ Future<void> syncNotebookToHomeWidget(
   String defaultLangIfUnset = 'ko',
 }) async {
   try {
+    await _ensureIosAppGroupReady();
+
     final user = AppSupabase.auth.currentUser;
     if (user == null) {
       await HomeWidget.saveWidgetData<String>(_keyPayloadKo, null);
@@ -72,8 +90,12 @@ Future<void> syncNotebookToHomeWidget(
 }
 
 Future<void> _reloadWidget() async {
-  await HomeWidget.updateWidget(
-    qualifiedAndroidName: 'com.dime.tomotomo.NotebookWidgetProvider',
-    iOSName: 'NotebookWidget',
-  );
+  // WidgetCenter.reloadTimelines in the first few pumps has been linked to EXC_BAD_ACCESS on device.
+  await waitIosPostLayoutFrames(frames: 4);
+  try {
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: 'com.dime.tomotomo.NotebookWidgetProvider',
+      iOSName: 'NotebookWidget',
+    );
+  } catch (_) {}
 }

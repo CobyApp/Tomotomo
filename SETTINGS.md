@@ -113,17 +113,57 @@ flutter clean && flutter pub get && (cd ios && pod install && cd ..) && flutter 
 
 `flutter run` / `flutter build ios` 는 보통 `pub get` 과 `pod install` 을 알아서 호출하므로, 수동으로 `pod install` 할 때만 `flutter pub get` 을 먼저 두면 됩니다.
 
-### 실기기에서 `EXC_BAD_ACCESS` (debug) 가 날 때
+### 실기기 설치 실패: `objective_c.framework` / `0xe8008014` (invalid signature)
 
-프로젝트에서 시도해 둔 안정화 (요약):
+Xcode / `flutter run` 으로 설치할 때 **`Failed to verify code signature of …/objective_c.framework`**, **`MIInstallerErrorDomain Code 13`**, **`0xe8008014`** 가 나오면 Flutter가 넣은 **엔진 프레임워크 서명**이 깨진 상태입니다.
+
+**이 저장소에서 한 조치:** Runner 타깃 빌드 단계 순서를 바로잡았습니다. **`Thin Binary`** (`xcode_backend.sh embed_and_thin`) 가 **`[CP] Copy Pods Resources` 보다 반드시 나중**에 실행되어야 최종 `.app` 이 올바르게 얇아지고 서명이 맞습니다. (이전에는 Pods 리소스 복사가 그 뒤에 와서 번들이 꼬일 수 있었습니다.)
+
+**직접 할 일:**
+
+1. `flutter clean` 후 `rm -rf build/ios` (선택)  
+2. `flutter pub get` → `cd ios && pod install`  
+3. Xcode에서 **Product → Clean Build Folder**  
+4. 다시 **`flutter run`** 또는 Xcode에서 Run (팀/번들 ID 그대로)
+
+이전에 **`flutter build ios --no-codesign`** 으로 만든 `build/ios/iphoneos/Runner.app` 을 기기에 올리면 동일 오류가 날 수 있으므로, 실기기에는 **항상 정상 서명된 빌드**로 설치하세요.
+
+### 실기기에서 `EXC_BAD_ACCESS` (debug) / VM Service 타임아웃
+
+#### iOS 26 + 실기기 + `flutter run`(debug) = 알려진 조합 문제
+
+**증상:** `EXC_BAD_ACCESS (code=50)`, fault 주소가 매번 다름, 심볼 없는 JIT 영역, 또는 **`The Dart VM Service was not discovered after 60 seconds`** (앱이 뜨기 전에 죽거나 디버거 연결 전에 종료).
+
+**원인:** Apple 쪽 **JIT 메모리 페이지 정책**과 Flutter **디버그 모드의 JIT** 가 충돌하는 이슈로 보는 것이 타당합니다. ([Flutter #184533](https://github.com/flutter/flutter/issues/184533) — `code=50`, `ldur x6, [x24, #0x37]` 등; 실제로는 `tbz` / `ldur x9, [x0, #-0x1]` 같은 **다른 JIT 패턴**으로도 동일 계열 크래시가 날 수 있음.) **앱 비즈니스 코드 버그라기보다 툴체인·OS 조합 이슈**에 가깝습니다.
+
+**실기기에서 권장하는 실행 방법 (가장 중요)**
+
+| 목적 | 명령 / 방법 |
+|------|-------------|
+| **실기기에서 매일 돌리기** | **`./run_on_iphone.sh`** 또는 **`make ios`** 또는 **`flutter run --profile`** (AOT — 안정적) |
+| 출시에 가깝게 확인 | `flutter run --release` |
+| 브레이크포인트·핫 리로드 디버그 | **iOS 시뮬레이터**에서 `flutter run` (debug) |
+| Cursor/VS Code | **실행 구성**에서 **「Tomotomo (profile — iOS 실기기 권장)」** 선택 (`.vscode/launch.json`) |
+
+> 터미널에서 습관적으로 **`flutter run`** 만 치면 **항상 debug** 라서 실기기에서는 같은 크래시가 납니다. 실기기면 **`make ios`** 로 통일하는 것을 권장합니다.
+
+**이미 해둔 완화 (완전 해결은 아님)**
+
+- Debug 전용 `RunnerDebug.entitlements` 에 **`com.apple.security.cs.allow-jit`** — 이슈에서도 **빈도만 줄일 수 있고 재현을 없애지는 못한다**고 함.
+
+**추가로**
+
+- 주기적으로 **`flutter upgrade`** (stable) — 엔진/도구 수정이 올라올 수 있음.
+
+#### 그 밖에 시도해 둔 앱/프로젝트 안정화 (요약)
 
 - **iOS 임베딩**: `UIApplicationSceneManifest` 없이 **`UIMainStoryboardFile` = Main** + `AppDelegate`에서 `GeneratedPluginRegistrant.register(with: self)` 만 사용 (레거시 단일 윈도 경로).
 - **Pods**: `use_frameworks! :linkage => :static`.
 - **Impeller 끔**: `Info.plist` 의 `FLTEnableImpeller` = false.
 - **UI**: 로그인 타이틀은 셰이더 없이 단색만; 전역 테마는 `InkSparkle` 대신 `InkRipple`(스파클 셰이더가 iOS에서 크래시 보고됨); iOS 에서 하단 `BackdropFilter` 블러 생략.
-- **`home_widget`**: `setAppGroupId` 는 첫 프레임 이후(`App`의 `addPostFrameCallback`).
+- **`home_widget` / 첫 프레임**: 네이티브 부하는 스케줄러 프레임 기준으로 늦춤 (`lib/core/platform/ios_post_layout_frames.dart`).
 
-그래도 동일하면 **`flutter run --profile`** / **`flutter run --release`** 로 비교하세요. Apple이 UIScene 강제하기 전까지는 위 레거시 경로가 실기기 안정성에 유리한 경우가 많습니다.
+Apple이 UIScene 강제하기 전까지는 위 레거시 경로가 실기기 안정성에 유리한 경우가 많습니다.
 
 ---
 

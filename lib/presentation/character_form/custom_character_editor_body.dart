@@ -72,6 +72,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       _nameSecondaryController.text = s.nameSecondary ?? '';
       _memoController.text = s.speechStyle ?? '';
       _language = s.language == 'ko' ? 'ko' : 'ja';
+      final u = s.avatarUrl?.trim();
+      if (u != null && u.isNotEmpty) {
+        _avatarUrl = u;
+      }
     });
   }
 

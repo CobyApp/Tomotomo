@@ -1,8 +1,3 @@
-import 'dart:io';
-import 'dart:math';
-
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../core/supabase/app_supabase.dart';
 import '../../data/character/characters_data.dart' as builtin_chars;
 import '../../domain/entities/character.dart';
@@ -410,55 +405,6 @@ class SupabaseChatRepository implements ChatRepository {
     if (roomId == null || roomId.isEmpty) return;
     final sender = character.isDirectMessage ? (message.senderId ?? user.id) : null;
     await AppSupabase.client.from('chat_messages').insert(_messageToRow(roomId, message, senderIdForDm: sender));
-  }
-
-  static String _voiceMime(String ext) {
-    switch (ext.toLowerCase()) {
-      case 'm4a':
-      case 'mp4':
-        return 'audio/mp4';
-      case 'aac':
-        return 'audio/aac';
-      case 'wav':
-        return 'audio/wav';
-      default:
-        return 'audio/mp4';
-    }
-  }
-
-  static String _fileExtension(String path) {
-    final i = path.lastIndexOf('.');
-    if (i == -1) return 'm4a';
-    return path.substring(i + 1).toLowerCase();
-  }
-
-  @override
-  Future<void> sendDirectMessageVoiceNote(Character character, String localAudioPath) async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null || !character.isDirectMessage) return;
-    final roomId = character.directMessageRoomId;
-    if (roomId == null || roomId.isEmpty) return;
-
-    final file = File(localAudioPath);
-    if (!await file.exists()) return;
-
-    final ext = _fileExtension(localAudioPath);
-    final objectPath =
-        '${user.id}/$roomId/${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(0x7fffffff)}.$ext';
-    await AppSupabase.client.storage.from('dm_voice').upload(
-          objectPath,
-          file,
-          fileOptions: FileOptions(contentType: _voiceMime(ext), upsert: false),
-        );
-    final url = AppSupabase.client.storage.from('dm_voice').getPublicUrl(objectPath);
-
-    final msg = ChatMessage(
-      content: DmVoiceMessage.wrapPublicUrl(url),
-      role: 'user',
-      timestamp: DateTime.now(),
-      senderId: user.id,
-    );
-    await saveMessage(character, msg);
   }
 
   @override

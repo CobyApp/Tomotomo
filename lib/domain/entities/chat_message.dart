@@ -13,6 +13,10 @@ class ChatMessage {
   final String role;
   final DateTime timestamp;
   final String? explanation;
+
+  /// Full-line translation for learners (e.g. Japanese line → Korean). Not persisted in DB yet.
+  final String? lineTranslation;
+
   final List<Vocabulary>? vocabulary;
 
   /// Supabase `chat_messages.sender_id` for direct messages; null for AI chats.
@@ -23,6 +27,7 @@ class ChatMessage {
     required this.role,
     required this.timestamp,
     this.explanation,
+    this.lineTranslation,
     this.vocabulary,
     this.senderId,
   });
@@ -32,6 +37,7 @@ class ChatMessage {
         'role': role,
         'timestamp': timestamp.toIso8601String(),
         'explanation': explanation,
+        'lineTranslation': lineTranslation,
         'vocabulary': vocabulary?.map((v) => v.toJson()).toList(),
         'senderId': senderId,
       };
@@ -41,6 +47,7 @@ class ChatMessage {
         role: json['role'] as String,
         timestamp: DateTime.parse(json['timestamp']),
         explanation: json['explanation'] as String?,
+        lineTranslation: json['lineTranslation'] as String?,
         vocabulary: json['vocabulary'] != null
             ? () {
                 final out = <Vocabulary>[];

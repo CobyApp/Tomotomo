@@ -29,6 +29,19 @@ class AppPageScaffold extends StatelessWidget {
     final scheme = theme.colorScheme;
     final hasSubtitle = subtitle != null && subtitle!.trim().isNotEmpty;
 
+    // Full-screen shell gradient behind Scaffold + AppBar. Transparent Scaffold alone
+    // under IndexedStack / pushed routes can composite to black (no ancestor paint).
+    final shellBackdrop = BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          AppTheme.shellGradientTop(scheme),
+          AppTheme.shellGradientBottom(scheme),
+        ],
+      ),
+    );
+
     final wrappedBody = transparentBackground
         ? body
         : DecoratedBox(
@@ -45,37 +58,44 @@ class AppPageScaffold extends StatelessWidget {
             child: body,
           );
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        toolbarHeight: hasSubtitle ? 72 : kToolbarHeight,
-        titleSpacing: NavigationToolbar.kMiddleSpacing,
-        title: hasSubtitle
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(title, style: AppTextStyles.pageTitle(context)),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle!.trim(),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
-                      height: 1.25,
+    return DecoratedBox(
+      decoration: shellBackdrop,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          toolbarHeight: hasSubtitle ? 72 : kToolbarHeight,
+          titleSpacing: NavigationToolbar.kMiddleSpacing,
+          surfaceTintColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          backgroundColor: Colors.transparent,
+          foregroundColor: scheme.onSurface,
+          title: hasSubtitle
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(title, style: AppTextStyles.pageTitle(context)),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!.trim(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                        height: 1.25,
+                      ),
                     ),
-                  ),
-                ],
-              )
-            : Text(title, style: AppTextStyles.pageTitle(context)),
-        centerTitle: false,
-        actions: actions,
-        bottom: bottom,
+                  ],
+                )
+              : Text(title, style: AppTextStyles.pageTitle(context)),
+          centerTitle: false,
+          actions: actions,
+          bottom: bottom,
+        ),
+        floatingActionButton: floatingActionButton,
+        body: wrappedBody,
       ),
-      floatingActionButton: floatingActionButton,
-      body: wrappedBody,
     );
   }
 }

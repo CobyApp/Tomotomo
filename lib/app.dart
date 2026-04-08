@@ -10,30 +10,14 @@ import 'domain/repositories/theme_repository.dart';
 import 'domain/repositories/saved_expression_repository.dart';
 import 'domain/repositories/friends_repository.dart';
 import 'data/celebrity_persona/celebrity_persona_suggester.dart';
-import 'core/home_widget/notebook_home_widget_sync.dart';
 import 'presentation/auth/auth_gate.dart';
 import 'presentation/auth/auth_state.dart';
 import 'presentation/locale/locale_notifier.dart';
 import 'presentation/theme/theme_notifier.dart';
 import 'presentation/notebook/word_book_refresh_notifier.dart';
 
-class App extends StatefulWidget {
+class App extends StatelessWidget {
   const App({super.key});
-
-  @override
-  State<App> createState() => _AppState();
-}
-
-class _AppState extends State<App> {
-  @override
-  void initState() {
-    super.initState();
-    // Defer home_widget native setup until after the first frame so the iOS Flutter
-    // engine is fully ready (early setAppGroupId has been linked to EXC_BAD_ACCESS).
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await initNotebookHomeWidget();
-    });
-  }
 
   @override
   Widget build(BuildContext context) {

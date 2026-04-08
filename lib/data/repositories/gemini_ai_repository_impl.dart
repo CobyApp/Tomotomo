@@ -214,7 +214,7 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
     required String appUiLanguageCode,
   }) async {
     final script = resolveDmUtteranceScript(utterance, appLanguageCode: appUiLanguageCode);
-    final prompt = buildDmExpressionAnalysisPrompt(utterance, script);
+    final prompt = buildDmExpressionAnalysisPrompt(utterance, script, appUiLanguageCode);
     final meaningMode = script == DmUtteranceScript.koreanHeavy
         ? VocabularyMeaningPickMode.preferJapaneseGloss
         : VocabularyMeaningPickMode.preferKoreanGloss;

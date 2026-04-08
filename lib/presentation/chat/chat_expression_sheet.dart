@@ -101,52 +101,55 @@ Future<void> showChatExpressionSheet(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (sheetContext) => Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.72,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 4),
-            child: Center(
-              child: Container(
-                width: 32,
-                height: 3,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+    builder: (sheetContext) {
+      final scheme = Theme.of(sheetContext).colorScheme;
+      return Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.72,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 4),
+              child: Center(
+                child: Container(
+                  width: 32,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: scheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
             ),
-          ),
-          const Divider(height: 1),
-          Flexible(
-            child: _ExpressionSheetBody(
-              message: message,
-              character: character,
-              chatRoomId: chatRoomId,
-              messenger: messenger,
-              dmScript: dmScript,
+            Divider(height: 1, color: scheme.outlineVariant),
+            Flexible(
+              child: _ExpressionSheetBody(
+                message: message,
+                character: character,
+                chatRoomId: chatRoomId,
+                messenger: messenger,
+                dmScript: dmScript,
+              ),
             ),
-          ),
-        ],
-      ),
-    ),
+          ],
+        ),
+      );
+    },
   );
 }
 
@@ -180,24 +183,31 @@ class _ExpressionSheetBody extends StatefulWidget {
 class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
   final Set<int> _savedWordIndices = {};
   final Set<int> _savingIndices = {};
-  ChatMessage? _dmAnalysis;
-  bool _dmLoading = false;
-  String? _dmError;
+  ChatMessage? _fetchedLineAnalysis;
+  bool _lineFetchLoading = false;
+  String? _lineFetchError;
+
+  bool _shouldFetchLineAnalysis() {
+    final raw = widget.message.content.trim();
+    if (raw.isEmpty || DmVoiceMessage.isVoiceContent(raw)) return false;
+    if (widget.character.isDirectMessage) return widget.dmScript != null;
+    return true;
+  }
 
   @override
   void initState() {
     super.initState();
-    if (widget.character.isDirectMessage && widget.dmScript != null) {
-      _dmLoading = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _loadDmAnalysis());
+    if (_shouldFetchLineAnalysis()) {
+      _lineFetchLoading = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadLineAnalysis());
     }
   }
 
-  Future<void> _loadDmAnalysis() async {
-    if (!mounted || widget.dmScript == null) return;
+  Future<void> _loadLineAnalysis() async {
+    if (!mounted || !_shouldFetchLineAnalysis()) return;
     setState(() {
-      _dmLoading = true;
-      _dmError = null;
+      _lineFetchLoading = true;
+      _lineFetchError = null;
     });
     try {
       final appLang = context.read<LocaleNotifier>().languageCode;
@@ -205,20 +215,27 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       final result = await ai.generateDmExpressionAnalysis(widget.message.content, appUiLanguageCode: appLang);
       if (!mounted) return;
       setState(() {
-        _dmAnalysis = result;
-        _dmLoading = false;
-        _dmError = null;
+        _fetchedLineAnalysis = result;
+        _lineFetchLoading = false;
+        _lineFetchError = null;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _dmLoading = false;
-        _dmError = e.toString();
+        _lineFetchLoading = false;
+        _lineFetchError = e.toString();
       });
     }
   }
 
-  List<Vocabulary>? get _effectiveVocabulary => _dmAnalysis?.vocabulary ?? widget.message.vocabulary;
+  List<Vocabulary>? get _effectiveVocabulary =>
+      _fetchedLineAnalysis?.vocabulary ?? widget.message.vocabulary;
+
+  String? get _effectiveLineTranslation =>
+      _fetchedLineAnalysis?.lineTranslation ?? widget.message.lineTranslation;
+
+  String? get _effectiveExplanation =>
+      _fetchedLineAnalysis?.explanation ?? widget.message.explanation;
 
   bool get _vocabMeaningUsesHangul {
     if (!widget.character.isDirectMessage) return widget.character.expectsKoreanStudyNotes;
@@ -279,27 +296,70 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final character = widget.character;
     final tr = sheetContext.tr;
     final dm = widget.dmScript;
+    final scheme = Theme.of(sheetContext).colorScheme;
 
     final messageStyle = TextStyle(
       fontSize: 15,
       height: 1.45,
-      color: Colors.grey.shade800,
+      color: scheme.onSurface,
       fontFamily: character.assistantMessagePrefersHangulFont ? 'Pretendard' : null,
     );
     final meaningStyle = TextStyle(
       fontSize: 13,
       height: 1.4,
-      color: Colors.grey.shade700,
+      color: scheme.onSurfaceVariant,
       fontFamily: _vocabMeaningUsesHangul ? 'Pretendard' : null,
+    );
+    final sectionLabelStyle = TextStyle(
+      fontSize: 12,
+      height: 1.2,
+      fontWeight: FontWeight.w600,
+      color: scheme.primary,
+      letterSpacing: 0.2,
+    );
+    final sectionBodyStyle = TextStyle(
+      fontSize: 14,
+      height: 1.45,
+      color: scheme.onSurface,
+      fontFamily: character.assistantMessagePrefersHangulFont ? 'Pretendard' : null,
     );
     final vocabWordUsesPretendard = character.koreanNationalPersona ||
         (character.isDirectMessage && dm == DmUtteranceScript.koreanHeavy);
     final wordStyle = TextStyle(
       fontSize: 15,
       fontWeight: FontWeight.w600,
-      color: Colors.grey.shade900,
+      color: scheme.onSurface,
       fontFamily: vocabWordUsesPretendard ? 'Pretendard' : null,
     );
+
+    final fetchLine = _shouldFetchLineAnalysis();
+    final translation = _effectiveLineTranslation?.trim();
+    final note = _effectiveExplanation?.trim();
+    final showTranslation = translation != null && translation.isNotEmpty;
+    final showNote = note != null && note.isNotEmpty;
+
+    final translationUsesHangul = character.isDirectMessage
+        ? dm != DmUtteranceScript.koreanHeavy
+        : character.expectsKoreanStudyNotes;
+
+    Widget sectionBlock(String label, String body, {bool useHangulBody = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: sectionLabelStyle),
+            const SizedBox(height: 6),
+            Text(
+              body,
+              style: sectionBodyStyle.copyWith(
+                fontFamily: useHangulBody ? 'Pretendard' : sectionBodyStyle.fontFamily,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 10, 8, 16),
@@ -307,9 +367,9 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(message.content, style: messageStyle),
-          if (character.isDirectMessage && dm != null) ...[
+          if (fetchLine) ...[
             const SizedBox(height: 12),
-            if (_dmLoading)
+            if (_lineFetchLoading)
               Row(
                 children: [
                   SizedBox(
@@ -320,22 +380,22 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      tr('expressionDmLoadingVocab'),
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                      tr('expressionAnalysisLoading'),
+                      style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
                     ),
                   ),
                 ],
               ),
-            if (_dmError != null)
+            if (_lineFetchError != null)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${tr('expressionDmFailedVocab')}\n$_dmError',
-                    style: TextStyle(fontSize: 12, height: 1.35, color: Colors.red.shade800),
+                    '${tr('expressionAnalysisFailed')}\n$_lineFetchError',
+                    style: TextStyle(fontSize: 12, height: 1.35, color: scheme.error),
                   ),
                   TextButton.icon(
-                    onPressed: _loadDmAnalysis,
+                    onPressed: _loadLineAnalysis,
                     icon: const Icon(Icons.refresh_rounded, size: 18),
                     label: Text(tr('expressionDmRetry')),
                     style: TextButton.styleFrom(
@@ -346,9 +406,21 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                 ],
               ),
           ],
+          if (showTranslation)
+            sectionBlock(
+              tr('expressionFullTranslationLabel'),
+              translation,
+              useHangulBody: translationUsesHangul,
+            ),
+          if (showNote)
+            sectionBlock(
+              tr('expressionLearningNoteLabel'),
+              note,
+              useHangulBody: context.read<LocaleNotifier>().languageCode == 'ko',
+            ),
           if (_effectiveVocabulary != null && _effectiveVocabulary!.isNotEmpty) ...[
             const SizedBox(height: 14),
-            const Divider(height: 1),
+            Divider(height: 1, color: scheme.outlineVariant),
             const SizedBox(height: 10),
             ..._effectiveVocabulary!.asMap().entries.map((e) {
               final i = e.key;
@@ -376,7 +448,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                                     style: TextStyle(
                                       fontWeight: FontWeight.w400,
                                       fontSize: 14,
-                                      color: Colors.grey.shade600,
+                                      color: scheme.onSurfaceVariant,
                                     ),
                                   ),
                               ],
@@ -423,7 +495,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                 ),
               );
             }),
-          ] else if (character.isDirectMessage && dm != null && (_dmLoading || _dmError != null))
+          ] else if (fetchLine && (_lineFetchLoading || _lineFetchError != null))
             const SizedBox.shrink()
           else if (character.isDirectMessage && dm != null)
             Padding(
@@ -433,7 +505,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.35,
-                  color: Colors.orange.shade800,
+                  color: scheme.tertiary,
                   fontFamily: dm == DmUtteranceScript.japaneseHeavy ? 'Pretendard' : null,
                 ),
               ),
@@ -446,7 +518,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.35,
-                  color: Colors.orange.shade800,
+                  color: scheme.tertiary,
                   fontFamily: 'Pretendard',
                 ),
               ),
@@ -456,7 +528,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
               padding: const EdgeInsets.only(top: 10),
               child: Text(
                 tr('expressionMissingVocabularyJa'),
-                style: TextStyle(fontSize: 13, height: 1.35, color: Colors.orange.shade800),
+                style: TextStyle(fontSize: 13, height: 1.35, color: scheme.tertiary),
               ),
             ),
         ],

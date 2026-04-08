@@ -20,7 +20,4 @@ abstract class ChatRepository {
 
   /// Deletes the chat room and all messages (cascade). RLS must allow the current user.
   Future<void> deleteRoom(String roomId);
-
-  /// Uploads a local audio file for a DM, then inserts a user message (`dm_voice:` + public URL).
-  Future<void> sendDirectMessageVoiceNote(Character character, String localAudioPath);
 }

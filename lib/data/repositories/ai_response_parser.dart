@@ -347,6 +347,16 @@ ChatMessage chatMessageFromAiJsonMap(
       ]) ??
       '';
 
+  final lineTranslation = _firstNonEmptyString(root, const [
+    'full_translation',
+    'message_translation',
+    'utterance_translation',
+    'line_translation',
+    'sentence_translation',
+    'translation_full',
+    'whole_line_translation',
+  ]);
+
   final explanation = _firstNonEmptyString(root, const [
     'explanation',
     'grammar_explanation',
@@ -359,6 +369,8 @@ ChatMessage chatMessageFromAiJsonMap(
     'korean_explanation',
     'learning_note',
     'learningNote',
+    'brief_explanation',
+    'line_note',
     'hint',
     'hints',
     'details',
@@ -377,6 +389,7 @@ ChatMessage chatMessageFromAiJsonMap(
     role: 'assistant',
     timestamp: DateTime.now(),
     explanation: explanation,
+    lineTranslation: lineTranslation,
     vocabulary: vocabulary,
   );
 }

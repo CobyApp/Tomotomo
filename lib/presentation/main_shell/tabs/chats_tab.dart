@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/platform/ios_post_layout_frames.dart';
 import '../../../core/supabase/app_supabase.dart';
 import '../../../core/ui/ui.dart';
 import '../../../core/widgets/on_app_resumed_mixin.dart';
@@ -45,9 +46,12 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _subscribeChatRoomsRealtime();
-      _load();
+      unawaited(() async {
+        await waitIosPostLayoutFrames(frames: 3);
+        if (!mounted) return;
+        _subscribeChatRoomsRealtime();
+        unawaited(_load());
+      }());
     });
   }
 

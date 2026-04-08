@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/home_widget/notebook_home_widget_sync.dart';
+import '../../core/platform/ios_post_layout_frames.dart';
 import '../../core/supabase/app_supabase.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
 import '../../core/theme/app_theme.dart';
@@ -11,7 +12,6 @@ import '../../domain/repositories/profile_repository.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../theme/theme_notifier.dart';
-import 'tabs/add_friend_tab.dart';
 import 'tabs/friends_tab.dart';
 import 'tabs/chats_tab.dart';
 import 'tabs/settings_tab.dart';
@@ -37,21 +37,24 @@ class _MainShellState extends State<MainShell> {
     _pages = [
       FriendsTab(key: _friendsTabKey),
       ChatsTab(key: _chatsTabKey),
-      const AddFriendTab(),
       WordBookScreen(key: _wordBookKey),
       const SettingsTab(),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _ensureProfile();
-      if (!mounted) return;
-      final repo = context.read<SavedExpressionRepository>();
-      final appLang = context.read<LocaleNotifier>().languageCode;
-      unawaited(
-        syncNotebookToHomeWidget(
-          repo,
-          defaultLangIfUnset: appLang == 'ja' ? 'ja' : 'ko',
-        ),
-      );
+      unawaited(() async {
+        await waitIosPostLayoutFrames(frames: 2);
+        if (!mounted) return;
+        unawaited(_ensureProfile());
+        if (!mounted) return;
+        final repo = context.read<SavedExpressionRepository>();
+        final appLang = context.read<LocaleNotifier>().languageCode;
+        unawaited(
+          syncNotebookToHomeWidget(
+            repo,
+            defaultLangIfUnset: appLang == 'ja' ? 'ja' : 'ko',
+          ),
+        );
+      }());
     });
   }
 
@@ -75,7 +78,7 @@ class _MainShellState extends State<MainShell> {
     setState(() => _index = i);
     if (i == 0) _friendsTabKey.currentState?.reloadFromTabSelection();
     if (i == 1) _chatsTabKey.currentState?.reloadFromTabSelection();
-    if (i == 3) {
+    if (i == 2) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _wordBookKey.currentState?.reloadWhenTabSelected();
       });
@@ -115,11 +118,6 @@ class _MainShellState extends State<MainShell> {
               icon: Icons.chat_bubble_outline_rounded,
               selectedIcon: Icons.chat_bubble_rounded,
               label: context.tr('tabChats'),
-            ),
-            NavItemData(
-              icon: Icons.search_outlined,
-              selectedIcon: Icons.search_rounded,
-              label: context.tr('tabAddFriend'),
             ),
             NavItemData(
               icon: Icons.menu_book_outlined,
