@@ -7,6 +7,18 @@ abstract final class AppSpacing {
   static const double pageBottom = 28;
   static const double listGap = 10;
   static const double sectionAfter = 8;
+
+  /// Horizontal inset for the glass bottom navigation dock.
+  static const double navDockInset = 18;
+
+  /// Side / bottom margin for floating modal sheets (e.g. expression sheet).
+  static const double sheetSide = 16;
+  static const double sheetBottom = 20;
+
+  /// Outer padding for the chat composer bar.
+  static const double composerPadH = 12;
+  static const double composerPadTop = 10;
+  static const double composerPadBottom = 12;
 }
 
 abstract final class AppRadii {

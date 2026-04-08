@@ -6,6 +6,7 @@ import '../../../../core/supabase/app_supabase.dart';
 import '../../../../domain/entities/character.dart';
 import '../../../../domain/entities/chat_message.dart' show ChatMessage, DmVoiceMessage;
 import '../chat_expression_sheet.dart';
+import '../chat_message_report.dart';
 import 'chat_bubble.dart';
 
 class ChatList extends StatefulWidget {

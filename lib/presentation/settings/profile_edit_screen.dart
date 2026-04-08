@@ -143,6 +143,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         statusMessage: status.isEmpty ? null : status,
         appLanguage: profile.appLanguage,
         learningLanguage: profile.learningLanguage,
+        pointBalance: profile.pointBalance,
         createdAt: profile.createdAt,
         updatedAt: profile.updatedAt,
       );
@@ -228,7 +229,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               ? Image.network(
                                   _avatarUrl!.trim(),
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Icon(
+                                  errorBuilder: (_, _, _) => Icon(
                                     Icons.broken_image_outlined,
                                     size: 40,
                                     color: scheme.onSurfaceVariant,

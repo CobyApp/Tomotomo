@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'app_tokens.dart';
+import 'points_toolbar_chip.dart';
 
 /// Primary page layout: shared app bar title style. Main shell tabs use [transparentBackground]; pushed routes often set it false.
 class AppPageScaffold extends StatelessWidget {
@@ -13,12 +14,15 @@ class AppPageScaffold extends StatelessWidget {
     this.bottom,
     this.floatingActionButton,
     this.transparentBackground = true,
+    this.showPointsChip = false,
   });
 
   final String title;
   final String? subtitle;
   final Widget body;
   final List<Widget>? actions;
+  /// When true, prepends [PointsToolbarChip] to [actions] (main shell tabs).
+  final bool showPointsChip;
   final PreferredSizeWidget? bottom;
   final Widget? floatingActionButton;
   final bool transparentBackground;
@@ -31,16 +35,12 @@ class AppPageScaffold extends StatelessWidget {
 
     // Full-screen shell gradient behind Scaffold + AppBar. Transparent Scaffold alone
     // under IndexedStack / pushed routes can composite to black (no ancestor paint).
-    final shellBackdrop = BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          AppTheme.shellGradientTop(scheme),
-          AppTheme.shellGradientBottom(scheme),
-        ],
-      ),
-    );
+    final shellBackdrop = AppTheme.shellBackdropDecoration(scheme);
+
+    final mergedActions = <Widget>[
+      if (showPointsChip) const PointsToolbarChip(),
+      ...?actions,
+    ];
 
     final wrappedBody = transparentBackground
         ? body
@@ -90,7 +90,7 @@ class AppPageScaffold extends StatelessWidget {
                 )
               : Text(title, style: AppTextStyles.pageTitle(context)),
           centerTitle: false,
-          actions: actions,
+          actions: mergedActions.isEmpty ? null : mergedActions,
           bottom: bottom,
         ),
         floatingActionButton: floatingActionButton,

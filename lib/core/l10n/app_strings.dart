@@ -37,6 +37,11 @@ class AppStrings {
     'characterBrowseSubtitle': '레벨별 AI 친구를 골라 대화를 시작해요.',
     'settingsLearningLanguageTitle': '학습 언어',
     'settingsLearningLanguageSubtitle': '캐릭터·학습 콘텐츠 기본 언어 (일본어/한국어)',
+    'pointsChipTooltip':
+        '가입 시 500포인트 · X 프로필 가져오기 5P · AI 캐릭터 대화 1회당 1P · 친구 채팅 학습(느낌표) 메시지당 첫 1P · 공유 캐릭터 받기 10P · 커스텀 캐릭터 생성 10P',
+    'pointsInsufficient': '포인트가 부족합니다.',
+    'settingsPointsBalance': '포인트',
+    'settingsPointsBalanceSubtitle': 'AI·학습 기능 사용 시 차감됩니다',
     'cancel': '취소',
     'confirm': '확인',
     'retry': '다시 시도',
@@ -350,6 +355,11 @@ class AppStrings {
     'characterBrowseSubtitle': 'レベル別のAIキャラと会話を始められます。',
     'settingsLearningLanguageTitle': '学習言語',
     'settingsLearningLanguageSubtitle': 'キャラ・学習コンテンツの既定（日本語/韓国語）',
+    'pointsChipTooltip':
+        '登録で500pt · Xプロフィール取り込み5pt · AIキャラ会話1回1pt · 友だちチャット学習（！）はメッセージ初回のみ1pt · 共有キャラ追加10pt · カスタムキャラ作成10pt',
+    'pointsInsufficient': 'ポイントが足りません。',
+    'settingsPointsBalance': 'ポイント',
+    'settingsPointsBalanceSubtitle': 'AI・学習機能の利用で消費されます',
     'cancel': 'キャンセル',
     'confirm': 'OK',
     'retry': '再試行',

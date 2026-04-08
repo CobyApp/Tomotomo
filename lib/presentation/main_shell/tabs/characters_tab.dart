@@ -9,7 +9,9 @@ import '../../../domain/entities/character_record.dart';
 import '../../../domain/repositories/chat_repository.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
 import '../../../domain/repositories/character_record_repository.dart';
+import '../../../domain/repositories/points_repository.dart';
 import '../../../core/ui/ui.dart';
+import '../../points/points_balance_notifier.dart';
 import '../../../data/character/characters_data.dart';
 import '../../chat/chat_screen.dart';
 import '../../character_form/create_character_screen.dart';
@@ -111,6 +113,14 @@ class CharactersTabState extends State<CharactersTab> with WidgetsBindingObserve
       return;
     }
     try {
+      final spend = await context.read<PointsRepository>().spendPoints(10, 'public_character_download');
+      if (!spend.ok) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('pointsInsufficient'))));
+        return;
+      }
+      if (!mounted) return;
+      context.read<PointsBalanceNotifier>().setBalance(spend.balance);
       final repo = context.read<CharacterRecordRepository>();
       final copy = CharacterRecord.draft(
         ownerId: user.id,
@@ -173,6 +183,7 @@ class CharactersTabState extends State<CharactersTab> with WidgetsBindingObserve
     final scheme = Theme.of(context).colorScheme;
     return AppPageScaffold(
       title: context.tr('charactersTitle'),
+      showPointsChip: true,
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh_rounded),

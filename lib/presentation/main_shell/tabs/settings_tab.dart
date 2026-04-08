@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../points/points_balance_notifier.dart';
 import '../../../core/ui/ui.dart';
 import '../../../core/supabase/app_supabase.dart';
 import '../../auth/auth_state.dart';
@@ -19,6 +20,7 @@ class SettingsTab extends StatelessWidget {
 
     return AppPageScaffold(
       title: context.tr('settingsTitle'),
+      showPointsChip: true,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.pageH,
@@ -35,6 +37,18 @@ class SettingsTab extends StatelessWidget {
                   title: context.tr('settingsEmail'),
                   subtitle: user.email ?? '',
                   showChevron: false,
+                ),
+                Consumer<PointsBalanceNotifier>(
+                  builder: (context, pn, _) {
+                    final bal = pn.balance;
+                    final suffix = bal != null ? ' · $bal' : '';
+                    return AppSettingsNavTile(
+                      icon: Icons.stars_outlined,
+                      title: context.tr('settingsPointsBalance'),
+                      subtitle: '${context.tr('settingsPointsBalanceSubtitle')}$suffix',
+                      showChevron: false,
+                    );
+                  },
                 ),
                 AppSettingsNavTile(
                   icon: Icons.person_outlined,

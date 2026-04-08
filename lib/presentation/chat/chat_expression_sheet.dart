@@ -1,88 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/language/dm_utterance_script.dart';
+import '../../core/ui/app_tokens.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/saved_expression.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
+import '../../domain/repositories/points_repository.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
+import '../points/points_balance_notifier.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../notebook/word_book_refresh_notifier.dart';
-
-Future<void> _launchChatMessageReportEmail(
-  BuildContext context, {
-  required ChatMessage message,
-  required Character character,
-}) async {
-  final rootLang = context.read<LocaleNotifier>().languageCode;
-  final dmScript = character.isDirectMessage
-      ? resolveDmUtteranceScript(message.content, appLanguageCode: rootLang)
-      : null;
-  final tr = context.tr;
-  final subject = tr('expressionDmReportSubject');
-  final bodyPrefix = dmScript == DmUtteranceScript.koreanHeavy
-      ? tr('expressionDmReportBodyPrefixJa')
-      : tr('expressionDmReportBodyPrefixKo');
-  final body = '$bodyPrefix${message.content}\n\n${tr('expressionDmReportReasonLabel')}\n';
-  final Uri emailLaunchUri = Uri(
-    scheme: 'mailto',
-    path: 'dime0801001@gmail.com',
-    queryParameters: {'subject': subject, 'body': body},
-  );
-  try {
-    final result = await launchUrl(
-      emailLaunchUri,
-      mode: LaunchMode.externalApplication,
-    );
-    if (!result) {
-      final gmailUri = Uri.parse(
-        'https://mail.google.com/mail/?view=cm&fs=1&to=dime0801001@gmail.com&su=$subject&body=$body',
-      );
-      await launchUrl(
-        gmailUri,
-        mode: LaunchMode.externalApplication,
-      );
-    }
-  } catch (e) {
-    debugPrint('Failed to launch email: $e');
-  }
-}
-
-/// Long-press on a chat bubble: ask, then open the report mail draft.
-Future<void> confirmAndReportChatMessage(
-  BuildContext context, {
-  required ChatMessage message,
-  required Character character,
-}) async {
-  final tr = context.tr;
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(tr('chatReportDialogTitle')),
-      content: Text(tr('chatReportDialogBody')),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: Text(tr('chatReportCancel')),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: Text(tr('chatReportConfirm')),
-        ),
-      ],
-    ),
-  );
-  if (ok != true || !context.mounted) return;
-  await _launchChatMessageReportEmail(
-    context,
-    message: message,
-    character: character,
-  );
-}
 
 /// Bottom sheet: message, per-word [+] saves **that word only** (headword + gloss) to the word book.
 Future<void> showChatExpressionSheet(
@@ -104,10 +35,15 @@ Future<void> showChatExpressionSheet(
     builder: (sheetContext) {
       final scheme = Theme.of(sheetContext).colorScheme;
       return Container(
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        margin: const EdgeInsets.fromLTRB(
+          AppSpacing.sheetSide,
+          0,
+          AppSpacing.sheetSide,
+          AppSpacing.sheetBottom,
+        ),
         decoration: BoxDecoration(
           color: scheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.cardSmall),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.08),
@@ -203,17 +139,86 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     }
   }
 
+  List<Vocabulary>? _vocabularyFromCacheJson(List<Map<String, dynamic>> raw) {
+    if (raw.isEmpty) return null;
+    final mode = widget.character.vocabularyMeaningPickMode;
+    final out = <Vocabulary>[];
+    for (final m in raw) {
+      final v = Vocabulary.tryParseLoose(m, meaningMode: mode);
+      if (v != null) out.add(v);
+    }
+    return out.isEmpty ? null : out;
+  }
+
   Future<void> _loadLineAnalysis() async {
     if (!mounted || !_shouldFetchLineAnalysis()) return;
     setState(() {
       _lineFetchLoading = true;
       _lineFetchError = null;
     });
+    final appLang = context.read<LocaleNotifier>().languageCode;
+    final mid = widget.message.serverId;
+    final points = context.read<PointsRepository>();
+
     try {
-      final appLang = context.read<LocaleNotifier>().languageCode;
+      if (mid != null) {
+        final cached = await points.getLineAnalysisCache(mid, appLang);
+        if (!mounted) return;
+        if (cached != null) {
+          final vocab = _vocabularyFromCacheJson(cached.vocabularyJson);
+          final hasPayload = (cached.explanation != null && cached.explanation!.trim().isNotEmpty) ||
+              (cached.lineTranslation != null && cached.lineTranslation!.trim().isNotEmpty) ||
+              (vocab != null && vocab.isNotEmpty);
+          if (hasPayload) {
+            setState(() {
+              _fetchedLineAnalysis = ChatMessage(
+                serverId: widget.message.serverId,
+                content: widget.message.content,
+                role: widget.message.role,
+                timestamp: widget.message.timestamp,
+                explanation: cached.explanation,
+                lineTranslation: cached.lineTranslation,
+                vocabulary: vocab,
+                senderId: widget.message.senderId,
+              );
+              _lineFetchLoading = false;
+              _lineFetchError = null;
+            });
+            return;
+          }
+        }
+      }
+
+      if (widget.character.isDirectMessage && mid != null) {
+        final unlock = await points.tryUnlockDmExpression(mid);
+        if (!mounted) return;
+        if (unlock.ok) {
+          context.read<PointsBalanceNotifier>().setBalance(unlock.balance);
+        } else {
+          setState(() {
+            _lineFetchLoading = false;
+            _lineFetchError = unlock.error == 'insufficient_points'
+                ? context.trRead('pointsInsufficient')
+                : (unlock.error ?? context.trRead('expressionAnalysisFailed'));
+          });
+          return;
+        }
+      }
+
       final ai = context.read<AiChatRepository>();
       final result = await ai.generateDmExpressionAnalysis(widget.message.content, appUiLanguageCode: appLang);
       if (!mounted) return;
+      if (mid != null) {
+        try {
+          await points.saveLineAnalysisCache(
+            mid,
+            appLang,
+            explanation: result.explanation,
+            lineTranslation: result.lineTranslation,
+            vocabularyJson: result.vocabulary?.map((v) => v.toJson()).toList(),
+          );
+        } catch (_) {}
+      }
       setState(() {
         _fetchedLineAnalysis = result;
         _lineFetchLoading = false;
@@ -362,7 +367,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 10, 8, 16),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 10, AppSpacing.pageH, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

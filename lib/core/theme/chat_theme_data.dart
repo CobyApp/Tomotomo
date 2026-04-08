@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Chat-specific colors (bubbles, background) from user theme. Use via Theme.of(context).extension<ChatThemeData>().
+/// Chat-specific colors (bubbles, background) from user theme.
+/// Read with `Theme.of(context).extension` as type [ChatThemeData].
 class ChatThemeData extends ThemeExtension<ChatThemeData> {
   final Color? userBubble;
   final Color? botBubble;

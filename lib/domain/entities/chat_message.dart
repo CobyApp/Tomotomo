@@ -9,6 +9,8 @@ enum VocabularyMeaningPickMode {
 }
 
 class ChatMessage {
+  /// Supabase `chat_messages.id` when loaded or right after insert; null for optimistic local rows.
+  final String? serverId;
   final String content;
   final String role;
   final DateTime timestamp;
@@ -23,6 +25,7 @@ class ChatMessage {
   final String? senderId;
 
   ChatMessage({
+    this.serverId,
     required this.content,
     required this.role,
     required this.timestamp,
@@ -32,7 +35,30 @@ class ChatMessage {
     this.senderId,
   });
 
+  ChatMessage copyWith({
+    String? serverId,
+    String? content,
+    String? role,
+    DateTime? timestamp,
+    String? explanation,
+    String? lineTranslation,
+    List<Vocabulary>? vocabulary,
+    String? senderId,
+  }) {
+    return ChatMessage(
+      serverId: serverId ?? this.serverId,
+      content: content ?? this.content,
+      role: role ?? this.role,
+      timestamp: timestamp ?? this.timestamp,
+      explanation: explanation ?? this.explanation,
+      lineTranslation: lineTranslation ?? this.lineTranslation,
+      vocabulary: vocabulary ?? this.vocabulary,
+      senderId: senderId ?? this.senderId,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
+        if (serverId != null) 'serverId': serverId,
         'content': content,
         'role': role,
         'timestamp': timestamp.toIso8601String(),
@@ -43,6 +69,7 @@ class ChatMessage {
       };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
+        serverId: json['serverId'] as String?,
         content: json['content'] as String,
         role: json['role'] as String,
         timestamp: DateTime.parse(json['timestamp']),

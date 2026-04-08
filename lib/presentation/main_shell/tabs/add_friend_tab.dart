@@ -12,7 +12,9 @@ import '../../../domain/repositories/character_record_repository.dart';
 import '../../../domain/repositories/chat_repository.dart';
 import '../../../domain/repositories/friends_repository.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
+import '../../../domain/repositories/points_repository.dart';
 import '../../chat/chat_screen.dart';
+import '../../points/points_balance_notifier.dart';
 import '../../locale/l10n_context.dart';
 
 /// Third bottom-nav tab: search users (add friend) or characters (open AI chat).
@@ -84,6 +86,14 @@ class _AddFriendTabState extends State<AddFriendTab> with SingleTickerProviderSt
     }
     if (r.ownerId == user.id) return;
     try {
+      final spend = await context.read<PointsRepository>().spendPoints(10, 'public_character_download');
+      if (!spend.ok) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('pointsInsufficient'))));
+        return;
+      }
+      if (!mounted) return;
+      context.read<PointsBalanceNotifier>().setBalance(spend.balance);
       final repo = context.read<CharacterRecordRepository>();
       final copy = CharacterRecord.draft(
         ownerId: user.id,
@@ -114,6 +124,7 @@ class _AddFriendTabState extends State<AddFriendTab> with SingleTickerProviderSt
 
     return AppPageScaffold(
       title: context.tr('tabAddFriend'),
+      showPointsChip: true,
       bottom: TabBar(
         controller: _tabController,
         tabs: [

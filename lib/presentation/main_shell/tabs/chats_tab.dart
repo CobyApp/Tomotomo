@@ -336,6 +336,7 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
   Widget build(BuildContext context) {
     return AppPageScaffold(
       title: context.tr('chatsTitle'),
+      showPointsChip: true,
       body: _loading
           ? const AppLoadingBody()
           : _error != null

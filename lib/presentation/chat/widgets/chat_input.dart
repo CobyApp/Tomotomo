@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/ui/app_tokens.dart';
 import '../../../../domain/entities/character.dart';
 import '../../locale/l10n_context.dart';
 
@@ -27,7 +28,12 @@ class ChatInput extends StatelessWidget {
     final accent = character.primaryColor;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.composerPadH,
+        AppSpacing.composerPadTop,
+        AppSpacing.composerPadH,
+        AppSpacing.composerPadBottom,
+      ),
       decoration: BoxDecoration(
         color: scheme.surface,
         boxShadow: [

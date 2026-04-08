@@ -84,7 +84,7 @@ class AppGlassNavBar extends StatelessWidget {
       top: false,
       minimum: EdgeInsets.zero,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(18, 0, 18, bottomGap),
+        padding: EdgeInsets.fromLTRB(AppSpacing.navDockInset, 0, AppSpacing.navDockInset, bottomGap),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(32),
           child: _iosBlurCrashWorkaround

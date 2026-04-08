@@ -15,6 +15,9 @@ import 'presentation/auth/auth_state.dart';
 import 'presentation/locale/locale_notifier.dart';
 import 'presentation/theme/theme_notifier.dart';
 import 'presentation/notebook/word_book_refresh_notifier.dart';
+import 'presentation/points/points_balance_notifier.dart';
+import 'domain/repositories/points_repository.dart';
+import 'core/ui/app_scaffold_messenger.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -30,6 +33,14 @@ class App extends StatelessWidget {
         Provider<ChatRepository>.value(value: chatRepository),
         Provider<AiChatRepository>.value(value: aiChatRepository),
         Provider<ProfileRepository>.value(value: profileRepository),
+        Provider<PointsRepository>.value(value: pointsRepository),
+        ChangeNotifierProvider(
+          create: (c) {
+            final n = PointsBalanceNotifier(c.read<ProfileRepository>());
+            pointsBalanceNotifier = n;
+            return n;
+          },
+        ),
         ChangeNotifierProvider(create: (c) => LocaleNotifier(c.read<ProfileRepository>())),
         Provider<CharacterRecordRepository>.value(value: characterRecordRepository),
         Provider<SavedExpressionRepository>.value(value: savedExpressionRepository),
@@ -40,6 +51,7 @@ class App extends StatelessWidget {
       child: Builder(
         builder: (context) {
           return MaterialApp(
+            scaffoldMessengerKey: appScaffoldMessengerKey,
             title: 'トモトモ',
             theme: context.watch<ThemeNotifier>().theme,
             locale: context.watch<LocaleNotifier>().locale,

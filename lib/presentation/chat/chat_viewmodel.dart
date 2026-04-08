@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/di/injection.dart';
 import '../../core/supabase/app_supabase.dart';
+import '../../core/ui/app_scaffold_messenger.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/chat_repository.dart';
@@ -21,6 +23,7 @@ class ChatViewModel extends ChangeNotifier {
   final Character character;
   final ChatRepository chatRepository;
   final AiChatRepository aiChatRepository;
+  final String insufficientPointsMessage;
   final TextEditingController messageController = TextEditingController();
 
   List<ChatMessage> _messages = [];
@@ -43,6 +46,7 @@ class ChatViewModel extends ChangeNotifier {
     required this.character,
     required this.chatRepository,
     required this.aiChatRepository,
+    required this.insufficientPointsMessage,
   }) {
     _loadMessages();
     aiChatRepository.initializeForCharacter(character);
@@ -195,6 +199,22 @@ class ChatViewModel extends ChangeNotifier {
     _suppressMessageReloadFromServer = false;
 
     final uid = AppSupabase.auth.currentUser?.id;
+    if (!character.isDirectMessage && uid != null) {
+      final notifier = pointsBalanceNotifier;
+      if (notifier != null) {
+        if (notifier.balance == null) {
+          await notifier.refreshFromProfile(uid);
+        }
+        final bal = notifier.balance;
+        if (bal != null && bal < 1) {
+          appScaffoldMessengerKey.currentState?.showSnackBar(
+            SnackBar(content: Text(insufficientPointsMessage)),
+          );
+          return;
+        }
+      }
+    }
+
     final userChatMessage = ChatMessage(
       content: userMessage,
       role: 'user',
@@ -203,7 +223,11 @@ class ChatViewModel extends ChangeNotifier {
     );
 
     _messages.add(userChatMessage);
-    await chatRepository.saveMessage(character, userChatMessage);
+    final userRowId = await chatRepository.saveMessage(character, userChatMessage);
+    if (userRowId != null) {
+      final i = _messages.length - 1;
+      _messages[i] = _messages[i].copyWith(serverId: userRowId);
+    }
     await _ensureRealtimeSubscription();
     notifyListeners();
 
@@ -221,8 +245,18 @@ class ChatViewModel extends ChangeNotifier {
     try {
       final aiMessage = await aiChatRepository.generateResponse(userMessage);
       _messages.add(aiMessage);
-      await chatRepository.saveMessage(character, aiMessage);
+      final aiRowId = await chatRepository.saveMessage(character, aiMessage);
+      if (aiRowId != null) {
+        final i = _messages.length - 1;
+        _messages[i] = _messages[i].copyWith(serverId: aiRowId);
+      }
       await _ensureRealtimeSubscription();
+      final spend = await pointsRepository.spendPoints(1, 'character_chat');
+      if (spend.ok) {
+        pointsBalanceNotifier?.setBalance(spend.balance);
+      } else {
+        debugPrint('Point spend failed after AI reply: ${spend.error}');
+      }
     } catch (e) {
       debugPrint('AI chat failed: $e');
       final errorBubble = ChatMessage(

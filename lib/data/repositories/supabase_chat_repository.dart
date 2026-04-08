@@ -371,7 +371,10 @@ class SupabaseChatRepository implements ChatRepository {
       vocabulary = list.isEmpty ? null : list;
     }
     final sid = row['sender_id'];
+    final rawId = row['id'];
+    final mid = rawId == null ? null : (rawId is String ? rawId : rawId.toString());
     return ChatMessage(
+      serverId: mid,
       content: row['content'] as String,
       role: row['role'] as String,
       timestamp: DateTime.parse(row['created_at'] as String),
@@ -396,15 +399,23 @@ class SupabaseChatRepository implements ChatRepository {
   }
 
   @override
-  Future<void> saveMessage(Character character, ChatMessage message) async {
+  Future<String?> saveMessage(Character character, ChatMessage message) async {
     final user = AppSupabase.auth.currentUser;
-    if (user == null) return;
+    if (user == null) return null;
     final roomId = character.isDirectMessage
         ? character.directMessageRoomId
         : await _ensureRoomId(character);
-    if (roomId == null || roomId.isEmpty) return;
+    if (roomId == null || roomId.isEmpty) return null;
     final sender = character.isDirectMessage ? (message.senderId ?? user.id) : null;
-    await AppSupabase.client.from('chat_messages').insert(_messageToRow(roomId, message, senderIdForDm: sender));
+    final row = await AppSupabase.client
+        .from('chat_messages')
+        .insert(_messageToRow(roomId, message, senderIdForDm: sender))
+        .select('id')
+        .maybeSingle();
+    if (row == null) return null;
+    final m = Map<String, dynamic>.from(row as Map);
+    final id = m['id'];
+    return id == null ? null : (id is String ? id : id.toString());
   }
 
   @override

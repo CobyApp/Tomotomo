@@ -27,6 +27,20 @@ class AppTheme {
     return Color.alphaBlend(scheme.tertiary.withValues(alpha: 0.07), scheme.surface);
   }
 
+  /// Full-screen shell gradient behind [Scaffold] (main shell, [AppPageScaffold] root).
+  static BoxDecoration shellBackdropDecoration(ColorScheme scheme) {
+    return BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          shellGradientTop(scheme),
+          shellGradientBottom(scheme),
+        ],
+      ),
+    );
+  }
+
   /// Full light theme; [seedColor] drives ColorScheme. Chat bubbles/bg from [chatExtension].
   static ThemeData buildLightTheme({
     Color? seedColor,

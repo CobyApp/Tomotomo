@@ -281,6 +281,7 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
   Widget build(BuildContext context) {
     return AppPageScaffold(
       title: context.tr('tabFriends'),
+      showPointsChip: true,
       actions: [
         IconButton(
           icon: const Icon(Icons.person_search_rounded),

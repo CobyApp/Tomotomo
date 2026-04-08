@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/chat_theme_data.dart';
 import '../../core/ui/ui.dart';
+import '../../core/ui/points_toolbar_chip.dart';
 import '../../domain/entities/block_relation.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/repositories/chat_repository.dart';
@@ -46,6 +47,7 @@ class _ChatScreenState extends State<ChatScreen>
       character: widget.character,
       chatRepository: widget.chatRepository,
       aiChatRepository: widget.aiChatRepository,
+      insufficientPointsMessage: context.trRead('pointsInsufficient'),
     );
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),
@@ -323,6 +325,7 @@ class _ChatScreenContent extends StatelessWidget {
           ],
         ),
         actions: [
+          const PointsToolbarChip(),
           if (!character.isDirectMessage)
             IconButton(
               icon: Icon(Icons.refresh_rounded, color: scheme.primary),

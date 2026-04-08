@@ -10,7 +10,9 @@ import '../../../core/ui/ui.dart';
 import '../../../data/celebrity_persona/celebrity_persona_suggester.dart';
 import '../../../domain/entities/character_record.dart';
 import '../../../domain/repositories/character_record_repository.dart';
+import '../../../domain/repositories/points_repository.dart';
 import '../locale/l10n_context.dart';
+import '../points/points_balance_notifier.dart';
 
 /// Shared form for [CreateCharacterScreen] and [EditCharacterScreen].
 class CustomCharacterEditorBody extends StatefulWidget {
@@ -79,6 +81,21 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     });
   }
 
+  Future<bool> _spendPointsForXProfileImport() async {
+    final user = AppSupabase.auth.currentUser;
+    if (user == null) {
+      if (mounted) setState(() => _error = context.tr('loginRequired'));
+      return false;
+    }
+    final spend = await context.read<PointsRepository>().spendPoints(5, 'x_profile_import');
+    if (!spend.ok) {
+      if (mounted) setState(() => _error = context.tr('pointsInsufficient'));
+      return false;
+    }
+    if (mounted) context.read<PointsBalanceNotifier>().setBalance(spend.balance);
+    return true;
+  }
+
   Future<void> _importPersonaFromXUrl() async {
     final url = _xUrlController.text.trim();
     if (url.isEmpty) {
@@ -91,6 +108,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       _importUrlBusy = true;
     });
     try {
+      final okSpend = await _spendPointsForXProfileImport();
+      if (!okSpend) return;
+      if (!mounted) return;
       final suggester = context.read<CelebrityPersonaSuggester>();
       final s = await suggester.suggestFromXProfileUrl(url);
       if (!mounted) return;
@@ -116,6 +136,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       _importPasteBusy = true;
     });
     try {
+      final okSpend = await _spendPointsForXProfileImport();
+      if (!okSpend) return;
+      if (!mounted) return;
       final suggester = context.read<CelebrityPersonaSuggester>();
       final s = await suggester.suggestFromProfileText(raw);
       if (!mounted) return;
@@ -157,6 +180,17 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     try {
       final repo = context.read<CharacterRecordRepository>();
       if (existing == null) {
+        final spend = await context.read<PointsRepository>().spendPoints(10, 'custom_character_create');
+        if (!spend.ok) {
+          if (!mounted) return;
+          setState(() {
+            _error = context.tr('pointsInsufficient');
+            _saving = false;
+          });
+          return;
+        }
+        if (!mounted) return;
+        context.read<PointsBalanceNotifier>().setBalance(spend.balance);
         final record = CharacterRecord.draft(
           ownerId: user.id,
           name: name,

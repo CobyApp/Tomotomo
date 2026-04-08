@@ -308,6 +308,7 @@ class WordBookScreenState extends State<WordBookScreen>
   Widget build(BuildContext context) {
     return AppPageScaffold(
       title: context.tr('notebookTitle'),
+      showPointsChip: true,
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh_rounded),

@@ -9,6 +9,7 @@ import '../../domain/repositories/saved_expression_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/ui/ui.dart';
 import '../../domain/repositories/profile_repository.dart';
+import '../points/points_balance_notifier.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../theme/theme_notifier.dart';
@@ -69,6 +70,8 @@ class _MainShellState extends State<MainShell> {
         await repo.createProfile(user.id, email: user.email);
       }
       if (!mounted) return;
+      await context.read<PointsBalanceNotifier>().refreshFromProfile(user.id);
+      if (!mounted) return;
       context.read<ThemeNotifier>().load(user.id);
       context.read<LocaleNotifier>().loadFromProfile(user.id);
     } catch (_) {}
@@ -89,16 +92,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.shellGradientTop(scheme),
-            AppTheme.shellGradientBottom(scheme),
-          ],
-        ),
-      ),
+      decoration: AppTheme.shellBackdropDecoration(scheme),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: IndexedStack(

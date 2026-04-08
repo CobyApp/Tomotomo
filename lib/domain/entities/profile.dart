@@ -7,6 +7,8 @@ class Profile {
   final String? statusMessage;
   final String appLanguage;
   final String learningLanguage;
+  /// In-app currency for AI / downloads (server-owned; do not trust client writes).
+  final int pointBalance;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -18,6 +20,7 @@ class Profile {
     this.statusMessage,
     this.appLanguage = 'ko',
     this.learningLanguage = 'ja',
+    this.pointBalance = 500,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -31,6 +34,7 @@ class Profile {
       statusMessage: json['status_message'] as String?,
       appLanguage: json['app_language'] as String? ?? 'ko',
       learningLanguage: json['learning_language'] as String? ?? 'ja',
+      pointBalance: (json['point_balance'] as num?)?.toInt() ?? 500,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -45,6 +49,7 @@ class Profile {
       'status_message': statusMessage,
       'app_language': appLanguage,
       'learning_language': learningLanguage,
+      'point_balance': pointBalance,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -56,6 +61,7 @@ class Profile {
     String? statusMessage,
     String? appLanguage,
     String? learningLanguage,
+    int? pointBalance,
   }) {
     return Profile(
       id: id,
@@ -65,6 +71,7 @@ class Profile {
       statusMessage: statusMessage ?? this.statusMessage,
       appLanguage: appLanguage ?? this.appLanguage,
       learningLanguage: learningLanguage ?? this.learningLanguage,
+      pointBalance: pointBalance ?? this.pointBalance,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );

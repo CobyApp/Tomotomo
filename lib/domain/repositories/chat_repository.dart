@@ -6,7 +6,8 @@ import '../entities/chat_room_summary.dart';
 /// Implementations can use local storage, remote API, etc.
 abstract class ChatRepository {
   Future<List<ChatMessage>> getMessages(Character character);
-  Future<void> saveMessage(Character character, ChatMessage message);
+  /// Returns `chat_messages.id` after insert, or null if nothing was written.
+  Future<String?> saveMessage(Character character, ChatMessage message);
   Future<void> clearMessages(Character character);
 
   /// Recent chat rooms for the current user (newest first). Empty if not signed in.
