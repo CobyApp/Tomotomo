@@ -1,6 +1,7 @@
 import '../../../core/language/dm_utterance_script.dart';
 
-String _learningNoteLanguageRule(String appUiLanguageCode) {
+/// Rule text embedded in LLM prompts for [learning_note] language (matches app UI locale).
+String learningNoteLanguageRuleForUi(String appUiLanguageCode) {
   final lang = appUiLanguageCode.toLowerCase();
   if (lang.startsWith('ja')) {
     return 'Write "learning_note" entirely in natural Japanese (no Korean).';
@@ -10,7 +11,7 @@ String _learningNoteLanguageRule(String appUiLanguageCode) {
 
 /// One-shot analysis: **Japanese(-heavy) peer message** → Japanese vocabulary with Korean glosses.
 String buildDmJapaneseUtteranceAnalysisPrompt(String utterance, String appUiLanguageCode) {
-  final noteRule = _learningNoteLanguageRule(appUiLanguageCode);
+  final noteRule = learningNoteLanguageRuleForUi(appUiLanguageCode);
   return '''
 You are a language coach for Korean learners of Japanese. The user is reading a **real chat line** (human DM or AI tutor).
 
@@ -42,7 +43,7 @@ $utterance
 
 /// One-shot analysis: **Korean(-heavy) peer message** → Korean vocabulary with Japanese glosses.
 String buildDmKoreanUtteranceAnalysisPrompt(String utterance, String appUiLanguageCode) {
-  final noteRule = _learningNoteLanguageRule(appUiLanguageCode);
+  final noteRule = learningNoteLanguageRuleForUi(appUiLanguageCode);
   return '''
 You are a language coach for Japanese learners of Korean. The user is reading a **real chat line** (human DM or AI tutor).
 

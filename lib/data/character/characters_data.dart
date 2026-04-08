@@ -136,6 +136,7 @@ final List<Character> characters = [
     },
     imageUrl: '$_imageBasePath/yuna$_imageExtension',
     imagePath: '$_imageBasePath/yuna$_imageExtension',
+    omitSecondaryDisplayName: true,
   ),
   Character(
     id: 'junho',
@@ -169,5 +170,6 @@ final List<Character> characters = [
     imagePath: '$_imageBasePath/junho$_imageExtension',
     tutorLocale: 'ko',
     koreanNationalPersona: true,
+    omitSecondaryDisplayName: true,
   ),
 ];

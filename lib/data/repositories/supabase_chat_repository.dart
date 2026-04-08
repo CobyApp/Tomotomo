@@ -379,6 +379,7 @@ class SupabaseChatRepository implements ChatRepository {
       role: row['role'] as String,
       timestamp: DateTime.parse(row['created_at'] as String),
       explanation: row['explanation'] as String?,
+      lineTranslation: row['line_translation'] as String?,
       vocabulary: vocabulary,
       senderId: sid == null ? null : (sid is String ? sid : sid.toString()),
     );
@@ -390,6 +391,7 @@ class SupabaseChatRepository implements ChatRepository {
       'role': m.role,
       'content': m.content,
       'explanation': m.explanation,
+      'line_translation': m.lineTranslation,
       'vocabulary': m.vocabulary?.map((v) => v.toJson()).toList(),
     };
     if (senderIdForDm != null) {

@@ -6,12 +6,17 @@ import '../../../domain/entities/character.dart';
 String buildKoreanCharacterJapaneseNotesPrompt(
   Character character,
   String traits,
-  String interests,
-) {
+  String interests, {
+  required String noteRule,
+}) {
   return '''
 【対称ルール】アプリには2つのチューターモードがある。このプロンプトは「韓国語チューター」(吹き出し=韓国語 / 語彙の意味=日本語)専用。「日本語チューター」(吹き出し=日本語 / 語彙の意味=韓国語)と**真逆**なので、JSONの言語を入れ替えないこと。
 
 【역할】韓国語で話す韓国人の友人・同僚。ユーザーは主に日本語話者の **韓国語学習者** とする。
+
+【全文翻訳・学習メモ（アプリが同じ JSON で表示）】
+• "full_translation" → "content" の韓国語（ハングル）**全文**を、自然な**日本語一文**に訳す（敬体・タメ口は content に合わせる）。必須。
+• "learning_note" → 文法・ニュアンス・使い分けなど 1〜3 短句。$noteRule
 
 【対話 — エコー禁止（超重要）】
 - "content" は **キャラクター自身の新しい発話** だけ。ユーザーが送った文を **引用・繰り返し・ほぼ同じ言い回しの言い換え** にしてはならない。
@@ -29,6 +34,7 @@ String buildKoreanCharacterJapaneseNotesPrompt(
 
 【絶対ルール — JSON フィールドごとの言語】
 • "content" → 韓国語（ハングル）のみ。日本語文・英文は禁止。
+• "full_translation" → **日本語のみ**（ハングルを混ぜない）。
 • vocabulary の **意味** → **100% 日本語**。キーは **"meaning_ja"** を優先して使う（"meaning" に日本語だけを入れてもよいが、韓国語の意味を "meaning" に書くのは禁止）。
 • vocabulary の **word** → **必ず韓国語（ハングル）**。
 • "reading" → 任意。日本語話者向けに **カタカナ** で発音近似（例: アンニョンハセヨ）。空でも可。
@@ -46,15 +52,15 @@ String buildKoreanCharacterJapaneseNotesPrompt(
 • 各要素は必ず **word**（ハングル）, **reading**（任意・カタカナ）, **meaning_ja**（日本語のみ）の3キー形式。
 
 【アプリがそのまま解釈する完成形（キー名はこの通り・1行で出力してよい）】
-{"content":"안녕, 반가워!","vocabulary":[{"word":"반가워","reading":"パンガウォ","meaning_ja":"会えてうれしい気持ちのあいさつ。初対面でよく使う。"},{"word":"안녕","reading":"アンニョン","meaning_ja":"軽いあいさつ。友だち同士の「やあ」に近い。"}]}
+{"content":"안녕, 반가워!","full_translation":"やあ、はじめまして！","learning_note":"「반가워」は会えてうれしいという軽いあいさつ。友だち同士でよく使う。","vocabulary":[{"word":"반가워","reading":"パンガウォ","meaning_ja":"会えてうれしい気持ちのあいさつ。初対面でよく使う。"},{"word":"안녕","reading":"アンニョン","meaning_ja":"軽いあいさつ。友だち同士の「やあ」に近い。"}]}
 
 【JSON 構文 — 破壊するとアプリが表示できない】
-• ルートに置くキーは **content** と **vocabulary** だけ。reading / meaning_ja / word をルートに置かない（必ず vocabulary の配列の中へ）。
+• ルートに置くキーは **content**, **full_translation**, **learning_note**, **vocabulary** の 4 つだけ。reading / meaning_ja / word をルートに置かない（必ず vocabulary の配列の中へ）。
 • 文字列の中に `"` を含める場合は必ず `\\"` とエスケープ。文字列を閉じた後に、引用符なしで説明文（例: 中文や日本語の羅列）を続けない。
 • 出力は `{` で始まり `}` で終わる **1個の JSON** のみ。前後に説明文や ``` を付けない。
 
 【出力】
-JSON オブジェクトのみ。キー名: content, vocabulary のみ（explanation キーは出力しない）。
+JSON オブジェクトのみ。キー名: content, full_translation, learning_note, vocabulary のみ。
 
 名前（韓国語行）: ${character.name}. 日本語表記: ${character.nameJp} (${character.nameKanji}). ${character.occupation}. レベル表示: ${character.level}.
 

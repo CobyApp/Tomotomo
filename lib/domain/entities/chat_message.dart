@@ -16,7 +16,7 @@ class ChatMessage {
   final DateTime timestamp;
   final String? explanation;
 
-  /// Full-line translation for learners (e.g. Japanese line → Korean). Not persisted in DB yet.
+  /// Full-line translation for learners (e.g. Japanese line → Korean). Persisted as `line_translation` for assistant rows when available.
   final String? lineTranslation;
 
   final List<Vocabulary>? vocabulary;

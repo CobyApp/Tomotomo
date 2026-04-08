@@ -47,9 +47,10 @@ class ChatViewModel extends ChangeNotifier {
     required this.chatRepository,
     required this.aiChatRepository,
     required this.insufficientPointsMessage,
+    required String appUiLanguageCode,
   }) {
     _loadMessages();
-    aiChatRepository.initializeForCharacter(character);
+    aiChatRepository.initializeForCharacter(character, appUiLanguageCode: appUiLanguageCode);
   }
 
   List<ChatMessage> get messages => _messages;

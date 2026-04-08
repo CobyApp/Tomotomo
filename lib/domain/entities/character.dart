@@ -60,6 +60,9 @@ class Character {
   /// Korean-national friend: [ChatMessage.content] in Korean; vocabulary highlights **Korean** phrases (gloss in Japanese).
   final bool koreanNationalPersona;
 
+  /// When true, [displayNameSecondary] is always empty (packaged default tutors).
+  final bool omitSecondaryDisplayName;
+
   const Character({
     required this.id,
     required this.name,
@@ -90,6 +93,7 @@ class Character {
     this.directMessageRoomId,
     this.tutorLocale = 'ko',
     this.koreanNationalPersona = false,
+    this.omitSecondaryDisplayName = false,
   });
 
   String get displayImageUrl => imageUrl;
@@ -133,6 +137,7 @@ class Character {
 
   /// Smaller bilingual subtitle; empty when there is no second script or it matches [displayNamePrimary].
   String get displayNameSecondary {
+    if (omitSecondaryDisplayName) return '';
     if (isDirectMessage) {
       final s = nameJp.trim();
       if (s.isEmpty || s == name) return '';
@@ -214,6 +219,7 @@ class Character {
       directMessageRoomId: roomId,
       tutorLocale: 'ko',
       koreanNationalPersona: false,
+      omitSecondaryDisplayName: false,
     );
   }
 
@@ -284,6 +290,7 @@ class Character {
       directMessageRoomId: null,
       tutorLocale: 'ko',
       koreanNationalPersona: !isJaPersona,
+      omitSecondaryDisplayName: false,
     );
   }
 
@@ -326,6 +333,7 @@ class Character {
       directMessageRoomId: json['directMessageRoomId'] as String?,
       tutorLocale: json['tutorLocale'] as String? ?? 'ko',
       koreanNationalPersona: json['koreanNationalPersona'] as bool? ?? false,
+      omitSecondaryDisplayName: json['omitSecondaryDisplayName'] as bool? ?? false,
     );
   }
 
@@ -360,6 +368,7 @@ class Character {
       'directMessageRoomId': directMessageRoomId,
       'tutorLocale': tutorLocale,
       'koreanNationalPersona': koreanNationalPersona,
+      'omitSecondaryDisplayName': omitSecondaryDisplayName,
     };
   }
 }

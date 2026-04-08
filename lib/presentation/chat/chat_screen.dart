@@ -11,6 +11,7 @@ import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
 import '../../domain/repositories/friends_repository.dart';
 import '../locale/l10n_context.dart';
+import '../locale/locale_notifier.dart';
 import 'chat_message_report.dart';
 import 'chat_viewmodel.dart';
 import 'widgets/chat_list.dart';
@@ -49,6 +50,7 @@ class _ChatScreenState extends State<ChatScreen>
       chatRepository: widget.chatRepository,
       aiChatRepository: widget.aiChatRepository,
       insufficientPointsMessage: context.trRead('pointsInsufficient'),
+      appUiLanguageCode: context.read<LocaleNotifier>().languageCode,
     );
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),

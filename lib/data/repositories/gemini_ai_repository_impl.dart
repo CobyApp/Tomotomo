@@ -36,6 +36,7 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
 
   Character? _currentCharacter;
   GenerativeModel? _chatModel;
+  String _appUiLanguageCode = 'ko';
 
   /// Prior turns: alternating user / model [Content] (JSON assistant lines).
   final List<Content> _history = [];
@@ -77,8 +78,8 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
       final v = int.tryParse(p);
       if (v != null && v > 0) return v;
     }
-    // Short JSON replies: smaller cap → model stops sooner → feels faster.
-    return 512;
+      // Tutor JSON includes full_translation + learning_note + vocabulary.
+      return 768;
   }
 
   int get _maxChatHistoryContents {
@@ -109,7 +110,9 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
     return GenerativeModel(
       model: _modelName,
       apiKey: _apiKey,
-      systemInstruction: Content.system(buildCharacterSystemPrompt(character)),
+      systemInstruction: Content.system(
+        buildCharacterSystemPrompt(character, appUiLanguageCode: _appUiLanguageCode),
+      ),
       generationConfig: _jsonGenerationConfig,
     );
   }
@@ -156,16 +159,21 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
   }
 
   @override
-  void initializeForCharacter(Character character) {
-    if (_currentCharacter?.id == character.id) return;
-
+  void initializeForCharacter(Character character, {String appUiLanguageCode = 'ko'}) {
+    final lang = appUiLanguageCode.trim().isEmpty ? 'ko' : appUiLanguageCode;
+    if (character.isDirectMessage) {
+      _currentCharacter = null;
+      _chatModel = null;
+      _history.clear();
+      return;
+    }
+    if (_currentCharacter?.id == character.id && _chatModel != null && _appUiLanguageCode == lang) {
+      return;
+    }
+    _appUiLanguageCode = lang;
     _currentCharacter = character;
     _chatModel = null;
     _history.clear();
-    if (character.isDirectMessage) {
-      return;
-    }
-
     _chatModel = _buildChatModel(character);
   }
 
@@ -254,6 +262,6 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
     _chatModel = null;
     _history.clear();
     _currentCharacter = null;
-    initializeForCharacter(currentCharacter);
+    initializeForCharacter(currentCharacter, appUiLanguageCode: _appUiLanguageCode);
   }
 }

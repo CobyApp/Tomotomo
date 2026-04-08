@@ -15,6 +15,15 @@ import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../notebook/word_book_refresh_notifier.dart';
 
+/// List physics: iOS/macOS bounce + overscroll hands off to [DraggableScrollableSheet]; Android clamps.
+ScrollPhysics _chatExpressionSheetListPhysics(BuildContext context) {
+  final p = Theme.of(context).platform;
+  final iosLike = p == TargetPlatform.iOS || p == TargetPlatform.macOS;
+  return AlwaysScrollableScrollPhysics(
+    parent: iosLike ? const BouncingScrollPhysics() : const ClampingScrollPhysics(),
+  );
+}
+
 /// Bottom sheet: message, per-word [+] saves **that word only** (headword + gloss) to the word book.
 Future<void> showChatExpressionSheet(
   BuildContext context, {
@@ -34,60 +43,69 @@ Future<void> showChatExpressionSheet(
     isScrollControlled: true,
     useSafeArea: false,
     enableDrag: false,
+    barrierColor: Colors.black.withValues(alpha: 0.42),
     builder: (sheetContext) {
       final scheme = Theme.of(sheetContext).colorScheme;
       final mq = MediaQuery.of(sheetContext);
       final h = mq.size.height;
       final w = mq.size.width;
+      // Keep sheet geometry below status bar / notch; list still pads bottom for home indicator.
+      final topInset = mq.viewPadding.top;
 
-      return SizedBox(
-        height: h,
-        width: w,
-        child: DraggableScrollableSheet(
-          initialChildSize: 0.92,
-          minChildSize: 0.22,
-          maxChildSize: 1.0,
-          expand: false,
-          snap: true,
-          snapSizes: const <double>[0.22, 0.92],
-          builder: (ctx, scrollController) {
-            return Material(
-              color: scheme.surface,
-              elevation: 12,
-              shadowColor: Colors.black26,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 8),
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: scheme.outlineVariant.withValues(alpha: 0.65),
-                        borderRadius: BorderRadius.circular(2.5),
+      return Padding(
+        padding: EdgeInsets.only(top: topInset),
+        child: SizedBox(
+          height: h - topInset,
+          width: w,
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.9,
+            minChildSize: 0.32,
+            maxChildSize: 1.0,
+            expand: false,
+            snap: true,
+            snapSizes: const <double>[0.32, 0.58, 0.9, 1.0],
+            snapAnimationDuration: const Duration(milliseconds: 280),
+            builder: (ctx, scrollController) {
+              return Material(
+                color: scheme.surface,
+                elevation: 10,
+                shadowColor: Colors.black26,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Taller grab area (iOS HIG–friendly) without huge visual gap.
+                    SizedBox(
+                      height: 36,
+                      child: Center(
+                        child: Container(
+                          width: 40,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: scheme.outlineVariant.withValues(alpha: 0.65),
+                            borderRadius: BorderRadius.circular(2.5),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: _ExpressionSheetBody(
-                      scrollController: scrollController,
-                      message: message,
-                      character: character,
-                      chatRoomId: chatRoomId,
-                      messenger: messenger,
-                      dmScript: dmScript,
+                    Expanded(
+                      child: _ExpressionSheetBody(
+                        scrollController: scrollController,
+                        message: message,
+                        character: character,
+                        chatRoomId: chatRoomId,
+                        messenger: messenger,
+                        dmScript: dmScript,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       );
     },
@@ -137,13 +155,23 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     return true;
   }
 
+  /// Tutor replies already include [ChatMessage.lineTranslation] + note/vocab from one JSON — no extra API call.
+  static bool _assistantHasBundledAiPayload(ChatMessage m) {
+    if (m.role != 'assistant') return false;
+    final t = m.lineTranslation?.trim() ?? '';
+    if (t.isEmpty) return false;
+    final hasV = m.vocabulary != null && m.vocabulary!.isNotEmpty;
+    final hasN = m.explanation?.trim().isNotEmpty ?? false;
+    return hasV || hasN;
+  }
+
   @override
   void initState() {
     super.initState();
-    if (_shouldFetchLineAnalysis()) {
-      _lineFetchLoading = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _loadLineAnalysis());
-    }
+    if (!_shouldFetchLineAnalysis()) return;
+    if (_assistantHasBundledAiPayload(widget.message)) return;
+    _lineFetchLoading = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadLineAnalysis());
   }
 
   List<Vocabulary>? _vocabularyFromCacheJson(List<Map<String, dynamic>> raw) {
@@ -159,6 +187,13 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
 
   Future<void> _loadLineAnalysis() async {
     if (!mounted || !_shouldFetchLineAnalysis()) return;
+    if (_assistantHasBundledAiPayload(widget.message)) {
+      setState(() {
+        _lineFetchLoading = false;
+        _lineFetchError = null;
+      });
+      return;
+    }
     setState(() {
       _lineFetchLoading = true;
       _lineFetchError = null;
@@ -377,8 +412,8 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final bottomPad = MediaQuery.paddingOf(sheetContext).bottom;
     return ListView(
       controller: widget.scrollController,
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(AppSpacing.pageH, 6, AppSpacing.pageH, 28 + bottomPad),
+      physics: _chatExpressionSheetListPhysics(sheetContext),
+      padding: EdgeInsets.fromLTRB(AppSpacing.pageH, 4, AppSpacing.pageH, 28 + bottomPad),
       children: [
         DecoratedBox(
           decoration: BoxDecoration(
