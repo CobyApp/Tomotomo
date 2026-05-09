@@ -35,25 +35,36 @@ $$;
 -- ---------------------------------------------------------------------------
 -- DM: first time user opens learning sheet for a message → 1 point (idempotent per message)
 -- ---------------------------------------------------------------------------
-create table public.dm_expression_unlocks (
+create table if not exists public.dm_expression_unlocks (
   user_id uuid not null references public.profiles(id) on delete cascade,
   message_id uuid not null references public.chat_messages(id) on delete cascade,
   created_at timestamptz not null default now(),
   primary key (user_id, message_id)
 );
 
-create index dm_expression_unlocks_message_id_idx on public.dm_expression_unlocks(message_id);
+create index if not exists dm_expression_unlocks_message_id_idx on public.dm_expression_unlocks(message_id);
 
 alter table public.dm_expression_unlocks enable row level security;
 
-create policy "dm_expression_unlocks_select_own"
-  on public.dm_expression_unlocks for select
-  using (auth.uid() = user_id);
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'dm_expression_unlocks'
+      and policyname = 'dm_expression_unlocks_select_own'
+  ) then
+    create policy "dm_expression_unlocks_select_own"
+      on public.dm_expression_unlocks for select
+      using (auth.uid() = user_id);
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- Cached Gemini line analysis (per viewer × message × app UI language)
 -- ---------------------------------------------------------------------------
-create table public.chat_message_line_analysis_cache (
+create table if not exists public.chat_message_line_analysis_cache (
   user_id uuid not null references public.profiles(id) on delete cascade,
   message_id uuid not null references public.chat_messages(id) on delete cascade,
   app_lang text not null check (app_lang in ('ko', 'ja')),
@@ -64,13 +75,24 @@ create table public.chat_message_line_analysis_cache (
   primary key (user_id, message_id, app_lang)
 );
 
-create index chat_message_line_analysis_cache_message_idx on public.chat_message_line_analysis_cache(message_id);
+create index if not exists chat_message_line_analysis_cache_message_idx on public.chat_message_line_analysis_cache(message_id);
 
 alter table public.chat_message_line_analysis_cache enable row level security;
 
-create policy "line_analysis_cache_select_own"
-  on public.chat_message_line_analysis_cache for select
-  using (auth.uid() = user_id);
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'chat_message_line_analysis_cache'
+      and policyname = 'line_analysis_cache_select_own'
+  ) then
+    create policy "line_analysis_cache_select_own"
+      on public.chat_message_line_analysis_cache for select
+      using (auth.uid() = user_id);
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- spend_points: returns { ok, balance, error }

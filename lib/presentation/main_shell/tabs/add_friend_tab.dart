@@ -15,6 +15,7 @@ import '../../../domain/repositories/ai_chat_repository.dart';
 import '../../../domain/repositories/points_repository.dart';
 import '../../chat/chat_screen.dart';
 import '../../points/points_balance_notifier.dart';
+import '../../points/points_topup_prompt.dart';
 import '../../locale/l10n_context.dart';
 
 /// Third bottom-nav tab: search users (add friend) or characters (open AI chat).
@@ -78,6 +79,7 @@ class _AddFriendTabState extends State<AddFriendTab> with SingleTickerProviderSt
     if (!spend.ok) {
       if (!mounted) return null;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('pointsInsufficient'))));
+      await showPointsTopUpPrompt(context);
       return null;
     }
     if (!mounted) return null;
@@ -161,6 +163,7 @@ class _AddFriendTabState extends State<AddFriendTab> with SingleTickerProviderSt
       if (!spend.ok) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('pointsInsufficient'))));
+        await showPointsTopUpPrompt(context);
         return;
       }
       if (!mounted) return;

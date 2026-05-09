@@ -17,6 +17,7 @@ import '../../chat/chat_screen.dart';
 import '../../character_form/create_character_screen.dart';
 import '../../character_form/edit_character_screen.dart';
 import '../../locale/l10n_context.dart';
+import '../../points/points_topup_prompt.dart';
 import '../../friends/builtin_intro_l10n.dart';
 import '../../tutor_studio/public_character_sheet.dart';
 
@@ -165,6 +166,7 @@ class CharactersTabState extends State<CharactersTab>
     if (!spend.ok) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('pointsInsufficient'))));
+        await showPointsTopUpPrompt(context);
       }
       return null;
     }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/ui/ui.dart';
 import '../locale/l10n_context.dart';
+import 'points_topup_screen.dart';
 
 /// Explains when points are spent (opened from the balance chip or Settings).
 class PointsUsageScreen extends StatelessWidget {
@@ -70,6 +71,16 @@ class PointsUsageScreen extends StatelessWidget {
                     color: scheme.onSurfaceVariant,
                   ),
             ),
+          ),
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(builder: (_) => const PointsTopUpScreen()),
+              );
+            },
+            icon: const Icon(Icons.add_card_rounded),
+            label: Text(context.tr('pointsTopupBuy')),
           ),
         ],
       ),

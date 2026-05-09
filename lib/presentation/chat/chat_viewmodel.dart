@@ -24,6 +24,7 @@ class ChatViewModel extends ChangeNotifier {
   final ChatRepository chatRepository;
   final AiChatRepository aiChatRepository;
   final String insufficientPointsMessage;
+  final VoidCallback? onInsufficientPoints;
   final TextEditingController messageController = TextEditingController();
 
   List<ChatMessage> _messages = [];
@@ -47,6 +48,7 @@ class ChatViewModel extends ChangeNotifier {
     required this.chatRepository,
     required this.aiChatRepository,
     required this.insufficientPointsMessage,
+    this.onInsufficientPoints,
     required String appUiLanguageCode,
   }) {
     _loadMessages();
@@ -222,6 +224,7 @@ class ChatViewModel extends ChangeNotifier {
           appScaffoldMessengerKey.currentState?.showSnackBar(
             SnackBar(content: Text(insufficientPointsMessage)),
           );
+          onInsufficientPoints?.call();
           return;
         }
       }
@@ -267,6 +270,9 @@ class ChatViewModel extends ChangeNotifier {
       if (spend.ok) {
         pointsBalanceNotifier?.setBalance(spend.balance);
       } else {
+        if (spend.error == 'insufficient_points') {
+          onInsufficientPoints?.call();
+        }
         debugPrint('Point spend failed after AI reply: ${spend.error}');
       }
     } catch (e) {

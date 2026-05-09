@@ -16,6 +16,18 @@ abstract class PointsRepository {
     String? lineTranslation,
     List<Map<String, dynamic>>? vocabularyJson,
   });
+
+  /// Credits points from a completed in-app purchase.
+  /// Idempotent by (store, transaction id / token) on server.
+  Future<CreditIapPointsOutcome> creditIapPoints({
+    required String store,
+    required String transactionId,
+    required String productId,
+    String? purchaseToken,
+    required int points,
+    required int usdCents,
+    String? rawReceipt,
+  });
 }
 
 class SpendPointsOutcome {
@@ -76,4 +88,32 @@ class LineAnalysisCacheRow {
     this.lineTranslation,
     this.vocabularyJson = const [],
   });
+}
+
+class CreditIapPointsOutcome {
+  final bool ok;
+  final bool credited;
+  final int balance;
+  final String? error;
+
+  const CreditIapPointsOutcome({
+    required this.ok,
+    required this.credited,
+    required this.balance,
+    this.error,
+  });
+
+  static CreditIapPointsOutcome fromRpcJson(Map<String, dynamic> json) {
+    final ok = json['ok'] == true;
+    final credited = json['credited'] == true;
+    final balRaw = json['balance'];
+    final bal = balRaw is num ? balRaw.toInt() : int.tryParse('$balRaw') ?? 0;
+    final err = json['error'];
+    return CreditIapPointsOutcome(
+      ok: ok,
+      credited: credited,
+      balance: bal,
+      error: err?.toString(),
+    );
+  }
 }

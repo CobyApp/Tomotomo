@@ -12,6 +12,7 @@ import '../../domain/repositories/ai_chat_repository.dart';
 import '../../domain/repositories/friends_repository.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
+import '../points/points_topup_prompt.dart';
 import 'chat_message_report.dart';
 import 'chat_viewmodel.dart';
 import 'widgets/chat_list.dart';
@@ -50,6 +51,7 @@ class _ChatScreenState extends State<ChatScreen>
       chatRepository: widget.chatRepository,
       aiChatRepository: widget.aiChatRepository,
       insufficientPointsMessage: context.trRead('pointsInsufficient'),
+      onInsufficientPoints: _onInsufficientPoints,
       appUiLanguageCode: context.read<LocaleNotifier>().languageCode,
     );
     _controller = AnimationController(
@@ -79,6 +81,11 @@ class _ChatScreenState extends State<ChatScreen>
     } catch (_) {
       if (mounted) setState(() => _dmSocialLoaded = true);
     }
+  }
+
+  void _onInsufficientPoints() {
+    if (!mounted) return;
+    unawaited(showPointsTopUpPrompt(context));
   }
 
   Future<void> _dmAddFriend() async {

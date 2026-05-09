@@ -13,6 +13,7 @@ import '../../../domain/repositories/character_record_repository.dart';
 import '../../../domain/repositories/points_repository.dart';
 import '../locale/l10n_context.dart';
 import '../points/points_balance_notifier.dart';
+import '../points/points_topup_prompt.dart';
 
 /// Shared form for [CreateCharacterScreen] and [EditCharacterScreen].
 class CustomCharacterEditorBody extends StatefulWidget {
@@ -93,7 +94,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     }
     final spend = await context.read<PointsRepository>().spendPoints(5, 'x_profile_import');
     if (!spend.ok) {
-      if (mounted) setState(() => _error = context.tr('pointsInsufficient'));
+      if (mounted) {
+        setState(() => _error = context.tr('pointsInsufficient'));
+        await showPointsTopUpPrompt(context);
+      }
       return false;
     }
     if (mounted) context.read<PointsBalanceNotifier>().setBalance(spend.balance);
@@ -192,6 +196,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             _error = context.tr('pointsInsufficient');
             _saving = false;
           });
+          await showPointsTopUpPrompt(context);
           return;
         }
         if (!mounted) return;

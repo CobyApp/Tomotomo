@@ -68,4 +68,29 @@ class PointsRepositoryImpl implements PointsRepository {
       },
     );
   }
+
+  @override
+  Future<CreditIapPointsOutcome> creditIapPoints({
+    required String store,
+    required String transactionId,
+    required String productId,
+    String? purchaseToken,
+    required int points,
+    required int usdCents,
+    String? rawReceipt,
+  }) async {
+    final res = await AppSupabase.client.rpc(
+      'credit_iap_points',
+      params: {
+        'p_store': store,
+        'p_transaction_id': transactionId,
+        'p_product_id': productId,
+        'p_purchase_token': purchaseToken,
+        'p_points': points,
+        'p_usd_cents': usdCents,
+        'p_raw_receipt': rawReceipt,
+      },
+    );
+    return CreditIapPointsOutcome.fromRpcJson(_asJsonMap(res));
+  }
 }

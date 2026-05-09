@@ -10,6 +10,7 @@ import '../../settings/language_settings_screen.dart';
 import '../../settings/profile_edit_screen.dart';
 import '../../settings/theme_settings_screen.dart';
 import '../../points/points_usage_screen.dart';
+import '../../points/points_topup_screen.dart';
 
 class SettingsTab extends StatelessWidget {
   const SettingsTab({super.key});
@@ -54,6 +55,17 @@ class SettingsTab extends StatelessWidget {
                           MaterialPageRoute<void>(builder: (_) => const PointsUsageScreen()),
                         );
                       },
+                    );
+                  },
+                ),
+                AppSettingsNavTile(
+                  icon: Icons.add_card_rounded,
+                  title: context.tr('pointsTopupTitle'),
+                  subtitle: context.tr('pointsTopupSubtitle'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(builder: (_) => const PointsTopUpScreen()),
                     );
                   },
                 ),

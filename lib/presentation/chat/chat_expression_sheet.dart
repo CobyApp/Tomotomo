@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +13,7 @@ import '../../domain/repositories/ai_chat_repository.dart';
 import '../../domain/repositories/points_repository.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
 import '../points/points_balance_notifier.dart';
+import '../points/points_topup_prompt.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../notebook/word_book_refresh_notifier.dart';
@@ -237,6 +240,9 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
         if (unlock.ok) {
           context.read<PointsBalanceNotifier>().setBalance(unlock.balance);
         } else {
+          if (unlock.error == 'insufficient_points') {
+            unawaited(showPointsTopUpPrompt(context));
+          }
           setState(() {
             _lineFetchLoading = false;
             _lineFetchError = unlock.error == 'insufficient_points'
