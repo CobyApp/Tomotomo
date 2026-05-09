@@ -46,10 +46,12 @@ class AppStrings {
     'settingsPointsBalanceSubtitle': 'AI·학습 기능 사용 시 차감됩니다',
     'pointsTopupTitle': '포인트 충전',
     'pointsTopupSubtitle': '인앱결제로 포인트를 충전할 수 있어요.',
-    'pointsTopupRateHint': '충전 옵션: \$1 = 300P · \$5 = 2,000P · \$10 = 5,000P',
     'pointsTopupPackTitle': '{points} 포인트',
-    'pointsTopupValueLabel': '1달러당 약 {points}P',
+    'pointsTopupValueLabel': '₩{price} · 원화 기준',
     'pointsTopupBuy': '충전하기',
+    'pointsTopupCheckStore': '스토어 확인',
+    'pointsTopupProductMissing':
+        '스토어 상품을 찾을 수 없습니다. App Store Connect/Play Console에 product ID를 등록했는지 확인해 주세요.',
     'pointsTopupSuccess': '{points} 포인트가 충전되었습니다.',
     'pointsTopupStoreUnavailable': '스토어에 연결할 수 없습니다.',
     'pointsTopupPurchaseFailed': '결제를 완료하지 못했습니다.',
@@ -58,14 +60,14 @@ class AppStrings {
     'pointsHelpLead': 'AI·학습 기능을 쓸 때 포인트가 차감돼요.',
     'pointsHelpSectionWhen': '언제 쓰이나요?',
     'pointsHelpItemSignup': '신규 가입 시 500포인트를 받아요.',
-    'pointsHelpItemXImport':
-        '챗봇 만들기에서 X 프로필 가져오기(URL 또는 붙여넣기)를 할 때마다 5포인트예요.',
+    'pointsHelpItemXImport': '챗봇 만들기에서 X 프로필 가져오기(URL 또는 붙여넣기)를 할 때마다 5포인트예요.',
     'pointsHelpItemCharacterChat':
         'AI 캐릭터와 채팅에서 답장이 성공할 때마다 1포인트예요. (보낸 직후 AI 응답이 올 때 차감)',
     'pointsHelpItemDmLearning':
         '친구와 DM에서 말풍선 옆 느낌표(학습)로 분석을 볼 때, 메시지마다 처음 한 번만 1포인트예요. 같은 메시지를 다시 열면 캐시를 써서 API를 다시 부르지 않아요.',
     'pointsHelpItemPublicChar': '다른 사람이 공유한 캐릭터를 내 목록에 받을 때 10포인트예요.',
-    'pointsHelpItemCustomCreate': '커스텀 캐릭터를 새로 만들어 저장할 때 10포인트예요. (이미 있는 캐릭터 수정만 할 때는 없어요)',
+    'pointsHelpItemCustomCreate':
+        '커스텀 캐릭터를 새로 만들어 저장할 때 10포인트예요. (이미 있는 캐릭터 수정만 할 때는 없어요)',
     'pointsHelpFooter':
         '잔액은 서버에 저장돼요. 포인트가 부족하면 해당 기능을 쓸 수 없어요. 앱 상단의 별 칩에서 이 안내를 다시 열 수 있어요.',
     'cancel': '취소',
@@ -109,7 +111,8 @@ class AppStrings {
     'charactersTitle': '튜터 스튜디오',
     'charactersMy': '내 캐릭터',
     'charactersDiscover': '발견',
-    'charactersDiscoverHint': '공개 튜터는 내 계정에 복제됩니다. 원작자가 삭제해도 내 복제본으로 계속 쓸 수 있어요.',
+    'charactersDiscoverHint':
+        '공개 튜터는 내 계정에 복제됩니다. 원작자가 삭제해도 내 복제본으로 계속 쓸 수 있어요.',
     'charactersDiscoverEmpty': '아직 공개된 튜터가 없어요. 튜터를 공개로 설정하면 여기에 표시돼요.',
     'charactersFilterAll': '전체',
     'charactersDownloadsLabel': '다운로드 {count}회',
@@ -136,7 +139,8 @@ class AppStrings {
     'charactersAdded': '{name}을(를) 내 캐릭터에 추가했습니다.',
     'charactersAddFailed': '추가 실패',
     'charactersEmptyMyCta': '나만의 AI 튜터 만들기',
-    'charactersPublicForkExplain': '내 계정에 복제된 튜터로 대화합니다. 원작자가 삭제해도 내 복제본은 그대로예요.',
+    'charactersPublicForkExplain':
+        '내 계정에 복제된 튜터로 대화합니다. 원작자가 삭제해도 내 복제본은 그대로예요.',
     'charactersAlreadyForked': '이미 내 튜터로 복제해 둔 캐릭터예요.',
     'charactersPublicStartChat': '채팅 시작',
     'charactersPublicDownloadLine': '내 캐릭터에 추가 · 10 포인트',
@@ -226,12 +230,17 @@ class AppStrings {
     'expressionVocabLineMeaningKo': '한국어 뜻',
     'expressionVocabLineMeaningJa': '日本語の意味',
     'expressionVocabJapaneseSurface': '일본어 표기',
-    'expressionVocabAddHintKoNotebook': '각 단어 오른쪽 ＋를 누르면 그 일본어 단어만 한국어 단어장에 저장됩니다.',
-    'expressionVocabAddHintJaNotebook': '각 단어 오른쪽 ＋를 누르면 그 일본어 단어만 日本語単語帳に保存されます。',
-    'expressionVocabAddHintImmersion': '각 단어 오른쪽 ＋를 누르면 그 일본어 단어만 일본어 단어장에 저장됩니다.',
-    'expressionMissingStudyNote': '이 메시지에는 설명이 비어 있습니다. 다시 생성해 보거나 다른 캐릭터 타입을 확인해 주세요.',
+    'expressionVocabAddHintKoNotebook':
+        '각 단어 오른쪽 ＋를 누르면 그 일본어 단어만 한국어 단어장에 저장됩니다.',
+    'expressionVocabAddHintJaNotebook':
+        '각 단어 오른쪽 ＋를 누르면 그 일본어 단어만 日本語単語帳に保存されます。',
+    'expressionVocabAddHintImmersion':
+        '각 단어 오른쪽 ＋를 누르면 그 일본어 단어만 일본어 단어장에 저장됩니다.',
+    'expressionMissingStudyNote':
+        '이 메시지에는 설명이 비어 있습니다. 다시 생성해 보거나 다른 캐릭터 타입을 확인해 주세요.',
     'expressionMissingStudyNoteJa': '日本語の説明が空です。再生成するか、キャラタイプを確認してください。',
-    'expressionMissingVocabulary': '단어·어휘 항목이 비어 있습니다. AI 응답이 JSON 형식인지 확인해 주세요.',
+    'expressionMissingVocabulary':
+        '단어·어휘 항목이 비어 있습니다. AI 응답이 JSON 형식인지 확인해 주세요.',
     'expressionMissingVocabularyJa': '語彙（日本語）が空です。AIのJSONを確認してください。',
     'expressionVocabAddHint': '단어 오른쪽 ＋를 누르면 그 단어만 단어장에 저장됩니다.',
     'expressionDmLoadingVocab': '단어·어휘를 불러오는 중…',
@@ -280,7 +289,8 @@ class AppStrings {
     'friendsTabCharacterHint':
         'AI와의 대화는 우측 상단의 얼굴 아이콘에서 캐릭터를 선택해 시작할 수 있어요. + 버튼으로는 사용자 검색·캐릭터 검색이 가능합니다.',
     'friendsSectionPeople': '친구 (사용자)',
-    'friendsSectionPeopleEmpty': '아직 친구가 없습니다. 우측 상단 + 버튼에서 닉네임으로 찾아 추가할 수 있어요.',
+    'friendsSectionPeopleEmpty':
+        '아직 친구가 없습니다. 우측 상단 + 버튼에서 닉네임으로 찾아 추가할 수 있어요.',
     'friendsSectionCharacters': '캐릭터',
     'friendsSectionLocalCharacters': '캐릭터 (앱 · 내 목록)',
     'friendsTutorStudioBannerTitle': '튜터 스튜디오',
@@ -363,12 +373,15 @@ class AppStrings {
     'passwordMinLength': '비밀번호는 6자 이상이어야 합니다.',
     'authNetworkUnreachable':
         'Supabase 서버에 연결할 수 없습니다. 인터넷(Wi‑Fi/셀룰러)을 확인하고, .env의 SUPABASE_URL이 대시보드 Settings → API의 Project URL과 정확히 같은지(복사·붙여넣기, 오타·공백 없음) 확인하세요.',
-    'authErrorEmailAlreadyRegistered': '이미 가입된 이메일입니다. 로그인을 시도하거나 비밀번호 재설정을 이용하세요.',
-    'authErrorSignUpDisabled': '이 프로젝트에서는 새 가입이 비활성화되어 있습니다. (Supabase Dashboard → Authentication → Providers)',
+    'authErrorEmailAlreadyRegistered':
+        '이미 가입된 이메일입니다. 로그인을 시도하거나 비밀번호 재설정을 이용하세요.',
+    'authErrorSignUpDisabled':
+        '이 프로젝트에서는 새 가입이 비활성화되어 있습니다. (Supabase Dashboard → Authentication → Providers)',
     'authErrorRateLimit': '요청이 너무 많습니다. 잠시 후 다시 시도하세요.',
     'authErrorConfirmEmail': '이메일 인증이 필요합니다. 받은 편지함(스팸함 포함)의 링크를 확인하세요.',
     'authErrorInvalidCredentials': '이메일 또는 비밀번호가 올바르지 않습니다.',
-    'authErrorProviderDisabled': '이메일 로그인이 비활성화되어 있습니다. (Supabase Dashboard → Authentication)',
+    'authErrorProviderDisabled':
+        '이메일 로그인이 비활성화되어 있습니다. (Supabase Dashboard → Authentication)',
   };
 
   static const Map<String, String> _ja = {
@@ -415,10 +428,12 @@ class AppStrings {
     'settingsPointsBalanceSubtitle': 'AI・学習機能の利用で消費されます',
     'pointsTopupTitle': 'ポイントチャージ',
     'pointsTopupSubtitle': 'アプリ内課金でポイントを追加できます。',
-    'pointsTopupRateHint': 'チャージ: \$1 = 300P · \$5 = 2,000P · \$10 = 5,000P',
     'pointsTopupPackTitle': '{points} ポイント',
-    'pointsTopupValueLabel': '1ドルあたり約{points}P',
+    'pointsTopupValueLabel': '¥{price} · 日本円目安',
     'pointsTopupBuy': 'チャージ',
+    'pointsTopupCheckStore': 'ストア確認',
+    'pointsTopupProductMissing':
+        'ストア商品が見つかりません。App Store Connect / Play Console で product ID が登録済みか確認してください。',
     'pointsTopupSuccess': '{points} ポイントを追加しました。',
     'pointsTopupStoreUnavailable': 'ストアに接続できません。',
     'pointsTopupPurchaseFailed': '決済を完了できませんでした。',
@@ -427,8 +442,7 @@ class AppStrings {
     'pointsHelpLead': 'AI・学習機能を使うとポイントが消費されます。',
     'pointsHelpSectionWhen': 'いつ消費されますか？',
     'pointsHelpItemSignup': '新規登録で500ptもらえます。',
-    'pointsHelpItemXImport':
-        'チャットボット作成でXプロフィール取り込み（URLまたは貼り付け）をするたびに5ptです。',
+    'pointsHelpItemXImport': 'チャットボット作成でXプロフィール取り込み（URLまたは貼り付け）をするたびに5ptです。',
     'pointsHelpItemCharacterChat':
         'AIキャラとのチャットで、返信が成功するたびに1ptです。（送信後にAIの返信が届いたときに減ります）',
     'pointsHelpItemDmLearning':
@@ -479,7 +493,8 @@ class AppStrings {
     'charactersTitle': 'チュータースタジオ',
     'charactersMy': 'マイキャラ',
     'charactersDiscover': '発見',
-    'charactersDiscoverHint': '公開チューターはあなたのアカウントに複製されます。作者が削除しても、あなたの複製はそのまま使えます。',
+    'charactersDiscoverHint':
+        '公開チューターはあなたのアカウントに複製されます。作者が削除しても、あなたの複製はそのまま使えます。',
     'charactersDiscoverEmpty': 'まだ公開チューターがありません。公開にするとここに表示されます。',
     'charactersFilterAll': 'すべて',
     'charactersDownloadsLabel': 'ダウンロード {count}回',
@@ -493,8 +508,7 @@ class AppStrings {
     'characterImportFromXDone': '入力しました。内容を確認してから保存してください。',
     'characterImportFromXError': '読み込みに失敗しました。',
     'characterImportFromXUrlRequired': 'XのプロフィールURLを入力してください。',
-    'characterImportFromXLegal':
-        '公開テキストのみ利用します。学習用の架空ペルソナであり、実在と一致しない場合があります。',
+    'characterImportFromXLegal': '公開テキストのみ利用します。学習用の架空ペルソナであり、実在と一致しない場合があります。',
     'charactersBuiltin': '標準キャラ',
     'charactersEdit': '編集',
     'charactersDelete': '削除',
@@ -733,15 +747,22 @@ class AppStrings {
     'passwordMinLength': 'パスワードは6文字以上にしてください。',
     'authNetworkUnreachable':
         'Supabase に接続できません。インターネットを確認し、.env の SUPABASE_URL がダッシュボード Settings → API の Project URL と完全に一致するか（コピー推奨・誤字・余分な空白なし）を確認してください。',
-    'authErrorEmailAlreadyRegistered': 'このメールは既に登録されています。ログインするか、パスワード再設定を試してください。',
-    'authErrorSignUpDisabled': 'このプロジェクトでは新規登録が無効です。（Supabase Dashboard → Authentication → Providers）',
+    'authErrorEmailAlreadyRegistered':
+        'このメールは既に登録されています。ログインするか、パスワード再設定を試してください。',
+    'authErrorSignUpDisabled':
+        'このプロジェクトでは新規登録が無効です。（Supabase Dashboard → Authentication → Providers）',
     'authErrorRateLimit': 'リクエストが多すぎます。しばらくしてから再度お試しください。',
     'authErrorConfirmEmail': 'メール確認が必要です。受信トレイ（迷惑メール含む）のリンクを確認してください。',
     'authErrorInvalidCredentials': 'メールまたはパスワードが正しくありません。',
-    'authErrorProviderDisabled': 'メールログインが無効です。（Supabase Dashboard → Authentication）',
+    'authErrorProviderDisabled':
+        'メールログインが無効です。（Supabase Dashboard → Authentication）',
   };
 
-  static String of(String languageCode, String key, {Map<String, String>? params}) {
+  static String of(
+    String languageCode,
+    String key, {
+    Map<String, String>? params,
+  }) {
     final m = languageCode == 'ja' ? _ja : _ko;
     var s = m[key] ?? _ko[key] ?? key;
     if (params != null) {

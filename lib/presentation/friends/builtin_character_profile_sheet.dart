@@ -12,7 +12,7 @@ Future<void> showBuiltinCharacterProfileSheet(
   required Future<void> Function() onRemoveAttempt,
 }) {
   final key = builtinCharacterShortKey(character.id);
-  final short = key != null ? context.tr(key) : character.tagline;
+  final short = key != null ? context.trRead(key) : character.tagline;
 
   return showTutorProfileSheet(
     context,

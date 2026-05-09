@@ -32,10 +32,13 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
   @override
   void initState() {
     super.initState();
-    _purchaseSub = _iap.purchaseStream.listen(_onPurchaseUpdated, onDone: () {
-      _purchaseSub?.cancel();
-      _purchaseSub = null;
-    });
+    _purchaseSub = _iap.purchaseStream.listen(
+      _onPurchaseUpdated,
+      onDone: () {
+        _purchaseSub?.cancel();
+        _purchaseSub = null;
+      },
+    );
     unawaited(_loadProducts());
   }
 
@@ -104,12 +107,14 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
         if (!mounted) return;
         setState(() {
           _pendingProductId = null;
-          _error = p.error?.message ?? context.trRead('pointsTopupPurchaseFailed');
+          _error =
+              p.error?.message ?? context.trRead('pointsTopupPurchaseFailed');
         });
         continue;
       }
 
-      if (p.status == PurchaseStatus.purchased || p.status == PurchaseStatus.restored) {
+      if (p.status == PurchaseStatus.purchased ||
+          p.status == PurchaseStatus.restored) {
         final pack = pointPackByProductId(p.productID);
         if (pack == null) {
           if (p.pendingCompletePurchase) {
@@ -144,7 +149,14 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
         if (out.ok) {
           notifier.setBalance(out.balance);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.tr('pointsTopupSuccess', params: {'points': '${pack.points}'}))),
+            SnackBar(
+              content: Text(
+                context.tr(
+                  'pointsTopupSuccess',
+                  params: {'points': '${pack.points}'},
+                ),
+              ),
+            ),
           );
           setState(() {
             _pendingProductId = null;
@@ -164,7 +176,9 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
     final user = AppSupabase.auth.currentUser;
     if (user == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('loginRequired'))));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('loginRequired'))));
       return;
     }
     setState(() {
@@ -175,13 +189,33 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
     await _iap.buyConsumable(purchaseParam: param);
   }
 
+  String _formatPriceNumber(int value) {
+    return value.toString().replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (_) => ',',
+    );
+  }
+
   String _fallbackPrice(PointTopUpPack pack) {
-    return '\$${(pack.usdCents / 100).toStringAsFixed(2)}';
+    final lang = Localizations.localeOf(context).languageCode;
+    if (lang == 'ja') return '¥${_formatPriceNumber(pack.jpy)}';
+    return '₩${_formatPriceNumber(pack.krw)}';
   }
 
   String _valueLabel(BuildContext context, PointTopUpPack pack) {
-    final pointsPerDollar = (pack.points / (pack.usdCents / 100)).round();
-    return context.tr('pointsTopupValueLabel', params: {'points': '$pointsPerDollar'});
+    final lang = Localizations.localeOf(context).languageCode;
+    final price = lang == 'ja' ? pack.jpy : pack.krw;
+    return context.tr(
+      'pointsTopupValueLabel',
+      params: {'price': _formatPriceNumber(price)},
+    );
+  }
+
+  void _showMissingProductMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.tr('pointsTopupProductMissing'))),
+    );
+    unawaited(_loadProducts());
   }
 
   @override
@@ -190,23 +224,16 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
 
     return AppPageScaffold(
       title: context.tr('pointsTopupTitle'),
-      subtitle: context.tr('pointsTopupSubtitle'),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 8, AppSpacing.pageH, AppSpacing.pageBottom),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.pageH,
+          8,
+          AppSpacing.pageH,
+          AppSpacing.pageBottom,
+        ),
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: scheme.secondaryContainer.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(AppRadii.card),
-            ),
-            child: Text(
-              context.tr('pointsTopupRateHint'),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSecondaryContainer),
-            ),
-          ),
-          const SizedBox(height: 14),
-          if (_loadingProducts) const Center(child: CircularProgressIndicator()),
+          if (_loadingProducts)
+            const Center(child: CircularProgressIndicator()),
           if (!_loadingProducts && _error != null) ...[
             Text(_error!, style: TextStyle(color: scheme.error)),
             const SizedBox(height: 8),
@@ -219,24 +246,42 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
           ],
           for (final pack in pointTopUpPacks)
             Card(
-              child: ListTile(
-                leading: Icon(Icons.stars_rounded, color: scheme.secondary),
-                title: Text(context.tr('pointsTopupPackTitle', params: {'points': '${pack.points}'})),
-                subtitle: Text(
-                  '${_products[pack.productId]?.price ?? _fallbackPrice(pack)} · ${_valueLabel(context, pack)}',
-                ),
-                trailing: FilledButton(
-                  onPressed: (!_storeAvailable || _pendingProductId != null || !_products.containsKey(pack.productId))
-                      ? null
-                      : () => _buy(_products[pack.productId]!),
-                  child: _pendingProductId == pack.productId
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(context.tr('pointsTopupBuy')),
-                ),
+              child: Builder(
+                builder: (context) {
+                  final product = _products[pack.productId];
+                  final canAttemptPurchase =
+                      _storeAvailable && _pendingProductId == null;
+                  return ListTile(
+                    leading: Icon(Icons.stars_rounded, color: scheme.secondary),
+                    title: Text(
+                      context.tr(
+                        'pointsTopupPackTitle',
+                        params: {'points': '${pack.points}'},
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${product?.price ?? _fallbackPrice(pack)} · ${_valueLabel(context, pack)}',
+                    ),
+                    trailing: FilledButton(
+                      onPressed: !canAttemptPurchase
+                          ? null
+                          : product == null
+                          ? _showMissingProductMessage
+                          : () => _buy(product),
+                      child: _pendingProductId == pack.productId
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(
+                              product == null
+                                  ? context.tr('pointsTopupCheckStore')
+                                  : context.tr('pointsTopupBuy'),
+                            ),
+                    ),
+                  );
+                },
               ),
             ),
         ],

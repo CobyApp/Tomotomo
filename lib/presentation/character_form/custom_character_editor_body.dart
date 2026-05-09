@@ -107,7 +107,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   Future<void> _importPersonaFromXUrl() async {
     final url = _xUrlController.text.trim();
     if (url.isEmpty) {
-      setState(() => _error = context.tr('characterImportFromXUrlRequired'));
+      setState(() => _error = context.trRead('characterImportFromXUrlRequired'));
       return;
     }
     FocusScope.of(context).unfocus();
@@ -123,10 +123,11 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       final s = await suggester.suggestFromXProfileUrl(url);
       if (!mounted) return;
       _applyPersonaSuggestion(s);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('characterImportFromXDone'))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('characterImportFromXDone'))));
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = '${context.tr('characterImportFromXError')} $e');
+      final message = '${context.trRead('characterImportFromXError')} $e';
+      setState(() => _error = message);
     } finally {
       if (mounted) setState(() => _importUrlBusy = false);
     }
@@ -135,7 +136,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   Future<void> _importPersonaFromPaste() async {
     final raw = _xPasteController.text.trim();
     if (raw.length < 20) {
-      setState(() => _error = context.tr('characterImportFromXPasteHint'));
+      setState(() => _error = context.trRead('characterImportFromXPasteHint'));
       return;
     }
     FocusScope.of(context).unfocus();
@@ -151,10 +152,11 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       final s = await suggester.suggestFromProfileText(raw);
       if (!mounted) return;
       _applyPersonaSuggestion(s);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('characterImportFromXDone'))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('characterImportFromXDone'))));
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = '${context.tr('characterImportFromXError')} $e');
+      final message = '${context.trRead('characterImportFromXError')} $e';
+      setState(() => _error = message);
     } finally {
       if (mounted) setState(() => _importPasteBusy = false);
     }

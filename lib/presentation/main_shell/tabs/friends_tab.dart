@@ -109,7 +109,7 @@ class FriendsTabState extends State<FriendsTab> with WidgetsBindingObserver, OnA
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${context.tr('friendsDmOpenFailed')}: $e')),
+          SnackBar(content: Text('${context.trRead('friendsDmOpenFailed')}: $e')),
         );
       }
       return null;

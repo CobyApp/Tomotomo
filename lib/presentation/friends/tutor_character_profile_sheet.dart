@@ -187,7 +187,7 @@ Future<void> showMyTutorProfileSheet(
   );
 
   final raw = record.listDetailLine.trim();
-  final fallback = record.language == 'ja' ? context.tr('langJa') : context.tr('langKo');
+  final fallback = record.language == 'ja' ? context.trRead('langJa') : context.trRead('langKo');
   final line = raw.isNotEmpty ? raw : fallback;
   final short = line.length > 24 ? '${line.substring(0, 23)}…' : line;
 
