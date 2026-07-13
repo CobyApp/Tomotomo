@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
@@ -14,5 +16,15 @@ void main() async {
 
   setupInjection();
 
+  unawaited(_initAds());
+
   runApp(const App());
+}
+
+/// Initializes the AdMob SDK without blocking startup or crashing the app if
+/// it fails (e.g. offline / no network on first launch).
+Future<void> _initAds() async {
+  try {
+    await rewardedAdService.init();
+  } catch (_) {}
 }

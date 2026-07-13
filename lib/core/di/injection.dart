@@ -1,5 +1,6 @@
 import 'package:hive_ce/hive.dart';
 
+import '../ads/rewarded_ad_service.dart';
 import '../local/hive_boxes.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
@@ -27,7 +28,10 @@ void setupInjection({
   int? geminiMaxOutputTokens,
 }) {
   chatRepository = LocalChatRepositoryImpl(Hive.box(HiveBoxes.chats));
-  pointsRepository = LocalPointsRepositoryImpl(Hive.box(HiveBoxes.points));
+  final pts = LocalPointsRepositoryImpl(Hive.box(HiveBoxes.points));
+  pointsRepository = pts;
+  localPointsRepository = pts;
+  rewardedAdService = RewardedAdService();
   aiChatRepository = GeminiAiRepositoryImpl(
     apiKey: geminiApiKey,
     model: geminiModel,
@@ -49,6 +53,10 @@ void setupInjection({
 /// Set by [setupInjection]. Used by [App] to provide to widget tree.
 late ChatRepository chatRepository;
 late PointsRepository pointsRepository;
+/// Concrete points repo (same instance as [pointsRepository]) so the ad UI
+/// can call rewarded-ad-specific methods not on the [PointsRepository] interface.
+late LocalPointsRepositoryImpl localPointsRepository;
+late RewardedAdService rewardedAdService;
 late AiChatRepository aiChatRepository;
 late ProfileRepository profileRepository;
 /// Assigned when [PointsBalanceNotifier] is created in [App].

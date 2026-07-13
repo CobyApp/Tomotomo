@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'core/ads/rewarded_ad_service.dart';
 import 'core/di/injection.dart';
+import 'data/repositories/local_points_repository_impl.dart';
 import 'domain/repositories/chat_repository.dart';
 import 'domain/repositories/ai_chat_repository.dart';
 import 'domain/repositories/profile_repository.dart';
@@ -30,6 +32,8 @@ class App extends StatelessWidget {
         Provider<AiChatRepository>.value(value: aiChatRepository),
         Provider<ProfileRepository>.value(value: profileRepository),
         Provider<PointsRepository>.value(value: pointsRepository),
+        Provider<LocalPointsRepositoryImpl>.value(value: localPointsRepository),
+        Provider<RewardedAdService>.value(value: rewardedAdService),
         ChangeNotifierProvider(
           create: (c) {
             final n = PointsBalanceNotifier(c.read<PointsRepository>());
