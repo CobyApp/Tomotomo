@@ -5,7 +5,6 @@ import '../../../core/ui/ui.dart';
 import '../../locale/l10n_context.dart';
 import '../../settings/language_settings_screen.dart';
 import '../../settings/profile_edit_screen.dart';
-import '../../settings/theme_settings_screen.dart';
 import '../../points/points_usage_screen.dart';
 import '../../points/points_topup_screen.dart';
 
@@ -71,17 +70,6 @@ class SettingsTab extends StatelessWidget {
           ),
           AppSettingsPanel(
             children: [
-              AppSettingsNavTile(
-                icon: Icons.palette_outlined,
-                title: context.tr('settingsTheme'),
-                subtitle: context.tr('settingsThemeSubtitle'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ThemeSettingsScreen()),
-                  );
-                },
-              ),
               AppSettingsNavTile(
                 icon: Icons.language_rounded,
                 title: context.tr('settingsAppLanguage'),

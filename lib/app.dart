@@ -8,7 +8,6 @@ import 'domain/repositories/chat_repository.dart';
 import 'domain/repositories/ai_chat_repository.dart';
 import 'domain/repositories/profile_repository.dart';
 import 'domain/repositories/character_record_repository.dart';
-import 'domain/repositories/theme_repository.dart';
 import 'domain/repositories/saved_expression_repository.dart';
 import 'data/celebrity_persona/celebrity_persona_suggester.dart';
 import 'presentation/main_shell/main_shell.dart';
@@ -26,8 +25,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<ThemeRepository>.value(value: themeRepository),
-        ChangeNotifierProvider(create: (c) => ThemeNotifier(c.read<ThemeRepository>())),
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
         Provider<ChatRepository>.value(value: chatRepository),
         Provider<AiChatRepository>.value(value: aiChatRepository),
         Provider<ProfileRepository>.value(value: profileRepository),

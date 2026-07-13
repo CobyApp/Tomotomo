@@ -11,7 +11,6 @@ import '../../domain/repositories/profile_repository.dart';
 import '../points/points_balance_notifier.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
-import '../theme/theme_notifier.dart';
 import 'tabs/characters_tab.dart';
 import 'tabs/chats_tab.dart';
 import 'tabs/settings_tab.dart';
@@ -68,7 +67,6 @@ class _MainShellState extends State<MainShell> {
       if (!mounted) return;
       await context.read<PointsBalanceNotifier>().loadInitial();
       if (!mounted) return;
-      context.read<ThemeNotifier>().load(_localUserId);
       context.read<LocaleNotifier>().loadFromProfile(_localUserId);
     } catch (_) {}
   }
