@@ -9,6 +9,9 @@ import '../../../domain/repositories/chat_repository.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
 import '../../../domain/repositories/character_record_repository.dart';
 import '../../../core/ui/ui.dart';
+import '../../../core/ui/holo/glitch_text.dart';
+import '../../../core/ui/holo/holo_tokens.dart';
+import '../../../core/ui/holo/holo_widgets.dart';
 import '../../../data/character/characters_data.dart';
 import '../../chat/chat_screen.dart';
 import '../../character_form/create_character_screen.dart';
@@ -110,34 +113,26 @@ class CharactersTabState extends State<CharactersTab>
 
   // ── avatar helper ────────────────────────────────────────
   Widget _avatarWidget(String? url, String name, {double radius = 28}) {
-    final scheme = Theme.of(context).colorScheme;
+    Widget inner;
     if (url != null && url.isNotEmpty) {
-      return CircleAvatar(radius: radius, backgroundImage: NetworkImage(url));
-    }
-    // Initial letter + gradient avatar.
-    final initial = name.isNotEmpty ? name.substring(0, 1) : '?';
-    return Container(
-      width: radius * 2,
-      height: radius * 2,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [scheme.primary, scheme.tertiary],
-        ),
-      ),
-      child: Center(
+      inner = CircleAvatar(radius: radius, backgroundColor: Holo.surfaceCard, backgroundImage: NetworkImage(url));
+    } else {
+      // Initial letter avatar on a holo card backdrop.
+      final initial = name.isNotEmpty ? name.substring(0, 1) : '?';
+      inner = CircleAvatar(
+        radius: radius,
+        backgroundColor: Holo.surfaceCard,
         child: Text(
           initial,
           style: TextStyle(
             fontSize: radius * 0.80,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            color: Holo.inkPlum,
           ),
         ),
-      ),
-    );
+      );
+    }
+    return HoloGradientRing(size: radius * 2 + 4, child: inner);
   }
 
   @override
@@ -148,12 +143,35 @@ class CharactersTabState extends State<CharactersTab>
       showPointsChip: true,
       bottom: _loading || _error != null
           ? null
-          : TabBar(
-              controller: _tabController,
-              tabs: [
-                Tab(text: context.tr('charactersMy')),
-                Tab(text: context.tr('charactersBuiltin')),
-              ],
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(56),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 0, AppSpacing.pageH, 10),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Holo.surfaceCard,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                    border: Border.all(color: Holo.pink.withValues(alpha: 0.25), width: 1.5),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    dividerColor: Colors.transparent,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    splashBorderRadius: BorderRadius.circular(AppRadii.pill),
+                    indicator: BoxDecoration(
+                      gradient: Holo.holoGradient,
+                      borderRadius: BorderRadius.circular(AppRadii.pill),
+                    ),
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Holo.inkPlumSoft,
+                    tabs: [
+                      Tab(text: context.tr('charactersMy')),
+                      Tab(text: context.tr('charactersBuiltin')),
+                    ],
+                  ),
+                ),
+              ),
             ),
       actions: [
         IconButton(
@@ -164,7 +182,9 @@ class CharactersTabState extends State<CharactersTab>
       ],
       floatingActionButton: _loading || _error != null || _tabController.index != 0
           ? null
-          : FloatingActionButton.extended(
+          : HoloButton(
+              icon: Icons.add_rounded,
+              label: context.tr('create'),
               onPressed: () async {
                 final created = await Navigator.push<bool>(
                   context,
@@ -172,8 +192,6 @@ class CharactersTabState extends State<CharactersTab>
                 );
                 if (created == true) unawaited(_load());
               },
-              icon: const Icon(Icons.add_rounded),
-              label: Text(context.tr('create')),
             ),
       body: _loading
           ? const AppLoadingBody()
@@ -194,9 +212,10 @@ class CharactersTabState extends State<CharactersTab>
                       child: ListView(
                         padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 12, AppSpacing.pageH, 100),
                         children: [
-                          Text(
+                          GlitchText(
                             context.tr('charactersBuiltin'),
                             style: AppTextStyles.sectionLabel(context),
+                            offset: 1.5,
                           ),
                           const SizedBox(height: 12),
                           _builtInGrid(),
