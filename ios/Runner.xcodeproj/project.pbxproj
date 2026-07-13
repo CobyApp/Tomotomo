@@ -607,8 +607,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7F2A8B9C1CF9000F007C1201 /* Extension.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = AppIcon;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = NotebookWidgetExtension/NotebookWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -638,8 +638,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7F2A8B9C1CF9000F007C1201 /* Extension.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = AppIcon;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = NotebookWidgetExtension/NotebookWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -668,8 +668,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7F2A8B9C1CF9000F007C1201 /* Extension.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = AppIcon;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = NotebookWidgetExtension/NotebookWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
