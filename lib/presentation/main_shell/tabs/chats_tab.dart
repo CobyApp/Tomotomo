@@ -3,23 +3,36 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/platform/ios_post_layout_frames.dart';
-import '../../../core/supabase/app_supabase.dart';
 import '../../../core/ui/ui.dart';
 import '../../../core/widgets/on_app_resumed_mixin.dart';
+import '../../../data/character/characters_data.dart';
+import '../../../domain/entities/character.dart';
 import '../../../domain/entities/chat_message.dart';
 import '../../../domain/entities/chat_room_summary.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
 import '../../../domain/repositories/chat_repository.dart';
 import '../../../domain/repositories/character_record_repository.dart';
-import '../../../domain/repositories/profile_repository.dart';
 import '../../locale/l10n_context.dart';
-import '../character_room_resolver.dart';
 import '../../chat/chat_screen.dart';
 
-/// Lists recent Supabase chat rooms; tap opens [ChatScreen].
+/// Resolves a [Character] from a local chat room (roomId == character id).
+Future<Character?> _resolveCharacterForRoom(
+  ChatRoomSummary room,
+  CharacterRecordRepository charRepo,
+) async {
+  // Built-in packaged tutors first.
+  for (final c in characters) {
+    if (c.id == room.roomId) return c;
+  }
+  // Then the user's local custom characters.
+  final r = await charRepo.getCharacter(room.roomId);
+  if (r != null) return Character.fromRecord(r);
+  return null;
+}
+
+/// Lists recent local chat rooms; tap opens [ChatScreen].
 class ChatsTab extends StatefulWidget {
   const ChatsTab({super.key});
 
@@ -28,7 +41,7 @@ class ChatsTab extends StatefulWidget {
 }
 
 class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppResumedMixin {
-  /// Bottom nav selected this tab — refresh room list (e.g. after block / new DM).
+  /// Bottom nav selected this tab — refresh room list.
   void reloadFromTabSelection() {
     unawaited(_load(silent: true));
   }
@@ -36,11 +49,6 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
   List<ChatRoomSummary> _rooms = [];
   bool _loading = true;
   String? _error;
-  RealtimeChannel? _roomsChannel;
-  Timer? _roomsDebounce;
-  Timer? _roomsResubscribeTimer;
-  int _roomsSubscribeAttempts = 0;
-  static const int _maxRoomsResubscribeAttempts = 6;
 
   @override
   void initState() {
@@ -49,7 +57,6 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
       unawaited(() async {
         await waitIosPostLayoutFrames(frames: 3);
         if (!mounted) return;
-        _subscribeChatRoomsRealtime();
         unawaited(_load());
       }());
     });
@@ -57,70 +64,6 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
 
   @override
   void onAppResumed() => unawaited(_load(silent: true));
-
-  void _subscribeChatRoomsRealtime() {
-    if (AppSupabase.auth.currentUser == null) return;
-
-    final old = _roomsChannel;
-    if (old != null) {
-      unawaited(AppSupabase.client.removeChannel(old));
-      _roomsChannel = null;
-    }
-
-    final uid = AppSupabase.auth.currentUser!.id;
-    final channel = AppSupabase.client.channel('public:chat_rooms:list:$uid');
-    channel
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'chat_rooms',
-          callback: (_) {
-            if (!mounted) return;
-            _scheduleRoomsReload();
-          },
-        )
-        .subscribe(_onRoomsChannelSubscribeStatus);
-    _roomsChannel = channel;
-  }
-
-  void _onRoomsChannelSubscribeStatus(RealtimeSubscribeStatus status, [Object? error]) {
-    if (!mounted) return;
-    switch (status) {
-      case RealtimeSubscribeStatus.subscribed:
-        _roomsSubscribeAttempts = 0;
-        _scheduleRoomsReload();
-        break;
-      case RealtimeSubscribeStatus.timedOut:
-      case RealtimeSubscribeStatus.channelError:
-        debugPrint('Chat rooms realtime: $status ${error ?? ''}');
-        _scheduleRoomsChannelResubscribe();
-        break;
-      case RealtimeSubscribeStatus.closed:
-        break;
-    }
-  }
-
-  void _scheduleRoomsChannelResubscribe() {
-    if (!mounted) return;
-    if (_roomsSubscribeAttempts >= _maxRoomsResubscribeAttempts) {
-      debugPrint('Chat rooms realtime: max resubscribe attempts reached');
-      return;
-    }
-    _roomsSubscribeAttempts++;
-    _roomsResubscribeTimer?.cancel();
-    final seconds = (2 * _roomsSubscribeAttempts).clamp(2, 20);
-    _roomsResubscribeTimer = Timer(Duration(seconds: seconds), () {
-      if (!mounted) return;
-      _subscribeChatRoomsRealtime();
-    });
-  }
-
-  void _scheduleRoomsReload() {
-    _roomsDebounce?.cancel();
-    _roomsDebounce = Timer(const Duration(milliseconds: 350), () {
-      if (mounted) unawaited(_load(silent: true));
-    });
-  }
 
   Future<void> _load({bool silent = false}) async {
     if (!silent) {
@@ -145,18 +88,6 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
         _loading = false;
       });
     }
-  }
-
-  @override
-  void dispose() {
-    _roomsDebounce?.cancel();
-    _roomsResubscribeTimer?.cancel();
-    final ch = _roomsChannel;
-    if (ch != null) {
-      unawaited(AppSupabase.client.removeChannel(ch));
-      _roomsChannel = null;
-    }
-    super.dispose();
   }
 
   Widget _roomLeading(ChatRoomSummary r, {double radius = AppSizes.listAvatar}) {
@@ -307,11 +238,7 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
 
   Future<void> _openRoom(ChatRoomSummary room) async {
     final charRepo = context.read<CharacterRecordRepository>();
-    final character = await resolveCharacterForRoom(
-      room,
-      charRepo,
-      context.read<ProfileRepository>(),
-    );
+    final character = await _resolveCharacterForRoom(room, charRepo);
     if (!mounted) return;
     if (character == null) {
       ScaffoldMessenger.of(context).showSnackBar(

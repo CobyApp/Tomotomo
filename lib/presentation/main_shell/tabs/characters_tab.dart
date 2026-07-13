@@ -2,26 +2,32 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/supabase/app_supabase.dart';
 import '../../../core/widgets/on_app_resumed_mixin.dart';
 import '../../../domain/entities/character.dart';
 import '../../../domain/entities/character_record.dart';
 import '../../../domain/repositories/chat_repository.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
 import '../../../domain/repositories/character_record_repository.dart';
-import '../../../domain/repositories/points_repository.dart';
 import '../../../core/ui/ui.dart';
-import '../../points/points_balance_notifier.dart';
 import '../../../data/character/characters_data.dart';
 import '../../chat/chat_screen.dart';
 import '../../character_form/create_character_screen.dart';
 import '../../character_form/edit_character_screen.dart';
 import '../../locale/l10n_context.dart';
-import '../../points/points_topup_prompt.dart';
-import '../../friends/builtin_intro_l10n.dart';
-import '../../tutor_studio/public_character_sheet.dart';
 
-/// My characters (Supabase) + Discover (public) + Built-in characters.
+/// L10n key for a built-in tutor's one-line blurb (~20 chars, per app language).
+String? _builtinCharacterShortKey(String characterId) {
+  switch (characterId) {
+    case 'yuna':
+      return 'friendsBuiltinShortYuna';
+    case 'junho':
+      return 'friendsBuiltinShortJunho';
+    default:
+      return null;
+  }
+}
+
+/// My characters (local) + Built-in characters.
 class CharactersTab extends StatefulWidget {
   const CharactersTab({super.key});
 
@@ -37,9 +43,6 @@ class CharactersTabState extends State<CharactersTab>
   }
 
   List<CharacterRecord> _myCharacters = [];
-  List<CharacterRecord> _publicCharactersRaw = [];
-  /// `all` | `ja` | `ko` — filters [discover] list client-side.
-  String _publicFilter = 'all';
   bool _loading = true;
   String? _error;
   late final TabController _tabController;
@@ -47,7 +50,7 @@ class CharactersTabState extends State<CharactersTab>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
@@ -67,16 +70,6 @@ class CharactersTabState extends State<CharactersTab>
   void onAppResumed() => unawaited(_load(silent: true));
 
   Future<void> _load({bool silent = false}) async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _myCharacters = [];
-        _publicCharactersRaw = [];
-      });
-      return;
-    }
     if (!silent) {
       setState(() {
         _loading = true;
@@ -85,12 +78,10 @@ class CharactersTabState extends State<CharactersTab>
     }
     try {
       final repo = context.read<CharacterRecordRepository>();
-      final my = await repo.getMyCharacters(user.id);
-      final public = await repo.getPublicCharacters();
+      final my = await repo.getMyCharacters();
       if (!mounted) return;
       setState(() {
         _myCharacters = my;
-        _publicCharactersRaw = public;
         _loading = false;
         _error = null;
       });
@@ -101,24 +92,6 @@ class CharactersTabState extends State<CharactersTab>
         _loading = false;
       });
     }
-  }
-
-  List<CharacterRecord> _visiblePublicList() {
-    final uid = AppSupabase.auth.currentUser?.id;
-    var list = _publicCharactersRaw.where((r) => uid == null || r.ownerId != uid).toList();
-    if (_publicFilter == 'ja') {
-      list = list.where((r) => r.language == 'ja').toList();
-    } else if (_publicFilter == 'ko') {
-      list = list.where((r) => r.language == 'ko').toList();
-    }
-    return list;
-  }
-
-  String _publicDiscoverSubtitle(CharacterRecord r) {
-    final tag = r.tagline?.trim();
-    final base = (tag != null && tag.isNotEmpty) ? tag : _recordSubtitle(context, r);
-    final dl = context.tr('charactersDownloadsLabel', params: {'count': '${r.downloadCount}'});
-    return '$base · $dl';
   }
 
   void _pushChatWithRecord(CharacterRecord r) {
@@ -135,109 +108,13 @@ class CharactersTabState extends State<CharactersTab>
     );
   }
 
-  void _openPublicCharacterSheet(CharacterRecord r) {
-    unawaited(
-      showPublicCharacterSheet(
-        context,
-        record: r,
-        subtitleLine: _publicDiscoverSubtitle(r),
-        onStartChat: () => _startChatFromPublic(r),
-        onAddToMine: () => _addPublicCharacterToMine(r),
-      ),
-    );
-  }
-
-  /// Own library row forked from [public]; creates one (10P) if missing. Chat always uses this id, not [public.id].
-  Future<CharacterRecord?> _ensureMyForkOfPublic(CharacterRecord public) async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('loginRequired'))));
-      }
-      return null;
-    }
-    final repo = context.read<CharacterRecordRepository>();
-    final pointsRepo = context.read<PointsRepository>();
-    final pointsNotifier = context.read<PointsBalanceNotifier>();
-    final existing = await repo.getMyCloneOfSource(public.id, user.id);
-    if (existing != null) return existing;
-
-    final spend = await pointsRepo.spendPoints(10, 'public_character_download');
-    if (!spend.ok) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('pointsInsufficient'))));
-        await showPointsTopUpPrompt(context);
-      }
-      return null;
-    }
-    if (!mounted) return null;
-    pointsNotifier.setBalance(spend.balance);
-
-    final copy = CharacterRecord.draft(
-      ownerId: user.id,
-      name: public.name,
-      nameSecondary: public.nameSecondary,
-      avatarUrl: public.avatarUrl,
-      tagline: public.tagline,
-      speechStyle: public.speechStyle,
-      language: public.language,
-      isPublic: false,
-      clonedFromId: public.id,
-    );
-    try {
-      final created = await repo.createCharacter(copy);
-      await repo.incrementDownloadCount(public.id);
-      return created;
-    } catch (e) {
-      final again = await repo.getMyCloneOfSource(public.id, user.id);
-      if (again != null) return again;
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${context.tr('charactersAddFailed')}: $e')),
-        );
-      }
-      return null;
-    }
-  }
-
-  Future<void> _startChatFromPublic(CharacterRecord public) async {
-    final mine = await _ensureMyForkOfPublic(public);
-    if (!mounted || mine == null) return;
-    _pushChatWithRecord(mine);
-  }
-
-  /// Adds a fork of [public] to the library (10P once per source); no-op if already forked.
-  Future<void> _addPublicCharacterToMine(CharacterRecord public) async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('loginRequired'))));
-      }
-      return;
-    }
-    final repo = context.read<CharacterRecordRepository>();
-    final existing = await repo.getMyCloneOfSource(public.id, user.id);
-    if (existing != null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('charactersAlreadyForked'))));
-      }
-      return;
-    }
-    final created = await _ensureMyForkOfPublic(public);
-    if (!mounted || created == null) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.tr('charactersAdded', params: {'name': public.name}))),
-    );
-    unawaited(_load());
-  }
-
-  // ── avatar 헬퍼 ────────────────────────────────────────────
+  // ── avatar helper ────────────────────────────────────────
   Widget _avatarWidget(String? url, String name, {double radius = 28}) {
     final scheme = Theme.of(context).colorScheme;
     if (url != null && url.isNotEmpty) {
       return CircleAvatar(radius: radius, backgroundImage: NetworkImage(url));
     }
-    // 이름 첫 글자 + 그라디언트 아바타
+    // Initial letter + gradient avatar.
     final initial = name.isNotEmpty ? name.substring(0, 1) : '?';
     return Container(
       width: radius * 2,
@@ -275,7 +152,6 @@ class CharactersTabState extends State<CharactersTab>
               controller: _tabController,
               tabs: [
                 Tab(text: context.tr('charactersMy')),
-                Tab(text: context.tr('charactersDiscover')),
                 Tab(text: context.tr('charactersBuiltin')),
               ],
             ),
@@ -311,51 +187,6 @@ class CharactersTabState extends State<CharactersTab>
                       child: ListView(
                         padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 12, AppSpacing.pageH, 100),
                         children: [_mySection(scheme)],
-                      ),
-                    ),
-                    RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 12, AppSpacing.pageH, 100),
-                        children: [
-                          Text(
-                            context.tr('charactersDiscoverHint'),
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                  height: 1.35,
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          SegmentedButton<String>(
-                            segments: [
-                              ButtonSegment<String>(
-                                value: 'all',
-                                label: Text(context.tr('charactersFilterAll')),
-                              ),
-                              ButtonSegment<String>(
-                                value: 'ja',
-                                label: Text(context.tr('langJa')),
-                              ),
-                              ButtonSegment<String>(
-                                value: 'ko',
-                                label: Text(context.tr('langKo')),
-                              ),
-                            ],
-                            selected: {_publicFilter},
-                            onSelectionChanged: (s) {
-                              if (s.isEmpty) return;
-                              setState(() => _publicFilter = s.first);
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          if (_visiblePublicList().isEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 24, bottom: 20),
-                              child: AppEmptyHint(text: context.tr('charactersDiscoverEmpty')),
-                            )
-                          else
-                            ..._visiblePublicList().map((r) => _recordTile(r, isMine: false, isPublicDiscover: true)),
-                        ],
                       ),
                     ),
                     RefreshIndicator(
@@ -404,7 +235,7 @@ class CharactersTabState extends State<CharactersTab>
     );
   }
 
-  /// 빌트인 캐릭터 — 2열 그리드 카드
+  /// Built-in characters — 2-column grid cards.
   Widget _builtInGrid() {
     return GridView.builder(
       shrinkWrap: true,
@@ -422,7 +253,7 @@ class CharactersTabState extends State<CharactersTab>
 
   Widget _builtInCard(Character c) {
     final scheme = Theme.of(context).colorScheme;
-    final builtinShortKey = builtinCharacterShortKey(c.id);
+    final builtinShortKey = _builtinCharacterShortKey(c.id);
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -549,12 +380,12 @@ class CharactersTabState extends State<CharactersTab>
     return r.language == 'ja' ? context.tr('langJa') : context.tr('langKo');
   }
 
-  Widget _recordTile(CharacterRecord r, {bool isMine = false, bool isPublicDiscover = false}) {
+  Widget _recordTile(CharacterRecord r, {bool isMine = false}) {
     final scheme = Theme.of(context).colorScheme;
     return AppListRow(
       leading: _avatarWidget(r.avatarUrl, r.name, radius: AppSizes.listAvatarLg),
       title: r.name,
-      subtitle: isPublicDiscover ? _publicDiscoverSubtitle(r) : _recordSubtitle(context, r),
+      subtitle: _recordSubtitle(context, r),
       subtitleMaxLines: 2,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -582,7 +413,7 @@ class CharactersTabState extends State<CharactersTab>
                 );
                 if (confirm != true || !mounted) return;
                 try {
-                  await context.read<CharacterRecordRepository>().deleteCharacter(r.id, r.ownerId);
+                  await context.read<CharacterRecordRepository>().deleteCharacter(r.id);
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('charactersDeleted'))));
                   unawaited(_load());
@@ -597,18 +428,12 @@ class CharactersTabState extends State<CharactersTab>
           Icon(Icons.chevron_right_rounded, color: scheme.outlineVariant),
         ],
       ),
-      onTap: () {
-        if (isPublicDiscover) {
-          _openPublicCharacterSheet(r);
-        } else {
-          _pushChatWithRecord(r);
-        }
-      },
+      onTap: () => _pushChatWithRecord(r),
     );
   }
 }
 
-// ── 빈 내 캐릭터 카드 ────────────────────────────────────────
+// ── Empty "my character" card ────────────────────────────────
 class _EmptyMyCharacterCard extends StatelessWidget {
   const _EmptyMyCharacterCard({required this.onTap});
   final VoidCallback onTap;
@@ -657,7 +482,7 @@ class _EmptyMyCharacterCard extends StatelessWidget {
   }
 }
 
-// ── 팝업 메뉴 ────────────────────────────────────────────────
+// ── Popup menu ────────────────────────────────────────────────
 class _RecordMenu extends StatelessWidget {
   const _RecordMenu({
     required this.onEdit,
