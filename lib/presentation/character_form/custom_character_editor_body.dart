@@ -2,10 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/storage/character_storage.dart';
-import '../../../core/supabase/app_supabase.dart';
 import '../../../core/ui/ui.dart';
 import '../../../data/celebrity_persona/celebrity_persona_suggester.dart';
 import '../../../domain/entities/character_record.dart';
@@ -14,6 +13,33 @@ import '../../../domain/repositories/points_repository.dart';
 import '../locale/l10n_context.dart';
 import '../points/points_balance_notifier.dart';
 import '../points/points_topup_prompt.dart';
+
+/// Single local user id (no auth).
+const String _localUserId = 'local';
+
+/// True if [value] looks like a remote http(s) URL rather than a local file path.
+bool _isNetworkImagePath(String value) {
+  final v = value.trim();
+  return v.startsWith('http://') || v.startsWith('https://');
+}
+
+/// Image provider for either a remote http(s) URL or a local file path.
+ImageProvider _avatarImageProvider(String value) {
+  return _isNetworkImagePath(value) ? NetworkImage(value) : FileImage(File(value));
+}
+
+/// Copies a picked image [src] into the app documents dir, returns the stored path.
+Future<String> _copyAvatarToAppDir(File src) async {
+  final dir = await getApplicationDocumentsDirectory();
+  final avatarsDir = Directory('${dir.path}/avatars');
+  if (!await avatarsDir.exists()) {
+    await avatarsDir.create(recursive: true);
+  }
+  final ext = src.path.contains('.') ? src.path.split('.').last : 'jpg';
+  final dest = '${avatarsDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+  await src.copy(dest);
+  return dest;
+}
 
 /// Shared form for [CreateCharacterScreen] and [EditCharacterScreen].
 class CustomCharacterEditorBody extends StatefulWidget {
@@ -87,11 +113,6 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   }
 
   Future<bool> _spendPointsForXProfileImport() async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) {
-      if (mounted) setState(() => _error = context.tr('loginRequired'));
-      return false;
-    }
     final spend = await context.read<PointsRepository>().spendPoints(5, 'x_profile_import');
     if (!spend.ok) {
       if (mounted) {
@@ -166,16 +187,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
 
   Future<void> _save() async {
     if (_saving) return;
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) {
-      setState(() => _error = context.tr('loginRequired'));
-      return;
-    }
     final existing = _existing;
-    if (existing != null && user.id != existing.ownerId) {
-      setState(() => _error = context.tr('editCharacterOwnOnly'));
-      return;
-    }
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       setState(() => _error = context.tr('nameRequired'));
@@ -204,7 +216,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
         if (!mounted) return;
         context.read<PointsBalanceNotifier>().setBalance(spend.balance);
         final record = CharacterRecord.draft(
-          ownerId: user.id,
+          ownerId: _localUserId,
           name: name,
           nameSecondary: secondary.isEmpty ? null : secondary,
           tagline: tagline.isEmpty ? null : tagline,
@@ -251,13 +263,6 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   }
 
   Future<void> _pickAvatar() async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) {
-      setState(() => _error = context.tr('loginRequired'));
-      return;
-    }
-    final existing = _existing;
-    if (existing != null && user.id != existing.ownerId) return;
     final x = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       maxWidth: 512,
@@ -269,10 +274,11 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       _uploadingAvatar = true;
     });
     try {
-      final url = await CharacterStorage.uploadAvatar(user.id, File(x.path));
+      // No server upload: copy the picked file into the app documents dir.
+      final path = await _copyAvatarToAppDir(File(x.path));
       if (!mounted) return;
       setState(() {
-        _avatarUrl = url;
+        _avatarUrl = path;
         _uploadingAvatar = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -351,7 +357,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                             )
                           : null,
                       image: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
-                          ? DecorationImage(image: NetworkImage(_avatarUrl!), fit: BoxFit.cover)
+                          ? DecorationImage(image: _avatarImageProvider(_avatarUrl!), fit: BoxFit.cover)
                           : null,
                       boxShadow: [
                         BoxShadow(
