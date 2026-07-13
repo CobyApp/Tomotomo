@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/l10n/app_strings.dart';
-import '../../core/supabase/app_supabase.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/ui/ui.dart';
 import '../../domain/entities/user_theme.dart';
@@ -81,8 +80,6 @@ class ThemeSettingsScreen extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () async {
-                final user = AppSupabase.auth.currentUser;
-                if (user == null) return;
                 await notifier.clear();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/supabase/app_supabase.dart';
 import '../../core/ui/ui.dart';
 import '../../domain/repositories/points_repository.dart';
 import '../locale/l10n_context.dart';
@@ -173,14 +172,6 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
   }
 
   Future<void> _buy(ProductDetails pd) async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.tr('loginRequired'))));
-      return;
-    }
     setState(() {
       _pendingProductId = pd.id;
       _error = null;

@@ -3,16 +3,37 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/storage/character_storage.dart';
-import '../../core/supabase/app_supabase.dart';
 import '../../core/ui/ui.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../locale/l10n_context.dart';
 
-/// Edit current user's profile (display name, gallery avatar, status). App language: Settings.
+/// Single local user id (no auth).
+const String _localUserId = 'local';
+
+/// True if [value] looks like a remote http(s) URL rather than a local file path.
+bool _isNetworkImagePath(String value) {
+  final v = value.trim();
+  return v.startsWith('http://') || v.startsWith('https://');
+}
+
+/// Copies a picked image [src] into the app documents dir, returns the stored path.
+Future<String> _copyAvatarToAppDir(File src) async {
+  final dir = await getApplicationDocumentsDirectory();
+  final avatarsDir = Directory('${dir.path}/avatars');
+  if (!await avatarsDir.exists()) {
+    await avatarsDir.create(recursive: true);
+  }
+  final ext = src.path.contains('.') ? src.path.split('.').last : 'jpg';
+  final dest = '${avatarsDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+  await src.copy(dest);
+  return dest;
+}
+
+/// Edit the local profile (display name, gallery avatar, status). App language: Settings.
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
 
@@ -47,24 +68,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _load() async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = null;
-          _profile = null;
-        });
-      }
-      return;
-    }
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
       final repo = context.read<ProfileRepository>();
-      final p = await repo.getProfile(user.id);
+      final p = await repo.getProfile(_localUserId);
       if (!mounted) return;
       if (p == null) {
         setState(() {
@@ -93,8 +103,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _pickAndUploadAvatar() async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) return;
     final x = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 512, imageQuality: 85);
     if (x == null || !mounted) return;
     setState(() {
@@ -102,10 +110,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       _uploadingAvatar = true;
     });
     try {
-      final url = await CharacterStorage.uploadAvatar(user.id, File(x.path));
+      // No server upload: copy the picked file into the app documents dir.
+      final path = await _copyAvatarToAppDir(File(x.path));
       if (!mounted) return;
       setState(() {
-        _avatarUrl = url;
+        _avatarUrl = path;
         _uploadingAvatar = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('avatarUploadDone'))));
@@ -120,8 +129,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Future<void> _save() async {
     final profile = _profile;
-    final user = AppSupabase.auth.currentUser;
-    if (profile == null || user == null) return;
+    if (profile == null) return;
     final name = _displayNameController.text.trim();
     if (name.isEmpty) {
       setState(() => _error = context.trRead('displayNameRequired'));
@@ -163,7 +171,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = AppSupabase.auth.currentUser;
     final scheme = Theme.of(context).colorScheme;
 
     final Widget body;
@@ -171,9 +178,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
     if (_loading) {
       body = const AppLoadingBody();
-      actions = null;
-    } else if (user == null) {
-      body = Center(child: Text(context.tr('loginRequired')));
       actions = null;
     } else if (_profile == null) {
       body = AppErrorBody(
@@ -183,7 +187,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       );
       actions = null;
     } else {
-      final profile = _profile!;
       final hasPhoto = _avatarUrl != null && _avatarUrl!.trim().isNotEmpty;
       actions = [
         TextButton(
@@ -226,15 +229,25 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       child: _uploadingAvatar
                           ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
                           : hasPhoto
-                              ? Image.network(
-                                  _avatarUrl!.trim(),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => Icon(
-                                    Icons.broken_image_outlined,
-                                    size: 40,
-                                    color: scheme.onSurfaceVariant,
-                                  ),
-                                )
+                              ? (_isNetworkImagePath(_avatarUrl!.trim())
+                                  ? Image.network(
+                                      _avatarUrl!.trim(),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => Icon(
+                                        Icons.broken_image_outlined,
+                                        size: 40,
+                                        color: scheme.onSurfaceVariant,
+                                      ),
+                                    )
+                                  : Image.file(
+                                      File(_avatarUrl!.trim()),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => Icon(
+                                        Icons.broken_image_outlined,
+                                        size: 40,
+                                        color: scheme.onSurfaceVariant,
+                                      ),
+                                    ))
                               : Icon(Icons.person_outline, size: 48, color: scheme.onSurfaceVariant),
                     ),
                   ),
@@ -286,11 +299,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ),
             maxLines: 2,
             textCapitalization: TextCapitalization.sentences,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            '${context.tr('settingsEmail')}: ${profile.email ?? user.email ?? '—'}',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ],
       );

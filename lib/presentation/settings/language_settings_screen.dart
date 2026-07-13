@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/supabase/app_supabase.dart';
 import '../../core/ui/ui.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
+
+/// Single local user id (no auth).
+const String _localUserId = 'local';
 
 class LanguageSettingsScreen extends StatelessWidget {
   const LanguageSettingsScreen({super.key});
@@ -61,9 +63,7 @@ class LanguageSettingsScreen extends StatelessWidget {
   }
 
   Future<Profile?> _loadProfile(BuildContext context) async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) return null;
-    return context.read<ProfileRepository>().getProfile(user.id);
+    return context.read<ProfileRepository>().getProfile(_localUserId);
   }
 
   Future<void> _set(BuildContext context, String? code, Profile profile) async {
