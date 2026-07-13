@@ -66,7 +66,7 @@ git commit -m "chore: add hive, drop supabase_flutter dependency"
 ```dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
-import 'package:tomotomo/core/local/hive_boxes.dart';
+import 'package:aichat/core/local/hive_boxes.dart';
 
 void main() {
   setUp(() => Hive.init('./.dart_tool/hive_test_1_2'));
@@ -136,7 +136,7 @@ list of JSON maps under one key, or keyed single objects. Keeps repos DRY.
 ```dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
-import 'package:tomotomo/data/local/local_json_store.dart';
+import 'package:aichat/data/local/local_json_store.dart';
 
 void main() {
   late Box box;
@@ -386,7 +386,7 @@ Implements the existing `PointsRepository` interface (`lib/domain/repositories/p
 ```dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
-import 'package:tomotomo/data/repositories/local_points_repository_impl.dart';
+import 'package:aichat/data/repositories/local_points_repository_impl.dart';
 
 void main() {
   late Box box;
