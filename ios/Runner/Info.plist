@@ -36,6 +36,15 @@
 	</dict>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>캐릭터 아바타와 배경 이미지를 선택하기 위해 사진 라이브러리 접근이 필요합니다.</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>AIキャラクターとの音声チャットで、あなたの声を文字に変換するためにマイクを使用します。</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
