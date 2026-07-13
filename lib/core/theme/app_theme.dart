@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../ui/holo/holo_tokens.dart';
 import 'chat_theme_data.dart';
 
 /// App-wide light theme: soft tinted shell (no flat grey), M3, ties to [ThemeNotifier] / user accent.
@@ -239,4 +240,202 @@ class AppTheme {
 
   /// Same as [buildLightTheme] with defaults (e.g. tests).
   static ThemeData get light => buildLightTheme();
+
+  /// HOLO-KITSCH theme — single bright holographic theme seeded from [Holo.pink].
+  /// Surfaces use [Holo.surface]/[Holo.surfaceCard], ink text uses
+  /// [Holo.inkPlum]/[Holo.inkPlumSoft]. App bar is transparent; screens style
+  /// titles via [GlitchText]. Nav bar / tab bar restyled to holo accents.
+  static ThemeData buildHoloTheme({
+    ChatThemeData chatExtension = const ChatThemeData(),
+  }) {
+    final scheme = ColorScheme.fromSeed(
+      seedColor: Holo.pink,
+      brightness: Brightness.light,
+      surface: Holo.surface,
+      primary: Holo.pink,
+      secondary: Holo.cyan,
+      tertiary: Holo.lilac,
+      onSurface: Holo.inkPlum,
+      onSurfaceVariant: Holo.inkPlumSoft,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      fontFamily: fontFamily,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: Holo.surface,
+      // InkSparkle uses a shader path that has triggered EXC_BAD_ACCESS on some iOS devices (Skia).
+      splashFactory: InkRipple.splashFactory,
+      appBarTheme: const AppBarTheme(
+        centerTitle: false,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Holo.inkPlum,
+        titleTextStyle: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -0.6,
+          color: Holo.inkPlum,
+          fontFamily: fontFamily,
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        dividerColor: Colors.transparent,
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: Holo.inkPlum,
+        unselectedLabelColor: Holo.inkPlumSoft,
+        indicator: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: Holo.pink.withValues(alpha: 0.14),
+        ),
+        labelStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w900, fontSize: 13),
+        unselectedLabelStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w600, fontSize: 13),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        height: 64,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        backgroundColor: Colors.transparent,
+        indicatorColor: Holo.pink.withValues(alpha: 0.16),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return TextStyle(
+            fontFamily: fontFamily,
+            fontSize: 11,
+            letterSpacing: 0.2,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+            color: selected ? Holo.pink : Holo.inkPlumSoft,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            size: 24,
+            color: selected ? Holo.pink : Holo.inkPlumSoft,
+          );
+        }),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: Holo.surfaceCard,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: Holo.pink.withValues(alpha: 0.35), width: 2),
+        ),
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: Holo.inkPlumSoft,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          elevation: 0,
+          backgroundColor: Holo.pink,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800, fontSize: 15),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Holo.inkPlum,
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          side: const BorderSide(color: Holo.cyan, width: 2),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: Holo.pink,
+          textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Holo.surfaceCard,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: Holo.pink.withValues(alpha: 0.30), width: 2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: Holo.pink, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: scheme.error, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        hintStyle: TextStyle(color: Holo.inkPlumSoft.withValues(alpha: 0.7)),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        elevation: 3,
+        focusElevation: 5,
+        highlightElevation: 5,
+        backgroundColor: Holo.pink,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        extendedPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+      ),
+      dividerTheme: DividerThemeData(
+        color: Holo.pink.withValues(alpha: 0.20),
+        thickness: 1,
+        space: 1,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: Holo.surfaceCard,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        elevation: 6,
+        shadowColor: Holo.pink.withValues(alpha: 0.14),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentTextStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w600),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Holo.surfaceCard,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        side: BorderSide(color: Holo.cyan.withValues(alpha: 0.45), width: 2),
+      ),
+      textTheme: TextTheme(
+        displayLarge: const TextStyle(fontFamily: fontFamily),
+        displayMedium: const TextStyle(fontFamily: fontFamily),
+        displaySmall: const TextStyle(fontFamily: fontFamily),
+        headlineLarge: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w900),
+        headlineMedium: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w900),
+        headlineSmall: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800),
+        titleLarge: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w900, letterSpacing: -0.4),
+        titleMedium: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800),
+        titleSmall: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w600),
+        bodyLarge: const TextStyle(fontFamily: fontFamily, height: 1.45),
+        bodyMedium: const TextStyle(fontFamily: fontFamily, height: 1.45),
+        bodySmall: const TextStyle(fontFamily: fontFamily, height: 1.35),
+        labelLarge: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800),
+        labelMedium: const TextStyle(fontFamily: fontFamily),
+        labelSmall: const TextStyle(fontFamily: fontFamily),
+      ),
+      extensions: [chatExtension],
+    );
+  }
 }
