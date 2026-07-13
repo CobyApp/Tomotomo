@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/ui/holo/holo_tokens.dart';
+import '../../core/ui/holo/holo_widgets.dart';
 import '../../core/ui/ui.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
@@ -13,6 +15,22 @@ import '../locale/l10n_context.dart';
 
 /// Single local user id (no auth).
 const String _localUserId = 'local';
+
+/// Cyan-bordered holo field decoration shared by every text input on this form.
+InputDecoration _holoFieldDecoration({String? labelText, String? hintText}) {
+  const radius = BorderRadius.all(Radius.circular(18));
+  return InputDecoration(
+    labelText: labelText,
+    hintText: hintText,
+    filled: true,
+    fillColor: Holo.surfaceCard,
+    labelStyle: const TextStyle(color: Holo.inkPlum, fontWeight: FontWeight.w700),
+    floatingLabelStyle: const TextStyle(color: Holo.inkPlum, fontWeight: FontWeight.w800),
+    border: const OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: Holo.cyan, width: 2)),
+    enabledBorder: const OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: Holo.cyan, width: 2)),
+    focusedBorder: const OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: Holo.pink, width: 2.5)),
+  );
+}
 
 /// True if [value] looks like a remote http(s) URL rather than a local file path.
 bool _isNetworkImagePath(String value) {
@@ -171,8 +189,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     final Widget body;
     final List<Widget>? actions;
 
@@ -189,27 +205,33 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     } else {
       final hasPhoto = _avatarUrl != null && _avatarUrl!.trim().isNotEmpty;
       actions = [
-        TextButton(
-          onPressed: _saving ? null : _save,
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
           child: _saving
-              ? SizedBox(
+              ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Holo.pink),
                 )
-              : Text(context.tr('save')),
+              : HoloButton(
+                  icon: Icons.check_rounded,
+                  label: context.tr('save'),
+                  onPressed: _save,
+                ),
         ),
       ];
       body = ListView(
         padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 16, AppSpacing.pageH, AppSpacing.pageBottom),
         children: [
           if (_error != null) ...[
-            Card(
-              color: scheme.errorContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(_error!, style: TextStyle(color: scheme.onErrorContainer)),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Holo.pink.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppRadii.cardSmall),
+                border: Border.all(color: Holo.pink.withValues(alpha: 0.4), width: 2),
               ),
+              child: Text(_error!, style: const TextStyle(color: Holo.inkPlum)),
             ),
             const SizedBox(height: 16),
           ],
@@ -217,48 +239,60 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             child: Stack(
               alignment: Alignment.bottomRight,
               children: [
-                Material(
-                  color: scheme.surfaceContainerHigh,
-                  shape: const CircleBorder(),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
-                    child: SizedBox(
-                      width: 112,
-                      height: 112,
-                      child: _uploadingAvatar
-                          ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-                          : hasPhoto
-                              ? (_isNetworkImagePath(_avatarUrl!.trim())
-                                  ? Image.network(
-                                      _avatarUrl!.trim(),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => Icon(
-                                        Icons.broken_image_outlined,
-                                        size: 40,
-                                        color: scheme.onSurfaceVariant,
-                                      ),
-                                    )
-                                  : Image.file(
-                                      File(_avatarUrl!.trim()),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => Icon(
-                                        Icons.broken_image_outlined,
-                                        size: 40,
-                                        color: scheme.onSurfaceVariant,
-                                      ),
-                                    ))
-                              : Icon(Icons.person_outline, size: 48, color: scheme.onSurfaceVariant),
+                HoloGradientRing(
+                  size: 112,
+                  child: Material(
+                    color: Holo.surfaceCard,
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
+                      child: SizedBox(
+                        width: 112,
+                        height: 112,
+                        child: _uploadingAvatar
+                            ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Holo.pink))
+                            : hasPhoto
+                                ? (_isNetworkImagePath(_avatarUrl!.trim())
+                                    ? Image.network(
+                                        _avatarUrl!.trim(),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) => const Icon(
+                                          Icons.broken_image_outlined,
+                                          size: 40,
+                                          color: Holo.inkPlumSoft,
+                                        ),
+                                      )
+                                    : Image.file(
+                                        File(_avatarUrl!.trim()),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) => const Icon(
+                                          Icons.broken_image_outlined,
+                                          size: 40,
+                                          color: Holo.inkPlumSoft,
+                                        ),
+                                      ))
+                                : const Icon(Icons.person_outline, size: 48, color: Holo.inkPlumSoft),
+                      ),
                     ),
                   ),
                 ),
                 Positioned(
                   right: 0,
                   bottom: 0,
-                  child: FloatingActionButton.small(
-                    heroTag: 'profile_pick_photo',
-                    onPressed: _uploadingAvatar ? null : _pickAndUploadAvatar,
-                    child: const Icon(Icons.camera_alt_outlined, size: 20),
+                  child: GestureDetector(
+                    onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Holo.pink,
+                        border: Border.all(color: Holo.surface, width: 2.5),
+                        boxShadow: Holo.cardShadow,
+                      ),
+                      child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                    ),
                   ),
                 ),
               ],
@@ -272,19 +306,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   : () {
                       setState(() => _avatarUrl = null);
                     },
-              child: Text(context.tr('profileEditClearPhoto')),
+              child: Text(
+                context.tr('profileEditClearPhoto'),
+                style: const TextStyle(color: Holo.inkPlumSoft, fontWeight: FontWeight.w700),
+              ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             context.tr('profilePhotoGalleryHint'),
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Holo.inkPlumSoft),
           ),
           const SizedBox(height: 28),
           TextFormField(
             controller: _displayNameController,
-            decoration: InputDecoration(
+            decoration: _holoFieldDecoration(
               labelText: context.tr('displayNameLabel'),
               hintText: context.tr('displayNameHint'),
             ),
@@ -293,7 +330,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _statusMessageController,
-            decoration: InputDecoration(
+            decoration: _holoFieldDecoration(
               labelText: context.tr('profileStatusMessageLabel'),
               hintText: context.tr('profileStatusMessageHint'),
             ),

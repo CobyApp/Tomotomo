@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/ads/ad_config.dart';
 import '../../core/ads/rewarded_ad_service.dart';
+import '../../core/ui/holo/holo_tokens.dart';
+import '../../core/ui/holo/holo_widgets.dart';
 import '../../core/ui/ui.dart';
 import '../../data/repositories/local_points_repository_impl.dart';
 import '../../domain/repositories/points_repository.dart';
@@ -243,8 +245,6 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return AppPageScaffold(
       title: context.tr('pointsTopupTitle'),
       body: ListView(
@@ -261,87 +261,216 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
               final adReady = context.watch<RewardedAdService>().isReady;
               final remaining = pts.adsRemainingToday(today: _today());
               final capReached = remaining == 0;
-              return Card(
-                child: ListTile(
-                  leading: Icon(Icons.play_circle_fill_rounded, color: scheme.secondary),
-                  title: Text(context.tr('adEarnTitle')),
-                  subtitle: Text(
-                    capReached
-                        ? context.tr('adEarnCapReached')
-                        : '${context.tr('adEarnSubtitle', params: {
-                              'points': '${AdConfig.pointsPerAd}',
-                            })}\n${context.tr('adEarnRemaining', params: {
-                              'remaining': '$remaining',
-                              'max': '${AdConfig.maxAdsPerDay}',
-                            })}',
-                  ),
-                  isThreeLine: !capReached,
-                  trailing: FilledButton(
-                    onPressed: (capReached || !adReady) ? null : _watchAd,
-                    child: Text(
-                      !adReady && !capReached
-                          ? context.tr('adEarnNotReady')
-                          : context.tr('adEarnWatch'),
+              return _AdShimmerCard(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(shape: BoxShape.circle, gradient: Holo.holoGradient),
+                      child: const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 24),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.tr('adEarnTitle'),
+                            style: const TextStyle(color: Holo.inkPlum, fontWeight: FontWeight.w800, fontSize: 16),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            capReached
+                                ? context.tr('adEarnCapReached')
+                                : '${context.tr('adEarnSubtitle', params: {
+                                      'points': '${AdConfig.pointsPerAd}',
+                                    })}\n${context.tr('adEarnRemaining', params: {
+                                      'remaining': '$remaining',
+                                      'max': '${AdConfig.maxAdsPerDay}',
+                                    })}',
+                            style: const TextStyle(color: Holo.inkPlumSoft, height: 1.3),
+                          ),
+                          const SizedBox(height: 12),
+                          HoloButton(
+                            icon: Icons.play_arrow_rounded,
+                            label: !adReady && !capReached ? context.tr('adEarnNotReady') : context.tr('adEarnWatch'),
+                            onPressed: (capReached || !adReady) ? null : _watchAd,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
           ),
-          const SizedBox(height: 8),
-          if (_loadingProducts)
-            const Center(child: CircularProgressIndicator()),
+          const SizedBox(height: 12),
+          if (_loadingProducts) const AppLoadingBody(),
           if (!_loadingProducts && _error != null) ...[
-            Text(_error!, style: TextStyle(color: scheme.error)),
+            Text(_error!, style: const TextStyle(color: Holo.pink)),
             const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: _loadProducts,
-              icon: const Icon(Icons.refresh_rounded),
-              label: Text(context.tr('retry')),
+            Center(
+              child: HoloButton(
+                icon: Icons.refresh_rounded,
+                label: context.tr('retry'),
+                onPressed: _loadProducts,
+              ),
             ),
             const SizedBox(height: 8),
           ],
           for (final pack in pointTopUpPacks)
-            Card(
-              child: Builder(
-                builder: (context) {
-                  final product = _products[pack.productId];
-                  final canAttemptPurchase =
-                      _storeAvailable && _pendingProductId == null;
-                  return ListTile(
-                    leading: Icon(Icons.stars_rounded, color: scheme.secondary),
-                    title: Text(
-                      context.tr(
-                        'pointsTopupPackTitle',
-                        params: {'points': '${pack.points}'},
-                      ),
-                    ),
-                    subtitle: Text(
-                      '${product?.price ?? _fallbackPrice(pack)} · ${_valueLabel(context, pack)}',
-                    ),
-                    trailing: FilledButton(
-                      onPressed: !canAttemptPurchase
-                          ? null
-                          : product == null
-                          ? _showMissingProductMessage
-                          : () => _buy(product),
-                      child: _pendingProductId == pack.productId
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(
-                              product == null
-                                  ? context.tr('pointsTopupCheckStore')
-                                  : context.tr('pointsTopupBuy'),
-                            ),
-                    ),
-                  );
-                },
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: HoloCard(
+                child: Builder(
+                  builder: (context) {
+                    final product = _products[pack.productId];
+                    final canAttemptPurchase =
+                        _storeAvailable && _pendingProductId == null;
+                    return Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Holo.lemon.withValues(alpha: 0.25),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.stars_rounded, color: Holo.inkPlum, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                context.tr(
+                                  'pointsTopupPackTitle',
+                                  params: {'points': '${pack.points}'},
+                                ),
+                                style: const TextStyle(color: Holo.inkPlum, fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${product?.price ?? _fallbackPrice(pack)} · ${_valueLabel(context, pack)}',
+                                style: const TextStyle(color: Holo.inkPlumSoft, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _pendingProductId == pack.productId
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(strokeWidth: 2.5, color: Holo.pink),
+                              )
+                            : HoloButton(
+                                label: product == null
+                                    ? context.tr('pointsTopupCheckStore')
+                                    : context.tr('pointsTopupBuy'),
+                                onPressed: !canAttemptPurchase
+                                    ? null
+                                    : product == null
+                                    ? _showMissingProductMessage
+                                    : () => _buy(product),
+                              ),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Holographic shimmer sweep behind the ad-earning card content — the visual
+/// hero of the top-up screen. Purely decorative: a diagonal translucent band
+/// slides across the card on a gentle 2s repeating loop.
+class _AdShimmerCard extends StatefulWidget {
+  const _AdShimmerCard({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_AdShimmerCard> createState() => _AdShimmerCardState();
+}
+
+class _AdShimmerCardState extends State<_AdShimmerCard> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Holo.surfaceCard,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Holo.pink.withValues(alpha: 0.35), width: 2),
+        boxShadow: Holo.cardShadow,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            Padding(padding: const EdgeInsets.all(14), child: widget.child),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final w = constraints.maxWidth;
+                    final h = constraints.maxHeight;
+                    return AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, _) {
+                        final dx = -w * 0.6 + _controller.value * (w * 1.9);
+                        return Transform.translate(
+                          offset: Offset(dx, 0),
+                          child: Transform.rotate(
+                            angle: -0.35,
+                            child: Container(
+                              width: w * 0.45,
+                              height: h * 2.2,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  colors: [
+                                    Colors.white.withValues(alpha: 0.0),
+                                    Colors.white.withValues(alpha: 0.45),
+                                    Holo.cyan.withValues(alpha: 0.3),
+                                    Colors.white.withValues(alpha: 0.0),
+                                  ],
+                                  stops: const [0.0, 0.45, 0.65, 1.0],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

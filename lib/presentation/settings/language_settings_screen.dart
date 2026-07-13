@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/ui/holo/holo_tokens.dart';
 import '../../core/ui/ui.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
@@ -26,9 +27,10 @@ class LanguageSettingsScreen extends StatelessWidget {
           }
           final profile = snap.data;
           if (profile == null) {
-            return Center(child: Text(context.tr('loginRequired')));
+            return Center(
+              child: Text(context.tr('loginRequired'), style: const TextStyle(color: Holo.inkPlumSoft)),
+            );
           }
-          final scheme = Theme.of(context).colorScheme;
           return ListView(
             padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 16, AppSpacing.pageH, AppSpacing.pageBottom),
             children: [
@@ -40,7 +42,7 @@ class LanguageSettingsScreen extends StatelessWidget {
                     title: context.tr('langKorean'),
                     showChevron: false,
                     trailing: profile.appLanguage == 'ko'
-                        ? Icon(Icons.check_circle_rounded, color: scheme.primary, size: 24)
+                        ? const Icon(Icons.check_circle_rounded, color: Holo.pink, size: 24)
                         : null,
                     onTap: () => _set(context, 'ko', profile),
                   ),
@@ -49,7 +51,7 @@ class LanguageSettingsScreen extends StatelessWidget {
                     title: context.tr('langJapanese'),
                     showChevron: false,
                     trailing: profile.appLanguage == 'ja'
-                        ? Icon(Icons.check_circle_rounded, color: scheme.primary, size: 24)
+                        ? const Icon(Icons.check_circle_rounded, color: Holo.pink, size: 24)
                         : null,
                     onTap: () => _set(context, 'ja', profile),
                   ),

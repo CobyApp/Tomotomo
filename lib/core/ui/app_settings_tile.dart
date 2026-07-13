@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'app_tokens.dart';
+import 'holo/holo_tokens.dart';
 
-/// Group of settings rows inside one frosted card.
+/// Group of settings rows inside one holo card.
 class AppSettingsPanel extends StatelessWidget {
   const AppSettingsPanel({
     super.key,
@@ -14,19 +15,19 @@ class AppSettingsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadii.card),
-        color: scheme.surfaceContainerLow.withValues(alpha: 0.92),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.35)),
+        color: Holo.surfaceCard,
+        border: Border.all(color: Holo.pink.withValues(alpha: 0.35), width: 2),
+        boxShadow: Holo.cardShadow,
       ),
-      child: Column(children: _divided(children, scheme)),
+      child: Column(children: _divided(children)),
     );
   }
 
-  List<Widget> _divided(List<Widget> items, ColorScheme scheme) {
+  List<Widget> _divided(List<Widget> items) {
     if (items.isEmpty) return items;
     final out = <Widget>[];
     for (var i = 0; i < items.length; i++) {
@@ -36,7 +37,7 @@ class AppSettingsPanel extends StatelessWidget {
           height: 1,
           indent: dividerIndent,
           endIndent: 0,
-          color: scheme.outlineVariant.withValues(alpha: 0.35),
+          color: Holo.cyan.withValues(alpha: 0.35),
         ));
       }
     }
@@ -68,9 +69,8 @@ class AppSettingsNavTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final ic = iconColor ?? scheme.primary;
-    final tc = titleColor ?? scheme.onSurface;
+    final ic = iconColor ?? Holo.pink;
+    final tc = titleColor ?? Holo.inkPlum;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -78,7 +78,7 @@ class AppSettingsNavTile extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: ic.withValues(alpha: 0.12),
+          color: ic.withValues(alpha: 0.14),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(icon, color: ic, size: 22),
@@ -90,12 +90,12 @@ class AppSettingsNavTile extends StatelessWidget {
       subtitle: subtitle != null
           ? Text(
               subtitle!,
-              style: AppTextStyles.listSubtitle(context),
+              style: AppTextStyles.listSubtitle(context).copyWith(color: Holo.inkPlumSoft),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             )
           : null,
-      trailing: trailing ?? (showChevron ? Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant) : null),
+      trailing: trailing ?? (showChevron ? const Icon(Icons.chevron_right_rounded, color: Holo.inkPlumSoft) : null),
       onTap: onTap,
     );
   }

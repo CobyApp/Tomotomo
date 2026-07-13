@@ -1,23 +1,29 @@
 import 'package:flutter/material.dart';
 import 'app_tokens.dart';
+import 'holo/holo_tokens.dart';
+import 'holo/holo_widgets.dart';
 
 class AppLoadingBody extends StatelessWidget {
   const AppLoadingBody({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final seed = Theme.of(context).colorScheme.primary;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 44,
-            height: 44,
-            child: CircularProgressIndicator(
-              strokeWidth: 3.5,
-              color: seed,
-              strokeCap: StrokeCap.round,
+          HoloGradientRing(
+            size: 48,
+            child: const ColoredBox(
+              color: Holo.surfaceCard,
+              child: Padding(
+                padding: EdgeInsets.all(8),
+                child: CircularProgressIndicator(
+                  strokeWidth: 3.5,
+                  color: Holo.pink,
+                  strokeCap: StrokeCap.round,
+                ),
+              ),
             ),
           ),
         ],
@@ -35,7 +41,6 @@ class AppErrorBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.pageH),
@@ -47,18 +52,19 @@ class AppErrorBody extends StatelessWidget {
               height: 72,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: scheme.errorContainer.withValues(alpha: 0.45),
+                color: Holo.pink.withValues(alpha: 0.14),
+                border: Border.all(color: Holo.pink.withValues(alpha: 0.4), width: 2),
               ),
-              child: Icon(Icons.cloud_off_rounded, size: 36, color: scheme.error),
+              child: const Icon(Icons.cloud_off_rounded, size: 36, color: Holo.pink),
             ),
             const SizedBox(height: 18),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45, color: scheme.onSurface),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45, color: Holo.inkPlum),
             ),
             const SizedBox(height: 20),
-            FilledButton(onPressed: onRetry, child: Text(retryLabel)),
+            HoloButton(icon: Icons.refresh_rounded, label: retryLabel, onPressed: onRetry),
           ],
         ),
       ),
@@ -78,7 +84,7 @@ class AppEmptyHint extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: Holo.inkPlumSoft,
               height: 1.35,
             ),
       ),
@@ -102,7 +108,6 @@ class AppEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -114,25 +119,19 @@ class AppEmptyState extends StatelessWidget {
               height: 88,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    scheme.primaryContainer,
-                    scheme.secondaryContainer,
-                  ],
-                ),
+                gradient: Holo.holoGradient,
+                boxShadow: Holo.cardShadow,
               ),
               child: Center(
                 child: emoji != null
                     ? Text(emoji!, style: const TextStyle(fontSize: 38))
-                    : Icon(icon, size: 40, color: scheme.primary),
+                    : Icon(icon, size: 40, color: Colors.white),
               ),
             ),
             const SizedBox(height: 20),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800, color: Holo.inkPlum),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
@@ -140,7 +139,7 @@ class AppEmptyState extends StatelessWidget {
               subtitle,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
+                    color: Holo.inkPlumSoft,
                     height: 1.5,
                   ),
             ),

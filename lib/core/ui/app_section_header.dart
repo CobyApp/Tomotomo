@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_tokens.dart';
+import 'holo/holo_tokens.dart';
 
 class AppSectionHeader extends StatelessWidget {
   const AppSectionHeader({
@@ -19,7 +20,6 @@ class AppSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, top: 4),
       child: Material(
@@ -31,17 +31,22 @@ class AppSectionHeader extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
             child: Row(
               children: [
-                Expanded(child: Text(title, style: AppTextStyles.sectionLabel(context))),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppTextStyles.sectionLabel(context).copyWith(color: Holo.inkPlum),
+                  ),
+                ),
                 Icon(
                   expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-                  color: scheme.onSurfaceVariant,
+                  color: Holo.inkPlumSoft,
                   size: 26,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   expanded ? collapseLabel : expandLabel,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: scheme.primary,
+                        color: Holo.pink,
                         fontWeight: FontWeight.w700,
                       ),
                 ),

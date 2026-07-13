@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_tokens.dart';
+import 'holo/holo_tokens.dart';
 
 /// Primary list row: avatar / leading + text column + optional trailing (AI badge, etc.).
 class AppListRow extends StatelessWidget {
@@ -24,12 +25,10 @@ class AppListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Padding(
       padding: EdgeInsets.only(bottom: marginBottom),
       child: Material(
-        color: scheme.surfaceContainerLow,
+        color: Holo.surfaceCard,
         borderRadius: BorderRadius.circular(AppRadii.card),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadii.card),
@@ -37,7 +36,8 @@ class AppListRow extends StatelessWidget {
           child: Ink(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadii.card),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.25)),
+              border: Border.all(color: Holo.pink.withValues(alpha: 0.35), width: 2),
+              boxShadow: Holo.cardShadow,
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -51,7 +51,7 @@ class AppListRow extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: AppTextStyles.listTitle(context),
+                          style: AppTextStyles.listTitle(context).copyWith(color: Holo.inkPlum),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -59,7 +59,7 @@ class AppListRow extends StatelessWidget {
                           SizedBox(height: subtitleMaxLines > 1 ? 4 : 2),
                           Text(
                             subtitle!,
-                            style: AppTextStyles.listSubtitle(context),
+                            style: AppTextStyles.listSubtitle(context).copyWith(color: Holo.inkPlumSoft),
                             maxLines: subtitleMaxLines,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -102,12 +102,10 @@ class AppListRowCustom extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Padding(
       padding: EdgeInsets.only(bottom: marginBottom),
       child: Material(
-        color: scheme.surfaceContainerLow,
+        color: Holo.surfaceCard,
         borderRadius: BorderRadius.circular(AppRadii.card),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadii.card),
@@ -115,7 +113,8 @@ class AppListRowCustom extends StatelessWidget {
           child: Ink(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadii.card),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.25)),
+              border: Border.all(color: Holo.pink.withValues(alpha: 0.35), width: 2),
+              boxShadow: Holo.cardShadow,
             ),
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 14, vertical: verticalPadding),
