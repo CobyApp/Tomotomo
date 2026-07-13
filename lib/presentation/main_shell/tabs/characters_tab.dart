@@ -271,121 +271,88 @@ class CharactersTabState extends State<CharactersTab>
   }
 
   Widget _builtInCard(Character c) {
-    final scheme = Theme.of(context).colorScheme;
     final builtinShortKey = _builtinCharacterShortKey(c.id);
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChatScreen(
-            character: c,
-            chatRepository: context.read<ChatRepository>(),
-            aiChatRepository: context.read<AiChatRepository>(),
-          ),
-        ),
-      ),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          boxShadow: [
-            BoxShadow(
-              color: scheme.primary.withValues(alpha: 0.07),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
+    void openChat() => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(
+              character: c,
+              chatRepository: context.read<ChatRepository>(),
+              aiChatRepository: context.read<AiChatRepository>(),
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          child: Material(
-            color: scheme.surfaceContainerLow,
-            child: InkWell(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChatScreen(
-                    character: c,
-                    chatRepository: context.read<ChatRepository>(),
-                    aiChatRepository: context.read<AiChatRepository>(),
+          ),
+        );
+    return HoloCard(
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: openChat,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                HoloGradientRing(
+                  size: 76,
+                  child: CircleAvatar(
+                    radius: 36,
+                    backgroundColor: Holo.surfaceCard,
+                    backgroundImage: c.imageProvider,
                   ),
                 ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 36,
-                      backgroundImage: c.imageProvider,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      c.displayNamePrimary,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (c.displayNameSecondary.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        c.displayNameSecondary,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    if (c.tagline.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        c.tagline,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                              height: 1.25,
-                              fontWeight: FontWeight.w500,
-                            ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    if (builtinShortKey != null) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        context.tr(builtinShortKey),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant.withValues(alpha: 0.95),
-                              height: 1.3,
-                              fontSize: 11,
-                            ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: scheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(AppRadii.pill),
-                      ),
-                      child: Text(
-                        context.tr('tabChats'),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 12),
+                Text(
+                  c.displayNamePrimary,
+                  style: const TextStyle(fontWeight: FontWeight.w800, color: Holo.inkPlum),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
+                if (c.displayNameSecondary.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    c.displayNameSecondary,
+                    style: const TextStyle(color: Holo.inkPlumSoft),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                if (c.tagline.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    c.tagline,
+                    style: const TextStyle(
+                      color: Holo.inkPlumSoft,
+                      height: 1.25,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                if (builtinShortKey != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    context.tr(builtinShortKey),
+                    style: TextStyle(
+                      color: Holo.inkPlumSoft.withValues(alpha: 0.95),
+                      height: 1.3,
+                      fontSize: 11,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: 10),
+                HoloChip(child: Text(context.tr('tabChats'))),
+              ],
             ),
           ),
         ),
@@ -400,54 +367,89 @@ class CharactersTabState extends State<CharactersTab>
   }
 
   Widget _recordTile(CharacterRecord r, {bool isMine = false}) {
-    final scheme = Theme.of(context).colorScheme;
-    return AppListRow(
-      leading: _avatarWidget(r.avatarUrl, r.name, radius: AppSizes.listAvatarLg),
-      title: r.name,
-      subtitle: _recordSubtitle(context, r),
-      subtitleMaxLines: 2,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isMine)
-            _RecordMenu(
-              onEdit: () async {
-                final updated = await Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute(builder: (_) => EditCharacterScreen(record: r)),
-                );
-                if (updated == true) unawaited(_load());
-              },
-              onDelete: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(context.tr('charactersDeleteTitle')),
-                    content: Text(context.tr('charactersDeleteBody', params: {'name': r.name})),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.tr('cancel'))),
-                      FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.tr('charactersDelete'))),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.listGap),
+      child: HoloCard(
+        padding: EdgeInsets.zero,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () => _pushChatWithRecord(r),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  _avatarWidget(r.avatarUrl, r.name, radius: AppSizes.listAvatarLg),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          r.name,
+                          style: AppTextStyles.listTitle(context).copyWith(color: Holo.inkPlum, fontWeight: FontWeight.w800),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _recordSubtitle(context, r),
+                          style: AppTextStyles.listSubtitle(context).copyWith(color: Holo.inkPlumSoft),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isMine)
+                        _RecordMenu(
+                          onEdit: () async {
+                            final updated = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(builder: (_) => EditCharacterScreen(record: r)),
+                            );
+                            if (updated == true) unawaited(_load());
+                          },
+                          onDelete: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text(context.tr('charactersDeleteTitle')),
+                                content: Text(context.tr('charactersDeleteBody', params: {'name': r.name})),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.tr('cancel'))),
+                                  FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.tr('charactersDelete'))),
+                                ],
+                              ),
+                            );
+                            if (confirm != true || !mounted) return;
+                            try {
+                              await context.read<CharacterRecordRepository>().deleteCharacter(r.id);
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('charactersDeleted'))));
+                              unawaited(_load());
+                            } catch (e) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${context.tr('charactersDeleteFailed')}: $e')));
+                            }
+                          },
+                          editLabel: context.tr('charactersEdit'),
+                          deleteLabel: context.tr('charactersDelete'),
+                        ),
+                      Icon(Icons.chevron_right_rounded, color: Holo.inkPlumSoft),
                     ],
                   ),
-                );
-                if (confirm != true || !mounted) return;
-                try {
-                  await context.read<CharacterRecordRepository>().deleteCharacter(r.id);
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('charactersDeleted'))));
-                  unawaited(_load());
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${context.tr('charactersDeleteFailed')}: $e')));
-                }
-              },
-              editLabel: context.tr('charactersEdit'),
-              deleteLabel: context.tr('charactersDelete'),
+                ],
+              ),
             ),
-          Icon(Icons.chevron_right_rounded, color: scheme.outlineVariant),
-        ],
+          ),
+        ),
       ),
-      onTap: () => _pushChatWithRecord(r),
     );
   }
 }
@@ -459,42 +461,40 @@ class _EmptyMyCharacterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          border: Border.all(
-            color: scheme.primary.withValues(alpha: 0.30),
-            width: 1.5,
-            strokeAlign: BorderSide.strokeAlignInside,
-          ),
-          color: scheme.primaryContainer.withValues(alpha: 0.18),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: scheme.primaryContainer,
-              ),
-              child: Icon(Icons.add_rounded, color: scheme.primary),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                context.tr('charactersEmptyMyCta'),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: scheme.primary,
+    return HoloCard(
+      dashed: true,
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: Holo.holoGradient,
+                  ),
+                  child: const Icon(Icons.add_rounded, color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    context.tr('charactersEmptyMyCta'),
+                    style: const TextStyle(
+                      color: Holo.inkPlum,
                       fontWeight: FontWeight.w700,
                     ),
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -517,7 +517,8 @@ class _RecordMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert_rounded),
+      icon: const Icon(Icons.more_vert_rounded, color: Holo.inkPlumSoft),
+      color: Holo.surfaceCard,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       onSelected: (v) {
         if (v == 'edit') onEdit();
