@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/language/dm_utterance_script.dart';
 import '../../core/ui/app_tokens.dart';
+import '../../core/ui/holo/holo_tokens.dart';
+import '../../core/ui/holo/holo_widgets.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/saved_expression.dart';
@@ -23,7 +25,9 @@ ScrollPhysics _chatExpressionSheetListPhysics(BuildContext context) {
   final p = Theme.of(context).platform;
   final iosLike = p == TargetPlatform.iOS || p == TargetPlatform.macOS;
   return AlwaysScrollableScrollPhysics(
-    parent: iosLike ? const BouncingScrollPhysics() : const ClampingScrollPhysics(),
+    parent: iosLike
+        ? const BouncingScrollPhysics()
+        : const ClampingScrollPhysics(),
   );
 }
 
@@ -48,7 +52,6 @@ Future<void> showChatExpressionSheet(
     enableDrag: false,
     barrierColor: Colors.black.withValues(alpha: 0.42),
     builder: (sheetContext) {
-      final scheme = Theme.of(sheetContext).colorScheme;
       final mq = MediaQuery.of(sheetContext);
       final h = mq.size.height;
       final w = mq.size.width;
@@ -70,11 +73,12 @@ Future<void> showChatExpressionSheet(
             snapAnimationDuration: const Duration(milliseconds: 280),
             builder: (ctx, scrollController) {
               return Material(
-                color: scheme.surface,
+                color: Holo.surfaceCard,
                 elevation: 10,
-                shadowColor: Colors.black26,
+                shadowColor: Holo.pink.withValues(alpha: 0.28),
                 shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+                  side: BorderSide(color: Holo.pink, width: 1.5),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Column(
@@ -88,7 +92,7 @@ Future<void> showChatExpressionSheet(
                           width: 40,
                           height: 5,
                           decoration: BoxDecoration(
-                            color: scheme.outlineVariant.withValues(alpha: 0.65),
+                            color: Holo.cyan.withValues(alpha: 0.7),
                             borderRadius: BorderRadius.circular(2.5),
                           ),
                         ),
@@ -211,8 +215,11 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
         if (!mounted) return;
         if (cached != null) {
           final vocab = _vocabularyFromCacheJson(cached.vocabularyJson);
-          final hasPayload = (cached.explanation != null && cached.explanation!.trim().isNotEmpty) ||
-              (cached.lineTranslation != null && cached.lineTranslation!.trim().isNotEmpty) ||
+          final hasPayload =
+              (cached.explanation != null &&
+                  cached.explanation!.trim().isNotEmpty) ||
+              (cached.lineTranslation != null &&
+                  cached.lineTranslation!.trim().isNotEmpty) ||
               (vocab != null && vocab.isNotEmpty);
           if (hasPayload) {
             setState(() {
@@ -254,7 +261,10 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       }
 
       final ai = context.read<AiChatRepository>();
-      final result = await ai.generateDmExpressionAnalysis(widget.message.content, appUiLanguageCode: appLang);
+      final result = await ai.generateDmExpressionAnalysis(
+        widget.message.content,
+        appUiLanguageCode: appLang,
+      );
       if (!mounted) return;
       if (mid != null) {
         try {
@@ -291,7 +301,9 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       _fetchedLineAnalysis?.explanation ?? widget.message.explanation;
 
   bool get _vocabMeaningUsesHangul {
-    if (!widget.character.isDirectMessage) return widget.character.expectsKoreanStudyNotes;
+    if (!widget.character.isDirectMessage) {
+      return widget.character.expectsKoreanStudyNotes;
+    }
     return widget.dmScript == DmUtteranceScript.japaneseHeavy;
   }
 
@@ -302,11 +314,14 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
   }
 
   Future<void> _saveWordToNotebook(int index, Vocabulary v) async {
-    if (_savedWordIndices.contains(index) || _savingIndices.contains(index)) return;
+    if (_savedWordIndices.contains(index) || _savingIndices.contains(index)) {
+      return;
+    }
     final sheetContext = context;
     final repo = sheetContext.read<SavedExpressionRepository>();
-    final lang =
-        widget.character.isDirectMessage ? _notebookLangForDm() : widget.character.defaultNotebookLangForVocabSave;
+    final lang = widget.character.isDirectMessage
+        ? _notebookLangForDm()
+        : widget.character.defaultNotebookLangForVocabSave;
     final snackText = lang == 'ko'
         ? sheetContext.trRead('wordAddedToNotebookKo')
         : sheetContext.trRead('wordAddedToNotebookJa');
@@ -354,35 +369,40 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final messageStyle = TextStyle(
       fontSize: 17,
       height: 1.5,
-      color: scheme.onSurface,
+      color: Holo.inkPlum,
       fontWeight: FontWeight.w500,
-      fontFamily: character.assistantMessagePrefersHangulFont ? 'Pretendard' : null,
+      fontFamily: character.assistantMessagePrefersHangulFont
+          ? 'Pretendard'
+          : null,
     );
     final meaningStyle = TextStyle(
       fontSize: 14,
       height: 1.42,
-      color: scheme.onSurfaceVariant,
+      color: Holo.inkPlumSoft,
       fontFamily: _vocabMeaningUsesHangul ? 'Pretendard' : null,
     );
-    final sectionLabelStyle = TextStyle(
+    final sectionLabelStyle = const TextStyle(
       fontSize: 13,
       height: 1.2,
-      fontWeight: FontWeight.w700,
-      color: scheme.primary,
+      fontWeight: FontWeight.w900,
+      color: Holo.pink,
       letterSpacing: 0.15,
     );
     final sectionBodyStyle = TextStyle(
       fontSize: 15,
       height: 1.5,
-      color: scheme.onSurface,
-      fontFamily: character.assistantMessagePrefersHangulFont ? 'Pretendard' : null,
+      color: Holo.inkPlum,
+      fontFamily: character.assistantMessagePrefersHangulFont
+          ? 'Pretendard'
+          : null,
     );
-    final vocabWordUsesPretendard = character.koreanNationalPersona ||
+    final vocabWordUsesPretendard =
+        character.koreanNationalPersona ||
         (character.isDirectMessage && dm == DmUtteranceScript.koreanHeavy);
     final wordStyle = TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.w700,
-      color: scheme.onSurface,
+      color: Holo.inkPlum,
       fontFamily: vocabWordUsesPretendard ? 'Pretendard' : null,
     );
 
@@ -396,7 +416,11 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
         ? dm != DmUtteranceScript.koreanHeavy
         : character.expectsKoreanStudyNotes;
 
-    Widget sectionBlock(String label, String body, {bool useHangulBody = false}) {
+    Widget sectionBlock(
+      String label,
+      String body, {
+      bool useHangulBody = false,
+    }) {
       return Padding(
         padding: const EdgeInsets.only(top: 12),
         child: Column(
@@ -407,7 +431,9 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
             Text(
               body,
               style: sectionBodyStyle.copyWith(
-                fontFamily: useHangulBody ? 'Pretendard' : sectionBodyStyle.fontFamily,
+                fontFamily: useHangulBody
+                    ? 'Pretendard'
+                    : sectionBodyStyle.fontFamily,
               ),
             ),
           ],
@@ -419,187 +445,219 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     return ListView(
       controller: widget.scrollController,
       physics: _chatExpressionSheetListPhysics(sheetContext),
-      padding: EdgeInsets.fromLTRB(AppSpacing.pageH, 4, AppSpacing.pageH, 28 + bottomPad),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.pageH,
+        4,
+        AppSpacing.pageH,
+        28 + bottomPad,
+      ),
       children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(AppRadii.cardSmall),
-            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.25)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Text(message.content, style: messageStyle),
-          ),
+        HoloCard(
+          dashed: true,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Text(message.content, style: messageStyle),
         ),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-          if (fetchLine) ...[
-            const SizedBox(height: 12),
-            if (_lineFetchLoading)
-              Row(
-                children: [
-                  SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: character.primaryColor),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      tr('expressionAnalysisLoading'),
-                      style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant),
-                    ),
-                  ),
-                ],
-              ),
-            if (_lineFetchError != null)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${tr('expressionAnalysisFailed')}\n$_lineFetchError',
-                    style: TextStyle(fontSize: 13, height: 1.4, color: scheme.error),
-                  ),
-                  TextButton.icon(
-                    onPressed: _loadLineAnalysis,
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: Text(tr('expressionDmRetry')),
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
-              ),
-          ],
-          if (showTranslation)
-            sectionBlock(
-              tr('expressionFullTranslationLabel'),
-              translation,
-              useHangulBody: translationUsesHangul,
-            ),
-          if (showNote)
-            sectionBlock(
-              tr('expressionLearningNoteLabel'),
-              note,
-              useHangulBody: context.read<LocaleNotifier>().languageCode == 'ko',
-            ),
-          if (_effectiveVocabulary != null && _effectiveVocabulary!.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Divider(height: 1, color: scheme.outlineVariant),
-            const SizedBox(height: 10),
-            ..._effectiveVocabulary!.asMap().entries.map((e) {
-              final i = e.key;
-              final vocab = e.value;
-              final done = _savedWordIndices.contains(i);
-              final hasReading = vocab.reading != null && vocab.reading!.trim().isNotEmpty;
-
-              return Padding(
-                padding: EdgeInsets.only(bottom: i < _effectiveVocabulary!.length - 1 ? 12 : 0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            if (fetchLine) ...[
+              const SizedBox(height: 12),
+              if (_lineFetchLoading)
+                Row(
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text.rich(
-                            TextSpan(
-                              style: wordStyle,
-                              children: [
-                                TextSpan(text: vocab.word),
-                                if (hasReading)
-                                  TextSpan(
-                                    text: ' (${vocab.reading})',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 14,
-                                      color: scheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(vocab.meaning, style: meaningStyle),
-                        ],
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Holo.pink,
                       ),
                     ),
-                    Tooltip(
-                      message: done
-                          ? tr('expressionWordSavedTooltip')
-                          : _savingIndices.contains(i)
-                              ? tr('expressionWordSavingTooltip')
-                              : tr('addWordToNotebookTooltip'),
-                      child: SizedBox(
-                        width: 44,
-                        height: 44,
-                        child: _savingIndices.contains(i)
-                            ? Center(
-                                child: SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: character.primaryColor,
-                                  ),
-                                ),
-                              )
-                            : IconButton(
-                                visualDensity: VisualDensity.compact,
-                                padding: EdgeInsets.zero,
-                                onPressed: done ? null : () => _saveWordToNotebook(i, vocab),
-                                icon: Icon(
-                                  done ? Icons.check_circle_rounded : Icons.add_circle_rounded,
-                                  size: 28,
-                                  color: done ? Colors.green.shade700 : character.primaryColor,
-                                ),
-                              ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        tr('expressionAnalysisLoading'),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Holo.inkPlumSoft,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              );
-            }),
-          ] else if (fetchLine && (_lineFetchLoading || _lineFetchError != null))
-            const SizedBox.shrink()
-          else if (character.isDirectMessage && dm != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                dm == DmUtteranceScript.koreanHeavy ? tr('expressionMissingVocabularyJa') : tr('expressionMissingVocabulary'),
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.4,
-                  color: scheme.tertiary,
-                  fontFamily: dm == DmUtteranceScript.japaneseHeavy ? 'Pretendard' : null,
+              if (_lineFetchError != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${tr('expressionAnalysisFailed')}\n$_lineFetchError',
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.4,
+                        color: scheme.error,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: HoloButton(
+                        label: tr('expressionDmRetry'),
+                        icon: Icons.refresh_rounded,
+                        onPressed: _loadLineAnalysis,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+            if (showTranslation)
+              sectionBlock(
+                tr('expressionFullTranslationLabel'),
+                translation,
+                useHangulBody: translationUsesHangul,
+              ),
+            if (showNote)
+              sectionBlock(
+                tr('expressionLearningNoteLabel'),
+                note,
+                useHangulBody:
+                    context.read<LocaleNotifier>().languageCode == 'ko',
+              ),
+            if (_effectiveVocabulary != null &&
+                _effectiveVocabulary!.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Divider(height: 1, color: Holo.pink.withValues(alpha: 0.2)),
+              const SizedBox(height: 10),
+              ..._effectiveVocabulary!.asMap().entries.map((e) {
+                final i = e.key;
+                final vocab = e.value;
+                final done = _savedWordIndices.contains(i);
+                final hasReading =
+                    vocab.reading != null && vocab.reading!.trim().isNotEmpty;
+
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: i < _effectiveVocabulary!.length - 1 ? 12 : 0,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            HoloChip(
+                              filled: false,
+                              child: Text.rich(
+                                TextSpan(
+                                  style: wordStyle,
+                                  children: [
+                                    TextSpan(text: vocab.word),
+                                    if (hasReading)
+                                      TextSpan(
+                                        text: ' (${vocab.reading})',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 14,
+                                          color: Holo.inkPlumSoft,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(vocab.meaning, style: meaningStyle),
+                          ],
+                        ),
+                      ),
+                      Tooltip(
+                        message: done
+                            ? tr('expressionWordSavedTooltip')
+                            : _savingIndices.contains(i)
+                            ? tr('expressionWordSavingTooltip')
+                            : tr('addWordToNotebookTooltip'),
+                        child: SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: _savingIndices.contains(i)
+                              ? const Center(
+                                  child: SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Holo.pink,
+                                    ),
+                                  ),
+                                )
+                              : IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  onPressed: done
+                                      ? null
+                                      : () => _saveWordToNotebook(i, vocab),
+                                  icon: Icon(
+                                    done
+                                        ? Icons.check_circle_rounded
+                                        : Icons.add_circle_rounded,
+                                    size: 28,
+                                    color: done
+                                        ? Colors.green.shade700
+                                        : Holo.pink,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ] else if (fetchLine &&
+                (_lineFetchLoading || _lineFetchError != null))
+              const SizedBox.shrink()
+            else if (character.isDirectMessage && dm != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  dm == DmUtteranceScript.koreanHeavy
+                      ? tr('expressionMissingVocabularyJa')
+                      : tr('expressionMissingVocabulary'),
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    color: scheme.tertiary,
+                    fontFamily: dm == DmUtteranceScript.japaneseHeavy
+                        ? 'Pretendard'
+                        : null,
+                  ),
+                ),
+              )
+            else if (character.expectsKoreanStudyNotes)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  tr('expressionMissingVocabulary'),
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    color: scheme.tertiary,
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
+              )
+            else if (character.expectsJapaneseStudyNotes)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  tr('expressionMissingVocabularyJa'),
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    color: scheme.tertiary,
+                  ),
                 ),
               ),
-            )
-          else if (character.expectsKoreanStudyNotes)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                tr('expressionMissingVocabulary'),
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.4,
-                  color: scheme.tertiary,
-                  fontFamily: 'Pretendard',
-                ),
-              ),
-            )
-          else if (character.expectsJapaneseStudyNotes)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                tr('expressionMissingVocabularyJa'),
-                style: TextStyle(fontSize: 14, height: 1.4, color: scheme.tertiary),
-              ),
-            ),
           ],
         ),
       ],
