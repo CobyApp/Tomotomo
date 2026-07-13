@@ -2,9 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/ads/ad_config.dart';
+import '../../core/ads/rewarded_ad_service.dart';
 import '../../core/ui/ui.dart';
+import '../../data/repositories/local_points_repository_impl.dart';
 import '../../domain/repositories/points_repository.dart';
 import '../locale/l10n_context.dart';
 import 'points_balance_notifier.dart';
@@ -209,6 +213,34 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
     unawaited(_loadProducts());
   }
 
+  String _today() => DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+  Future<void> _watchAd() async {
+    final ad = context.read<RewardedAdService>();
+    final pts = context.read<LocalPointsRepositoryImpl>();
+    final notifier = context.read<PointsBalanceNotifier>();
+    final shown = await ad.show(
+      onEarned: () async {
+        final r = await pts.recordAdReward(today: _today());
+        if (r.credited) {
+          notifier.setBalance(r.balance);
+          if (mounted) {
+            setState(() {});
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('+${AdConfig.pointsPerAd}pt')),
+            );
+          }
+        }
+      },
+    );
+    if (!shown && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('adEarnNotReady'))),
+      );
+    }
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -223,6 +255,40 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
           AppSpacing.pageBottom,
         ),
         children: [
+          Builder(
+            builder: (context) {
+              final pts = context.read<LocalPointsRepositoryImpl>();
+              final adReady = context.watch<RewardedAdService>().isReady;
+              final remaining = pts.adsRemainingToday(today: _today());
+              final capReached = remaining == 0;
+              return Card(
+                child: ListTile(
+                  leading: Icon(Icons.play_circle_fill_rounded, color: scheme.secondary),
+                  title: Text(context.tr('adEarnTitle')),
+                  subtitle: Text(
+                    capReached
+                        ? context.tr('adEarnCapReached')
+                        : '${context.tr('adEarnSubtitle', params: {
+                              'points': '${AdConfig.pointsPerAd}',
+                            })}\n${context.tr('adEarnRemaining', params: {
+                              'remaining': '$remaining',
+                              'max': '${AdConfig.maxAdsPerDay}',
+                            })}',
+                  ),
+                  isThreeLine: !capReached,
+                  trailing: FilledButton(
+                    onPressed: (capReached || !adReady) ? null : _watchAd,
+                    child: Text(
+                      !adReady && !capReached
+                          ? context.tr('adEarnNotReady')
+                          : context.tr('adEarnWatch'),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 8),
           if (_loadingProducts)
             const Center(child: CircularProgressIndicator()),
           if (!_loadingProducts && _error != null) ...[

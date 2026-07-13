@@ -14,6 +14,10 @@ Future<void> showPointsTopUpPrompt(BuildContext context) async {
           onPressed: () => Navigator.pop(ctx, false),
           child: Text(context.tr('cancel')),
         ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(context.tr('adEarnWatch')),
+        ),
         FilledButton(
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(context.tr('pointsTopupBuy')),
@@ -21,6 +25,8 @@ Future<void> showPointsTopUpPrompt(BuildContext context) async {
       ],
     ),
   );
+  // Both the "watch ad" and "buy" actions lead here — the ad-earning card
+  // lives at the top of the top-up screen, so either path reaches it.
   if (open == true && context.mounted) {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(builder: (_) => const PointsTopUpScreen()),
