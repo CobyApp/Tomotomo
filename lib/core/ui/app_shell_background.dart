@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
+import 'holo/holo_tokens.dart';
 
 /// Decorative circle used behind auth / shell screens.
 class ShellDecoCircle extends StatelessWidget {
@@ -19,7 +19,43 @@ class ShellDecoCircle extends StatelessWidget {
   }
 }
 
-/// Full-screen backdrop: soft gradient + optional orbs (learning / SNS style).
+/// Faint repeating horizontal scanlines over the holo wash — CRT/hologram flavor.
+/// Non-interactive; sits between the gradient wash and the orbs/content.
+class _ScanlineOverlay extends StatelessWidget {
+  const _ScanlineOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return const IgnorePointer(
+      child: CustomPaint(
+        painter: _ScanlinePainter(),
+        size: Size.infinite,
+      ),
+    );
+  }
+}
+
+class _ScanlinePainter extends CustomPainter {
+  const _ScanlinePainter();
+
+  static const double _lineGap = 4;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Holo.inkPlum.withValues(alpha: 0.04)
+      ..strokeWidth = 1;
+    for (double y = 0; y < size.height; y += _lineGap) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScanlinePainter oldDelegate) => false;
+}
+
+/// Full-screen backdrop: pastel HOLO-KITSCH gradient wash + scanline overlay +
+/// optional gradient orbs (learning / SNS style).
 class AppShellBackground extends StatelessWidget {
   const AppShellBackground({
     super.key,
@@ -31,21 +67,14 @@ class AppShellBackground extends StatelessWidget {
   final Widget child;
   final bool showOrbs;
 
-  /// Stronger pink-tinted top (login / auth loading). Otherwise uses [AppTheme] shell tones.
+  /// Stronger pink-tinted top (login / auth loading). Otherwise uses the plain [Holo.pageGradient].
   final bool gradientPrimaryTop;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final colors = gradientPrimaryTop
-        ? [
-            scheme.primaryContainer.withValues(alpha: 0.45),
-            scheme.surface,
-          ]
-        : [
-            AppTheme.shellGradientTop(scheme),
-            Color.lerp(AppTheme.shellGradientBottom(scheme), scheme.surface, 0.55) ?? scheme.surface,
-          ];
+        ? [Holo.pink.withValues(alpha: 0.35), Holo.surface]
+        : Holo.pageGradient.colors;
 
     return Stack(
       fit: StackFit.expand,
@@ -53,27 +82,28 @@ class AppShellBackground extends StatelessWidget {
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: gradientPrimaryTop ? Alignment.topCenter : Alignment.topLeft,
+              begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: colors,
             ),
           ),
         ),
+        const _ScanlineOverlay(),
         if (showOrbs) ...[
           Positioned(
             top: -60,
             right: -50,
-            child: ShellDecoCircle(size: 220, color: scheme.primary.withValues(alpha: 0.10)),
+            child: ShellDecoCircle(size: 220, color: Holo.pink.withValues(alpha: 0.14)),
           ),
           Positioned(
             top: 100,
             left: -80,
-            child: ShellDecoCircle(size: 180, color: scheme.tertiary.withValues(alpha: 0.08)),
+            child: ShellDecoCircle(size: 180, color: Holo.lilac.withValues(alpha: 0.12)),
           ),
           Positioned(
             bottom: 60,
             right: -40,
-            child: ShellDecoCircle(size: 140, color: scheme.secondary.withValues(alpha: 0.07)),
+            child: ShellDecoCircle(size: 140, color: Holo.cyan.withValues(alpha: 0.10)),
           ),
         ],
         child,
@@ -90,7 +120,6 @@ class AppAuthLoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: AppShellBackground(
         gradientPrimaryTop: true,
@@ -104,26 +133,18 @@ class AppAuthLoadingView extends StatelessWidget {
                   height: 72,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [scheme.primary, scheme.tertiary],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: scheme.primary.withValues(alpha: 0.28),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+                    gradient: Holo.holoGradient,
+                    boxShadow: Holo.cardShadow,
                   ),
                   child: Center(child: Text(brandEmoji, style: const TextStyle(fontSize: 32))),
                 ),
                 const SizedBox(height: 28),
-                SizedBox(
+                const SizedBox(
                   width: 36,
                   height: 36,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
-                    color: scheme.primary,
+                    color: Holo.pink,
                     strokeCap: StrokeCap.round,
                   ),
                 ),

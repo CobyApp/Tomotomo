@@ -5,7 +5,8 @@ import 'package:provider/provider.dart';
 import '../../core/home_widget/notebook_home_widget_sync.dart';
 import '../../core/platform/ios_post_layout_frames.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/ui/holo/holo_nav_bar.dart';
+import '../../core/ui/holo/holo_tokens.dart';
 import '../../core/ui/ui.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../points/points_balance_notifier.dart';
@@ -84,16 +85,15 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return DecoratedBox(
-      decoration: AppTheme.shellBackdropDecoration(scheme),
+      decoration: const BoxDecoration(gradient: Holo.pageGradient),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: IndexedStack(
           index: _index,
           children: _pages,
         ),
-        bottomNavigationBar: AppGlassNavBar(
+        bottomNavigationBar: HoloNavBar(
           currentIndex: _index,
           onSelect: _onNavSelect,
           items: [
