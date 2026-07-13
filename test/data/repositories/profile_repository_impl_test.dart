@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:aichat/data/repositories/profile_repository_impl.dart';
-import 'package:aichat/domain/entities/profile.dart';
 
 void main() {
   late Box box;
