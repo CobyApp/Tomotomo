@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/ui/holo/holo_tokens.dart';
+import '../../core/ui/holo/holo_widgets.dart';
 import '../../core/ui/ui.dart';
 import '../locale/l10n_context.dart';
 import 'points_topup_screen.dart';
@@ -10,12 +12,8 @@ class PointsUsageScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final bodyStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          height: 1.45,
-          color: scheme.onSurface,
-        );
-    final bulletStyle = bodyStyle?.copyWith(fontWeight: FontWeight.w500);
+    const bodyStyle = TextStyle(height: 1.45, color: Holo.inkPlum);
+    const bulletStyle = TextStyle(height: 1.45, color: Holo.inkPlum, fontWeight: FontWeight.w500);
 
     Widget bullet(String text) {
       return Padding(
@@ -23,7 +21,7 @@ class PointsUsageScreen extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('• ', style: bulletStyle),
+            const Text('• ', style: bulletStyle),
             Expanded(child: Text(text, style: bodyStyle)),
           ],
         ),
@@ -45,8 +43,8 @@ class PointsUsageScreen extends StatelessWidget {
           Text(
             context.tr('pointsHelpSectionWhen'),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: scheme.primary,
-                  fontWeight: FontWeight.w700,
+                  color: Holo.pink,
+                  fontWeight: FontWeight.w800,
                 ),
           ),
           const SizedBox(height: 12),
@@ -57,30 +55,24 @@ class PointsUsageScreen extends StatelessWidget {
           bullet(context.tr('pointsHelpItemPublicChar')),
           bullet(context.tr('pointsHelpItemCustomCreate')),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest.withValues(alpha: 0.65),
-              borderRadius: BorderRadius.circular(AppRadii.card),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
-            ),
+          HoloCard(
+            dashed: true,
             child: Text(
               context.tr('pointsHelpFooter'),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    height: 1.4,
-                    color: scheme.onSurfaceVariant,
-                  ),
+              style: const TextStyle(height: 1.4, color: Holo.inkPlumSoft),
             ),
           ),
           const SizedBox(height: 14),
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).push<void>(
-                MaterialPageRoute<void>(builder: (_) => const PointsTopUpScreen()),
-              );
-            },
-            icon: const Icon(Icons.add_card_rounded),
-            label: Text(context.tr('pointsTopupBuy')),
+          Center(
+            child: HoloButton(
+              icon: Icons.add_card_rounded,
+              label: context.tr('pointsTopupBuy'),
+              onPressed: () {
+                Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(builder: (_) => const PointsTopUpScreen()),
+                );
+              },
+            ),
           ),
         ],
       ),

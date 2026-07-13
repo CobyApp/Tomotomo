@@ -602,9 +602,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                                         ? Icons.check_circle_rounded
                                         : Icons.add_circle_rounded,
                                     size: 28,
-                                    color: done
-                                        ? Colors.green.shade700
-                                        : Holo.pink,
+                                    color: done ? Holo.cyan : Holo.pink,
                                   ),
                                 ),
                         ),
