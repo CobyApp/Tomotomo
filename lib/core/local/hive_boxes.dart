@@ -18,4 +18,8 @@ Future<void> openAllBoxes() async {
       await Hive.openBox<dynamic>(name);
     }
   }
+
+  // Seed the starting points balance the first time the wallet is opened.
+  final pts = Hive.box(HiveBoxes.points);
+  if (pts.get('balance') == null) await pts.put('balance', 500);
 }

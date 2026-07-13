@@ -11,7 +11,7 @@ import '../../domain/repositories/saved_expression_repository.dart';
 import '../../data/repositories/local_chat_repository_impl.dart';
 import '../../data/repositories/gemini_ai_repository_impl.dart';
 import '../../data/repositories/profile_repository_impl.dart';
-import '../../data/repositories/points_repository_impl.dart';
+import '../../data/repositories/local_points_repository_impl.dart';
 import '../../data/repositories/character_record_repository_impl.dart';
 import '../../data/repositories/theme_repository_impl.dart';
 import '../../data/repositories/saved_expression_repository_impl.dart';
@@ -27,7 +27,7 @@ void setupInjection({
   int? geminiMaxOutputTokens,
 }) {
   chatRepository = LocalChatRepositoryImpl(Hive.box(HiveBoxes.chats));
-  pointsRepository = PointsRepositoryImpl();
+  pointsRepository = LocalPointsRepositoryImpl(Hive.box(HiveBoxes.points));
   aiChatRepository = GeminiAiRepositoryImpl(
     apiKey: geminiApiKey,
     model: geminiModel,

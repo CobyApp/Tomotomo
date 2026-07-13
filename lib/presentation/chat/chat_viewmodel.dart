@@ -95,7 +95,7 @@ class ChatViewModel extends ChangeNotifier {
       final notifier = pointsBalanceNotifier;
       if (notifier != null) {
         if (notifier.balance == null) {
-          await notifier.refreshFromProfile(_localUserId);
+          await notifier.loadInitial();
         }
         final bal = notifier.balance;
         if (bal != null && bal < 1) {

@@ -66,7 +66,7 @@ class _MainShellState extends State<MainShell> {
       // Local profile is created with defaults if absent.
       await repo.getProfile(_localUserId);
       if (!mounted) return;
-      await context.read<PointsBalanceNotifier>().refreshFromProfile(_localUserId);
+      await context.read<PointsBalanceNotifier>().loadInitial();
       if (!mounted) return;
       context.read<ThemeNotifier>().load(_localUserId);
       context.read<LocaleNotifier>().loadFromProfile(_localUserId);

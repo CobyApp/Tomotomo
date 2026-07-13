@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 
-import '../../domain/repositories/profile_repository.dart';
+import '../../domain/repositories/points_repository.dart';
 
-/// Cached [pointBalance] from profile / spend RPCs; drives the app bar chip.
+/// Cached point balance from the local wallet / spend outcomes; drives the app bar chip.
 class PointsBalanceNotifier extends ChangeNotifier {
-  PointsBalanceNotifier(this._profileRepository);
+  PointsBalanceNotifier(this._pointsRepository);
 
-  final ProfileRepository _profileRepository;
+  final PointsRepository _pointsRepository;
   int? _balance;
 
   int? get balance => _balance;
@@ -17,10 +17,14 @@ class PointsBalanceNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> refreshFromProfile(String userId) async {
+  /// Loads the current balance from the local wallet (e.g. on app startup).
+  Future<void> loadInitial() async {
     try {
-      final p = await _profileRepository.getProfile(userId);
-      if (p != null) setBalance(p.pointBalance);
+      // A zero-amount spend is a side-effect-free way to read the current
+      // balance through the [PointsRepository] interface (which exposes no
+      // dedicated getter).
+      final result = await _pointsRepository.spendPoints(0, 'balance_check');
+      setBalance(result.balance);
     } catch (_) {}
   }
 }
