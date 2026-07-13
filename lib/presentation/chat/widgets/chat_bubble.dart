@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/chat_theme_data.dart';
+import '../../../../core/ui/holo/holo_tokens.dart';
 import '../../../../domain/entities/character.dart';
 import '../../../../domain/entities/chat_message.dart';
 import '../../locale/l10n_context.dart';
@@ -10,6 +10,7 @@ class ChatBubble extends StatelessWidget {
   final Character character;
   final bool isUser;
   final VoidCallback? onExplanationTap;
+
   /// Long-press the bubble to open report confirmation (optional).
   final VoidCallback? onLongPressReport;
 
@@ -33,37 +34,39 @@ class ChatBubble extends StatelessWidget {
       );
     }
 
-    final scheme = Theme.of(context).colorScheme;
-    final chatTheme = Theme.of(context).extension<ChatThemeData>();
-    final userBubbleColor = chatTheme?.userBubble ?? scheme.primary;
-    final botBubbleColor = chatTheme?.botBubble ?? scheme.surfaceContainerHigh;
-
-    final userTextColor =
-        userBubbleColor.computeLuminance() > 0.55 ? scheme.onSurface : Colors.white;
-    final botTextColor = scheme.onSurface;
+    // HOLO-KITSCH bubbles: my messages get the holo gradient fill; tutor/AI
+    // messages get a white card with a cyan hairline border.
+    final userTextColor = Colors.white;
+    const botTextColor = Holo.inkPlum;
 
     final bubbleRadius = BorderRadius.only(
-      topLeft: const Radius.circular(22),
-      topRight: const Radius.circular(22),
-      bottomLeft: Radius.circular(isUser ? 22 : 6),
-      bottomRight: Radius.circular(isUser ? 6 : 22),
+      topLeft: const Radius.circular(18),
+      topRight: const Radius.circular(18),
+      bottomLeft: Radius.circular(isUser ? 18 : 6),
+      bottomRight: Radius.circular(isUser ? 6 : 18),
     );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isUser) ...[
             CircleAvatar(
               radius: 18,
-              backgroundColor: scheme.surfaceContainerHighest,
-              backgroundImage: character.hasAvatar ? character.imageProvider : null,
+              backgroundColor: Holo.surfaceCard,
+              backgroundImage: character.hasAvatar
+                  ? character.imageProvider
+                  : null,
               child: !character.hasAvatar
                   ? Text(
-                      character.displayNamePrimary.isNotEmpty ? character.displayNamePrimary.substring(0, 1) : '?',
-                      style: TextStyle(fontSize: 13, color: scheme.primary),
+                      character.displayNamePrimary.isNotEmpty
+                          ? character.displayNamePrimary.substring(0, 1)
+                          : '?',
+                      style: const TextStyle(fontSize: 13, color: Holo.pink),
                     )
                   : null,
             ),
@@ -71,14 +74,18 @@ class ChatBubble extends StatelessWidget {
           ],
           if (isUser && onExplanationTap != null) ...[
             Material(
-              color: scheme.primaryContainer.withValues(alpha: 0.5),
+              color: Holo.lilac.withValues(alpha: 0.25),
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),
                 onTap: onExplanationTap,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(Icons.info_outline_rounded, size: 18, color: scheme.primary),
+                child: const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.info_outline_rounded,
+                    size: 18,
+                    color: Holo.inkPlum,
+                  ),
                 ),
               ),
             ),
@@ -90,21 +97,19 @@ class ChatBubble extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: Container(
                 decoration: BoxDecoration(
-                  color: isUser ? userBubbleColor : botBubbleColor,
+                  gradient: isUser ? Holo.holoGradient : null,
+                  color: isUser ? null : Holo.surfaceCard,
                   borderRadius: bubbleRadius,
                   border: isUser
                       ? null
-                      : Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                      : Border.all(color: Holo.cyan, width: 2),
+                  boxShadow: Holo.cardShadow,
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Text(
                     message.content,
                     style: TextStyle(
@@ -120,14 +125,18 @@ class ChatBubble extends StatelessWidget {
           if (!isUser && onExplanationTap != null) ...[
             const SizedBox(width: 6),
             Material(
-              color: scheme.primaryContainer.withValues(alpha: 0.5),
+              color: Holo.lilac.withValues(alpha: 0.25),
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),
                 onTap: onExplanationTap,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(Icons.info_outline_rounded, size: 18, color: scheme.primary),
+                child: const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.info_outline_rounded,
+                    size: 18,
+                    color: Holo.inkPlum,
+                  ),
                 ),
               ),
             ),
@@ -152,37 +161,36 @@ class _DmVoiceBubbleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final chatTheme = Theme.of(context).extension<ChatThemeData>();
-    final userBubbleColor = chatTheme?.userBubble ?? scheme.primary;
-    final botBubbleColor = chatTheme?.botBubble ?? scheme.surfaceContainerHigh;
-    final bubbleColor = isUser ? userBubbleColor : botBubbleColor;
-    final fg = bubbleColor.computeLuminance() > 0.55 ? scheme.onSurface : Colors.white;
+    final fg = isUser ? Colors.white : Holo.inkPlum;
 
     final bubbleRadius = BorderRadius.only(
-      topLeft: const Radius.circular(22),
-      topRight: const Radius.circular(22),
-      bottomLeft: Radius.circular(isUser ? 22 : 6),
-      bottomRight: Radius.circular(isUser ? 6 : 22),
+      topLeft: const Radius.circular(18),
+      topRight: const Radius.circular(18),
+      bottomLeft: Radius.circular(isUser ? 18 : 6),
+      bottomRight: Radius.circular(isUser ? 6 : 18),
     );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isUser) ...[
             CircleAvatar(
               radius: 18,
-              backgroundColor: scheme.surfaceContainerHighest,
-              backgroundImage: character.hasAvatar ? character.imageProvider : null,
+              backgroundColor: Holo.surfaceCard,
+              backgroundImage: character.hasAvatar
+                  ? character.imageProvider
+                  : null,
               child: !character.hasAvatar
                   ? Text(
                       character.displayNamePrimary.isNotEmpty
                           ? character.displayNamePrimary.substring(0, 1)
                           : '?',
-                      style: TextStyle(fontSize: 13, color: scheme.primary),
+                      style: const TextStyle(fontSize: 13, color: Holo.pink),
                     )
                   : null,
             ),
@@ -194,23 +202,20 @@ class _DmVoiceBubbleRow extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: bubbleColor,
+                gradient: isUser ? Holo.holoGradient : null,
+                color: isUser ? null : Holo.surfaceCard,
                 borderRadius: bubbleRadius,
-                border: isUser
-                    ? null
-                    : Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 12,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                border: isUser ? null : Border.all(color: Holo.cyan, width: 2),
+                boxShadow: Holo.cardShadow,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.graphic_eq_rounded, color: fg.withValues(alpha: 0.85), size: 22),
+                  Icon(
+                    Icons.graphic_eq_rounded,
+                    color: fg.withValues(alpha: 0.85),
+                    size: 22,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     context.tr('dmVoiceMessageLabel'),

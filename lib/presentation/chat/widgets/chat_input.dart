@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/ui/app_tokens.dart';
+import '../../../../core/ui/holo/holo_tokens.dart';
 import '../../../../domain/entities/character.dart';
 import '../../locale/l10n_context.dart';
 
@@ -24,8 +25,7 @@ class ChatInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final accent = character.primaryColor;
+    final canTapSend = !isGenerating && canSendMessage;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(
@@ -34,15 +34,9 @@ class ChatInput extends StatelessWidget {
         AppSpacing.composerPadH,
         AppSpacing.composerPadBottom,
       ),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: Holo.surfaceCard,
+        border: Border(top: BorderSide(color: Holo.pink, width: 1.5)),
       ),
       child: SafeArea(
         top: false,
@@ -52,20 +46,29 @@ class ChatInput extends StatelessWidget {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHigh,
+                  color: Holo.surface,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: Holo.cyan.withValues(alpha: 0.45),
+                    width: 1.5,
+                  ),
                 ),
                 child: TextField(
                   controller: controller,
                   readOnly: !canSendMessage,
                   decoration: InputDecoration(
                     hintText: hintOverride ?? context.tr('chatInputHint'),
-                    hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: 0.55), fontSize: 15),
+                    hintStyle: TextStyle(
+                      color: Holo.inkPlumSoft.withValues(alpha: 0.7),
+                      fontSize: 15,
+                    ),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 12,
+                    ),
                   ),
-                  style: TextStyle(fontSize: 15.5, color: scheme.onSurface),
+                  style: const TextStyle(fontSize: 15.5, color: Holo.inkPlum),
                   maxLines: null,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) {
@@ -75,20 +78,31 @@ class ChatInput extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Material(
-              color: accent,
-              borderRadius: BorderRadius.circular(22),
-              elevation: 0,
-              child: InkWell(
-                onTap: (isGenerating || !canSendMessage) ? null : onSend,
-                borderRadius: BorderRadius.circular(22),
-                child: SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: Icon(
-                    isGenerating ? Icons.hourglass_empty_rounded : Icons.send_rounded,
-                    color: accent.computeLuminance() > 0.5 ? scheme.onSurface : Colors.white,
-                    size: 22,
+            Container(
+              decoration: BoxDecoration(
+                gradient: canTapSend ? Holo.holoGradient : null,
+                color: canTapSend
+                    ? null
+                    : Holo.inkPlumSoft.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+                boxShadow: canTapSend ? Holo.cardShadow : null,
+              ),
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: canTapSend ? onSend : null,
+                  customBorder: const CircleBorder(),
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Icon(
+                      isGenerating
+                          ? Icons.hourglass_empty_rounded
+                          : Icons.send_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                   ),
                 ),
               ),

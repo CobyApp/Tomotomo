@@ -2,8 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/ui/holo/holo_tokens.dart';
 import '../../../../domain/entities/character.dart';
-import '../../../../domain/entities/chat_message.dart' show ChatMessage, DmVoiceMessage;
+import '../../../../domain/entities/chat_message.dart'
+    show ChatMessage, DmVoiceMessage;
 import '../chat_expression_sheet.dart';
 import '../chat_message_report.dart';
 import 'chat_bubble.dart';
@@ -46,7 +48,8 @@ class _ChatListState extends State<ChatList> {
         }
         final message = widget.messages[index];
         final isUser = _isFromCurrentUser(message);
-        final showExpression = !DmVoiceMessage.isVoiceContent(message.content) &&
+        final showExpression =
+            !DmVoiceMessage.isVoiceContent(message.content) &&
             (widget.character.isDirectMessage || message.role != 'user');
         return ChatBubble(
           message: message,
@@ -54,17 +57,17 @@ class _ChatListState extends State<ChatList> {
           isUser: isUser,
           onExplanationTap: showExpression
               ? () => showChatExpressionSheet(
-                    context,
-                    message: message,
-                    character: widget.character,
-                    chatRoomId: widget.chatRoomId,
-                  )
+                  context,
+                  message: message,
+                  character: widget.character,
+                  chatRoomId: widget.chatRoomId,
+                )
               : null,
           onLongPressReport: () => confirmAndReportChatMessage(
-                context,
-                message: message,
-                character: widget.character,
-              ),
+            context,
+            message: message,
+            character: widget.character,
+          ),
         );
       },
     );
@@ -84,25 +87,23 @@ class _ChatListState extends State<ChatList> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: widget.character.primaryColor.withValues(alpha: 0.2),
+                color: Holo.pink.withValues(alpha: 0.35),
                 width: 2,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: widget.character.primaryColor.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              boxShadow: Holo.cardShadow,
             ),
             child: CircleAvatar(
               radius: 16,
-              backgroundImage: widget.character.hasAvatar ? widget.character.imageProvider : null,
+              backgroundColor: Holo.surfaceCard,
+              backgroundImage: widget.character.hasAvatar
+                  ? widget.character.imageProvider
+                  : null,
               child: !widget.character.hasAvatar
                   ? Text(
                       widget.character.displayNamePrimary.isNotEmpty
                           ? widget.character.displayNamePrimary.substring(0, 1)
                           : '?',
+                      style: const TextStyle(color: Holo.pink),
                     )
                   : null,
             ),
@@ -111,18 +112,12 @@ class _ChatListState extends State<ChatList> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: Holo.surfaceCard,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Holo.cyan, width: 2),
+              boxShadow: Holo.cardShadow,
             ),
-            child: _TypingDots(color: widget.character.primaryColor),
+            child: const _TypingDots(color: Holo.inkPlum),
           ),
         ],
       ),
@@ -140,7 +135,8 @@ class _TypingDots extends StatefulWidget {
   State<_TypingDots> createState() => _TypingDotsState();
 }
 
-class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderStateMixin {
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
