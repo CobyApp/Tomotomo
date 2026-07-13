@@ -7,7 +7,6 @@ import 'package:home_widget/home_widget.dart';
 import '../../domain/entities/saved_expression.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
 import '../platform/ios_post_layout_frames.dart';
-import '../supabase/app_supabase.dart';
 
 /// iOS: add a Widget Extension in Xcode, enable App Group [kNotebookWidgetAppGroup] on Runner + extension,
 /// and use Swift kind `NotebookWidget`. Reference: `ios/NotebookWidgetExtension/NotebookWidget.swift`.
@@ -48,15 +47,6 @@ Future<void> syncNotebookToHomeWidget(
 }) async {
   try {
     await _ensureIosAppGroupReady();
-
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) {
-      await HomeWidget.saveWidgetData<String>(_keyPayloadKo, null);
-      await HomeWidget.saveWidgetData<String>(_keyPayloadJa, null);
-      await HomeWidget.saveWidgetData<String>(_keyLang, null);
-      await _reloadWidget();
-      return;
-    }
 
     final ko = await repo.listForCurrentUser(notebookLang: 'ko');
     final ja = await repo.listForCurrentUser(notebookLang: 'ja');

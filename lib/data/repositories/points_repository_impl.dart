@@ -1,52 +1,31 @@
-import '../../core/supabase/app_supabase.dart';
 import '../../domain/repositories/points_repository.dart';
 
+// TODO(phase2): replace with LocalPointsRepositoryImpl.
+//
+// Temporary in-memory stub so the data layer compiles after Supabase removal.
+// All operations succeed as no-ops against a fixed default balance; the line
+// analysis cache is not persisted. A later phase implements local points.
 class PointsRepositoryImpl implements PointsRepository {
-  Map<String, dynamic> _asJsonMap(dynamic res) {
-    if (res is Map<String, dynamic>) return res;
-    if (res is Map) return Map<String, dynamic>.from(res);
-    return {};
-  }
+  static const int _defaultBalance = 500;
 
   @override
   Future<SpendPointsOutcome> spendPoints(int amount, String reason) async {
-    final res = await AppSupabase.client.rpc(
-      'spend_points',
-      params: {'p_amount': amount, 'p_reason': reason},
-    );
-    return SpendPointsOutcome.fromRpcJson(_asJsonMap(res));
+    return const SpendPointsOutcome(ok: true, balance: _defaultBalance);
   }
 
   @override
   Future<DmExpressionUnlockOutcome> tryUnlockDmExpression(String messageServerId) async {
-    final res = await AppSupabase.client.rpc(
-      'try_unlock_dm_expression',
-      params: {'p_message_id': messageServerId},
+    return const DmExpressionUnlockOutcome(
+      ok: true,
+      balance: _defaultBalance,
+      charged: false,
     );
-    return DmExpressionUnlockOutcome.fromRpcJson(_asJsonMap(res));
   }
 
   @override
-  Future<LineAnalysisCacheRow?> getLineAnalysisCache(String messageServerId, String appLang) async {
-    final res = await AppSupabase.client.rpc(
-      'get_line_analysis_cache',
-      params: {'p_message_id': messageServerId, 'p_app_lang': appLang},
-    );
-    if (res == null) return null;
-    final m = _asJsonMap(res);
-    if (m.isEmpty) return null;
-    final vocab = m['vocabulary'];
-    final list = <Map<String, dynamic>>[];
-    if (vocab is List) {
-      for (final e in vocab) {
-        if (e is Map) list.add(Map<String, dynamic>.from(e));
-      }
-    }
-    return LineAnalysisCacheRow(
-      explanation: m['explanation']?.toString(),
-      lineTranslation: m['line_translation']?.toString(),
-      vocabularyJson: list,
-    );
+  Future<LineAnalysisCacheRow?> getLineAnalysisCache(
+      String messageServerId, String appLang) async {
+    return null;
   }
 
   @override
@@ -57,16 +36,7 @@ class PointsRepositoryImpl implements PointsRepository {
     String? lineTranslation,
     List<Map<String, dynamic>>? vocabularyJson,
   }) async {
-    await AppSupabase.client.rpc(
-      'save_line_analysis_cache',
-      params: {
-        'p_message_id': messageServerId,
-        'p_app_lang': appLang,
-        'p_explanation': explanation,
-        'p_line_translation': lineTranslation,
-        'p_vocabulary': vocabularyJson ?? [],
-      },
-    );
+    // no-op
   }
 
   @override
@@ -79,18 +49,10 @@ class PointsRepositoryImpl implements PointsRepository {
     required int usdCents,
     String? rawReceipt,
   }) async {
-    final res = await AppSupabase.client.rpc(
-      'credit_iap_points',
-      params: {
-        'p_store': store,
-        'p_transaction_id': transactionId,
-        'p_product_id': productId,
-        'p_purchase_token': purchaseToken,
-        'p_points': points,
-        'p_usd_cents': usdCents,
-        'p_raw_receipt': rawReceipt,
-      },
+    return const CreditIapPointsOutcome(
+      ok: true,
+      credited: false,
+      balance: _defaultBalance,
     );
-    return CreditIapPointsOutcome.fromRpcJson(_asJsonMap(res));
   }
 }

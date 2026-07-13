@@ -8,10 +8,8 @@ import 'domain/repositories/profile_repository.dart';
 import 'domain/repositories/character_record_repository.dart';
 import 'domain/repositories/theme_repository.dart';
 import 'domain/repositories/saved_expression_repository.dart';
-import 'domain/repositories/friends_repository.dart';
 import 'data/celebrity_persona/celebrity_persona_suggester.dart';
-import 'presentation/auth/auth_gate.dart';
-import 'presentation/auth/auth_state.dart';
+import 'presentation/main_shell/main_shell.dart';
 import 'presentation/locale/locale_notifier.dart';
 import 'presentation/theme/theme_notifier.dart';
 import 'presentation/notebook/word_book_refresh_notifier.dart';
@@ -26,8 +24,6 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        /// Above [MaterialApp] so theme/locale rebuilds do not dispose/recreate auth state.
-        ChangeNotifierProvider(create: (_) => AppAuthState()),
         Provider<ThemeRepository>.value(value: themeRepository),
         ChangeNotifierProvider(create: (c) => ThemeNotifier(c.read<ThemeRepository>())),
         Provider<ChatRepository>.value(value: chatRepository),
@@ -45,7 +41,6 @@ class App extends StatelessWidget {
         Provider<CharacterRecordRepository>.value(value: characterRecordRepository),
         Provider<SavedExpressionRepository>.value(value: savedExpressionRepository),
         ChangeNotifierProvider(create: (_) => WordBookRefreshNotifier()),
-        Provider<FriendsRepository>.value(value: friendsRepository),
         Provider<CelebrityPersonaSuggester>.value(value: celebrityPersonaSuggester),
       ],
       child: Builder(
@@ -61,7 +56,7 @@ class App extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            home: const AuthGate(),
+            home: const MainShell(),
           );
         },
       ),
