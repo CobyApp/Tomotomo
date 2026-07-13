@@ -9,7 +9,6 @@ import '../../domain/entities/block_relation.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
-import '../../domain/repositories/friends_repository.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../points/points_topup_prompt.dart';
@@ -39,9 +38,9 @@ class _ChatScreenState extends State<ChatScreen>
   late AnimationController _controller;
   final ScrollController _scrollController = ScrollController();
   late final ChatViewModel _viewModel;
-  bool _dmSocialLoaded = false;
-  bool _dmOutgoingFriend = false;
-  BlockRelation _dmBlock = BlockRelation.none;
+  final bool _dmSocialLoaded = false;
+  final bool _dmOutgoingFriend = false;
+  final BlockRelation _dmBlock = BlockRelation.none;
 
   @override
   void initState() {
@@ -65,22 +64,10 @@ class _ChatScreenState extends State<ChatScreen>
     WidgetsBinding.instance.addObserver(this);
   }
 
+  /// Human-to-human DM social state is not used in the local offline app
+  /// (no DM characters exist). Kept as a no-op for app bar wiring.
   Future<void> _loadDmSocialState() async {
-    if (!widget.character.isDirectMessage) return;
-    final peer = widget.character.id;
-    try {
-      final friends = context.read<FriendsRepository>();
-      final out = await friends.isOutgoingFriend(peer);
-      final blk = await friends.blockRelationWith(peer);
-      if (!mounted) return;
-      setState(() {
-        _dmOutgoingFriend = out;
-        _dmBlock = blk;
-        _dmSocialLoaded = true;
-      });
-    } catch (_) {
-      if (mounted) setState(() => _dmSocialLoaded = true);
-    }
+    return;
   }
 
   void _onInsufficientPoints() {
@@ -89,51 +76,15 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Future<void> _dmAddFriend() async {
-    final peer = widget.character.id;
-    try {
-      await context.read<FriendsRepository>().addFriendById(peer);
-      if (!mounted) return;
-      setState(() => _dmOutgoingFriend = true);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('friendsAdded'))));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-    }
+    return;
   }
 
   Future<void> _dmConfirmBlock() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.tr('dmBlockConfirmTitle')),
-        content: Text(context.tr('dmBlockConfirmBody')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.tr('cancel'))),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.tr('dmStrangerBlock'))),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
-    try {
-      await context.read<FriendsRepository>().blockUser(widget.character.id);
-      if (!mounted) return;
-      setState(() => _dmBlock = const BlockRelation(anyBlock: true, iBlockedThem: true, theyBlockedMe: false));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-    }
+    return;
   }
 
   Future<void> _dmUnblock() async {
-    try {
-      await context.read<FriendsRepository>().unblockUser(widget.character.id);
-      if (!mounted) return;
-      setState(() => _dmBlock = BlockRelation.none);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('dmUnblock'))));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-    }
+    return;
   }
 
   @override
