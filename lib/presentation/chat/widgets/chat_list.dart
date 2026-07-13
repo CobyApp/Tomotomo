@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/supabase/app_supabase.dart';
 import '../../../../domain/entities/character.dart';
 import '../../../../domain/entities/chat_message.dart' show ChatMessage, DmVoiceMessage;
 import '../chat_expression_sheet.dart';
@@ -31,12 +30,8 @@ class ChatList extends StatefulWidget {
 
 class _ChatListState extends State<ChatList> {
   bool _isFromCurrentUser(ChatMessage message) {
-    if (!widget.character.isDirectMessage) {
-      return message.role == 'user';
-    }
-    final uid = AppSupabase.auth.currentUser?.id;
-    if (message.senderId != null && uid != null) return message.senderId == uid;
-    return false;
+    // Single local user: user messages are role 'user'.
+    return message.role == 'user';
   }
 
   @override
