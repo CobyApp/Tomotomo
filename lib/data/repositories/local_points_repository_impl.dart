@@ -27,7 +27,7 @@ class LocalPointsRepositoryImpl implements PointsRepository {
       return SpendPointsOutcome(ok: true, balance: _balance);
     }
     if (_balance < amount) {
-      return SpendPointsOutcome(ok: false, balance: _balance, error: 'insufficient');
+      return SpendPointsOutcome(ok: false, balance: _balance, error: 'insufficient_points');
     }
     await _setBalance(_balance - amount);
     return SpendPointsOutcome(ok: true, balance: _balance);
@@ -41,7 +41,7 @@ class LocalPointsRepositoryImpl implements PointsRepository {
     }
     if (_balance < 1) {
       return DmExpressionUnlockOutcome(
-          ok: false, balance: _balance, charged: false, error: 'insufficient');
+          ok: false, balance: _balance, charged: false, error: 'insufficient_points');
     }
     await _setBalance(_balance - 1);
     await _box.put('dm_unlocks', [...unlocked, messageServerId]);

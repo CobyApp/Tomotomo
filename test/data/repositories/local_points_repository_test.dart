@@ -19,6 +19,9 @@ void main() {
     final bad = await repo.spendPoints(1000, 'dm');
     expect(bad.ok, isFalse);
     expect(bad.balance, 70);
+    // Contract: consumers (chat_viewmodel / expression sheet) gate the top-up
+    // prompt on this exact error code.
+    expect(bad.error, 'insufficient_points');
   });
 
   test('tryUnlockDmExpression charges once per message', () async {
