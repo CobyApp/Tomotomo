@@ -1,49 +1,47 @@
-import '../../core/supabase/app_supabase.dart';
+import 'package:hive_ce/hive.dart';
+
 import '../../domain/entities/saved_expression.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
+import '../local/local_json_store.dart';
 
+/// Local word-book persistence in the `wordbook` box. One map per saved
+/// expression, keyed by a generated id. Single local user (no auth).
 class SavedExpressionRepositoryImpl implements SavedExpressionRepository {
+  SavedExpressionRepositoryImpl(Box box) : _store = LocalJsonStore(box);
+  final LocalJsonStore _store;
+
+  /// The single local user id; there are no accounts in the offline app.
+  static const _localUserId = 'local';
+
   @override
   Future<List<SavedExpression>> listForCurrentUser({required String notebookLang}) async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) return [];
-    final res = await AppSupabase.client
-        .from('saved_expressions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('notebook_lang', notebookLang)
-        .order('created_at', ascending: false);
-    return (res as List<dynamic>)
-        .map((e) => SavedExpression.fromRow(Map<String, dynamic>.from(e as Map)))
+    final rows = _store
+        .listItems()
+        .where((m) => (m['notebook_lang'] as String?) == notebookLang)
+        .map(SavedExpression.fromRow)
         .toList();
+    rows.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return rows;
   }
 
   @override
   Future<void> add(SavedExpressionDraft draft) async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) {
-      throw StateError('Not signed in');
-    }
-    // Round-trip so RLS / missing column errors surface to the UI.
-    await AppSupabase.client.from('saved_expressions').insert({
-      'user_id': user.id,
+    final id = DateTime.now().microsecondsSinceEpoch.toString();
+    await _store.putItem(id, {
+      'id': id,
+      'user_id': _localUserId,
       'source': draft.source,
       'notebook_lang': draft.notebookLang,
       'content': draft.content,
-      if (draft.explanation != null) 'explanation': draft.explanation,
+      'explanation': draft.explanation,
       'translation': draft.translation,
       'room_id': draft.roomId,
-    }).select('id').single();
+      'created_at': DateTime.now().toIso8601String(),
+    });
   }
 
   @override
   Future<void> delete(String id) async {
-    final user = AppSupabase.auth.currentUser;
-    if (user == null) {
-      throw StateError('Not signed in');
-    }
-    // No trailing .select(): DELETE often returns an empty body; relying on
-    // row count used to throw false "empty" errors with return=representation + RLS.
-    await AppSupabase.client.from('saved_expressions').delete().eq('id', id).eq('user_id', user.id);
+    await _store.deleteItem(id);
   }
 }
