@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/home_widget/notebook_home_widget_sync.dart';
 import '../../core/ui/ui.dart';
+import '../../core/ui/holo/holo_tokens.dart';
+import '../../core/ui/holo/holo_widgets.dart';
 import '../../core/widgets/on_app_resumed_mixin.dart';
 import '../../domain/entities/saved_expression.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
@@ -185,24 +187,12 @@ class WordBookScreenState extends State<WordBookScreen>
     final word = (e.content ?? '').trim().isEmpty ? '—' : e.content!.trim();
     final usePretendard = e.notebookLang == 'ko';
 
-    // Mirrors chat expression sheet: headline word, optional (reading), then gloss line.
-    final wordStyle = TextStyle(
-      fontSize: 15,
-      height: 1.45,
-      fontWeight: FontWeight.w600,
-      color: scheme.onSurface,
-      fontFamily: usePretendard ? 'Pretendard' : null,
-    );
-    final readingStyle = TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w400,
-      color: scheme.onSurfaceVariant,
-      fontFamily: usePretendard ? 'Pretendard' : null,
-    );
+    // Mirrors chat expression sheet: headline word chip, optional reading chip, then gloss line.
+    final chipTextStyle = TextStyle(fontFamily: usePretendard ? 'Pretendard' : null);
     final meaningStyle = TextStyle(
       fontSize: 13,
       height: 1.4,
-      color: scheme.onSurfaceVariant,
+      color: Holo.inkPlumSoft,
       fontFamily: usePretendard ? 'Pretendard' : null,
     );
 
@@ -244,48 +234,34 @@ class WordBookScreenState extends State<WordBookScreen>
           ),
           child: Icon(Icons.delete_outline_rounded, color: scheme.onErrorContainer, size: 28),
         ),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerLow.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(AppRadii.card),
-            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.35)),
-            boxShadow: [
-              BoxShadow(
-                color: scheme.primary.withValues(alpha: 0.05),
-                blurRadius: 14,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+        child: HoloCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text.rich(
-                TextSpan(
-                  style: wordStyle,
-                  children: [
-                    TextSpan(text: word),
-                    if (reading != null && reading.isNotEmpty)
-                      TextSpan(text: ' ($reading)', style: readingStyle),
-                  ],
-                ),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  HoloChip(child: Text(word, style: chipTextStyle)),
+                  if (reading != null && reading.isNotEmpty)
+                    HoloChip(filled: false, child: Text(reading, style: chipTextStyle)),
+                ],
               ),
               if (hasGlossLine) ...[
-                const SizedBox(height: 3),
+                const SizedBox(height: 8),
                 Text(meaningBody, style: meaningStyle),
               ],
               if (hasLegacy) ...[
                 const SizedBox(height: 10),
-                Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.5)),
+                Divider(height: 1, color: Holo.pink.withValues(alpha: 0.2)),
                 const SizedBox(height: 8),
                 Text(
                   context.tr('notebookLegacyNoteLabel'),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: scheme.onSurfaceVariant,
+                    color: Holo.inkPlumSoft,
                     fontFamily: usePretendard ? 'Pretendard' : null,
                   ),
                 ),
@@ -341,6 +317,14 @@ class WordBookScreenState extends State<WordBookScreen>
                     if (s.isEmpty) return;
                     _onNotebookLangChanged(s.first);
                   },
+                  style: SegmentedButton.styleFrom(
+                    backgroundColor: Holo.surfaceCard,
+                    foregroundColor: Holo.inkPlum,
+                    selectedBackgroundColor: Holo.pink,
+                    selectedForegroundColor: Colors.white,
+                    side: const BorderSide(color: Holo.cyan, width: 2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.pill)),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
