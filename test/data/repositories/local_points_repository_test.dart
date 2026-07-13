@@ -44,4 +44,19 @@ void main() {
     expect(b.credited, isFalse);
     expect(b.balance, 400);
   });
+
+  test('rewarded ad daily cap counts and resets by date', () async {
+    final repo = LocalPointsRepositoryImpl(box);
+    expect(repo.adsRemainingToday(today: '2026-07-13'), 5);
+    final r = await repo.recordAdReward(today: '2026-07-13'); // credits +30
+    expect(r.credited, isTrue);
+    expect(repo.adsRemainingToday(today: '2026-07-13'), 4);
+    for (var i = 0; i < 4; i++) {
+      await repo.recordAdReward(today: '2026-07-13');
+    }
+    expect(repo.adsRemainingToday(today: '2026-07-13'), 0);
+    final blocked = await repo.recordAdReward(today: '2026-07-13');
+    expect(blocked.credited, isFalse);
+    expect(repo.adsRemainingToday(today: '2026-07-14'), 5);
+  });
 }

@@ -1,5 +1,14 @@
 import 'package:hive_ce/hive.dart';
+import '../../core/ads/ad_config.dart';
 import '../../domain/repositories/points_repository.dart';
+
+/// Outcome of a rewarded-ad reward attempt against the daily cap.
+class AdRewardOutcome {
+  const AdRewardOutcome({required this.credited, required this.balance, required this.remaining});
+  final bool credited;
+  final int balance;
+  final int remaining;
+}
 
 /// Local Hive-backed wallet implementing [PointsRepository]. Single-user; no server.
 class LocalPointsRepositoryImpl implements PointsRepository {
@@ -97,4 +106,27 @@ class LocalPointsRepositoryImpl implements PointsRepository {
   }
 
   int get balance => _balance;
+
+  /// Remaining rewarded-ad views left for [today] (resets when the stored date differs).
+  int adsRemainingToday({required String today}) {
+    final storedDate = _box.get('ad_date') as String?;
+    final count = storedDate == today ? ((_box.get('ad_count') as num?)?.toInt() ?? 0) : 0;
+    final rem = AdConfig.maxAdsPerDay - count;
+    return rem < 0 ? 0 : rem;
+  }
+
+  /// Records a completed rewarded-ad view for [today] and credits the reward if
+  /// the daily cap has not been reached yet.
+  Future<AdRewardOutcome> recordAdReward({required String today}) async {
+    final storedDate = _box.get('ad_date') as String?;
+    var count = storedDate == today ? ((_box.get('ad_count') as num?)?.toInt() ?? 0) : 0;
+    if (count >= AdConfig.maxAdsPerDay) {
+      return AdRewardOutcome(credited: false, balance: _balance, remaining: 0);
+    }
+    count += 1;
+    await _box.put('ad_date', today);
+    await _box.put('ad_count', count);
+    final bal = await creditReward(AdConfig.pointsPerAd);
+    return AdRewardOutcome(credited: true, balance: bal, remaining: AdConfig.maxAdsPerDay - count);
+  }
 }
