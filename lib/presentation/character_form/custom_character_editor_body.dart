@@ -17,8 +17,6 @@ import '../points/points_balance_notifier.dart';
 import '../points/points_topup_prompt.dart';
 
 /// Single local user id (no auth).
-const String _localUserId = 'local';
-
 /// Cyan-bordered holo field decoration shared by every text input on this form.
 InputDecoration _holoFieldDecoration({
   String? labelText,
@@ -34,11 +32,26 @@ InputDecoration _holoFieldDecoration({
     alignLabelWithHint: alignLabelWithHint,
     filled: true,
     fillColor: Holo.surfaceCard,
-    labelStyle: const TextStyle(color: Holo.inkPlum, fontWeight: FontWeight.w700),
-    floatingLabelStyle: const TextStyle(color: Holo.inkPlum, fontWeight: FontWeight.w800),
-    border: const OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: Holo.cyan, width: 2)),
-    enabledBorder: const OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: Holo.cyan, width: 2)),
-    focusedBorder: const OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: Holo.pink, width: 2.5)),
+    labelStyle: const TextStyle(
+      color: Holo.inkPlum,
+      fontWeight: FontWeight.w700,
+    ),
+    floatingLabelStyle: const TextStyle(
+      color: Holo.inkPlum,
+      fontWeight: FontWeight.w800,
+    ),
+    border: const OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide(color: Holo.cyan, width: 2),
+    ),
+    enabledBorder: const OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide(color: Holo.cyan, width: 2),
+    ),
+    focusedBorder: const OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide(color: Holo.pink, width: 2.5),
+    ),
   );
 }
 
@@ -50,7 +63,9 @@ bool _isNetworkImagePath(String value) {
 
 /// Image provider for either a remote http(s) URL or a local file path.
 ImageProvider _avatarImageProvider(String value) {
-  return _isNetworkImagePath(value) ? NetworkImage(value) : FileImage(File(value));
+  return _isNetworkImagePath(value)
+      ? NetworkImage(value)
+      : FileImage(File(value));
 }
 
 /// Copies a picked image [src] into the app documents dir, returns the stored path.
@@ -61,7 +76,8 @@ Future<String> _copyAvatarToAppDir(File src) async {
     await avatarsDir.create(recursive: true);
   }
   final ext = src.path.contains('.') ? src.path.split('.').last : 'jpg';
-  final dest = '${avatarsDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+  final dest =
+      '${avatarsDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
   await src.copy(dest);
   return dest;
 }
@@ -70,11 +86,12 @@ Future<String> _copyAvatarToAppDir(File src) async {
 class CustomCharacterEditorBody extends StatefulWidget {
   const CustomCharacterEditorBody({super.key, this.existing});
 
-  /// `null` = create. Otherwise edit this row (must be owned by current user).
+  /// `null` creates a character; otherwise edits the local record.
   final CharacterRecord? existing;
 
   @override
-  State<CustomCharacterEditorBody> createState() => _CustomCharacterEditorBodyState();
+  State<CustomCharacterEditorBody> createState() =>
+      _CustomCharacterEditorBodyState();
 }
 
 class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
@@ -87,7 +104,6 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   final _xPasteController = TextEditingController();
 
   String _language = 'ja';
-  bool _isPublic = false;
   bool _saving = false;
   bool _uploadingAvatar = false;
   bool _importUrlBusy = false;
@@ -107,8 +123,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       _taglineController.text = r.tagline?.trim() ?? '';
       _memoController.text = r.speechStyle?.trim() ?? '';
       _language = r.language;
-      _isPublic = r.isPublic;
-      _avatarUrl = (r.avatarUrl != null && r.avatarUrl!.trim().isNotEmpty) ? r.avatarUrl : null;
+      _avatarUrl = (r.avatarUrl != null && r.avatarUrl!.trim().isNotEmpty)
+          ? r.avatarUrl
+          : null;
     }
   }
 
@@ -138,7 +155,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   }
 
   Future<bool> _spendPointsForXProfileImport() async {
-    final spend = await context.read<PointsRepository>().spendPoints(5, 'x_profile_import');
+    final spend = await context.read<PointsRepository>().spendPoints(
+      5,
+      'x_profile_import',
+    );
     if (!spend.ok) {
       if (mounted) {
         setState(() => _error = context.tr('pointsInsufficient'));
@@ -146,14 +166,18 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       }
       return false;
     }
-    if (mounted) context.read<PointsBalanceNotifier>().setBalance(spend.balance);
+    if (mounted) {
+      context.read<PointsBalanceNotifier>().setBalance(spend.balance);
+    }
     return true;
   }
 
   Future<void> _importPersonaFromXUrl() async {
     final url = _xUrlController.text.trim();
     if (url.isEmpty) {
-      setState(() => _error = context.trRead('characterImportFromXUrlRequired'));
+      setState(
+        () => _error = context.trRead('characterImportFromXUrlRequired'),
+      );
       return;
     }
     FocusScope.of(context).unfocus();
@@ -169,7 +193,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       final s = await suggester.suggestFromXProfileUrl(url);
       if (!mounted) return;
       _applyPersonaSuggestion(s);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('characterImportFromXDone'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.trRead('characterImportFromXDone'))),
+      );
     } catch (e) {
       if (!mounted) return;
       final message = '${context.trRead('characterImportFromXError')} $e';
@@ -198,7 +224,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       final s = await suggester.suggestFromProfileText(raw);
       if (!mounted) return;
       _applyPersonaSuggestion(s);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('characterImportFromXDone'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.trRead('characterImportFromXDone'))),
+      );
     } catch (e) {
       if (!mounted) return;
       final message = '${context.trRead('characterImportFromXError')} $e';
@@ -228,7 +256,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     try {
       final repo = context.read<CharacterRecordRepository>();
       if (existing == null) {
-        final spend = await context.read<PointsRepository>().spendPoints(10, 'custom_character_create');
+        final spend = await context.read<PointsRepository>().spendPoints(
+          10,
+          'custom_character_create',
+        );
         if (!spend.ok) {
           if (!mounted) return;
           setState(() {
@@ -241,29 +272,23 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
         if (!mounted) return;
         context.read<PointsBalanceNotifier>().setBalance(spend.balance);
         final record = CharacterRecord.draft(
-          ownerId: _localUserId,
           name: name,
           nameSecondary: secondary.isEmpty ? null : secondary,
           tagline: tagline.isEmpty ? null : tagline,
           speechStyle: memo.isEmpty ? null : memo,
           avatarUrl: _avatarUrl,
           language: _language,
-          isPublic: _isPublic,
         );
         await repo.createCharacter(record);
       } else {
         final updated = CharacterRecord(
           id: existing.id,
-          ownerId: existing.ownerId,
           name: name,
           nameSecondary: secondary.isEmpty ? null : secondary,
           tagline: tagline.isEmpty ? null : tagline,
           speechStyle: memo.isEmpty ? null : memo,
           avatarUrl: _avatarUrl,
           language: _language,
-          isPublic: _isPublic,
-          clonedFromId: existing.clonedFromId,
-          downloadCount: existing.downloadCount,
           createdAt: existing.createdAt,
           updatedAt: DateTime.now(),
         );
@@ -273,7 +298,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            context.tr(existing == null ? 'characterCreated' : 'characterUpdated'),
+            context.tr(
+              existing == null ? 'characterCreated' : 'characterUpdated',
+            ),
           ),
         ),
       );
@@ -306,9 +333,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
         _avatarUrl = path;
         _uploadingAvatar = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('avatarUploadDone'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('avatarUploadDone'))));
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -322,17 +349,21 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     setState(() => _avatarUrl = null);
   }
 
-  String _labelDisplayName(BuildContext context) =>
-      _language == 'ja' ? context.tr('characterDisplayNameJa') : context.tr('characterDisplayNameKo');
+  String _labelDisplayName(BuildContext context) => _language == 'ja'
+      ? context.tr('characterDisplayNameJa')
+      : context.tr('characterDisplayNameKo');
 
-  String _hintDisplayName(BuildContext context) =>
-      _language == 'ja' ? context.tr('characterDisplayNameJaHint') : context.tr('characterDisplayNameKoHint');
+  String _hintDisplayName(BuildContext context) => _language == 'ja'
+      ? context.tr('characterDisplayNameJaHint')
+      : context.tr('characterDisplayNameKoHint');
 
-  String _labelAltName(BuildContext context) =>
-      _language == 'ja' ? context.tr('characterAltNameJa') : context.tr('characterAltNameKo');
+  String _labelAltName(BuildContext context) => _language == 'ja'
+      ? context.tr('characterAltNameJa')
+      : context.tr('characterAltNameKo');
 
-  String _hintAltName(BuildContext context) =>
-      _language == 'ja' ? context.tr('characterAltNameJaHint') : context.tr('characterAltNameKoHint');
+  String _hintAltName(BuildContext context) => _language == 'ja'
+      ? context.tr('characterAltNameJaHint')
+      : context.tr('characterAltNameKoHint');
 
   @override
   Widget build(BuildContext context) {
@@ -341,7 +372,12 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     return Form(
       key: _formKey,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 16, AppSpacing.pageH, AppSpacing.pageBottom),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.pageH,
+          16,
+          AppSpacing.pageH,
+          AppSpacing.pageBottom,
+        ),
         children: [
           // ── Error banner ─────────────────────────────────────
           if (_error != null) ...[
@@ -353,9 +389,21 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline_rounded, color: scheme.onErrorContainer, size: 20),
+                  Icon(
+                    Icons.error_outline_rounded,
+                    color: scheme.onErrorContainer,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(_error!, style: TextStyle(color: scheme.onErrorContainer, fontWeight: FontWeight.w600))),
+                  Expanded(
+                    child: Text(
+                      _error!,
+                      style: TextStyle(
+                        color: scheme.onErrorContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -374,9 +422,14 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                     height: 110,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: (_avatarUrl == null || _avatarUrl!.isEmpty) ? Holo.holoGradient : null,
+                      gradient: (_avatarUrl == null || _avatarUrl!.isEmpty)
+                          ? Holo.holoGradient
+                          : null,
                       image: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
-                          ? DecorationImage(image: _avatarImageProvider(_avatarUrl!), fit: BoxFit.cover)
+                          ? DecorationImage(
+                              image: _avatarImageProvider(_avatarUrl!),
+                              fit: BoxFit.cover,
+                            )
                           : null,
                       boxShadow: Holo.cardShadow,
                     ),
@@ -389,10 +442,14 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                             ),
                           )
                         : (_avatarUrl == null || _avatarUrl!.isEmpty)
-                            ? const Center(
-                                child: Icon(Icons.face_rounded, size: 44, color: Colors.white),
-                              )
-                            : null,
+                        ? const Center(
+                            child: Icon(
+                              Icons.face_rounded,
+                              size: 44,
+                              color: Colors.white,
+                            ),
+                          )
+                        : null,
                   ),
                 ),
                 // Camera badge to re-open the picker.
@@ -410,7 +467,11 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                         border: Border.all(color: Holo.surface, width: 2.5),
                         boxShadow: Holo.cardShadow,
                       ),
-                      child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                      child: const Icon(
+                        Icons.camera_alt_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -440,9 +501,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                   Text(
                     context.tr('characterImportFromXLegal'),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Holo.inkPlumSoft,
-                          height: 1.35,
-                        ),
+                      color: Holo.inkPlumSoft,
+                      height: 1.35,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -450,7 +511,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                     enabled: !_anyPersonaImportBusy,
                     decoration: _holoFieldDecoration(
                       labelText: context.tr('characterImportFromXHint'),
-                      prefixIcon: const Icon(Icons.tag_rounded, color: Holo.pink),
+                      prefixIcon: const Icon(
+                        Icons.tag_rounded,
+                        color: Holo.pink,
+                      ),
                     ),
                     keyboardType: TextInputType.url,
                     autocorrect: false,
@@ -464,7 +528,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                           const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Holo.pink),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Holo.pink,
+                            ),
                           ),
                           const SizedBox(width: 10),
                         ],
@@ -473,7 +540,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                           label: _importUrlBusy
                               ? context.tr('characterImportFromXBusy')
                               : context.tr('characterImportFromXButton'),
-                          onPressed: _anyPersonaImportBusy ? null : _importPersonaFromXUrl,
+                          onPressed: _anyPersonaImportBusy
+                              ? null
+                              : _importPersonaFromXUrl,
                         ),
                       ],
                     ),
@@ -481,7 +550,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                   const SizedBox(height: 18),
                   Text(
                     context.tr('characterImportFromXPaste'),
-                    style: AppTextStyles.sectionLabel(context).copyWith(fontSize: 13, color: Holo.inkPlum),
+                    style: AppTextStyles.sectionLabel(
+                      context,
+                    ).copyWith(fontSize: 13, color: Holo.inkPlum),
                   ),
                   const SizedBox(height: 6),
                   TextField(
@@ -503,7 +574,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                           const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Holo.pink),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Holo.pink,
+                            ),
                           ),
                           const SizedBox(width: 10),
                         ],
@@ -512,7 +586,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                           label: _importPasteBusy
                               ? context.tr('characterImportFromXBusy')
                               : context.tr('characterImportFromXManualButton'),
-                          onPressed: _anyPersonaImportBusy ? null : _importPersonaFromPaste,
+                          onPressed: _anyPersonaImportBusy
+                              ? null
+                              : _importPersonaFromPaste,
                         ),
                       ],
                     ),
@@ -549,13 +625,18 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                 ),
                 const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: Holo.lilac.withValues(alpha: 0.20),
                     borderRadius: BorderRadius.circular(AppRadii.cardSmall),
                   ),
                   child: Text(
-                    _language == 'ja' ? context.tr('characterTutorJaHelp') : context.tr('characterTutorKoHelp'),
+                    _language == 'ja'
+                        ? context.tr('characterTutorJaHelp')
+                        : context.tr('characterTutorKoHelp'),
                     style: const TextStyle(
                       color: Holo.inkPlum,
                       height: 1.4,
@@ -579,10 +660,15 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                   decoration: _holoFieldDecoration(
                     labelText: _labelDisplayName(context),
                     hintText: _hintDisplayName(context),
-                    prefixIcon: const Icon(Icons.badge_outlined, color: Holo.pink),
+                    prefixIcon: const Icon(
+                      Icons.badge_outlined,
+                      color: Holo.pink,
+                    ),
                   ),
                   textCapitalization: TextCapitalization.words,
-                  validator: (v) => (v == null || v.trim().isEmpty) ? context.tr('nameRequired') : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? context.tr('nameRequired')
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -590,7 +676,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                   decoration: _holoFieldDecoration(
                     labelText: _labelAltName(context),
                     hintText: _hintAltName(context),
-                    prefixIcon: const Icon(Icons.translate_rounded, color: Holo.pink),
+                    prefixIcon: const Icon(
+                      Icons.translate_rounded,
+                      color: Holo.pink,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -599,7 +688,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                   decoration: _holoFieldDecoration(
                     labelText: context.tr('characterTaglineLabel'),
                     hintText: context.tr('characterTaglineHint'),
-                    prefixIcon: const Icon(Icons.format_quote_rounded, color: Holo.pink),
+                    prefixIcon: const Icon(
+                      Icons.format_quote_rounded,
+                      color: Holo.pink,
+                    ),
                   ),
                   maxLength: 40,
                 ),
@@ -621,41 +713,6 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-
-          // ── Public visibility toggle ───────────────────────────────────
-          HoloCard(
-            padding: EdgeInsets.zero,
-            child: SwitchListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              secondary: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: _isPublic ? Holo.holoGradient : null,
-                  color: _isPublic ? null : Holo.surfaceCard,
-                  border: _isPublic ? null : Border.all(color: Holo.cyan, width: 2),
-                ),
-                child: Icon(
-                  _isPublic ? Icons.public_rounded : Icons.lock_outline_rounded,
-                  size: 20,
-                  color: _isPublic ? Colors.white : Holo.inkPlumSoft,
-                ),
-              ),
-              title: Text(
-                context.tr('publicSwitch'),
-                style: const TextStyle(fontWeight: FontWeight.w700, color: Holo.inkPlum),
-              ),
-              subtitle: Text(
-                _isPublic ? context.tr('characterPublicOnSubtitle') : context.tr('characterPublicOffSubtitle'),
-                style: const TextStyle(color: Holo.inkPlumSoft),
-              ),
-              value: _isPublic,
-              activeThumbColor: Holo.pink,
-              onChanged: (v) => setState(() => _isPublic = v),
-            ),
-          ),
           const SizedBox(height: 28),
 
           // ── Save button ───────────────────────────────────
@@ -667,12 +724,17 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                   const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Holo.pink),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Holo.pink,
+                    ),
                   ),
                   const SizedBox(width: 10),
                 ],
                 HoloButton(
-                  icon: _existing == null ? Icons.add_rounded : Icons.check_rounded,
+                  icon: _existing == null
+                      ? Icons.add_rounded
+                      : Icons.check_rounded,
                   label: context.tr(_existing == null ? 'create' : 'save'),
                   onPressed: _saving
                       ? null
@@ -694,7 +756,11 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
 
 // ── Section card ────────────────────────────────────────────────
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.icon, required this.title, required this.child});
+  const _SectionCard({
+    required this.icon,
+    required this.title,
+    required this.child,
+  });
 
   final IconData icon;
   final String title;
@@ -711,7 +777,14 @@ class _SectionCard extends StatelessWidget {
             children: [
               Icon(icon, size: 22, color: Holo.pink),
               const SizedBox(width: 10),
-              Expanded(child: Text(title, style: AppTextStyles.sectionLabel(context).copyWith(color: Holo.inkPlum))),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTextStyles.sectionLabel(
+                    context,
+                  ).copyWith(color: Holo.inkPlum),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -758,7 +831,9 @@ class _LangChip extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                color: selected ? Colors.white.withValues(alpha: 0.22) : Holo.lilac.withValues(alpha: 0.20),
+                color: selected
+                    ? Colors.white.withValues(alpha: 0.22)
+                    : Holo.lilac.withValues(alpha: 0.20),
               ),
               child: Text(
                 codeLabel,

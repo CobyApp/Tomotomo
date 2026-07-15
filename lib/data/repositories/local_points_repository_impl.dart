@@ -4,7 +4,11 @@ import '../../domain/repositories/points_repository.dart';
 
 /// Outcome of a rewarded-ad reward attempt against the daily cap.
 class AdRewardOutcome {
-  const AdRewardOutcome({required this.credited, required this.balance, required this.remaining});
+  const AdRewardOutcome({
+    required this.credited,
+    required this.balance,
+    required this.remaining,
+  });
   final bool credited;
   final int balance;
   final int remaining;
@@ -18,61 +22,32 @@ class LocalPointsRepositoryImpl implements PointsRepository {
   int get _balance => (_box.get('balance') as num?)?.toInt() ?? 0;
   Future<void> _setBalance(int v) => _box.put('balance', v);
 
-  List<String> _idList(String key) =>
-      (_box.get(key) as List?)?.map((e) => e.toString()).toList() ?? <String>[];
-
   @override
   Future<SpendPointsOutcome> spendPoints(int amount, String reason) async {
     if (amount <= 0) {
       return SpendPointsOutcome(ok: true, balance: _balance);
     }
     if (_balance < amount) {
-      return SpendPointsOutcome(ok: false, balance: _balance, error: 'insufficient_points');
+      return SpendPointsOutcome(
+        ok: false,
+        balance: _balance,
+        error: 'insufficient_points',
+      );
     }
     await _setBalance(_balance - amount);
     return SpendPointsOutcome(ok: true, balance: _balance);
   }
 
   @override
-  Future<DmExpressionUnlockOutcome> tryUnlockDmExpression(String messageServerId) async {
-    final unlocked = _idList('dm_unlocks');
-    if (unlocked.contains(messageServerId)) {
-      return DmExpressionUnlockOutcome(ok: true, balance: _balance, charged: false);
-    }
-    if (_balance < 1) {
-      return DmExpressionUnlockOutcome(
-          ok: false, balance: _balance, charged: false, error: 'insufficient_points');
-    }
-    await _setBalance(_balance - 1);
-    await _box.put('dm_unlocks', [...unlocked, messageServerId]);
-    return DmExpressionUnlockOutcome(ok: true, balance: _balance, charged: true);
-  }
-
-  @override
-  Future<CreditIapPointsOutcome> creditIapPoints({
-    required String store,
-    required String transactionId,
-    required String productId,
-    String? purchaseToken,
-    required int points,
-    required int usdCents,
-    String? rawReceipt,
-  }) async {
-    final processed = _idList('iap_tx');
-    if (processed.contains(transactionId)) {
-      return CreditIapPointsOutcome(ok: true, credited: false, balance: _balance);
-    }
-    await _setBalance(_balance + points);
-    await _box.put('iap_tx', [...processed, transactionId]);
-    return CreditIapPointsOutcome(ok: true, credited: true, balance: _balance);
-  }
-
-  @override
-  Future<LineAnalysisCacheRow?> getLineAnalysisCache(String messageServerId, String appLang) async {
+  Future<LineAnalysisCacheRow?> getLineAnalysisCache(
+    String messageServerId,
+    String appLang,
+  ) async {
     final v = _box.get('line_cache/$messageServerId/$appLang');
     if (v is! Map) return null;
     final m = Map<String, dynamic>.from(v);
-    final vocab = (m['vocabulary'] as List?)
+    final vocab =
+        (m['vocabulary'] as List?)
             ?.whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
             .toList() ??
@@ -110,7 +85,9 @@ class LocalPointsRepositoryImpl implements PointsRepository {
   /// Remaining rewarded-ad views left for [today] (resets when the stored date differs).
   int adsRemainingToday({required String today}) {
     final storedDate = _box.get('ad_date') as String?;
-    final count = storedDate == today ? ((_box.get('ad_count') as num?)?.toInt() ?? 0) : 0;
+    final count = storedDate == today
+        ? ((_box.get('ad_count') as num?)?.toInt() ?? 0)
+        : 0;
     final rem = AdConfig.maxAdsPerDay - count;
     return rem < 0 ? 0 : rem;
   }
@@ -119,7 +96,9 @@ class LocalPointsRepositoryImpl implements PointsRepository {
   /// the daily cap has not been reached yet.
   Future<AdRewardOutcome> recordAdReward({required String today}) async {
     final storedDate = _box.get('ad_date') as String?;
-    var count = storedDate == today ? ((_box.get('ad_count') as num?)?.toInt() ?? 0) : 0;
+    var count = storedDate == today
+        ? ((_box.get('ad_count') as num?)?.toInt() ?? 0)
+        : 0;
     if (count >= AdConfig.maxAdsPerDay) {
       return AdRewardOutcome(credited: false, balance: _balance, remaining: 0);
     }
@@ -127,6 +106,10 @@ class LocalPointsRepositoryImpl implements PointsRepository {
     await _box.put('ad_date', today);
     await _box.put('ad_count', count);
     final bal = await creditReward(AdConfig.pointsPerAd);
-    return AdRewardOutcome(credited: true, balance: bal, remaining: AdConfig.maxAdsPerDay - count);
+    return AdRewardOutcome(
+      credited: true,
+      balance: bal,
+      remaining: AdConfig.maxAdsPerDay - count,
+    );
   }
 }

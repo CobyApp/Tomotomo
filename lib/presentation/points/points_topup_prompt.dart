@@ -41,13 +41,7 @@ Future<void> showPointsTopUpPrompt(BuildContext context) async {
             const SizedBox(height: 20),
             HoloButton(
               icon: Icons.play_circle_fill_rounded,
-              label: context.tr('adEarnWatch'),
-              onPressed: () => Navigator.pop(ctx, true),
-            ),
-            const SizedBox(height: 10),
-            HoloButton(
-              icon: Icons.add_card_rounded,
-              label: context.tr('pointsTopupBuy'),
+              label: context.tr('pointsEarnAction'),
               onPressed: () => Navigator.pop(ctx, true),
             ),
             const SizedBox(height: 10),
@@ -56,7 +50,10 @@ Future<void> showPointsTopUpPrompt(BuildContext context) async {
                 onPressed: () => Navigator.pop(ctx, false),
                 child: Text(
                   context.tr('cancel'),
-                  style: const TextStyle(color: Holo.inkPlumSoft, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    color: Holo.inkPlumSoft,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -65,8 +62,6 @@ Future<void> showPointsTopUpPrompt(BuildContext context) async {
       ),
     ),
   );
-  // Both the "watch ad" and "buy" actions lead here — the ad-earning card
-  // lives at the top of the top-up screen, so either path reaches it.
   if (open == true && context.mounted) {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(builder: (_) => const PointsTopUpScreen()),

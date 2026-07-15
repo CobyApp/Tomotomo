@@ -10,8 +10,6 @@ import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
 
 /// Local single-user id (no auth).
-const String _localUserId = 'local';
-
 /// Short assistant line matching the character’s main chat language (no stack traces or API text).
 String _aiChatErrorBubbleText(Character character) {
   if (character.koreanNationalPersona) {
@@ -41,7 +39,10 @@ class ChatViewModel extends ChangeNotifier {
     required String appUiLanguageCode,
   }) {
     _loadMessages();
-    aiChatRepository.initializeForCharacter(character, appUiLanguageCode: appUiLanguageCode);
+    aiChatRepository.initializeForCharacter(
+      character,
+      appUiLanguageCode: appUiLanguageCode,
+    );
   }
 
   List<ChatMessage> get messages => _messages;
@@ -91,20 +92,18 @@ class ChatViewModel extends ChangeNotifier {
   }
 
   Future<void> _sendUserMessage(String userMessage) async {
-    if (!character.isDirectMessage) {
-      final notifier = pointsBalanceNotifier;
-      if (notifier != null) {
-        if (notifier.balance == null) {
-          await notifier.loadInitial();
-        }
-        final bal = notifier.balance;
-        if (bal != null && bal < 1) {
-          appScaffoldMessengerKey.currentState?.showSnackBar(
-            SnackBar(content: Text(insufficientPointsMessage)),
-          );
-          onInsufficientPoints?.call();
-          return;
-        }
+    final notifier = pointsBalanceNotifier;
+    if (notifier != null) {
+      if (notifier.balance == null) {
+        await notifier.loadInitial();
+      }
+      final bal = notifier.balance;
+      if (bal != null && bal < 1) {
+        appScaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(content: Text(insufficientPointsMessage)),
+        );
+        onInsufficientPoints?.call();
+        return;
       }
     }
 
@@ -112,20 +111,18 @@ class ChatViewModel extends ChangeNotifier {
       content: userMessage,
       role: 'user',
       timestamp: DateTime.now(),
-      senderId: character.isDirectMessage ? _localUserId : null,
     );
 
     _messages.add(userChatMessage);
-    final userRowId = await chatRepository.saveMessage(character, userChatMessage);
+    final userRowId = await chatRepository.saveMessage(
+      character,
+      userChatMessage,
+    );
     if (userRowId != null) {
       final i = _messages.length - 1;
       _messages[i] = _messages[i].copyWith(serverId: userRowId);
     }
     notifyListeners();
-
-    if (character.isDirectMessage) {
-      return;
-    }
 
     _isGenerating = true;
     notifyListeners();
@@ -174,9 +171,7 @@ class ChatViewModel extends ChangeNotifier {
       messageController.clear();
       _isGenerating = false;
 
-      if (!character.isDirectMessage) {
-        aiChatRepository.resetChat();
-      }
+      aiChatRepository.resetChat();
       notifyListeners();
     } catch (e) {
       debugPrint('Failed to reset chat: $e');
@@ -196,9 +191,7 @@ class ChatViewModel extends ChangeNotifier {
     _messages.clear();
     messageController.clear();
     _isGenerating = false;
-    if (!character.isDirectMessage) {
-      aiChatRepository.resetChat();
-    }
+    aiChatRepository.resetChat();
     notifyListeners();
   }
 

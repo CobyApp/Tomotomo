@@ -16,7 +16,6 @@ void main() {
 
   test('create generates an id, then list/get/delete round-trip', () async {
     final draft = CharacterRecord.draft(
-      ownerId: 'local',
       name: 'さくら',
       nameSecondary: '사쿠라',
       language: 'ja',
@@ -40,12 +39,11 @@ void main() {
 
   test('update preserves createdAt and rewrites fields', () async {
     final created = await repo.createCharacter(
-      CharacterRecord.draft(ownerId: 'local', name: 'first'),
+      CharacterRecord.draft(name: 'first'),
     );
     final updated = await repo.updateCharacter(
       CharacterRecord(
         id: created.id,
-        ownerId: created.ownerId,
         name: 'second',
         createdAt: created.createdAt,
         updatedAt: created.updatedAt,

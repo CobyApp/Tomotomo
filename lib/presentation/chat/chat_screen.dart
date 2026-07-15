@@ -6,7 +6,6 @@ import '../../core/ui/ui.dart';
 import '../../core/ui/points_toolbar_chip.dart';
 import '../../core/ui/holo/glitch_text.dart';
 import '../../core/ui/holo/holo_tokens.dart';
-import '../../domain/entities/block_relation.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
@@ -39,9 +38,6 @@ class _ChatScreenState extends State<ChatScreen>
   late AnimationController _controller;
   final ScrollController _scrollController = ScrollController();
   late final ChatViewModel _viewModel;
-  final bool _dmSocialLoaded = false;
-  final bool _dmOutgoingFriend = false;
-  final BlockRelation _dmBlock = BlockRelation.none;
 
   @override
   void initState() {
@@ -60,32 +56,13 @@ class _ChatScreenState extends State<ChatScreen>
     )..forward();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
-      unawaited(_loadDmSocialState());
     });
     WidgetsBinding.instance.addObserver(this);
-  }
-
-  /// Human-to-human DM social state is not used in the local offline app
-  /// (no DM characters exist). Kept as a no-op for app bar wiring.
-  Future<void> _loadDmSocialState() async {
-    return;
   }
 
   void _onInsufficientPoints() {
     if (!mounted) return;
     unawaited(showPointsTopUpPrompt(context));
-  }
-
-  Future<void> _dmAddFriend() async {
-    return;
-  }
-
-  Future<void> _dmConfirmBlock() async {
-    return;
-  }
-
-  Future<void> _dmUnblock() async {
-    return;
   }
 
   @override
@@ -103,13 +80,6 @@ class _ChatScreenState extends State<ChatScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDm = widget.character.isDirectMessage;
-    final showStrangerBanner =
-        isDm && _dmSocialLoaded && !_dmBlock.anyBlock && !_dmOutgoingFriend;
-    final showBlockedByMe = isDm && _dmSocialLoaded && _dmBlock.iBlockedThem;
-    final showBlockedByThem = isDm && _dmSocialLoaded && _dmBlock.theyBlockedMe;
-    final canSendDm = !isDm || !_dmBlock.anyBlock;
-
     return ChangeNotifierProvider<ChatViewModel>.value(
       value: _viewModel,
       child: Consumer<ChatViewModel>(
@@ -124,23 +94,6 @@ class _ChatScreenState extends State<ChatScreen>
               chatRoomId: viewModel.chatRoomId,
             ),
             onLeaveRoom: (ctx) => _confirmLeaveRoom(ctx, viewModel),
-            showDmStrangerBanner: showStrangerBanner,
-            showDmBlockedByMeBanner: showBlockedByMe,
-            showDmBlockedByThemBanner: showBlockedByThem,
-            dmShowBlockInMenu:
-                isDm &&
-                _dmSocialLoaded &&
-                !_dmBlock.iBlockedThem &&
-                !_dmBlock.theyBlockedMe,
-            dmShowUnblockInMenu:
-                isDm && _dmSocialLoaded && _dmBlock.iBlockedThem,
-            onDmAddFriend: _dmAddFriend,
-            onDmBlock: _dmConfirmBlock,
-            onDmUnblock: _dmUnblock,
-            canSendMessage: canSendDm,
-            messageHintOverride: canSendDm
-                ? null
-                : context.trRead('dmInputBlockedHint'),
           );
         },
       ),
@@ -151,14 +104,14 @@ class _ChatScreenState extends State<ChatScreen>
     BuildContext context,
     ChatViewModel viewModel,
   ) async {
-    final isDm = widget.character.isDirectMessage;
     final name = widget.character.displayNamePrimary;
-    final bodyKey = isDm ? 'chatsDeleteBodyDm' : 'chatsDeleteBodyCharacter';
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(context.tr('chatsDeleteTitle')),
-        content: Text(context.tr(bodyKey, params: {'name': name})),
+        content: Text(
+          context.tr('chatsDeleteBodyCharacter', params: {'name': name}),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -215,16 +168,6 @@ class _ChatScreenContent extends StatelessWidget {
   final String? chatRoomId;
   final Future<void> Function(BuildContext context) onReportRoom;
   final Future<void> Function(BuildContext context) onLeaveRoom;
-  final bool showDmStrangerBanner;
-  final bool showDmBlockedByMeBanner;
-  final bool showDmBlockedByThemBanner;
-  final bool dmShowBlockInMenu;
-  final bool dmShowUnblockInMenu;
-  final Future<void> Function() onDmAddFriend;
-  final Future<void> Function() onDmBlock;
-  final Future<void> Function() onDmUnblock;
-  final bool canSendMessage;
-  final String? messageHintOverride;
 
   const _ChatScreenContent({
     required this.character,
@@ -232,16 +175,6 @@ class _ChatScreenContent extends StatelessWidget {
     required this.chatRoomId,
     required this.onReportRoom,
     required this.onLeaveRoom,
-    required this.showDmStrangerBanner,
-    required this.showDmBlockedByMeBanner,
-    required this.showDmBlockedByThemBanner,
-    required this.dmShowBlockInMenu,
-    required this.dmShowUnblockInMenu,
-    required this.onDmAddFriend,
-    required this.onDmBlock,
-    required this.onDmUnblock,
-    required this.canSendMessage,
-    required this.messageHintOverride,
   });
 
   void _scrollToBottom() {
@@ -350,12 +283,6 @@ class _ChatScreenContent extends StatelessWidget {
                   case 'report':
                     await onReportRoom(context);
                     break;
-                  case 'block':
-                    await onDmBlock();
-                    break;
-                  case 'unblock':
-                    await onDmUnblock();
-                    break;
                   case 'leave':
                     await onLeaveRoom(context);
                     break;
@@ -363,7 +290,6 @@ class _ChatScreenContent extends StatelessWidget {
               },
               itemBuilder: (ctx) {
                 final tr = ctx.tr;
-                final isDm = character.isDirectMessage;
                 return <PopupMenuEntry<String>>[
                   PopupMenuItem<String>(
                     value: 'report',
@@ -379,41 +305,6 @@ class _ChatScreenContent extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (isDm && dmShowBlockInMenu)
-                    PopupMenuItem<String>(
-                      value: 'block',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.block_rounded,
-                            size: 22,
-                            color: scheme.error,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              tr('chatMenuBlock'),
-                              style: TextStyle(color: scheme.error),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (isDm && dmShowUnblockInMenu)
-                    PopupMenuItem<String>(
-                      value: 'unblock',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.lock_open_rounded,
-                            size: 22,
-                            color: scheme.onSurface,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(child: Text(tr('chatMenuUnblock'))),
-                        ],
-                      ),
-                    ),
                   const PopupMenuDivider(),
                   PopupMenuItem<String>(
                     value: 'leave',
@@ -438,14 +329,6 @@ class _ChatScreenContent extends StatelessWidget {
           onTap: () => FocusScope.of(context).unfocus(),
           child: Column(
             children: [
-              if (showDmStrangerBanner)
-                _DmStrangerBanner(
-                  onAddFriend: () => unawaited(onDmAddFriend()),
-                  onBlock: () => unawaited(onDmBlock()),
-                ),
-              if (showDmBlockedByMeBanner)
-                _DmBlockedByMeBanner(onUnblock: () => unawaited(onDmUnblock())),
-              if (showDmBlockedByThemBanner) const _DmBlockedByThemBanner(),
               Expanded(
                 child: Consumer<ChatViewModel>(
                   builder: (context, viewModel, child) {
@@ -473,142 +356,12 @@ class _ChatScreenContent extends StatelessWidget {
                     },
                     isGenerating: viewModel.isGenerating,
                     character: character,
-                    canSendMessage: canSendMessage && !viewModel.isGenerating,
-                    hintOverride: messageHintOverride,
+                    canSendMessage: !viewModel.isGenerating,
                   );
                 },
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DmStrangerBanner extends StatelessWidget {
-  const _DmStrangerBanner({required this.onAddFriend, required this.onBlock});
-
-  final VoidCallback onAddFriend;
-  final VoidCallback onBlock;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.secondaryContainer.withValues(alpha: 0.7),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  size: 20,
-                  color: scheme.onSecondaryContainer,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    context.tr('dmStrangerBanner'),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.onSecondaryContainer,
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: onBlock,
-                  child: Text(context.tr('dmStrangerBlock')),
-                ),
-                FilledButton(
-                  onPressed: onAddFriend,
-                  child: Text(context.tr('dmStrangerAddFriend')),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DmBlockedByMeBanner extends StatelessWidget {
-  const _DmBlockedByMeBanner({required this.onUnblock});
-
-  final VoidCallback onUnblock;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.errorContainer.withValues(alpha: 0.5),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        child: Row(
-          children: [
-            Icon(Icons.block, size: 20, color: scheme.onErrorContainer),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                context.tr('dmBlockedByMeBanner'),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onErrorContainer,
-                  height: 1.35,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: onUnblock,
-              child: Text(context.tr('dmUnblock')),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DmBlockedByThemBanner extends StatelessWidget {
-  const _DmBlockedByThemBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        child: Row(
-          children: [
-            Icon(
-              Icons.shield_outlined,
-              size: 20,
-              color: scheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                context.tr('dmBlockedByThemBanner'),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  height: 1.35,
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

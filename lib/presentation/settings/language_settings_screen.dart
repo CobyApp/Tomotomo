@@ -28,7 +28,7 @@ class LanguageSettingsScreen extends StatelessWidget {
           final profile = snap.data;
           if (profile == null) {
             return Center(
-              child: Text(context.tr('loginRequired'), style: const TextStyle(color: Holo.inkPlumSoft)),
+              child: Text(context.tr('profileEditLoadError'), style: const TextStyle(color: Holo.inkPlumSoft)),
             );
           }
           return ListView(

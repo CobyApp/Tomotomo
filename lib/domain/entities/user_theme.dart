@@ -1,4 +1,4 @@
-/// User theme overrides stored in Supabase (public.themes).
+/// User theme overrides stored locally.
 /// All colors are optional hex strings (e.g. "FF6A3EA1" or "#FF6A3EA1").
 class UserTheme {
   final String? chatBubbleUser;
@@ -13,7 +13,7 @@ class UserTheme {
     this.accent,
   });
 
-  factory UserTheme.fromRow(Map<String, dynamic> row) {
+  factory UserTheme.fromJson(Map<String, dynamic> row) {
     return UserTheme(
       chatBubbleUser: row['chat_bubble_user'] as String?,
       chatBubbleBot: row['chat_bubble_bot'] as String?,
@@ -22,7 +22,7 @@ class UserTheme {
     );
   }
 
-  Map<String, dynamic> toRow() {
+  Map<String, dynamic> toJson() {
     return {
       'chat_bubble_user': chatBubbleUser,
       'chat_bubble_bot': chatBubbleBot,

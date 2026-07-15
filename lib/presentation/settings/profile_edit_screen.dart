@@ -24,11 +24,26 @@ InputDecoration _holoFieldDecoration({String? labelText, String? hintText}) {
     hintText: hintText,
     filled: true,
     fillColor: Holo.surfaceCard,
-    labelStyle: const TextStyle(color: Holo.inkPlum, fontWeight: FontWeight.w700),
-    floatingLabelStyle: const TextStyle(color: Holo.inkPlum, fontWeight: FontWeight.w800),
-    border: const OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: Holo.cyan, width: 2)),
-    enabledBorder: const OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: Holo.cyan, width: 2)),
-    focusedBorder: const OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: Holo.pink, width: 2.5)),
+    labelStyle: const TextStyle(
+      color: Holo.inkPlum,
+      fontWeight: FontWeight.w700,
+    ),
+    floatingLabelStyle: const TextStyle(
+      color: Holo.inkPlum,
+      fontWeight: FontWeight.w800,
+    ),
+    border: const OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide(color: Holo.cyan, width: 2),
+    ),
+    enabledBorder: const OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide(color: Holo.cyan, width: 2),
+    ),
+    focusedBorder: const OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide(color: Holo.pink, width: 2.5),
+    ),
   );
 }
 
@@ -46,12 +61,13 @@ Future<String> _copyAvatarToAppDir(File src) async {
     await avatarsDir.create(recursive: true);
   }
   final ext = src.path.contains('.') ? src.path.split('.').last : 'jpg';
-  final dest = '${avatarsDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+  final dest =
+      '${avatarsDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
   await src.copy(dest);
   return dest;
 }
 
-/// Edit the local profile (display name, gallery avatar, status). App language: Settings.
+/// Edit the local profile display name and gallery avatar.
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
 
@@ -61,7 +77,6 @@ class ProfileEditScreen extends StatefulWidget {
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _displayNameController = TextEditingController();
-  final _statusMessageController = TextEditingController();
 
   Profile? _profile;
   String? _avatarUrl;
@@ -81,7 +96,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   @override
   void dispose() {
     _displayNameController.dispose();
-    _statusMessageController.dispose();
     super.dispose();
   }
 
@@ -103,7 +117,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         return;
       }
       _displayNameController.text = p.displayName ?? '';
-      _statusMessageController.text = p.statusMessage ?? '';
       _avatarUrl = p.avatarUrl;
       setState(() {
         _profile = p;
@@ -121,7 +134,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _pickAndUploadAvatar() async {
-    final x = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 512, imageQuality: 85);
+    final x = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      imageQuality: 85,
+    );
     if (x == null || !mounted) return;
     setState(() {
       _error = null;
@@ -135,7 +152,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         _avatarUrl = path;
         _uploadingAvatar = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('avatarUploadDone'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.trRead('avatarUploadDone'))),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -159,24 +178,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     });
     try {
       final repo = context.read<ProfileRepository>();
-      final status = _statusMessageController.text.trim();
       final avatar = _avatarUrl?.trim();
       final updated = Profile(
         id: profile.id,
-        email: profile.email,
         displayName: name,
         avatarUrl: avatar == null || avatar.isEmpty ? null : avatar,
-        statusMessage: status.isEmpty ? null : status,
         appLanguage: profile.appLanguage,
         learningLanguage: profile.learningLanguage,
-        pointBalance: profile.pointBalance,
         createdAt: profile.createdAt,
         updatedAt: profile.updatedAt,
       );
       await repo.updateProfile(updated);
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.trRead('profileEditSaved'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.trRead('profileEditSaved'))),
+      );
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
@@ -197,7 +214,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       actions = null;
     } else if (_profile == null) {
       body = AppErrorBody(
-        message: _error == 'missing' ? context.tr('profileEditLoadError') : (_error ?? context.tr('profileEditLoadError')),
+        message: _error == 'missing'
+            ? context.tr('profileEditLoadError')
+            : (_error ?? context.tr('profileEditLoadError')),
         onRetry: () => unawaited(_load()),
         retryLabel: context.tr('retry'),
       );
@@ -211,7 +230,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Holo.pink),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Holo.pink,
+                  ),
                 )
               : HoloButton(
                   icon: Icons.check_rounded,
@@ -221,7 +243,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         ),
       ];
       body = ListView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 16, AppSpacing.pageH, AppSpacing.pageBottom),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.pageH,
+          16,
+          AppSpacing.pageH,
+          AppSpacing.pageBottom,
+        ),
         children: [
           if (_error != null) ...[
             Container(
@@ -229,7 +256,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               decoration: BoxDecoration(
                 color: Holo.pink.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppRadii.cardSmall),
-                border: Border.all(color: Holo.pink.withValues(alpha: 0.4), width: 2),
+                border: Border.all(
+                  color: Holo.pink.withValues(alpha: 0.4),
+                  width: 2,
+                ),
               ),
               child: Text(_error!, style: const TextStyle(color: Holo.inkPlum)),
             ),
@@ -251,28 +281,37 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         width: 112,
                         height: 112,
                         child: _uploadingAvatar
-                            ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Holo.pink))
+                            ? const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Holo.pink,
+                                ),
+                              )
                             : hasPhoto
-                                ? (_isNetworkImagePath(_avatarUrl!.trim())
-                                    ? Image.network(
-                                        _avatarUrl!.trim(),
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, _, _) => const Icon(
-                                          Icons.broken_image_outlined,
-                                          size: 40,
-                                          color: Holo.inkPlumSoft,
-                                        ),
-                                      )
-                                    : Image.file(
-                                        File(_avatarUrl!.trim()),
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, _, _) => const Icon(
-                                          Icons.broken_image_outlined,
-                                          size: 40,
-                                          color: Holo.inkPlumSoft,
-                                        ),
-                                      ))
-                                : const Icon(Icons.person_outline, size: 48, color: Holo.inkPlumSoft),
+                            ? (_isNetworkImagePath(_avatarUrl!.trim())
+                                  ? Image.network(
+                                      _avatarUrl!.trim(),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => const Icon(
+                                        Icons.broken_image_outlined,
+                                        size: 40,
+                                        color: Holo.inkPlumSoft,
+                                      ),
+                                    )
+                                  : Image.file(
+                                      File(_avatarUrl!.trim()),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => const Icon(
+                                        Icons.broken_image_outlined,
+                                        size: 40,
+                                        color: Holo.inkPlumSoft,
+                                      ),
+                                    ))
+                            : const Icon(
+                                Icons.person_outline,
+                                size: 48,
+                                color: Holo.inkPlumSoft,
+                              ),
                       ),
                     ),
                   ),
@@ -291,7 +330,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         border: Border.all(color: Holo.surface, width: 2.5),
                         boxShadow: Holo.cardShadow,
                       ),
-                      child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                      child: const Icon(
+                        Icons.camera_alt_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -308,7 +351,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     },
               child: Text(
                 context.tr('profileEditClearPhoto'),
-                style: const TextStyle(color: Holo.inkPlumSoft, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  color: Holo.inkPlumSoft,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -316,7 +362,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           Text(
             context.tr('profilePhotoGalleryHint'),
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Holo.inkPlumSoft),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Holo.inkPlumSoft),
           ),
           const SizedBox(height: 28),
           TextFormField(
@@ -326,16 +374,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               hintText: context.tr('displayNameHint'),
             ),
             textCapitalization: TextCapitalization.words,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _statusMessageController,
-            decoration: _holoFieldDecoration(
-              labelText: context.tr('profileStatusMessageLabel'),
-              hintText: context.tr('profileStatusMessageHint'),
-            ),
-            maxLines: 2,
-            textCapitalization: TextCapitalization.sentences,
           ),
         ],
       );

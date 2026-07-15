@@ -28,7 +28,8 @@ class Character {
   final String nameJp;
   final String nameKanji;
   final String level;
-  /// Short one-line subtitle for lists (~20 chars); empty for DM.
+
+  /// Short one-line subtitle for character lists.
   final String tagline;
   final String description;
   final int age;
@@ -49,10 +50,6 @@ class Character {
   final Map<String, List<String>> emotionalResponses;
   final String imageUrl;
   final String imagePath;
-
-  /// Human-to-human chat (no AI). When true, [directMessageRoomId] must be set.
-  final bool isDirectMessage;
-  final String? directMessageRoomId;
 
   /// `ko`: vocabulary meanings in Korean for Japanese dialogue. `ja`: full Japanese immersion (meanings in Japanese).
   final String tutorLocale;
@@ -89,8 +86,6 @@ class Character {
     required this.emotionalResponses,
     required this.imageUrl,
     required this.imagePath,
-    this.isDirectMessage = false,
-    this.directMessageRoomId,
     this.tutorLocale = 'ko',
     this.koreanNationalPersona = false,
     this.omitSecondaryDisplayName = false,
@@ -100,14 +95,14 @@ class Character {
 
   /// AI JSON: Korean vocabulary meanings (Japanese dialogue).
   bool get expectsKoreanStudyNotes =>
-      !isDirectMessage && !koreanNationalPersona && tutorLocale != 'ja';
+      !koreanNationalPersona && tutorLocale != 'ja';
 
   /// AI JSON: Japanese glosses (Korean dialogue or immersion).
   bool get expectsJapaneseStudyNotes =>
-      !isDirectMessage && (koreanNationalPersona || tutorLocale == 'ja');
+      koreanNationalPersona || tutorLocale == 'ja';
 
   /// Prefer Pretendard / Hangul-friendly font for [ChatMessage.content] in the expression sheet.
-  bool get assistantMessagePrefersHangulFont => isDirectMessage || koreanNationalPersona;
+  bool get assistantMessagePrefersHangulFont => koreanNationalPersona;
 
   /// Notebook tab for vocabulary [+] saves: **script of the headword** — Korean words → `ko`, Japanese → `ja`.
   String get defaultNotebookLangForVocabSave {
@@ -118,112 +113,38 @@ class Character {
 
   /// How to read `vocabulary[].*` meaning fields from AI/DB JSON for this persona.
   VocabularyMeaningPickMode get vocabularyMeaningPickMode {
-    if (isDirectMessage) return VocabularyMeaningPickMode.neutral;
     if (tutorLocale == 'ja') return VocabularyMeaningPickMode.neutral;
-    if (koreanNationalPersona) return VocabularyMeaningPickMode.preferJapaneseGloss;
+    if (koreanNationalPersona) {
+      return VocabularyMeaningPickMode.preferJapaneseGloss;
+    }
     return VocabularyMeaningPickMode.preferKoreanGloss;
   }
 
   bool get hasAvatar => imagePath.isNotEmpty;
 
-  /// Korean-national / DM: large line is Korean (or display name). Japanese persona: large line is Japanese ([nameJp]).
-  bool get _showsKoreanNamePrimary => isDirectMessage || koreanNationalPersona;
+  /// Korean persona: large line is Korean. Japanese persona: large line is Japanese.
+  bool get _showsKoreanNamePrimary => koreanNationalPersona;
 
   /// Primary name line for UI (chat header, list tiles, etc.).
   String get displayNamePrimary {
-    if (isDirectMessage) return name;
     return _showsKoreanNamePrimary ? name : nameJp;
   }
 
   /// Smaller bilingual subtitle; empty when there is no second script or it matches [displayNamePrimary].
   String get displayNameSecondary {
     if (omitSecondaryDisplayName) return '';
-    if (isDirectMessage) {
-      final s = nameJp.trim();
-      if (s.isEmpty || s == name) return '';
-      return s;
-    }
     final other = (_showsKoreanNamePrimary ? nameJp : name).trim();
     if (other.isEmpty || other == displayNamePrimary) return '';
     return other;
   }
 
-  /// List-row titles for a Supabase `characters` row (same rules as [fromRecord] + [displayNamePrimary]).
-  static ({String primary, String secondary}) bilingualChatTitlesFromCharacterDb({
-    required String language,
-    required String dbName,
-    String? dbNameSecondary,
-  }) {
-    final isJaPersona = language == 'ja';
-    final String nameKoLine;
-    final String nameJaLine;
-    if (isJaPersona) {
-      final ja = dbName.trim();
-      final ko = dbNameSecondary?.trim();
-      nameJaLine = ja;
-      nameKoLine = (ko != null && ko.isNotEmpty) ? ko : ja;
-    } else {
-      final ko = dbName.trim();
-      final jp = dbNameSecondary?.trim();
-      nameKoLine = ko;
-      nameJaLine = (jp != null && jp.isNotEmpty) ? jp : ko;
-    }
-    final koreanNational = !isJaPersona;
-    final primary = koreanNational ? nameKoLine : nameJaLine;
-    final other = koreanNational ? nameJaLine : nameKoLine;
-    final secondary = (other.isEmpty || other == primary) ? '' : other;
-    return (primary: primary, secondary: secondary);
-  }
-
   bool get isNetworkImage => imagePath.startsWith('http');
 
-  ImageProvider get imageProvider =>
-      isNetworkImage ? NetworkImage(imagePath) : AssetImage(imagePath) as ImageProvider;
+  ImageProvider get imageProvider => isNetworkImage
+      ? NetworkImage(imagePath)
+      : AssetImage(imagePath) as ImageProvider;
 
-  /// DM with a friend; uses [peerUserId] as [id] for stability.
-  static Character forDirectMessage({
-    required String peerUserId,
-    required String roomId,
-    required String displayName,
-    String? email,
-    String? avatarUrl,
-  }) {
-    final image = (avatarUrl != null && avatarUrl.trim().isNotEmpty) ? avatarUrl.trim() : '';
-    return Character(
-      id: peerUserId,
-      name: displayName,
-      nameJp: email ?? displayName,
-      nameKanji: displayName,
-      level: '—',
-      tagline: '',
-      description: '',
-      age: 0,
-      schoolYear: '',
-      occupation: '',
-      traits: const [CharacterTrait('friend', 1.0)],
-      interests: const [CharacterInterest(category: 'chat', items: ['direct'])],
-      speechStyle: '',
-      primaryColor: const Color(0xFF2E7D32),
-      secondaryColor: const Color(0xFFE8F5E9),
-      hairStyle: '-',
-      hairColor: '-',
-      eyeColor: '-',
-      outfit: '-',
-      accessories: const [],
-      selfReference: displayName,
-      commonPhrases: const [],
-      emotionalResponses: const {},
-      imageUrl: image,
-      imagePath: image,
-      isDirectMessage: true,
-      directMessageRoomId: roomId,
-      tutorLocale: 'ko',
-      koreanNationalPersona: false,
-      omitSecondaryDisplayName: false,
-    );
-  }
-
-  /// Builds a Character for chat from a Supabase custom character record.
+  /// Builds a chat character from a locally stored custom character record.
   ///
   /// [CharacterRecord.language]: `ja` → Japanese-speaking persona, Korean glosses on vocabulary in JSON.
   /// `ko` → Korean-speaking persona (friend), Japanese glosses on vocabulary in JSON.
@@ -233,7 +154,8 @@ class Character {
     final image = r.avatarUrl ?? '';
     final descParts = <String>[
       if (r.tagline != null && r.tagline!.trim().isNotEmpty) r.tagline!.trim(),
-      if (r.speechStyle != null && r.speechStyle!.trim().isNotEmpty) r.speechStyle!.trim(),
+      if (r.speechStyle != null && r.speechStyle!.trim().isNotEmpty)
+        r.speechStyle!.trim(),
     ];
 
     // Align with built-in [Character] rows: [name] = Korean-line label, [nameJp] = Japanese script.
@@ -272,7 +194,9 @@ class Character {
           ? '일본어 튜터 · 말풍선 일본어, 단어 뜻 한국어'
           : '한국어 튜터 · 말풍선 한국어, 단어 뜻 일본어',
       traits: const [CharacterTrait('친절함', 0.8)],
-      interests: const [CharacterInterest(category: '언어', items: ['대화'])],
+      interests: const [
+        CharacterInterest(category: '언어', items: ['대화']),
+      ],
       speechStyle: r.speechStyle ?? '친근하게 대화합니다.',
       primaryColor: const Color(0xFF6A3EA1),
       secondaryColor: const Color(0xFFF0E6FF),
@@ -286,8 +210,6 @@ class Character {
       emotionalResponses: {},
       imageUrl: image,
       imagePath: image,
-      isDirectMessage: false,
-      directMessageRoomId: null,
       tutorLocale: 'ko',
       koreanNationalPersona: !isJaPersona,
       omitSecondaryDisplayName: false,
@@ -307,13 +229,17 @@ class Character {
       schoolYear: json['schoolYear'] as String,
       occupation: json['occupation'] as String,
       traits: (json['traits'] as List)
-          .map((e) => CharacterTrait(e['trait'] as String, e['weight'] as double))
+          .map(
+            (e) => CharacterTrait(e['trait'] as String, e['weight'] as double),
+          )
           .toList(),
       interests: (json['interests'] as List)
-          .map((e) => CharacterInterest(
-                category: e['category'] as String,
-                items: e['items'] as List<String>,
-              ))
+          .map(
+            (e) => CharacterInterest(
+              category: e['category'] as String,
+              items: e['items'] as List<String>,
+            ),
+          )
           .toList(),
       speechStyle: json['speechStyle'] as String,
       primaryColor: Color(int.parse(json['primaryColor'] as String)),
@@ -329,11 +255,10 @@ class Character {
           json['emotionalResponses'] as Map<String, List<String>>,
       imageUrl: json['imageUrl'] as String,
       imagePath: json['imagePath'] as String,
-      isDirectMessage: json['isDirectMessage'] as bool? ?? false,
-      directMessageRoomId: json['directMessageRoomId'] as String?,
       tutorLocale: json['tutorLocale'] as String? ?? 'ko',
       koreanNationalPersona: json['koreanNationalPersona'] as bool? ?? false,
-      omitSecondaryDisplayName: json['omitSecondaryDisplayName'] as bool? ?? false,
+      omitSecondaryDisplayName:
+          json['omitSecondaryDisplayName'] as bool? ?? false,
     );
   }
 
@@ -349,8 +274,12 @@ class Character {
       'age': age,
       'schoolYear': schoolYear,
       'occupation': occupation,
-      'traits': traits.map((e) => {'trait': e.trait, 'weight': e.weight}).toList(),
-      'interests': interests.map((e) => {'category': e.category, 'items': e.items}).toList(),
+      'traits': traits
+          .map((e) => {'trait': e.trait, 'weight': e.weight})
+          .toList(),
+      'interests': interests
+          .map((e) => {'category': e.category, 'items': e.items})
+          .toList(),
       'speechStyle': speechStyle,
       'primaryColor': primaryColor.toARGB32().toString(),
       'secondaryColor': secondaryColor.toARGB32().toString(),
@@ -364,8 +293,6 @@ class Character {
       'emotionalResponses': emotionalResponses,
       'imageUrl': imageUrl,
       'imagePath': imagePath,
-      'isDirectMessage': isDirectMessage,
-      'directMessageRoomId': directMessageRoomId,
       'tutorLocale': tutorLocale,
       'koreanNationalPersona': koreanNationalPersona,
       'omitSecondaryDisplayName': omitSecondaryDisplayName,

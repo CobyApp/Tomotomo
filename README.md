@@ -11,7 +11,9 @@
 
 - AI 캐릭터와의 자연스러운 일본어 대화
 - 대화 내용의 표현 설명 제공
-- 단어와 문법 학습 지원
+- 단어장과 홈 화면 위젯
+- 로컬 커스텀 AI 튜터
+- 리워드 광고를 통한 무료 포인트 적립
 - 부적절한 표현 신고 기능
 
 ## 스크린샷
@@ -24,7 +26,8 @@
 - Flutter
 - Google Generative AI
 - Provider (상태 관리)
-- Shared Preferences (로컬 저장소)
+- Hive CE (로컬 저장소)
+- Google Mobile Ads (리워드 광고)
 - URL Launcher (이메일 연동)
 
 ## 설치 방법
@@ -40,16 +43,18 @@
    ```
 
 3. 환경 변수 설정
-   - `.env` 파일을 프로젝트 루트에 생성
-   - Google AI API 키 설정
+   ```bash
+   cp .env.example .env
+   ```
+   - `GEMINI_API_KEY` 설정
+   - 릴리스 광고를 사용할 경우 `ADMOB_REWARDED_ANDROID`와 `ADMOB_REWARDED_IOS` 설정
 
 4. 앱 실행
-   - **iPhone 실기기로 연결해서 돌릴 때 (iOS 26 등): `flutter run` 쓰지 마세요.** 디버그 JIT 때문에 `EXC_BAD_ACCESS (code=50)` 로 바로 죙니다. 아래 중 하나만 쓰세요.
+   - iPhone 실기기는 profile 모드를 사용합니다.
      ```bash
      ./run_on_iphone.sh
      ```
-     또는 `make ios` (= `flutter run --profile`). 설명은 `SETTINGS.md`.
-   - **시뮬레이터·Android** 등: 평소대로 `flutter run` 가능.
+   - 시뮬레이터와 Android는 `flutter run`을 사용할 수 있습니다.
 
 ## 빌드 방법
 
@@ -66,10 +71,6 @@ flutter build ipa --release
 ## 버전 정보
 
 - 현재 버전: 1.0.3+4
-- 주요 변경사항:
-  - 신고 기능 추가
-  - UI/UX 개선
-  - 버그 수정
 
 ## 라이선스
 

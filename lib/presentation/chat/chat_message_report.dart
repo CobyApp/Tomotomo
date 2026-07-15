@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/language/dm_utterance_script.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../locale/l10n_context.dart';
-import '../locale/locale_notifier.dart';
 
 const String _reportMailTo = 'dime0801001@gmail.com';
 
@@ -30,10 +27,7 @@ Future<void> _launchReportMail({
       final gmailUri = Uri.parse(
         'https://mail.google.com/mail/?view=cm&fs=1&to=$_reportMailTo&su=$encSubject&body=$encBody',
       );
-      await launchUrl(
-        gmailUri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(gmailUri, mode: LaunchMode.externalApplication);
     }
   } catch (e) {
     debugPrint('Failed to launch email: $e');
@@ -43,18 +37,11 @@ Future<void> _launchReportMail({
 Future<void> _openReportMailDraft(
   BuildContext context, {
   required ChatMessage message,
-  required Character character,
 }) async {
-  final rootLang = context.read<LocaleNotifier>().languageCode;
-  final dmScript = character.isDirectMessage
-      ? resolveDmUtteranceScript(message.content, appLanguageCode: rootLang)
-      : null;
   final tr = context.tr;
-  final subject = tr('expressionDmReportSubject');
-  final bodyPrefix = dmScript == DmUtteranceScript.koreanHeavy
-      ? tr('expressionDmReportBodyPrefixJa')
-      : tr('expressionDmReportBodyPrefixKo');
-  final body = '$bodyPrefix${message.content}\n\n${tr('expressionDmReportReasonLabel')}\n';
+  final subject = tr('chatReportSubject');
+  final body =
+      '${tr('chatReportBodyPrefix')}${message.content}\n\n${tr('chatReportReasonLabel')}\n';
   await _launchReportMail(subject: subject, body: body);
 }
 
@@ -83,11 +70,7 @@ Future<void> confirmAndReportChatMessage(
     ),
   );
   if (ok != true || !context.mounted) return;
-  await _openReportMailDraft(
-    context,
-    message: message,
-    character: character,
-  );
+  await _openReportMailDraft(context, message: message);
 }
 
 /// Report the whole chat (from ⋮ menu): mail draft with room / peer context.
@@ -116,11 +99,12 @@ Future<void> confirmAndReportChatRoom(
   );
   if (ok != true || !context.mounted) return;
   final subject = tr('chatRoomReportSubject');
-  final typeLine = character.isDirectMessage ? tr('chatRoomReportTypeDm') : tr('chatRoomReportTypeAi');
-  final body = '${tr('chatRoomReportBodyPrefix')}'
+  final typeLine = tr('chatRoomReportTypeAi');
+  final body =
+      '${tr('chatRoomReportBodyPrefix')}'
       '${tr('chatRoomReportFieldRoom')}: ${chatRoomId ?? '-'}\n'
       '${tr('chatRoomReportFieldType')}: $typeLine\n'
       '${tr('chatRoomReportFieldName')}: ${character.displayNamePrimary}\n\n'
-      '${tr('expressionDmReportReasonLabel')}\n';
+      '${tr('chatReportReasonLabel')}\n';
   await _launchReportMail(subject: subject, body: body);
 }

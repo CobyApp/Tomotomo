@@ -46,8 +46,8 @@ class SettingsTab extends StatelessWidget {
               ),
               AppSettingsNavTile(
                 icon: Icons.add_card_rounded,
-                title: context.tr('pointsTopupTitle'),
-                subtitle: context.tr('pointsTopupSubtitle'),
+                title: context.tr('pointsEarnTitle'),
+                subtitle: context.tr('pointsEarnSubtitle'),
                 onTap: () {
                   Navigator.push(
                     context,

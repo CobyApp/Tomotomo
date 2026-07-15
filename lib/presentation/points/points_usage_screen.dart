@@ -13,7 +13,11 @@ class PointsUsageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const bodyStyle = TextStyle(height: 1.45, color: Holo.inkPlum);
-    const bulletStyle = TextStyle(height: 1.45, color: Holo.inkPlum, fontWeight: FontWeight.w500);
+    const bulletStyle = TextStyle(
+      height: 1.45,
+      color: Holo.inkPlum,
+      fontWeight: FontWeight.w500,
+    );
 
     Widget bullet(String text) {
       return Padding(
@@ -43,16 +47,13 @@ class PointsUsageScreen extends StatelessWidget {
           Text(
             context.tr('pointsHelpSectionWhen'),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Holo.pink,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: Holo.pink,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 12),
-          bullet(context.tr('pointsHelpItemSignup')),
           bullet(context.tr('pointsHelpItemXImport')),
           bullet(context.tr('pointsHelpItemCharacterChat')),
-          bullet(context.tr('pointsHelpItemDmLearning')),
-          bullet(context.tr('pointsHelpItemPublicChar')),
           bullet(context.tr('pointsHelpItemCustomCreate')),
           const SizedBox(height: 8),
           HoloCard(
@@ -65,11 +66,13 @@ class PointsUsageScreen extends StatelessWidget {
           const SizedBox(height: 14),
           Center(
             child: HoloButton(
-              icon: Icons.add_card_rounded,
-              label: context.tr('pointsTopupBuy'),
+              icon: Icons.play_circle_fill_rounded,
+              label: context.tr('pointsEarnAction'),
               onPressed: () {
                 Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(builder: (_) => const PointsTopUpScreen()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const PointsTopUpScreen(),
+                  ),
                 );
               },
             ),

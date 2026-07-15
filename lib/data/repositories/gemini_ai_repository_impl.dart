@@ -2,11 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
-import '../../core/language/dm_utterance_script.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
-import 'ai_prompts/prompt_dm_expression_analysis.dart';
 import 'ai_response_parser.dart';
 import 'ai_system_prompt_builder.dart';
 import 'gemini_retry.dart';
@@ -22,11 +20,11 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
     double? temperature,
     int? maxOutputTokens,
     int? maxChatHistoryContents,
-  })  : _apiKeyOverride = apiKey,
-        _modelOverride = model,
-        _temperatureOverride = temperature,
-        _maxOutputTokensOverride = maxOutputTokens,
-        _maxChatHistoryContentsOverride = maxChatHistoryContents;
+  }) : _apiKeyOverride = apiKey,
+       _modelOverride = model,
+       _temperatureOverride = temperature,
+       _maxOutputTokensOverride = maxOutputTokens,
+       _maxChatHistoryContentsOverride = maxChatHistoryContents;
 
   final String? _apiKeyOverride;
   final String? _modelOverride;
@@ -53,11 +51,13 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
     return v;
   }
 
-  String get _apiKey => (_apiKeyOverride ?? _env('GEMINI_API_KEY') ?? '').trim();
+  String get _apiKey =>
+      (_apiKeyOverride ?? _env('GEMINI_API_KEY') ?? '').trim();
 
   /// Default: lowest-cost text tier on paid Standard; see SETTINGS.md.
   String get _modelName =>
-      (_modelOverride ?? _env('GEMINI_MODEL') ?? 'gemini-2.5-flash-lite').trim();
+      (_modelOverride ?? _env('GEMINI_MODEL') ?? 'gemini-2.5-flash-lite')
+          .trim();
 
   double get _temperature {
     final tempOverride = _temperatureOverride;
@@ -78,8 +78,8 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
       final v = int.tryParse(p);
       if (v != null && v > 0) return v;
     }
-      // Tutor JSON includes full_translation + learning_note + vocabulary.
-      return 768;
+    // Tutor JSON includes full_translation + learning_note + vocabulary.
+    return 768;
   }
 
   int get _maxChatHistoryContents {
@@ -100,10 +100,10 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
   }
 
   GenerationConfig get _jsonGenerationConfig => GenerationConfig(
-        temperature: _temperature,
-        maxOutputTokens: _maxOutputTokens,
-        responseMimeType: 'application/json',
-      );
+    temperature: _temperature,
+    maxOutputTokens: _maxOutputTokens,
+    responseMimeType: 'application/json',
+  );
 
   GenerativeModel _buildChatModel(Character character) {
     _ensureApiKey();
@@ -111,17 +111,29 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
       model: _modelName,
       apiKey: _apiKey,
       systemInstruction: Content.system(
-        buildCharacterSystemPrompt(character, appUiLanguageCode: _appUiLanguageCode),
+        buildCharacterSystemPrompt(
+          character,
+          appUiLanguageCode: _appUiLanguageCode,
+        ),
       ),
       generationConfig: _jsonGenerationConfig,
     );
   }
 
-  GenerativeModel _buildDmModel() {
+  GenerativeModel _buildAnalysisModel(
+    Character character,
+    String appUiLanguageCode,
+  ) {
     _ensureApiKey();
     return GenerativeModel(
       model: _modelName,
       apiKey: _apiKey,
+      systemInstruction: Content.system(
+        buildCharacterSystemPrompt(
+          character,
+          appUiLanguageCode: appUiLanguageCode,
+        ),
+      ),
       generationConfig: _jsonGenerationConfig,
     );
   }
@@ -146,28 +158,15 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
     return c;
   }
 
-  Future<String> _responseTextFromContent(GenerativeModel model, List<Content> contents) async {
-    final response = await withGeminiRetry(
-      () => model.generateContent(contents),
-      perAttemptTimeout: _timeout,
-    );
-    final text = response.text;
-    if (text == null || text.trim().isEmpty) {
-      throw Exception('Empty Gemini response (check safety filters or model name).');
-    }
-    return text.trim();
-  }
-
   @override
-  void initializeForCharacter(Character character, {String appUiLanguageCode = 'ko'}) {
+  void initializeForCharacter(
+    Character character, {
+    String appUiLanguageCode = 'ko',
+  }) {
     final lang = appUiLanguageCode.trim().isEmpty ? 'ko' : appUiLanguageCode;
-    if (character.isDirectMessage) {
-      _currentCharacter = null;
-      _chatModel = null;
-      _history.clear();
-      return;
-    }
-    if (_currentCharacter?.id == character.id && _chatModel != null && _appUiLanguageCode == lang) {
+    if (_currentCharacter?.id == character.id &&
+        _chatModel != null &&
+        _appUiLanguageCode == lang) {
       return;
     }
     _appUiLanguageCode = lang;
@@ -180,9 +179,6 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
   @override
   Future<ChatMessage> generateResponse(String userMessage) async {
     try {
-      if (_currentCharacter?.isDirectMessage == true) {
-        throw StateError('Direct message chat does not use AI');
-      }
       if (_currentCharacter == null) {
         throw Exception('AI 서비스가 초기화되지 않았습니다.');
       }
@@ -199,7 +195,9 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
       );
       final rawText = genResponse.text;
       if (rawText == null || rawText.trim().isEmpty) {
-        throw Exception('Empty Gemini response (check safety filters or model name).');
+        throw Exception(
+          'Empty Gemini response (check safety filters or model name).',
+        );
       }
       final jsonResponse = extractJsonObject(rawText.trim());
 
@@ -217,51 +215,46 @@ class GeminiAiRepositoryImpl implements AiChatRepository {
     }
   }
 
-  static final Character _dmParseDummy = Character.forDirectMessage(
-    peerUserId: '_dm_expression_parse_',
-    roomId: '_',
-    displayName: 'DM',
-  );
-
   @override
-  Future<ChatMessage> generateDmExpressionAnalysis(
-    String utterance, {
+  Future<ChatMessage> generateExpressionAnalysis(
+    String utterance,
+    Character character, {
     required String appUiLanguageCode,
   }) async {
-    final script = resolveDmUtteranceScript(utterance, appLanguageCode: appUiLanguageCode);
-    final prompt = buildDmExpressionAnalysisPrompt(utterance, script, appUiLanguageCode);
-    final meaningMode = script == DmUtteranceScript.koreanHeavy
-        ? VocabularyMeaningPickMode.preferJapaneseGloss
-        : VocabularyMeaningPickMode.preferKoreanGloss;
-
-    try {
-      final model = _buildDmModel();
-      final raw = await _responseTextFromContent(model, [Content.text(prompt)]);
-      final jsonResponse = extractJsonObject(raw);
-      return chatMessageFromAiJsonMap(
-        jsonResponse,
-        _dmParseDummy,
-        vocabularyMeaningPickModeOverride: meaningMode,
+    final model = _buildAnalysisModel(character, appUiLanguageCode);
+    final response = await withGeminiRetry(
+      () => model.generateContent([
+        Content.text(
+          'Analyze this existing tutor utterance without continuing the '
+          'conversation. Return the required JSON object, keep "content" '
+          'exactly equal to the utterance, and include full_translation, '
+          'learning_note, and vocabulary.\n\nUtterance:\n$utterance',
+        ),
+      ]),
+      perAttemptTimeout: _timeout,
+    );
+    final rawText = response.text;
+    if (rawText == null || rawText.trim().isEmpty) {
+      throw Exception(
+        'Empty Gemini response (check safety filters or model name).',
       );
-    } catch (e) {
-      debugPrint('DM expression analysis 오류: $e');
-      rethrow;
     }
+    return chatMessageFromAiJsonMap(
+      extractJsonObject(rawText.trim()),
+      character,
+    );
   }
 
   @override
   void resetChat() {
     if (_currentCharacter == null) return;
     final currentCharacter = _currentCharacter!;
-    if (currentCharacter.isDirectMessage) {
-      _chatModel = null;
-      _history.clear();
-      _currentCharacter = null;
-      return;
-    }
     _chatModel = null;
     _history.clear();
     _currentCharacter = null;
-    initializeForCharacter(currentCharacter, appUiLanguageCode: _appUiLanguageCode);
+    initializeForCharacter(
+      currentCharacter,
+      appUiLanguageCode: _appUiLanguageCode,
+    );
   }
 }

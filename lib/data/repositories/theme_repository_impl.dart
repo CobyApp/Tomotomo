@@ -15,11 +15,11 @@ class ThemeRepositoryImpl implements ThemeRepository {
   Future<UserTheme?> getTheme(String userId) async {
     final json = _store.getItem(_key);
     if (json == null) return null;
-    return UserTheme.fromRow(json);
+    return UserTheme.fromJson(json);
   }
 
   @override
   Future<void> saveTheme(String userId, UserTheme theme) async {
-    await _store.putItem(_key, theme.toRow());
+    await _store.putItem(_key, theme.toJson());
   }
 }

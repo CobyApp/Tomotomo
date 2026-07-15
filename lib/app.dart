@@ -31,7 +31,7 @@ class App extends StatelessWidget {
         Provider<ProfileRepository>.value(value: profileRepository),
         Provider<PointsRepository>.value(value: pointsRepository),
         Provider<LocalPointsRepositoryImpl>.value(value: localPointsRepository),
-        Provider<RewardedAdService>.value(value: rewardedAdService),
+        ChangeNotifierProvider<RewardedAdService>.value(value: rewardedAdService),
         ChangeNotifierProvider(
           create: (c) {
             final n = PointsBalanceNotifier(c.read<PointsRepository>());

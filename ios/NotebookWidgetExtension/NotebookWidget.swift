@@ -9,12 +9,11 @@ struct NotebookEntry: TimelineEntry {
   let date: Date
   let lang: String
   let lines: [String]
-  let loggedOut: Bool
 }
 
 struct NotebookProvider: TimelineProvider {
   func placeholder(in context: Context) -> NotebookEntry {
-    NotebookEntry(date: Date(), lang: "ko", lines: ["…"], loggedOut: false)
+    NotebookEntry(date: Date(), lang: "ko", lines: ["…"])
   }
 
   func getSnapshot(in context: Context, completion: @escaping (NotebookEntry) -> Void) {
@@ -29,13 +28,10 @@ struct NotebookProvider: TimelineProvider {
 
   private func readEntry() -> NotebookEntry {
     let d = UserDefaults(suiteName: widgetGroupId)
-    let ko = d?.string(forKey: "notebook_widget_payload_ko")
-    let ja = d?.string(forKey: "notebook_widget_payload_ja")
-    let loggedOut = ko == nil && ja == nil
     let lang = d?.string(forKey: "notebook_widget_lang") ?? "ko"
     let key = lang == "ja" ? "notebook_widget_payload_ja" : "notebook_widget_payload_ko"
     let raw = d?.string(forKey: key) ?? "[]"
-    return NotebookEntry(date: Date(), lang: lang, lines: parseLines(raw), loggedOut: loggedOut)
+    return NotebookEntry(date: Date(), lang: lang, lines: parseLines(raw))
   }
 
   private func parseLines(_ json: String) -> [String] {
@@ -58,16 +54,13 @@ struct NotebookWidgetView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
-      Text("단어장 · 単語帳")
+      Text("単語帳")
         .font(.headline)
-      Text(entry.lang == "ja" ? "日本語" : "한국어")
+      Text(entry.lang == "ja" ? "日本語" : "韓国語")
         .font(.caption)
         .foregroundColor(.secondary)
-      if entry.loggedOut {
-        Text("앱에서 로그인하면 표시됩니다")
-          .font(.caption)
-      } else if entry.lines.isEmpty {
-        Text("저장한 단어가 없습니다")
+      if entry.lines.isEmpty {
+        Text("保存した単語はありません")
           .font(.caption)
       } else {
         ForEach(Array(entry.lines.enumerated()), id: \.offset) { _, line in
@@ -96,8 +89,8 @@ struct NotebookWidget: Widget {
     StaticConfiguration(kind: kind, provider: NotebookProvider()) { entry in
       NotebookWidgetView(entry: entry)
     }
-    .configurationDisplayName("단어장 / 単語帳")
-    .description("저장한 단어를 홈 화면에 표시합니다.")
+    .configurationDisplayName("単語帳")
+    .description("保存した単語をホーム画面に表示します。")
     .supportedFamilies([.systemSmall, .systemMedium])
   }
 }

@@ -22,9 +22,9 @@ import '../../locale/l10n_context.dart';
 String? _builtinCharacterShortKey(String characterId) {
   switch (characterId) {
     case 'yuna':
-      return 'friendsBuiltinShortYuna';
+      return 'characterBuiltinShortYuna';
     case 'junho':
-      return 'friendsBuiltinShortJunho';
+      return 'characterBuiltinShortJunho';
     default:
       return null;
   }

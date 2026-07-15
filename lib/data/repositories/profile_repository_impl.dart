@@ -4,9 +4,7 @@ import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../local/local_json_store.dart';
 
-/// Local profile persistence in the `settings` box. Stores the single local
-/// user's preferences as scalar keys; point balance is owned by a later phase
-/// and always kept at the [Profile] default here.
+/// Local profile persistence in the `settings` box.
 class ProfileRepositoryImpl implements ProfileRepository {
   ProfileRepositoryImpl(Box box) : _store = LocalJsonStore(box);
   final LocalJsonStore _store;
@@ -15,7 +13,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
   static const _kLearningLanguage = 'profile_learning_language';
   static const _kDisplayName = 'profile_display_name';
   static const _kAvatarUrl = 'profile_avatar_url';
-  static const _kStatusMessage = 'profile_status_message';
   static const _kCreatedAt = 'profile_created_at';
 
   @override
@@ -39,9 +36,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
       id: userId,
       displayName: _store.getValue(_kDisplayName) as String?,
       avatarUrl: _store.getValue(_kAvatarUrl) as String?,
-      statusMessage: _store.getValue(_kStatusMessage) as String?,
       appLanguage: (_store.getValue(_kAppLanguage) as String?) ?? 'ko',
-      learningLanguage: (_store.getValue(_kLearningLanguage) as String?) ?? 'ja',
+      learningLanguage:
+          (_store.getValue(_kLearningLanguage) as String?) ?? 'ja',
       createdAt: createdAt,
       updatedAt: DateTime.now(),
     );
@@ -50,8 +47,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Profile> updateProfile(Profile profile) async {
     final createdAtRaw = _store.getValue(_kCreatedAt) as String?;
-    final createdAt =
-        createdAtRaw != null ? DateTime.tryParse(createdAtRaw) : null;
+    final createdAt = createdAtRaw != null
+        ? DateTime.tryParse(createdAtRaw)
+        : null;
     await _persist(profile, createdAt: createdAt ?? profile.createdAt);
     final updated = await getProfile(profile.id);
     return updated ?? profile;
@@ -62,7 +60,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
     await _store.putValue(_kLearningLanguage, profile.learningLanguage);
     await _store.putValue(_kDisplayName, profile.displayName);
     await _store.putValue(_kAvatarUrl, profile.avatarUrl);
-    await _store.putValue(_kStatusMessage, profile.statusMessage);
     await _store.putValue(_kCreatedAt, createdAt.toIso8601String());
   }
 }

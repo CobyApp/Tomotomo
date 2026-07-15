@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/ui/holo/holo_tokens.dart';
 import '../../../../domain/entities/character.dart';
-import '../../../../domain/entities/chat_message.dart'
-    show ChatMessage, DmVoiceMessage;
+import '../../../../domain/entities/chat_message.dart' show ChatMessage;
 import '../chat_expression_sheet.dart';
 import '../chat_message_report.dart';
 import 'chat_bubble.dart';
@@ -48,9 +47,7 @@ class _ChatListState extends State<ChatList> {
         }
         final message = widget.messages[index];
         final isUser = _isFromCurrentUser(message);
-        final showExpression =
-            !DmVoiceMessage.isVoiceContent(message.content) &&
-            (widget.character.isDirectMessage || message.role != 'user');
+        final showExpression = message.role != 'user';
         return ChatBubble(
           message: message,
           character: widget.character,
@@ -74,7 +71,6 @@ class _ChatListState extends State<ChatList> {
   }
 
   Widget _buildLoadingIndicator() {
-    if (widget.character.isDirectMessage) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(

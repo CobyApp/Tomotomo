@@ -13,39 +13,14 @@ void main() {
 
   test('spendPoints deducts and fails when insufficient', () async {
     final repo = LocalPointsRepositoryImpl(box);
-    final ok = await repo.spendPoints(30, 'dm');
+    final ok = await repo.spendPoints(30, 'character_chat');
     expect(ok.ok, isTrue);
     expect(ok.balance, 70);
-    final bad = await repo.spendPoints(1000, 'dm');
+    final bad = await repo.spendPoints(1000, 'character_chat');
     expect(bad.ok, isFalse);
     expect(bad.balance, 70);
-    // Contract: consumers (chat_viewmodel / expression sheet) gate the top-up
-    // prompt on this exact error code.
+    // Active point consumers gate the point-earning prompt on this error code.
     expect(bad.error, 'insufficient_points');
-  });
-
-  test('tryUnlockDmExpression charges once per message', () async {
-    final repo = LocalPointsRepositoryImpl(box);
-    final first = await repo.tryUnlockDmExpression('m1');
-    expect(first.charged, isTrue);
-    expect(first.balance, 99);
-    final second = await repo.tryUnlockDmExpression('m1');
-    expect(second.charged, isFalse);
-    expect(second.balance, 99);
-  });
-
-  test('creditIapPoints is idempotent by transactionId', () async {
-    final repo = LocalPointsRepositoryImpl(box);
-    final a = await repo.creditIapPoints(
-      store: 'play_store', transactionId: 'tx1', productId: 'p',
-      points: 300, usdCents: 100);
-    expect(a.credited, isTrue);
-    expect(a.balance, 400);
-    final b = await repo.creditIapPoints(
-      store: 'play_store', transactionId: 'tx1', productId: 'p',
-      points: 300, usdCents: 100);
-    expect(b.credited, isFalse);
-    expect(b.balance, 400);
   });
 
   test('rewarded ad daily cap counts and resets by date', () async {

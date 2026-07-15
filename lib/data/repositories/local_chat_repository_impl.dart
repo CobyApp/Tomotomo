@@ -12,8 +12,6 @@ class LocalChatRepositoryImpl implements ChatRepository {
   LocalChatRepositoryImpl(this._box);
   final Box _box;
 
-  static const _localUserId = 'local';
-
   Map<String, dynamic>? _entry(String id) {
     final v = _box.get(id);
     if (v is Map) return Map<String, dynamic>.from(v);
@@ -36,8 +34,8 @@ class LocalChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<String?> saveMessage(Character character, ChatMessage message) async {
-    final id = message.serverId ??
-        DateTime.now().microsecondsSinceEpoch.toString();
+    final id =
+        message.serverId ?? DateTime.now().microsecondsSinceEpoch.toString();
     final stored = message.copyWith(serverId: id);
 
     final entry = _entry(character.id) ?? <String, dynamic>{};
@@ -52,13 +50,13 @@ class LocalChatRepositoryImpl implements ChatRepository {
 
     entry['messages'] = messages;
     entry['title'] = character.displayNamePrimary;
-    entry['titleSecondary'] = character.displayNameSecondary;
-    entry['avatarNetworkUrl'] =
-        character.isNetworkImage ? character.imagePath : null;
+    entry['avatarNetworkUrl'] = character.isNetworkImage
+        ? character.imagePath
+        : null;
     entry['avatarAssetPath'] =
         (!character.isNetworkImage && character.imagePath.isNotEmpty)
-            ? character.imagePath
-            : null;
+        ? character.imagePath
+        : null;
 
     await _box.put(character.id, entry);
     return id;
@@ -90,20 +88,16 @@ class LocalChatRepositoryImpl implements ChatRepository {
         lastContent = c is String ? c : c?.toString();
       }
 
-      final titleSecondary = entry['titleSecondary'] as String?;
-      summaries.add(ChatRoomSummary(
-        roomId: roomId,
-        title: (entry['title'] as String?) ?? roomId,
-        titleSecondary:
-            (titleSecondary != null && titleSecondary.isNotEmpty) ? titleSecondary : null,
-        externalCharacterKey: roomId,
-        lastMessageAt: lastAt,
-        roomType: 'character',
-        roomOwnerUserId: _localUserId,
-        avatarNetworkUrl: entry['avatarNetworkUrl'] as String?,
-        avatarAssetPath: entry['avatarAssetPath'] as String?,
-        lastMessageContent: lastContent,
-      ));
+      summaries.add(
+        ChatRoomSummary(
+          roomId: roomId,
+          title: (entry['title'] as String?) ?? roomId,
+          lastMessageAt: lastAt,
+          avatarNetworkUrl: entry['avatarNetworkUrl'] as String?,
+          avatarAssetPath: entry['avatarAssetPath'] as String?,
+          lastMessageContent: lastContent,
+        ),
+      );
     }
     summaries.sort((a, b) {
       final at = a.lastMessageAt;

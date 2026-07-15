@@ -32,16 +32,12 @@ class CharacterRecordRepositoryImpl implements CharacterRecordRepository {
         : character.id;
     final record = CharacterRecord(
       id: id,
-      ownerId: character.ownerId,
       name: character.name,
       nameSecondary: character.nameSecondary,
       avatarUrl: character.avatarUrl,
       tagline: character.tagline,
       speechStyle: character.speechStyle,
       language: character.language,
-      isPublic: character.isPublic,
-      clonedFromId: character.clonedFromId,
-      downloadCount: character.downloadCount,
       createdAt: now,
       updatedAt: now,
     );
@@ -53,16 +49,12 @@ class CharacterRecordRepositoryImpl implements CharacterRecordRepository {
   Future<CharacterRecord> updateCharacter(CharacterRecord character) async {
     final record = CharacterRecord(
       id: character.id,
-      ownerId: character.ownerId,
       name: character.name,
       nameSecondary: character.nameSecondary,
       avatarUrl: character.avatarUrl,
       tagline: character.tagline,
       speechStyle: character.speechStyle,
       language: character.language,
-      isPublic: character.isPublic,
-      clonedFromId: character.clonedFromId,
-      downloadCount: character.downloadCount,
       createdAt: character.createdAt,
       updatedAt: DateTime.now(),
     );

@@ -30,7 +30,6 @@ class NotebookWidgetProvider : HomeWidgetProvider() {
 
     val payloadKo = widgetData.getString("notebook_widget_payload_ko", null)
     val payloadJa = widgetData.getString("notebook_widget_payload_ja", null)
-    val loggedOut = payloadKo == null && payloadJa == null
 
     val lang = widgetData.getString("notebook_widget_lang", "ko") ?: "ko"
     val payloadKey =
@@ -77,11 +76,7 @@ class NotebookWidgetProvider : HomeWidgetProvider() {
                 HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java),
             )
 
-            if (loggedOut) {
-              setViewVisibility(R.id.widget_empty, View.VISIBLE)
-              setTextViewText(R.id.widget_empty, context.getString(R.string.widget_login_hint))
-              lineIds.forEach { setViewVisibility(it, View.GONE) }
-            } else if (lines.isEmpty()) {
+            if (lines.isEmpty()) {
               setViewVisibility(R.id.widget_empty, View.VISIBLE)
               setTextViewText(
                   R.id.widget_empty,

@@ -97,7 +97,7 @@ class WordBookScreenState extends State<WordBookScreen>
         _items = lang == 'ko' ? koList : jaList;
         _loading = false;
       });
-      _syncHomeWidgetFromServer();
+      _syncHomeWidgetFromLocalData();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -127,7 +127,7 @@ class WordBookScreenState extends State<WordBookScreen>
         _items = list;
         _loading = false;
       });
-      _syncHomeWidgetFromServer();
+      _syncHomeWidgetFromLocalData();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -143,7 +143,7 @@ class WordBookScreenState extends State<WordBookScreen>
     unawaited(_load());
   }
 
-  void _syncHomeWidgetFromServer() {
+  void _syncHomeWidgetFromLocalData() {
     if (!_langInitialized || !mounted) return;
     final repo = context.read<SavedExpressionRepository>();
     final code = context.read<LocaleNotifier>().languageCode;
@@ -223,7 +223,7 @@ class WordBookScreenState extends State<WordBookScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(context.trRead('notebookWordDeleted'))),
           );
-          _syncHomeWidgetFromServer();
+          _syncHomeWidgetFromLocalData();
         },
         background: Container(
           alignment: Alignment.centerRight,

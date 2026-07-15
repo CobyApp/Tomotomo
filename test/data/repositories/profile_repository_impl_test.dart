@@ -18,22 +18,22 @@ void main() {
     expect(p, isNotNull);
     expect(p!.appLanguage, 'ko');
     expect(p.learningLanguage, 'ja');
-    expect(p.pointBalance, 500);
     expect(p.displayName, isNull);
   });
 
-  test('updateProfile persists fields and keeps default point balance', () async {
+  test('updateProfile persists local preference fields', () async {
     await repo.getProfile('local');
     final base = await repo.getProfile('local');
-    final updated = await repo.updateProfile(base!.copyWith(
-      displayName: 'ゆき',
-      appLanguage: 'ja',
-      learningLanguage: 'ko',
-    ));
+    final updated = await repo.updateProfile(
+      base!.copyWith(
+        displayName: 'ゆき',
+        appLanguage: 'ja',
+        learningLanguage: 'ko',
+      ),
+    );
     expect(updated.displayName, 'ゆき');
     expect(updated.appLanguage, 'ja');
     expect(updated.learningLanguage, 'ko');
-    expect(updated.pointBalance, 500);
 
     final reloaded = await repo.getProfile('local');
     expect(reloaded!.displayName, 'ゆき');

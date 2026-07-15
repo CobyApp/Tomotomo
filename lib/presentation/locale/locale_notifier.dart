@@ -22,7 +22,7 @@ class LocaleNotifier extends ChangeNotifier {
     } catch (_) {}
   }
 
-  /// Persists to Supabase and updates in-memory locale.
+  /// Persists locally and updates the in-memory locale.
   Future<void> setAppLanguage(String code, Profile profile) async {
     if (code != 'ko' && code != 'ja') return;
     final updated = profile.copyWith(appLanguage: code);

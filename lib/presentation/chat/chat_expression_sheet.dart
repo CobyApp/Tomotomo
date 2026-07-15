@@ -1,10 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/language/dm_utterance_script.dart';
 import '../../core/ui/app_tokens.dart';
 import '../../core/ui/holo/holo_tokens.dart';
 import '../../core/ui/holo/holo_widgets.dart';
@@ -14,8 +11,6 @@ import '../../domain/entities/saved_expression.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
 import '../../domain/repositories/points_repository.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
-import '../points/points_balance_notifier.dart';
-import '../points/points_topup_prompt.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../notebook/word_book_refresh_notifier.dart';
@@ -39,10 +34,6 @@ Future<void> showChatExpressionSheet(
   String? chatRoomId,
 }) async {
   final messenger = ScaffoldMessenger.of(context);
-  final rootLang = context.read<LocaleNotifier>().languageCode;
-  final dmScript = character.isDirectMessage
-      ? resolveDmUtteranceScript(message.content, appLanguageCode: rootLang)
-      : null;
 
   await showModalBottomSheet<void>(
     context: context,
@@ -105,7 +96,6 @@ Future<void> showChatExpressionSheet(
                         character: character,
                         chatRoomId: chatRoomId,
                         messenger: messenger,
-                        dmScript: dmScript,
                       ),
                     ),
                   ],
@@ -133,7 +123,6 @@ class _ExpressionSheetBody extends StatefulWidget {
   final Character character;
   final String? chatRoomId;
   final ScaffoldMessengerState messenger;
-  final DmUtteranceScript? dmScript;
 
   const _ExpressionSheetBody({
     required this.scrollController,
@@ -141,7 +130,6 @@ class _ExpressionSheetBody extends StatefulWidget {
     required this.character,
     required this.chatRoomId,
     required this.messenger,
-    required this.dmScript,
   });
 
   @override
@@ -151,167 +139,124 @@ class _ExpressionSheetBody extends StatefulWidget {
 class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
   final Set<int> _savedWordIndices = {};
   final Set<int> _savingIndices = {};
-  ChatMessage? _fetchedLineAnalysis;
-  bool _lineFetchLoading = false;
-  String? _lineFetchError;
+  ChatMessage? _fetchedAnalysis;
+  bool _analysisLoading = false;
+  String? _analysisError;
 
-  bool _shouldFetchLineAnalysis() {
-    final raw = widget.message.content.trim();
-    if (raw.isEmpty || DmVoiceMessage.isVoiceContent(raw)) return false;
-    if (widget.character.isDirectMessage) return widget.dmScript != null;
-    return true;
-  }
-
-  /// Tutor replies already include [ChatMessage.lineTranslation] + note/vocab from one JSON — no extra API call.
-  static bool _assistantHasBundledAiPayload(ChatMessage m) {
-    if (m.role != 'assistant') return false;
-    final t = m.lineTranslation?.trim() ?? '';
-    if (t.isEmpty) return false;
-    final hasV = m.vocabulary != null && m.vocabulary!.isNotEmpty;
-    final hasN = m.explanation?.trim().isNotEmpty ?? false;
-    return hasV || hasN;
+  bool get _hasBundledAnalysis {
+    final message = widget.message;
+    final translation = message.lineTranslation?.trim() ?? '';
+    final explanation = message.explanation?.trim() ?? '';
+    final vocabulary = message.vocabulary;
+    return translation.isNotEmpty &&
+        (explanation.isNotEmpty ||
+            (vocabulary != null && vocabulary.isNotEmpty));
   }
 
   @override
   void initState() {
     super.initState();
-    if (!_shouldFetchLineAnalysis()) return;
-    if (_assistantHasBundledAiPayload(widget.message)) return;
-    _lineFetchLoading = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadLineAnalysis());
+    if (!_hasBundledAnalysis && widget.message.content.trim().isNotEmpty) {
+      _analysisLoading = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadAnalysis());
+    }
   }
 
-  List<Vocabulary>? _vocabularyFromCacheJson(List<Map<String, dynamic>> raw) {
-    if (raw.isEmpty) return null;
-    final mode = widget.character.vocabularyMeaningPickMode;
-    final out = <Vocabulary>[];
-    for (final m in raw) {
-      final v = Vocabulary.tryParseLoose(m, meaningMode: mode);
-      if (v != null) out.add(v);
+  List<Vocabulary>? _vocabularyFromCache(
+    List<Map<String, dynamic>> values,
+  ) {
+    final vocabulary = <Vocabulary>[];
+    for (final value in values) {
+      final parsed = Vocabulary.tryParseLoose(
+        value,
+        meaningMode: widget.character.vocabularyMeaningPickMode,
+      );
+      if (parsed != null) vocabulary.add(parsed);
     }
-    return out.isEmpty ? null : out;
+    return vocabulary.isEmpty ? null : vocabulary;
   }
 
-  Future<void> _loadLineAnalysis() async {
-    if (!mounted || !_shouldFetchLineAnalysis()) return;
-    if (_assistantHasBundledAiPayload(widget.message)) {
-      setState(() {
-        _lineFetchLoading = false;
-        _lineFetchError = null;
-      });
-      return;
-    }
+  Future<void> _loadAnalysis() async {
+    if (!mounted || _hasBundledAnalysis) return;
     setState(() {
-      _lineFetchLoading = true;
-      _lineFetchError = null;
+      _analysisLoading = true;
+      _analysisError = null;
     });
-    final appLang = context.read<LocaleNotifier>().languageCode;
-    final mid = widget.message.serverId;
-    final points = context.read<PointsRepository>();
 
+    final appLanguage = context.read<LocaleNotifier>().languageCode;
+    final points = context.read<PointsRepository>();
+    final messageId = widget.message.serverId;
     try {
-      if (mid != null) {
-        final cached = await points.getLineAnalysisCache(mid, appLang);
+      if (messageId != null) {
+        final cached = await points.getLineAnalysisCache(
+          messageId,
+          appLanguage,
+        );
         if (!mounted) return;
         if (cached != null) {
-          final vocab = _vocabularyFromCacheJson(cached.vocabularyJson);
-          final hasPayload =
-              (cached.explanation != null &&
-                  cached.explanation!.trim().isNotEmpty) ||
-              (cached.lineTranslation != null &&
-                  cached.lineTranslation!.trim().isNotEmpty) ||
-              (vocab != null && vocab.isNotEmpty);
-          if (hasPayload) {
+          final vocabulary = _vocabularyFromCache(cached.vocabularyJson);
+          if ((cached.lineTranslation?.trim().isNotEmpty ?? false) ||
+              (cached.explanation?.trim().isNotEmpty ?? false) ||
+              (vocabulary?.isNotEmpty ?? false)) {
             setState(() {
-              _fetchedLineAnalysis = ChatMessage(
+              _fetchedAnalysis = ChatMessage(
                 serverId: widget.message.serverId,
                 content: widget.message.content,
                 role: widget.message.role,
                 timestamp: widget.message.timestamp,
                 explanation: cached.explanation,
                 lineTranslation: cached.lineTranslation,
-                vocabulary: vocab,
-                senderId: widget.message.senderId,
+                vocabulary: vocabulary,
               );
-              _lineFetchLoading = false;
-              _lineFetchError = null;
+              _analysisLoading = false;
             });
             return;
           }
         }
       }
 
-      if (widget.character.isDirectMessage && mid != null) {
-        final unlock = await points.tryUnlockDmExpression(mid);
-        if (!mounted) return;
-        if (unlock.ok) {
-          context.read<PointsBalanceNotifier>().setBalance(unlock.balance);
-        } else {
-          if (unlock.error == 'insufficient_points') {
-            unawaited(showPointsTopUpPrompt(context));
-          }
-          setState(() {
-            _lineFetchLoading = false;
-            _lineFetchError = unlock.error == 'insufficient_points'
-                ? context.trRead('pointsInsufficient')
-                : (unlock.error ?? context.trRead('expressionAnalysisFailed'));
-          });
-          return;
-        }
-      }
-
-      final ai = context.read<AiChatRepository>();
-      final result = await ai.generateDmExpressionAnalysis(
-        widget.message.content,
-        appUiLanguageCode: appLang,
-      );
-      if (!mounted) return;
-      if (mid != null) {
-        try {
-          await points.saveLineAnalysisCache(
-            mid,
-            appLang,
-            explanation: result.explanation,
-            lineTranslation: result.lineTranslation,
-            vocabularyJson: result.vocabulary?.map((v) => v.toJson()).toList(),
+      final analysis = await context
+          .read<AiChatRepository>()
+          .generateExpressionAnalysis(
+            widget.message.content,
+            widget.character,
+            appUiLanguageCode: appLanguage,
           );
-        } catch (_) {}
+      if (messageId != null) {
+        await points.saveLineAnalysisCache(
+          messageId,
+          appLanguage,
+          explanation: analysis.explanation,
+          lineTranslation: analysis.lineTranslation,
+          vocabularyJson: analysis.vocabulary
+              ?.map((value) => value.toJson())
+              .toList(),
+        );
       }
-      setState(() {
-        _fetchedLineAnalysis = result;
-        _lineFetchLoading = false;
-        _lineFetchError = null;
-      });
-    } catch (e) {
       if (!mounted) return;
       setState(() {
-        _lineFetchLoading = false;
-        _lineFetchError = e.toString();
+        _fetchedAnalysis = analysis;
+        _analysisLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _analysisLoading = false;
+        _analysisError = error.toString();
       });
     }
   }
 
   List<Vocabulary>? get _effectiveVocabulary =>
-      _fetchedLineAnalysis?.vocabulary ?? widget.message.vocabulary;
+      _fetchedAnalysis?.vocabulary ?? widget.message.vocabulary;
 
   String? get _effectiveLineTranslation =>
-      _fetchedLineAnalysis?.lineTranslation ?? widget.message.lineTranslation;
+      _fetchedAnalysis?.lineTranslation ?? widget.message.lineTranslation;
 
   String? get _effectiveExplanation =>
-      _fetchedLineAnalysis?.explanation ?? widget.message.explanation;
+      _fetchedAnalysis?.explanation ?? widget.message.explanation;
 
-  bool get _vocabMeaningUsesHangul {
-    if (!widget.character.isDirectMessage) {
-      return widget.character.expectsKoreanStudyNotes;
-    }
-    return widget.dmScript == DmUtteranceScript.japaneseHeavy;
-  }
-
-  String _notebookLangForDm() {
-    if (widget.dmScript == DmUtteranceScript.koreanHeavy) return 'ko';
-    if (widget.dmScript == DmUtteranceScript.japaneseHeavy) return 'ja';
-    return widget.character.defaultNotebookLangForVocabSave;
-  }
+  bool get _vocabMeaningUsesHangul => widget.character.expectsKoreanStudyNotes;
 
   Future<void> _saveWordToNotebook(int index, Vocabulary v) async {
     if (_savedWordIndices.contains(index) || _savingIndices.contains(index)) {
@@ -319,13 +264,10 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     }
     final sheetContext = context;
     final repo = sheetContext.read<SavedExpressionRepository>();
-    final lang = widget.character.isDirectMessage
-        ? _notebookLangForDm()
-        : widget.character.defaultNotebookLangForVocabSave;
+    final lang = widget.character.defaultNotebookLangForVocabSave;
     final snackText = lang == 'ko'
         ? sheetContext.trRead('wordAddedToNotebookKo')
         : sheetContext.trRead('wordAddedToNotebookJa');
-    final loginRequiredText = sheetContext.trRead('loginRequired');
     final saveFailedPrefix = sheetContext.trRead('wordSaveNotebookFailed');
     setState(() => _savingIndices.add(index));
     try {
@@ -351,9 +293,9 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _savingIndices.remove(index));
-      final isAuth = e is StateError && e.message.contains('Not signed');
-      final body = isAuth ? loginRequiredText : '$saveFailedPrefix\n$e';
-      widget.messenger.showSnackBar(SnackBar(content: Text(body)));
+      widget.messenger.showSnackBar(
+        SnackBar(content: Text('$saveFailedPrefix\n$e')),
+      );
     }
   }
 
@@ -363,7 +305,6 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final message = widget.message;
     final character = widget.character;
     final tr = sheetContext.tr;
-    final dm = widget.dmScript;
     final scheme = Theme.of(sheetContext).colorScheme;
 
     final messageStyle = TextStyle(
@@ -396,9 +337,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
           ? 'Pretendard'
           : null,
     );
-    final vocabWordUsesPretendard =
-        character.koreanNationalPersona ||
-        (character.isDirectMessage && dm == DmUtteranceScript.koreanHeavy);
+    final vocabWordUsesPretendard = character.koreanNationalPersona;
     final wordStyle = TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.w700,
@@ -406,15 +345,12 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       fontFamily: vocabWordUsesPretendard ? 'Pretendard' : null,
     );
 
-    final fetchLine = _shouldFetchLineAnalysis();
     final translation = _effectiveLineTranslation?.trim();
     final note = _effectiveExplanation?.trim();
     final showTranslation = translation != null && translation.isNotEmpty;
     final showNote = note != null && note.isNotEmpty;
 
-    final translationUsesHangul = character.isDirectMessage
-        ? dm != DmUtteranceScript.koreanHeavy
-        : character.expectsKoreanStudyNotes;
+    final translationUsesHangul = character.expectsKoreanStudyNotes;
 
     Widget sectionBlock(
       String label,
@@ -461,10 +397,10 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            if (fetchLine) ...[
-              const SizedBox(height: 12),
-              if (_lineFetchLoading)
-                Row(
+            if (_analysisLoading)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
                   children: [
                     const SizedBox(
                       width: 18,
@@ -475,41 +411,32 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        tr('expressionAnalysisLoading'),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Holo.inkPlumSoft,
-                        ),
-                      ),
+                    Text(
+                      tr('expressionAnalysisLoading'),
+                      style: const TextStyle(color: Holo.inkPlumSoft),
                     ),
                   ],
                 ),
-              if (_lineFetchError != null)
-                Column(
+              ),
+            if (_analysisError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${tr('expressionAnalysisFailed')}\n$_lineFetchError',
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.4,
-                        color: scheme.error,
-                      ),
+                      tr('expressionAnalysisFailed'),
+                      style: TextStyle(color: scheme.error),
                     ),
                     const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: HoloButton(
-                        label: tr('expressionDmRetry'),
-                        icon: Icons.refresh_rounded,
-                        onPressed: _loadLineAnalysis,
-                      ),
+                    HoloButton(
+                      label: tr('retry'),
+                      icon: Icons.refresh_rounded,
+                      onPressed: _loadAnalysis,
                     ),
                   ],
                 ),
-            ],
+              ),
             if (showTranslation)
               sectionBlock(
                 tr('expressionFullTranslationLabel'),
@@ -611,26 +538,8 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                   ),
                 );
               }),
-            ] else if (fetchLine &&
-                (_lineFetchLoading || _lineFetchError != null))
+            ] else if (_analysisLoading || _analysisError != null)
               const SizedBox.shrink()
-            else if (character.isDirectMessage && dm != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Text(
-                  dm == DmUtteranceScript.koreanHeavy
-                      ? tr('expressionMissingVocabularyJa')
-                      : tr('expressionMissingVocabulary'),
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.4,
-                    color: scheme.tertiary,
-                    fontFamily: dm == DmUtteranceScript.japaneseHeavy
-                        ? 'Pretendard'
-                        : null,
-                  ),
-                ),
-              )
             else if (character.expectsKoreanStudyNotes)
               Padding(
                 padding: const EdgeInsets.only(top: 12),

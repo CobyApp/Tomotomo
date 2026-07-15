@@ -1,4 +1,4 @@
-/// Row in `public.saved_expressions` — one **vocabulary** entry (from chat sheet `+`), not the full explanation popup.
+/// Locally stored vocabulary entry from the chat expression sheet.
 class SavedExpression {
   final String id;
   final String userId;
@@ -45,7 +45,7 @@ class SavedExpression {
   }
 }
 
-/// Payload for insert (current user from auth). Vocabulary row: [content] + [translation]; [explanation] should stay null.
+/// Draft vocabulary entry. [explanation] stays null for current saves.
 class SavedExpressionDraft {
   final String source;
 

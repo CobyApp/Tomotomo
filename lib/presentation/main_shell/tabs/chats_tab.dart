@@ -11,7 +11,6 @@ import '../../../core/ui/holo/holo_widgets.dart';
 import '../../../core/widgets/on_app_resumed_mixin.dart';
 import '../../../data/character/characters_data.dart';
 import '../../../domain/entities/character.dart';
-import '../../../domain/entities/chat_message.dart';
 import '../../../domain/entities/chat_room_summary.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
 import '../../../domain/repositories/chat_repository.dart';
@@ -185,7 +184,6 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
     final raw = r.lastMessageContent;
     if (raw == null || raw.trim().isEmpty) return context.tr('chatsListNoPreview');
     final t = raw.trim();
-    if (DmVoiceMessage.isVoiceContent(t)) return context.tr('dmVoiceMessageLabel');
     return t;
   }
 
@@ -206,12 +204,11 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
   }
 
   Future<bool?> _confirmDeleteRoom(BuildContext context, ChatRoomSummary r) {
-    final bodyKey = r.isDm ? 'chatsDeleteBodyDm' : 'chatsDeleteBodyCharacter';
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(ctx.tr('chatsDeleteTitle')),
-        content: Text(ctx.tr(bodyKey, params: {'name': r.title})),
+        content: Text(ctx.tr('chatsDeleteBodyCharacter', params: {'name': r.title})),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.tr('cancel'))),
           FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx.tr('confirm'))),
