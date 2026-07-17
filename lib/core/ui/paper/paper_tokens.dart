@@ -29,7 +29,7 @@ class PaperColors extends ThemeExtension<PaperColors> {
     hardShadow: Color(0xFFE8D9C1),
     softShadow: Color(0x24907850),
     ink: Color(0xFF4A3B32),
-    inkSoft: Color(0xFF9C7B62),
+    inkSoft: Color(0xFF7F604B), // darkened for WCAG AA on cream (4.9:1 / 5.6:1)
     coral: Color(0xFFC9563D),
     coralDeep: Color(0xFFA8442E),
     tape: Color(0x80E6B48C),

@@ -87,16 +87,20 @@ class StampTicket extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
+    // Use the deeper coral in light mode so the small bold label meets WCAG AA
+    // on the cream/card surface; the lifted coral already passes in dark mode.
+    final stamp =
+        Theme.of(context).brightness == Brightness.dark ? p.coral : p.coralDeep;
     return Transform.rotate(
       angle: rotate,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: p.coral, width: 1.5, style: BorderStyle.solid),
+          border: Border.all(color: stamp, width: 1.5, style: BorderStyle.solid),
         ),
         child: DefaultTextStyle.merge(
-          style: TextStyle(color: p.coral, fontWeight: FontWeight.w800, fontSize: 12),
+          style: TextStyle(color: stamp, fontWeight: FontWeight.w800, fontSize: 12),
           child: child,
         ),
       ),
