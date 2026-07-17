@@ -2,10 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../core/ui/holo/glitch_text.dart';
-import '../../core/ui/holo/holo_tokens.dart';
-import '../../core/ui/holo/holo_widgets.dart';
-import '../../core/ui/ui.dart';
+import '../../core/ui/app_tokens.dart';
+import '../../core/ui/paper/paper_scaffold.dart';
+import '../../core/ui/paper/paper_tokens.dart';
+import '../../core/ui/paper/paper_widgets.dart';
 import '../../domain/entities/saved_expression.dart';
 import '../locale/l10n_context.dart';
 
@@ -71,7 +71,7 @@ class _NotebookStudyScreenState extends State<NotebookStudyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppPageScaffold(
+    return PaperScaffold(
       title: context.tr('notebookStudyTitle'),
       body: SafeArea(
         top: false,
@@ -89,6 +89,7 @@ class _NotebookStudyScreenState extends State<NotebookStudyScreen> {
   }
 
   Widget _buildSession(BuildContext context) {
+    final p = context.paper;
     final progress = (_index + 1) / _cards.length;
     final item = _cards[_index];
     return Column(
@@ -100,13 +101,13 @@ class _NotebookStudyScreenState extends State<NotebookStudyScreen> {
               context.tr('notebookStudyProgress'),
               style: Theme.of(
                 context,
-              ).textTheme.labelLarge?.copyWith(color: Holo.inkPlumSoft),
+              ).textTheme.labelLarge?.copyWith(color: p.inkSoft),
             ),
             const Spacer(),
             Text(
               '${_index + 1} / ${_cards.length}',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Holo.inkPlum,
+                color: p.ink,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -114,11 +115,12 @@ class _NotebookStudyScreenState extends State<NotebookStudyScreen> {
         ),
         const SizedBox(height: 10),
         ClipRRect(
-          borderRadius: BorderRadius.circular(AppRadii.pill),
+          borderRadius: BorderRadius.circular(PaperRadii.pill),
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 8,
-            backgroundColor: Colors.white.withValues(alpha: 0.65),
+            backgroundColor: p.cardEdge,
+            valueColor: AlwaysStoppedAnimation(p.coral),
           ),
         ),
         const SizedBox(height: 20),
@@ -145,36 +147,35 @@ class _NotebookStudyScreenState extends State<NotebookStudyScreen> {
         ),
         const SizedBox(height: 20),
         if (!_revealed)
-          SizedBox(
-            height: 52,
-            child: FilledButton.icon(
-              onPressed: _reveal,
-              icon: const Icon(Icons.touch_app_rounded),
-              label: Text(context.tr('notebookStudyReveal')),
-            ),
+          PaperButton(
+            icon: Icons.touch_app_rounded,
+            label: context.tr('notebookStudyReveal'),
+            onPressed: _reveal,
           )
         else
           Row(
             children: [
               Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _answer(known: false),
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: Text(context.tr('notebookStudyAgain')),
+                child: OutlinedButton.icon(
+                  onPressed: () => _answer(known: false),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text(context.tr('notebookStudyAgain')),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: p.ink,
+                    side: BorderSide(color: p.cardEdge),
+                    minimumSize: const Size.fromHeight(52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(PaperRadii.button),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: FilledButton.icon(
-                    onPressed: () => _answer(known: true),
-                    icon: const Icon(Icons.check_rounded),
-                    label: Text(context.tr('notebookStudyKnow')),
-                  ),
+                child: PaperButton(
+                  icon: Icons.check_rounded,
+                  label: context.tr('notebookStudyKnow'),
+                  onPressed: () => _answer(known: true),
                 ),
               ),
             ],
@@ -184,6 +185,7 @@ class _NotebookStudyScreenState extends State<NotebookStudyScreen> {
   }
 
   Widget _buildSummary(BuildContext context) {
+    final p = context.paper;
     final total = math.max(1, _cards.length);
     final percent = ((_known / total) * 100).round();
     return Center(
@@ -195,9 +197,16 @@ class _NotebookStudyScreenState extends State<NotebookStudyScreen> {
               width: 96,
               height: 96,
               decoration: BoxDecoration(
-                gradient: Holo.holoGradient,
+                color: p.coral,
                 borderRadius: BorderRadius.circular(32),
-                boxShadow: Holo.floatingShadow,
+                boxShadow: [
+                  BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
+                  BoxShadow(
+                    color: p.softShadow,
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: const Icon(
                 Icons.celebration_rounded,
@@ -206,10 +215,9 @@ class _NotebookStudyScreenState extends State<NotebookStudyScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            GlitchText(
+            Text(
               context.tr('notebookStudyComplete'),
               style: Theme.of(context).textTheme.headlineSmall,
-              offset: 1.1,
             ),
             const SizedBox(height: 8),
             Text(
@@ -217,7 +225,7 @@ class _NotebookStudyScreenState extends State<NotebookStudyScreen> {
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,
-              ).textTheme.bodyLarge?.copyWith(color: Holo.inkPlumSoft),
+              ).textTheme.bodyLarge?.copyWith(color: p.inkSoft),
             ),
             const SizedBox(height: 24),
             Row(
@@ -227,7 +235,7 @@ class _NotebookStudyScreenState extends State<NotebookStudyScreen> {
                     icon: Icons.refresh_rounded,
                     value: _review,
                     label: context.tr('notebookStudyAgain'),
-                    color: Holo.lilac,
+                    color: p.coral,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -236,24 +244,24 @@ class _NotebookStudyScreenState extends State<NotebookStudyScreen> {
                     icon: Icons.check_rounded,
                     value: _known,
                     label: context.tr('notebookStudyKnow'),
-                    color: Holo.cyan,
+                    color: p.stampBlue,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _restart,
-                icon: const Icon(Icons.shuffle_rounded),
-                label: Text(context.tr('notebookStudyRestart')),
-              ),
+            PaperButton(
+              icon: Icons.shuffle_rounded,
+              label: context.tr('notebookStudyRestart'),
+              onPressed: _restart,
             ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(context.tr('notebookStudyClose')),
+              child: Text(
+                context.tr('notebookStudyClose'),
+                style: TextStyle(color: p.inkSoft, fontWeight: FontWeight.w700),
+              ),
             ),
           ],
         ),
@@ -290,6 +298,7 @@ class _StudyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.paper;
     final word = item.content?.trim().isNotEmpty == true
         ? item.content!.trim()
         : '—';
@@ -306,24 +315,22 @@ class _StudyCard extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
-            color: Holo.surfaceCard.withValues(alpha: 0.86),
+            color: p.card,
             borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Holo.pink.withValues(alpha: 0.22)),
-            boxShadow: Holo.floatingShadow,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.92),
-                Holo.lilac.withValues(alpha: 0.12),
-                Holo.cyan.withValues(alpha: 0.10),
-              ],
-            ),
+            border: Border.all(color: p.cardEdge),
+            boxShadow: [
+              BoxShadow(color: p.hardShadow, offset: const Offset(0, 4)),
+              BoxShadow(
+                color: p.softShadow,
+                blurRadius: 22,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              HoloChip(
+              StampTicket(
                 child: Text(
                   revealed
                       ? context.tr('notebookStudyAnswer')
@@ -337,7 +344,7 @@ class _StudyCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontFamily: notebookLanguage == 'ko' ? 'Pretendard' : null,
                   fontWeight: FontWeight.w900,
-                  color: Holo.inkPlum,
+                  color: p.ink,
                   height: 1.25,
                 ),
               ),
@@ -348,7 +355,7 @@ class _StudyCard extends StatelessWidget {
                     reading,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Holo.pink,
+                      color: p.coral,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -358,8 +365,8 @@ class _StudyCard extends StatelessWidget {
                   width: 44,
                   height: 3,
                   decoration: BoxDecoration(
-                    gradient: Holo.holoGradient,
-                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                    color: p.coral,
+                    borderRadius: BorderRadius.circular(PaperRadii.pill),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -369,7 +376,7 @@ class _StudyCard extends StatelessWidget {
                       : meaning,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Holo.inkPlum,
+                    color: p.ink,
                     height: 1.4,
                   ),
                 ),
@@ -382,7 +389,7 @@ class _StudyCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(
                       context,
-                    ).textTheme.bodyMedium?.copyWith(color: Holo.inkPlumSoft),
+                    ).textTheme.bodyMedium?.copyWith(color: p.inkSoft),
                   ),
                 ],
               ] else ...[
@@ -390,17 +397,13 @@ class _StudyCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.touch_app_rounded,
-                      size: 18,
-                      color: Holo.inkPlumSoft,
-                    ),
+                    Icon(Icons.touch_app_rounded, size: 18, color: p.inkSoft),
                     const SizedBox(width: 7),
                     Text(
                       context.tr('notebookStudyTapHint'),
                       style: Theme.of(
                         context,
-                      ).textTheme.bodyMedium?.copyWith(color: Holo.inkPlumSoft),
+                      ).textTheme.bodyMedium?.copyWith(color: p.inkSoft),
                     ),
                   ],
                 ),
@@ -428,7 +431,8 @@ class _ResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return HoloCard(
+    final p = context.paper;
+    return PaperCard(
       child: Column(
         children: [
           Icon(icon, color: color, size: 26),
@@ -437,7 +441,7 @@ class _ResultTile extends StatelessWidget {
             '$value',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w900,
-              color: Holo.inkPlum,
+              color: p.ink,
             ),
           ),
           const SizedBox(height: 3),
@@ -446,7 +450,7 @@ class _ResultTile extends StatelessWidget {
             textAlign: TextAlign.center,
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: Holo.inkPlumSoft),
+            ).textTheme.bodySmall?.copyWith(color: p.inkSoft),
           ),
         ],
       ),

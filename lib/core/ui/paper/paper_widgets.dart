@@ -47,6 +47,14 @@ class _PaperButtonState extends State<PaperButton> {
   Widget build(BuildContext context) {
     final p = context.paper;
     final enabled = widget.onPressed != null;
+    // coralDeep (not coral) keeps the white label at/near WCAG AA contrast in
+    // both light and dark — same reasoning as PaperTheme.filledButtonTheme.
+    // The shadow is a further-darkened derivative so the pressable "paper
+    // bottom edge" stays visible against the coralDeep fill.
+    final fill = enabled ? p.coralDeep : p.inkSoft;
+    final shadow = enabled
+        ? Color.lerp(p.coralDeep, Colors.black, 0.28)!
+        : p.inkSoft;
     return GestureDetector(
       onTapDown: enabled ? (_) => setState(() => _down = true) : null,
       onTapUp: enabled ? (_) => setState(() => _down = false) : null,
@@ -58,9 +66,9 @@ class _PaperButtonState extends State<PaperButton> {
         transform: Matrix4.translationValues(0, _down ? 3 : 0, 0),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         decoration: BoxDecoration(
-          color: enabled ? p.coral : p.inkSoft,
+          color: fill,
           borderRadius: BorderRadius.circular(PaperRadii.button),
-          boxShadow: [BoxShadow(color: enabled ? p.coralDeep : p.inkSoft, offset: Offset(0, _down ? 0 : 3))],
+          boxShadow: [BoxShadow(color: shadow, offset: Offset(0, _down ? 0 : 3))],
         ),
         child: Row(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
           if (widget.icon != null) ...[Icon(widget.icon, size: 18, color: Colors.white), const SizedBox(width: 6)],

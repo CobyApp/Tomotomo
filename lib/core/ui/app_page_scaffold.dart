@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'app_tokens.dart';
 import 'app_shell_background.dart';
-import 'holo/glitch_text.dart';
 import 'points_toolbar_chip.dart';
 
 /// Primary page layout: shared app bar title style. Main shell tabs use [transparentBackground]; pushed routes often set it false.
@@ -73,11 +72,7 @@ class AppPageScaffold extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    GlitchText(
-                      title,
-                      style: AppTextStyles.pageTitle(context),
-                      offset: 1.1,
-                    ),
+                    Text(title, style: AppTextStyles.pageTitle(context)),
                     const SizedBox(height: 3),
                     Text(
                       subtitle!.trim(),
@@ -91,11 +86,7 @@ class AppPageScaffold extends StatelessWidget {
                     ),
                   ],
                 )
-              : GlitchText(
-                  title,
-                  style: AppTextStyles.pageTitle(context),
-                  offset: 1.1,
-                ),
+              : Text(title, style: AppTextStyles.pageTitle(context)),
           centerTitle: false,
           actions: mergedActions.isEmpty
               ? null
