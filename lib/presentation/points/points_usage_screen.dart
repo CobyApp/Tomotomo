@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../core/ui/holo/holo_tokens.dart';
-import '../../core/ui/holo/holo_widgets.dart';
-import '../../core/ui/ui.dart';
+import '../../core/ui/app_tokens.dart';
+import '../../core/ui/paper/journal_note.dart';
+import '../../core/ui/paper/paper_scaffold.dart';
+import '../../core/ui/paper/paper_tokens.dart';
+import '../../core/ui/paper/paper_widgets.dart';
 import '../locale/l10n_context.dart';
 import 'points_topup_screen.dart';
 
@@ -10,29 +12,33 @@ import 'points_topup_screen.dart';
 class PointsUsageScreen extends StatelessWidget {
   const PointsUsageScreen({super.key});
 
+  Widget _bullet(BuildContext context, String text) {
+    final p = context.paper;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '• ',
+            style: TextStyle(
+              height: 1.45,
+              color: p.ink,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Expanded(
+            child: Text(text, style: TextStyle(height: 1.45, color: p.ink)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    const bodyStyle = TextStyle(height: 1.45, color: Holo.inkPlum);
-    const bulletStyle = TextStyle(
-      height: 1.45,
-      color: Holo.inkPlum,
-      fontWeight: FontWeight.w500,
-    );
-
-    Widget bullet(String text) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('• ', style: bulletStyle),
-            Expanded(child: Text(text, style: bodyStyle)),
-          ],
-        ),
-      );
-    }
-
-    return AppPageScaffold(
+    final p = context.paper;
+    return PaperScaffold(
       title: context.tr('pointsHelpTitle'),
       subtitle: context.tr('pointsHelpLead'),
       transparentBackground: false,
@@ -44,28 +50,28 @@ class PointsUsageScreen extends StatelessWidget {
           AppSpacing.pageBottom,
         ),
         children: [
-          Text(
-            context.tr('pointsHelpSectionWhen'),
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Holo.pink,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          bullet(context.tr('pointsHelpItemXImport')),
-          bullet(context.tr('pointsHelpItemCharacterChat')),
-          bullet(context.tr('pointsHelpItemCustomCreate')),
-          const SizedBox(height: 8),
-          HoloCard(
-            dashed: true,
-            child: Text(
-              context.tr('pointsHelpFooter'),
-              style: const TextStyle(height: 1.4, color: Holo.inkPlumSoft),
+          JournalNote(
+            label: context.tr('pointsHelpSectionWhen'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _bullet(context, context.tr('pointsHelpItemXImport')),
+                _bullet(context, context.tr('pointsHelpItemCharacterChat')),
+                _bullet(context, context.tr('pointsHelpItemCustomCreate')),
+              ],
             ),
           ),
           const SizedBox(height: 14),
+          PaperCard(
+            child: Text(
+              context.tr('pointsHelpFooter'),
+              style: TextStyle(height: 1.4, color: p.inkSoft),
+            ),
+          ),
+          const SizedBox(height: 20),
           Center(
-            child: HoloButton(
+            child: PaperButton(
+              expand: false,
               icon: Icons.play_circle_fill_rounded,
               label: context.tr('pointsEarnAction'),
               onPressed: () {

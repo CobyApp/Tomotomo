@@ -4,9 +4,10 @@ import 'package:provider/provider.dart';
 
 import '../../core/ads/ad_config.dart';
 import '../../core/ads/rewarded_ad_service.dart';
-import '../../core/ui/holo/holo_tokens.dart';
-import '../../core/ui/holo/holo_widgets.dart';
-import '../../core/ui/ui.dart';
+import '../../core/ui/app_tokens.dart';
+import '../../core/ui/paper/paper_scaffold.dart';
+import '../../core/ui/paper/paper_tokens.dart';
+import '../../core/ui/paper/paper_widgets.dart';
 import '../../data/repositories/local_points_repository_impl.dart';
 import '../locale/l10n_context.dart';
 import 'points_balance_notifier.dart';
@@ -49,7 +50,7 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppPageScaffold(
+    return PaperScaffold(
       title: context.tr('pointsEarnTitle'),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -67,67 +68,13 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
               final adLoading = adService.isLoading;
               final remaining = pts.adsRemainingToday(today: _today());
               final capReached = remaining == 0;
-              return _AdShimmerCard(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: Holo.holoGradient,
-                      ),
-                      child: const Icon(
-                        Icons.play_circle_fill_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.tr('adEarnTitle'),
-                            style: const TextStyle(
-                              color: Holo.inkPlum,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            capReached
-                                ? context.tr('adEarnCapReached')
-                                : '${context.tr('adEarnSubtitle', params: {'points': '${AdConfig.pointsPerAd}'})}\n${context.tr('adEarnRemaining', params: {'remaining': '$remaining', 'max': '${AdConfig.maxAdsPerDay}'})}',
-                            style: const TextStyle(
-                              color: Holo.inkPlumSoft,
-                              height: 1.3,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          HoloButton(
-                            icon: adReady
-                                ? Icons.play_arrow_rounded
-                                : Icons.refresh_rounded,
-                            label: adReady || capReached
-                                ? context.tr('adEarnWatch')
-                                : adLoading
-                                ? context.tr('adEarnNotReady')
-                                : context.tr('adEarnRetry'),
-                            onPressed: capReached || adLoading
-                                ? null
-                                : adReady
-                                ? _watchAd
-                                : adService.load,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              return _AdRewardCard(
+                adReady: adReady,
+                adLoading: adLoading,
+                capReached: capReached,
+                remaining: remaining,
+                onWatch: _watchAd,
+                onRetryLoad: adService.load,
               );
             },
           ),
@@ -137,92 +84,85 @@ class _PointsTopUpScreenState extends State<PointsTopUpScreen> {
   }
 }
 
-/// Holographic shimmer sweep behind the ad-earning card content — the visual
-/// hero of the top-up screen. Purely decorative: a diagonal translucent band
-/// slides across the card on a gentle 2s repeating loop.
-class _AdShimmerCard extends StatefulWidget {
-  const _AdShimmerCard({required this.child});
+/// The hero "free ticket" card that lets the user earn points by watching a
+/// rewarded ad. Static paper styling only — no shimmer/gradient animation.
+class _AdRewardCard extends StatelessWidget {
+  const _AdRewardCard({
+    required this.adReady,
+    required this.adLoading,
+    required this.capReached,
+    required this.remaining,
+    required this.onWatch,
+    required this.onRetryLoad,
+  });
 
-  final Widget child;
-
-  @override
-  State<_AdShimmerCard> createState() => _AdShimmerCardState();
-}
-
-class _AdShimmerCardState extends State<_AdShimmerCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  final bool adReady;
+  final bool adLoading;
+  final bool capReached;
+  final int remaining;
+  final VoidCallback onWatch;
+  final VoidCallback onRetryLoad;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Holo.surfaceCard,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(color: Holo.border),
-        boxShadow: Holo.cardShadow,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        child: Stack(
-          children: [
-            Padding(padding: const EdgeInsets.all(16), child: widget.child),
-            Positioned.fill(
-              child: IgnorePointer(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final w = constraints.maxWidth;
-                    final h = constraints.maxHeight;
-                    return AnimatedBuilder(
-                      animation: _controller,
-                      builder: (context, _) {
-                        final dx = -w * 0.6 + _controller.value * (w * 1.9);
-                        return Transform.translate(
-                          offset: Offset(dx, 0),
-                          child: Transform.rotate(
-                            angle: -0.35,
-                            child: Container(
-                              width: w * 0.45,
-                              height: h * 2.2,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                  colors: [
-                                    Colors.white.withValues(alpha: 0.0),
-                                    Colors.white.withValues(alpha: 0.45),
-                                    Holo.cyan.withValues(alpha: 0.3),
-                                    Colors.white.withValues(alpha: 0.0),
-                                  ],
-                                  stops: const [0.0, 0.45, 0.65, 1.0],
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
+    final p = context.paper;
+    return PaperCard(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              StampTicket(
+                rotate: -0.05,
+                child: Text(context.tr('adEarnFreeBadge')),
+              ),
+              const Spacer(),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: p.coral.withValues(alpha: 0.12),
+                ),
+                child: Icon(
+                  Icons.play_circle_fill_rounded,
+                  color: p.coral,
+                  size: 26,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            context.tr('adEarnTitle'),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: p.ink,
+              fontWeight: FontWeight.w800,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            capReached
+                ? context.tr('adEarnCapReached')
+                : '${context.tr('adEarnSubtitle', params: {'points': '${AdConfig.pointsPerAd}'})}\n${context.tr('adEarnRemaining', params: {'remaining': '$remaining', 'max': '${AdConfig.maxAdsPerDay}'})}',
+            style: TextStyle(color: p.inkSoft, height: 1.35),
+          ),
+          const SizedBox(height: 16),
+          PaperButton(
+            icon: adReady ? Icons.play_arrow_rounded : Icons.refresh_rounded,
+            label: adReady || capReached
+                ? context.tr('adEarnWatch')
+                : adLoading
+                ? context.tr('adEarnNotReady')
+                : context.tr('adEarnRetry'),
+            onPressed: capReached || adLoading
+                ? null
+                : adReady
+                ? onWatch
+                : onRetryLoad,
+          ),
+        ],
       ),
     );
   }

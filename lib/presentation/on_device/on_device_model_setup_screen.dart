@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/ui/ui.dart';
-import '../../core/ui/holo/holo_tokens.dart';
+import '../../core/ui/app_tokens.dart';
+import '../../core/ui/paper/paper_scaffold.dart';
+import '../../core/ui/paper/paper_tokens.dart';
+import '../../core/ui/paper/paper_widgets.dart';
 import '../../data/on_device/on_device_model_config.dart';
 import '../../data/on_device/on_device_model_manager.dart';
 import '../../domain/on_device/on_device_model_snapshot.dart';
@@ -17,7 +19,8 @@ class OnDeviceModelSetupScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final manager = context.watch<OnDeviceModelManager>();
     final snapshot = manager.snapshot;
-    return AppPageScaffold(
+    final p = context.paper;
+    return PaperScaffold(
       title: context.tr('onDeviceModelTitle'),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -32,15 +35,11 @@ class OnDeviceModelSetupScreen extends StatelessWidget {
               width: 88,
               height: 88,
               decoration: BoxDecoration(
-                color: Holo.pink.withValues(alpha: 0.10),
+                color: p.coral.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: Holo.pink.withValues(alpha: 0.14)),
+                border: Border.all(color: p.coral.withValues(alpha: 0.20)),
               ),
-              child: const Icon(
-                Icons.auto_awesome_rounded,
-                size: 40,
-                color: Holo.pink,
-              ),
+              child: Icon(Icons.auto_awesome_rounded, size: 40, color: p.coral),
             ),
           ),
           const SizedBox(height: 24),
@@ -49,36 +48,40 @@ class OnDeviceModelSetupScreen extends StatelessWidget {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
+              color: p.ink,
             ),
           ),
           const SizedBox(height: 10),
           Text(
             context.tr('onDeviceModelDescription'),
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Holo.inkPlumSoft,
-              height: 1.55,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.55),
           ),
           const SizedBox(height: 28),
           _ModelStatus(snapshot: snapshot),
           const SizedBox(height: 16),
           if (snapshot.phase == OnDeviceModelPhase.notInstalled ||
               snapshot.phase == OnDeviceModelPhase.error)
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: manager.install,
-                icon: const Icon(Icons.download_rounded),
-                label: Text(context.tr('onDeviceModelDownload')),
-              ),
+            PaperButton(
+              icon: Icons.download_rounded,
+              label: context.tr('onDeviceModelDownload'),
+              onPressed: manager.install,
             ),
           if (snapshot.phase == OnDeviceModelPhase.downloading)
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: manager.cancelInstall,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: p.ink,
+                  side: BorderSide(color: p.cardEdge),
+                  minimumSize: const Size.fromHeight(54),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(PaperRadii.button),
+                  ),
+                ),
                 child: Text(context.tr('cancel')),
               ),
             ),
@@ -89,23 +92,22 @@ class OnDeviceModelSetupScreen extends StatelessWidget {
                 onPressed: () => _confirmDelete(context, manager),
                 icon: const Icon(Icons.delete_outline_rounded),
                 label: Text(context.tr('onDeviceModelDelete')),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: p.ink,
+                  side: BorderSide(color: p.cardEdge),
+                  minimumSize: const Size.fromHeight(54),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(PaperRadii.button),
+                  ),
+                ),
               ),
             ),
           const SizedBox(height: 20),
-          Container(
+          PaperCard(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: Holo.surfaceCard,
-              borderRadius: BorderRadius.circular(AppRadii.cardSmall),
-              border: Border.all(color: Holo.border),
-            ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.storage_rounded,
-                  size: 20,
-                  color: Holo.inkPlumSoft,
-                ),
+                Icon(Icons.storage_rounded, size: 20, color: p.inkSoft),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -113,7 +115,7 @@ class OnDeviceModelSetupScreen extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Holo.inkPlumSoft,
+                      color: p.inkSoft,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -123,7 +125,7 @@ class OnDeviceModelSetupScreen extends StatelessWidget {
                   '${(OnDeviceModelConfig.byteCount / 1000000000).toStringAsFixed(2)} GB',
                   style: Theme.of(
                     context,
-                  ).textTheme.labelLarge?.copyWith(color: Holo.inkPlum),
+                  ).textTheme.labelLarge?.copyWith(color: p.ink),
                 ),
               ],
             ),
@@ -166,10 +168,17 @@ class _ModelStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final p = context.paper;
     if (snapshot.phase == OnDeviceModelPhase.checking) {
-      return const _StatusCard(
+      return _StatusCard(
         icon: Icons.search_rounded,
-        child: Center(child: CircularProgressIndicator(strokeWidth: 3)),
+        child: Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 3, color: p.coral),
+          ),
+        ),
       );
     }
     if (snapshot.phase == OnDeviceModelPhase.downloading) {
@@ -181,20 +190,26 @@ class _ModelStatus extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(child: Text(context.tr('onDeviceModelDownload'))),
+                Expanded(
+                  child: Text(
+                    context.tr('onDeviceModelDownload'),
+                    style: TextStyle(color: p.ink),
+                  ),
+                ),
                 Text(
                   '$percent%',
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  style: TextStyle(fontWeight: FontWeight.w800, color: p.ink),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadii.pill),
+              borderRadius: BorderRadius.circular(PaperRadii.pill),
               child: LinearProgressIndicator(
                 value: snapshot.progress,
                 minHeight: 8,
-                backgroundColor: Holo.surfaceMuted,
+                backgroundColor: p.cardEdge,
+                valueColor: AlwaysStoppedAnimation(p.coral),
               ),
             ),
           ],
@@ -204,14 +219,14 @@ class _ModelStatus extends StatelessWidget {
     if (snapshot.phase == OnDeviceModelPhase.ready) {
       return _StatusCard(
         icon: Icons.check_rounded,
-        iconColor: const Color(0xFF2D936C),
-        iconBackground: const Color(0xFFE7F6EF),
+        iconColor: p.stampBlue,
+        iconBackground: p.stampBlue.withValues(alpha: 0.14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               context.tr('onDeviceModelReady'),
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              style: TextStyle(fontWeight: FontWeight.w800, color: p.ink),
             ),
             if (snapshot.backend != null) ...[
               const SizedBox(height: 3),
@@ -219,7 +234,7 @@ class _ModelStatus extends StatelessWidget {
                 'Backend · ${snapshot.backend}',
                 style: Theme.of(
                   context,
-                ).textTheme.bodySmall?.copyWith(color: Holo.inkPlumSoft),
+                ).textTheme.bodySmall?.copyWith(color: p.inkSoft),
               ),
             ],
           ],
@@ -241,7 +256,7 @@ class _ModelStatus extends StatelessWidget {
       icon: Icons.smart_toy_outlined,
       child: Text(
         context.tr('onDeviceModelNotInstalled'),
-        style: const TextStyle(color: Holo.inkPlum, height: 1.4),
+        style: TextStyle(color: p.ink, height: 1.4),
       ),
     );
   }
@@ -251,35 +266,30 @@ class _StatusCard extends StatelessWidget {
   const _StatusCard({
     required this.icon,
     required this.child,
-    this.iconColor = Holo.pink,
+    this.iconColor,
     this.iconBackground,
   });
 
   final IconData icon;
   final Widget child;
-  final Color iconColor;
+  final Color? iconColor;
   final Color? iconBackground;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final p = context.paper;
+    return PaperCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Holo.surfaceCard,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(color: Holo.border),
-        boxShadow: Holo.cardShadow,
-      ),
       child: Row(
         children: [
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: iconBackground ?? Holo.pink.withValues(alpha: 0.10),
+              color: iconBackground ?? p.coral.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: iconColor, size: 24),
+            child: Icon(icon, color: iconColor ?? p.coral, size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(child: child),
