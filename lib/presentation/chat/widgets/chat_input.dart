@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/ui/app_tokens.dart';
-import '../../../../core/ui/holo/holo_tokens.dart';
-import '../../../../domain/entities/character.dart';
+import '../../../core/ui/app_tokens.dart';
+import '../../../core/ui/paper/paper_tokens.dart';
+import '../../../domain/entities/character.dart';
 import '../../locale/l10n_context.dart';
 
 class ChatInput extends StatelessWidget {
@@ -26,6 +26,7 @@ class ChatInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canTapSend = !isGenerating && canSendMessage;
+    final p = context.paper;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(
@@ -34,9 +35,9 @@ class ChatInput extends StatelessWidget {
         AppSpacing.composerPadH,
         AppSpacing.composerPadBottom,
       ),
-      decoration: const BoxDecoration(
-        color: Holo.surfaceCard,
-        border: Border(top: BorderSide(color: Holo.border)),
+      decoration: BoxDecoration(
+        color: p.card,
+        border: Border(top: BorderSide(color: p.cardEdge)),
       ),
       child: SafeArea(
         top: false,
@@ -46,9 +47,9 @@ class ChatInput extends StatelessWidget {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Holo.surfaceMuted,
+                  color: p.paperBg,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Holo.border),
+                  border: Border.all(color: p.cardEdge),
                 ),
                 child: TextField(
                   controller: controller,
@@ -56,16 +57,16 @@ class ChatInput extends StatelessWidget {
                   decoration: InputDecoration(
                     hintText: hintOverride ?? context.tr('chatInputHint'),
                     hintStyle: TextStyle(
-                      color: Holo.inkPlumSoft.withValues(alpha: 0.7),
+                      color: p.inkSoft.withValues(alpha: 0.7),
                       fontSize: 15,
                     ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 18,
-                      vertical: 11,
+                      vertical: 13,
                     ),
                   ),
-                  style: const TextStyle(fontSize: 15.5, color: Holo.inkPlum),
+                  style: TextStyle(fontSize: 15.5, color: p.ink),
                   maxLines: null,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) {
@@ -77,12 +78,11 @@ class ChatInput extends StatelessWidget {
             const SizedBox(width: 10),
             Container(
               decoration: BoxDecoration(
-                gradient: canTapSend ? Holo.holoGradient : null,
-                color: canTapSend
-                    ? null
-                    : Holo.inkPlumSoft.withValues(alpha: 0.3),
+                color: canTapSend ? p.coral : p.inkSoft.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
-                boxShadow: canTapSend ? Holo.cardShadow : null,
+                boxShadow: canTapSend
+                    ? [BoxShadow(color: p.coralDeep, offset: const Offset(0, 3))]
+                    : null,
               ),
               child: Material(
                 color: Colors.transparent,
@@ -91,8 +91,8 @@ class ChatInput extends StatelessWidget {
                   onTap: canTapSend ? onSend : null,
                   customBorder: const CircleBorder(),
                   child: SizedBox(
-                    width: 46,
-                    height: 46,
+                    width: 48,
+                    height: 48,
                     child: Icon(
                       isGenerating
                           ? Icons.hourglass_empty_rounded

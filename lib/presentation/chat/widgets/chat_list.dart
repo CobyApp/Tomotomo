@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/ui/app_tokens.dart';
-import '../../../../core/ui/holo/holo_tokens.dart';
+import '../../../../core/ui/paper/paper_tokens.dart';
+import '../../../../core/ui/paper/paper_widgets.dart';
 import '../../../../domain/entities/character.dart';
 import '../../../../domain/entities/chat_message.dart' show ChatMessage;
 import '../chat_expression_sheet.dart';
@@ -72,45 +72,36 @@ class _ChatListState extends State<ChatList> {
   }
 
   Widget _buildLoadingIndicator() {
+    final p = context.paper;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Holo.pink.withValues(alpha: 0.18)),
-              boxShadow: Holo.cardShadow,
-            ),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundColor: Holo.surfaceCard,
-              backgroundImage: widget.character.hasAvatar
-                  ? widget.character.imageProvider
-                  : null,
-              child: !widget.character.hasAvatar
-                  ? Text(
+          PolaroidAvatar(
+            size: 32,
+            rotate: -0.06,
+            child: widget.character.hasAvatar
+                ? Image(image: widget.character.imageProvider, fit: BoxFit.cover)
+                : Center(
+                    child: Text(
                       widget.character.displayNamePrimary.isNotEmpty
                           ? widget.character.displayNamePrimary.substring(0, 1)
                           : '?',
-                      style: const TextStyle(color: Holo.pink),
-                    )
-                  : null,
-            ),
+                      style: TextStyle(color: p.coral),
+                    ),
+                  ),
           ),
           const SizedBox(width: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Holo.surfaceCard,
-              borderRadius: BorderRadius.circular(AppRadii.cardSmall),
-              border: Border.all(color: Holo.border),
+              color: p.card,
+              borderRadius: BorderRadius.circular(PaperRadii.card),
+              border: Border.all(color: p.cardEdge),
             ),
-            child: const _TypingDots(color: Holo.inkPlum),
+            child: _TypingDots(color: p.ink),
           ),
         ],
       ),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/ui/holo/holo_tokens.dart';
-import '../../../../domain/entities/character.dart';
-import '../../../../domain/entities/chat_message.dart';
+import '../../../core/ui/paper/paper_tokens.dart';
+import '../../../core/ui/paper/paper_widgets.dart';
+import '../../../domain/entities/character.dart';
+import '../../../domain/entities/chat_message.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
@@ -24,9 +25,10 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // My messages use the brand gradient; tutor messages use a quiet card.
-    final userTextColor = Colors.white;
-    const botTextColor = Holo.inkPlum;
+    final p = context.paper;
+    // My messages get a solid coral fill; tutor messages sit on a cream card.
+    const userTextColor = Colors.white;
+    final botTextColor = p.ink;
 
     final bubbleRadius = BorderRadius.only(
       topLeft: const Radius.circular(18),
@@ -36,7 +38,7 @@ class ChatBubble extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         mainAxisAlignment: isUser
             ? MainAxisAlignment.end
@@ -44,36 +46,35 @@ class ChatBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isUser) ...[
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: Holo.surfaceCard,
-              backgroundImage: character.hasAvatar
-                  ? character.imageProvider
-                  : null,
-              child: !character.hasAvatar
-                  ? Text(
-                      character.displayNamePrimary.isNotEmpty
-                          ? character.displayNamePrimary.substring(0, 1)
-                          : '?',
-                      style: const TextStyle(fontSize: 13, color: Holo.pink),
-                    )
-                  : null,
+            PolaroidAvatar(
+              size: 36,
+              rotate: -0.06,
+              child: character.hasAvatar
+                  ? Image(image: character.imageProvider, fit: BoxFit.cover)
+                  : Center(
+                      child: Text(
+                        character.displayNamePrimary.isNotEmpty
+                            ? character.displayNamePrimary.substring(0, 1)
+                            : '?',
+                        style: TextStyle(fontSize: 13, color: p.coral),
+                      ),
+                    ),
             ),
             const SizedBox(width: 10),
           ],
           if (isUser && onExplanationTap != null) ...[
             Material(
-              color: Holo.lilac.withValues(alpha: 0.12),
+              color: p.stampBlue.withValues(alpha: 0.14),
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),
                 onTap: onExplanationTap,
-                child: const Padding(
-                  padding: EdgeInsets.all(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
                   child: Icon(
                     Icons.info_outline_rounded,
                     size: 18,
-                    color: Holo.inkPlum,
+                    color: p.ink,
                   ),
                 ),
               ),
@@ -86,16 +87,20 @@ class ChatBubble extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: isUser ? Holo.holoGradient : null,
-                  color: isUser ? null : Holo.surfaceCard,
+                  color: isUser ? p.coral : p.card,
                   borderRadius: bubbleRadius,
-                  border: isUser ? null : Border.all(color: Holo.border),
-                  boxShadow: isUser ? const [] : Holo.cardShadow,
+                  border: isUser ? null : Border.all(color: p.cardEdge),
+                  boxShadow: isUser
+                      ? const []
+                      : [
+                          BoxShadow(color: p.hardShadow, offset: const Offset(0, 2)),
+                          BoxShadow(color: p.softShadow, blurRadius: 14, offset: const Offset(0, 6)),
+                        ],
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 11,
+                    horizontal: 16,
+                    vertical: 12,
                   ),
                   child: Text(
                     message.content,
@@ -112,17 +117,17 @@ class ChatBubble extends StatelessWidget {
           if (!isUser && onExplanationTap != null) ...[
             const SizedBox(width: 6),
             Material(
-              color: Holo.lilac.withValues(alpha: 0.12),
+              color: p.stampBlue.withValues(alpha: 0.14),
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),
                 onTap: onExplanationTap,
-                child: const Padding(
-                  padding: EdgeInsets.all(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
                   child: Icon(
                     Icons.info_outline_rounded,
                     size: 18,
-                    color: Holo.inkPlum,
+                    color: p.ink,
                   ),
                 ),
               ),

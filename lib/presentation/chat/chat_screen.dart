@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/ui/ui.dart';
 import '../../core/ui/points_toolbar_chip.dart';
-import '../../core/ui/holo/glitch_text.dart';
-import '../../core/ui/holo/holo_tokens.dart';
+import '../../core/ui/paper/paper_tokens.dart';
+import '../../core/ui/paper/paper_theme.dart';
+import '../../core/ui/paper/paper_widgets.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
@@ -191,10 +192,10 @@ class _ChatScreenContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.paper;
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(gradient: Holo.pageGradient),
+    return ColoredBox(
+      color: p.paperBg,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
@@ -203,45 +204,35 @@ class _ChatScreenContent extends StatelessWidget {
           elevation: 0,
           shadowColor: Colors.transparent,
           toolbarHeight: 64,
-          shape: const Border(bottom: BorderSide(color: Holo.border)),
+          shape: Border(bottom: BorderSide(color: p.cardEdge)),
           centerTitle: false,
+          foregroundColor: p.ink,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: Holo.inkPlum,
+              color: p.ink,
               size: 20,
             ),
             onPressed: () => Navigator.pop(context),
           ),
           title: Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                padding: const EdgeInsets.all(2.5),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: Holo.holoGradient,
-                ),
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Holo.surfaceCard,
-                  backgroundImage: character.hasAvatar
-                      ? character.imageProvider
-                      : null,
-                  child: !character.hasAvatar
-                      ? Text(
+              PolaroidAvatar(
+                size: 44,
+                child: character.hasAvatar
+                    ? Image(image: character.imageProvider, fit: BoxFit.cover)
+                    : Center(
+                        child: Text(
                           character.displayNamePrimary.isNotEmpty
                               ? character.displayNamePrimary.substring(0, 1)
                               : '?',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: Holo.inkPlum,
+                            color: p.coral,
                           ),
-                        )
-                      : null,
-                ),
+                        ),
+                      ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -249,19 +240,22 @@ class _ChatScreenContent extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    GlitchText(
+                    Text(
                       character.displayNamePrimary,
-                      style: AppTextStyles.listTitle(
-                        context,
-                      ).copyWith(fontSize: 17, fontWeight: FontWeight.w800),
-                      offset: 0.8,
+                      style: cuteDisplay(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: p.ink,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     if (character.displayNameSecondary.isNotEmpty)
                       Text(
                         character.displayNameSecondary,
                         style: AppTextStyles.listSubtitle(
                           context,
-                        ).copyWith(color: Holo.inkPlumSoft),
+                        ).copyWith(color: p.inkSoft),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -274,11 +268,12 @@ class _ChatScreenContent extends StatelessWidget {
             const PointsToolbarChip(),
             PopupMenuButton<String>(
               tooltip: context.tr('chatMoreMenuTooltip'),
-              icon: const Icon(Icons.more_horiz_rounded, color: Holo.inkPlum),
+              icon: Icon(Icons.more_horiz_rounded, color: p.ink),
               offset: const Offset(0, 40),
+              color: p.card,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadii.cardSmall),
-                side: const BorderSide(color: Holo.border),
+                borderRadius: BorderRadius.circular(PaperRadii.button),
+                side: BorderSide(color: p.cardEdge),
               ),
               onSelected: (value) async {
                 switch (value) {
@@ -300,10 +295,10 @@ class _ChatScreenContent extends StatelessWidget {
                         Icon(
                           Icons.flag_outlined,
                           size: 22,
-                          color: scheme.onSurface,
+                          color: p.ink,
                         ),
                         const SizedBox(width: 12),
-                        Expanded(child: Text(tr('chatMenuReport'))),
+                        Expanded(child: Text(tr('chatMenuReport'), style: TextStyle(color: p.ink))),
                       ],
                     ),
                   ),
@@ -315,10 +310,10 @@ class _ChatScreenContent extends StatelessWidget {
                         Icon(
                           Icons.logout_rounded,
                           size: 22,
-                          color: scheme.onSurface,
+                          color: p.ink,
                         ),
                         const SizedBox(width: 12),
-                        Expanded(child: Text(tr('chatMenuLeave'))),
+                        Expanded(child: Text(tr('chatMenuLeave'), style: TextStyle(color: p.ink))),
                       ],
                     ),
                   ),
