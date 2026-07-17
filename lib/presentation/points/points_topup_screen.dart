@@ -173,15 +173,15 @@ class _AdShimmerCardState extends State<_AdShimmerCard>
     return Container(
       decoration: BoxDecoration(
         color: Holo.surfaceCard,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Holo.pink.withValues(alpha: 0.35), width: 2),
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: Holo.border),
         boxShadow: Holo.cardShadow,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.card),
         child: Stack(
           children: [
-            Padding(padding: const EdgeInsets.all(14), child: widget.child),
+            Padding(padding: const EdgeInsets.all(16), child: widget.child),
             Positioned.fill(
               child: IgnorePointer(
                 child: LayoutBuilder(

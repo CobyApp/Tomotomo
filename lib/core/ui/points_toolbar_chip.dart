@@ -34,13 +34,17 @@ class _PointsChipAnimated extends StatefulWidget {
   State<_PointsChipAnimated> createState() => _PointsChipAnimatedState();
 }
 
-class _PointsChipAnimatedState extends State<_PointsChipAnimated> with SingleTickerProviderStateMixin {
+class _PointsChipAnimatedState extends State<_PointsChipAnimated>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _flash;
 
   @override
   void initState() {
     super.initState();
-    _flash = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+    _flash = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
   }
 
   @override
@@ -64,55 +68,68 @@ class _PointsChipAnimatedState extends State<_PointsChipAnimated> with SingleTic
     final label = widget.balance != null ? '${widget.balance}' : '—';
 
     return Padding(
-      padding: const EdgeInsetsDirectional.only(end: 4),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => openPointsUsageScreen(context),
-          borderRadius: BorderRadius.circular(999),
-          child: AnimatedBuilder(
-            animation: _flash,
-            builder: (context, child) {
-              // Short pop + color flash toward lemon on balance increase, settles back to normal chip look.
-              final t = _flash.value;
-              final pulse = t < 0.5 ? t * 2 : (1 - t) * 2;
-              final scale = 1.0 + 0.16 * pulse;
-              final borderColor = Color.lerp(Holo.cyan, Holo.lemon, pulse) ?? Holo.cyan;
-              return Transform.scale(
-                scale: scale,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Holo.surfaceCard,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: borderColor, width: 2),
-                    boxShadow: pulse > 0
-                        ? [BoxShadow(color: Holo.lemon.withValues(alpha: 0.45 * pulse), blurRadius: 14)]
-                        : Holo.cardShadow,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.star_rounded, size: 16, color: Holo.lemon),
-                      const SizedBox(width: 4),
-                      Text(
-                        label,
-                        style: const TextStyle(fontWeight: FontWeight.w900, color: Holo.inkPlum, fontSize: 13),
-                      ),
-                      const SizedBox(width: 2),
-                      Tooltip(
-                        message: context.tr('pointsChipTooltip'),
-                        child: Icon(
-                          Icons.help_outline_rounded,
-                          size: 14,
-                          color: Holo.inkPlumSoft.withValues(alpha: 0.85),
+      padding: const EdgeInsetsDirectional.only(end: 2),
+      child: Tooltip(
+        message: context.tr('pointsChipTooltip'),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => openPointsUsageScreen(context),
+            borderRadius: BorderRadius.circular(999),
+            child: AnimatedBuilder(
+              animation: _flash,
+              builder: (context, child) {
+                // Short pop + color flash toward lemon on balance increase, settles back to normal chip look.
+                final t = _flash.value;
+                final pulse = t < 0.5 ? t * 2 : (1 - t) * 2;
+                final scale = 1.0 + 0.16 * pulse;
+                final borderColor =
+                    Color.lerp(Holo.border, Holo.lemon, pulse) ?? Holo.border;
+                return Transform.scale(
+                  scale: scale,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Holo.surfaceCard,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: borderColor),
+                      boxShadow: pulse > 0
+                          ? [
+                              BoxShadow(
+                                color: Holo.lemon.withValues(
+                                  alpha: 0.45 * pulse,
+                                ),
+                                blurRadius: 14,
+                              ),
+                            ]
+                          : const [],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.auto_awesome_rounded,
+                          size: 16,
+                          color: Holo.pink,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 5),
+                        Text(
+                          label,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: Holo.inkPlum,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),

@@ -24,8 +24,7 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // HOLO-KITSCH bubbles: my messages get the holo gradient fill; tutor/AI
-    // messages get a white card with a cyan hairline border.
+    // My messages use the brand gradient; tutor messages use a quiet card.
     final userTextColor = Colors.white;
     const botTextColor = Holo.inkPlum;
 
@@ -37,7 +36,7 @@ class ChatBubble extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       child: Row(
         mainAxisAlignment: isUser
             ? MainAxisAlignment.end
@@ -64,7 +63,7 @@ class ChatBubble extends StatelessWidget {
           ],
           if (isUser && onExplanationTap != null) ...[
             Material(
-              color: Holo.lilac.withValues(alpha: 0.25),
+              color: Holo.lilac.withValues(alpha: 0.12),
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),
@@ -90,21 +89,19 @@ class ChatBubble extends StatelessWidget {
                   gradient: isUser ? Holo.holoGradient : null,
                   color: isUser ? null : Holo.surfaceCard,
                   borderRadius: bubbleRadius,
-                  border: isUser
-                      ? null
-                      : Border.all(color: Holo.cyan, width: 2),
-                  boxShadow: Holo.cardShadow,
+                  border: isUser ? null : Border.all(color: Holo.border),
+                  boxShadow: isUser ? const [] : Holo.cardShadow,
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    horizontal: 15,
+                    vertical: 11,
                   ),
                   child: Text(
                     message.content,
                     style: TextStyle(
                       fontSize: 15.5,
-                      height: 1.45,
+                      height: 1.5,
                       color: isUser ? userTextColor : botTextColor,
                     ),
                   ),
@@ -115,7 +112,7 @@ class ChatBubble extends StatelessWidget {
           if (!isUser && onExplanationTap != null) ...[
             const SizedBox(width: 6),
             Material(
-              color: Holo.lilac.withValues(alpha: 0.25),
+              color: Holo.lilac.withValues(alpha: 0.12),
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),

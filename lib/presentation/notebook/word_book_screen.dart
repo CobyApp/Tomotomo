@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/home_widget/notebook_home_widget_sync.dart';
+import '../../core/locale/study_language.dart';
 import '../../core/ui/ui.dart';
 import '../../core/ui/holo/holo_tokens.dart';
 import '../../core/ui/holo/holo_widgets.dart';
@@ -13,6 +14,7 @@ import '../../domain/repositories/saved_expression_repository.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import 'word_book_refresh_notifier.dart';
+import 'notebook_study_screen.dart';
 
 /// Third tab: vocabulary saved per word via [+] on the chat expression sheet.
 class WordBookScreen extends StatefulWidget {
@@ -34,11 +36,16 @@ class WordBookScreenState extends State<WordBookScreen>
   /// Bottom nav re-selects this tab (IndexedStack does not dispose children).
   void reloadWhenTabSelected() {
     if (!mounted) return;
-    if (_langInitialized) {
+    final targetLanguage = _targetLanguageCode();
+    if (_langInitialized && _notebookLang == targetLanguage) {
       unawaited(_load(showSpinner: false));
     } else {
       unawaited(_bootstrapNotebookTab());
     }
+  }
+
+  String _targetLanguageCode() {
+    return studyLanguageForApp(context.read<LocaleNotifier>().languageCode);
   }
 
   @override
@@ -70,38 +77,26 @@ class WordBookScreenState extends State<WordBookScreen>
 
   Future<void> _bootstrapNotebookTab() async {
     if (!mounted) return;
-    final code = context.read<LocaleNotifier>().languageCode;
+    final targetLanguage = _targetLanguageCode();
     final repo = context.read<SavedExpressionRepository>();
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final results = await Future.wait([
-        repo.listForCurrentUser(notebookLang: 'ko'),
-        repo.listForCurrentUser(notebookLang: 'ja'),
-      ]);
+      final items = await repo.listForCurrentUser(notebookLang: targetLanguage);
       if (!mounted) return;
-      final koList = results[0];
-      final jaList = results[1];
-      final onlyKo = koList.isNotEmpty && jaList.isEmpty;
-      final onlyJa = jaList.isNotEmpty && koList.isEmpty;
-      final lang = onlyJa
-          ? 'ja'
-          : onlyKo
-              ? 'ko'
-              : ((code == 'ja') ? 'ja' : 'ko');
       setState(() {
-        _notebookLang = lang;
+        _notebookLang = targetLanguage;
         _langInitialized = true;
-        _items = lang == 'ko' ? koList : jaList;
+        _items = items;
         _loading = false;
       });
       _syncHomeWidgetFromLocalData();
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _notebookLang = (code == 'ja') ? 'ja' : 'ko';
+        _notebookLang = targetLanguage;
         _langInitialized = true;
         _loading = false;
         _error = e.toString();
@@ -137,22 +132,19 @@ class WordBookScreenState extends State<WordBookScreen>
     }
   }
 
-  void _onNotebookLangChanged(String lang) {
-    if (lang == _notebookLang) return;
-    setState(() => _notebookLang = lang);
-    unawaited(_load());
-  }
-
   void _syncHomeWidgetFromLocalData() {
     if (!_langInitialized || !mounted) return;
     final repo = context.read<SavedExpressionRepository>();
-    final code = context.read<LocaleNotifier>().languageCode;
-    unawaited(syncNotebookToHomeWidget(repo, defaultLangIfUnset: code == 'ja' ? 'ja' : 'ko'));
+    unawaited(
+      syncNotebookToHomeWidget(repo, defaultLangIfUnset: _notebookLang),
+    );
   }
 
   /// Same flow as [ChatsTab._confirmDeleteRoom]: dialog only; API runs in [Dismissible.confirmDismiss].
   /// Same shape as [_vocabTranslationLine] in chat: `reading — meaning` when both exist.
-  (String? reading, String meaning) _parseNotebookTranslation(String? translation) {
+  (String? reading, String meaning) _parseNotebookTranslation(
+    String? translation,
+  ) {
     final t = translation?.trim() ?? '';
     if (t.isEmpty) return (null, '');
     const sep = ' — ';
@@ -164,15 +156,24 @@ class WordBookScreenState extends State<WordBookScreen>
     return (r.isEmpty ? null : r, m);
   }
 
-  Future<bool?> _confirmDeleteExpression(BuildContext context, SavedExpression e) {
+  Future<bool?> _confirmDeleteExpression(
+    BuildContext context,
+    SavedExpression e,
+  ) {
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(ctx.tr('notebookDeleteTitle')),
         content: Text(ctx.tr('notebookDeleteConfirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.tr('cancel'))),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx.tr('confirm'))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(ctx.tr('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(ctx.tr('confirm')),
+          ),
         ],
       ),
     );
@@ -188,7 +189,9 @@ class WordBookScreenState extends State<WordBookScreen>
     final usePretendard = e.notebookLang == 'ko';
 
     // Mirrors chat expression sheet: headline word chip, optional reading chip, then gloss line.
-    final chipTextStyle = TextStyle(fontFamily: usePretendard ? 'Pretendard' : null);
+    final chipTextStyle = TextStyle(
+      fontFamily: usePretendard ? 'Pretendard' : null,
+    );
     final meaningStyle = TextStyle(
       fontSize: 13,
       height: 1.4,
@@ -211,7 +214,9 @@ class WordBookScreenState extends State<WordBookScreen>
             return true;
           } catch (_) {
             if (!context.mounted) return false;
-            messenger.showSnackBar(SnackBar(content: Text(context.trRead('notebookDeleteFailed'))));
+            messenger.showSnackBar(
+              SnackBar(content: Text(context.trRead('notebookDeleteFailed'))),
+            );
             return false;
           }
         },
@@ -232,48 +237,58 @@ class WordBookScreenState extends State<WordBookScreen>
             color: scheme.errorContainer,
             borderRadius: BorderRadius.circular(AppRadii.card),
           ),
-          child: Icon(Icons.delete_outline_rounded, color: scheme.onErrorContainer, size: 28),
+          child: Icon(
+            Icons.delete_outline_rounded,
+            color: scheme.onErrorContainer,
+            size: 28,
+          ),
         ),
         child: HoloCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  HoloChip(child: Text(word, style: chipTextStyle)),
-                  if (reading != null && reading.isNotEmpty)
-                    HoloChip(filled: false, child: Text(reading, style: chipTextStyle)),
+          child: SizedBox(
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    HoloChip(child: Text(word, style: chipTextStyle)),
+                    if (reading != null && reading.isNotEmpty)
+                      HoloChip(
+                        filled: false,
+                        child: Text(reading, style: chipTextStyle),
+                      ),
+                  ],
+                ),
+                if (hasGlossLine) ...[
+                  const SizedBox(height: 8),
+                  Text(meaningBody, style: meaningStyle),
                 ],
-              ),
-              if (hasGlossLine) ...[
-                const SizedBox(height: 8),
-                Text(meaningBody, style: meaningStyle),
-              ],
-              if (hasLegacy) ...[
-                const SizedBox(height: 10),
-                Divider(height: 1, color: Holo.pink.withValues(alpha: 0.2)),
-                const SizedBox(height: 8),
-                Text(
-                  context.tr('notebookLegacyNoteLabel'),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Holo.inkPlumSoft,
-                    fontFamily: usePretendard ? 'Pretendard' : null,
+                if (hasLegacy) ...[
+                  const SizedBox(height: 10),
+                  Divider(height: 1, color: Holo.pink.withValues(alpha: 0.2)),
+                  const SizedBox(height: 8),
+                  Text(
+                    context.tr('notebookLegacyNoteLabel'),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Holo.inkPlumSoft,
+                      fontFamily: usePretendard ? 'Pretendard' : null,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  legacyBlock,
-                  maxLines: 6,
-                  overflow: TextOverflow.ellipsis,
-                  style: meaningStyle,
-                ),
+                  const SizedBox(height: 4),
+                  Text(
+                    legacyBlock,
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
+                    style: meaningStyle,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -284,55 +299,25 @@ class WordBookScreenState extends State<WordBookScreen>
   Widget build(BuildContext context) {
     return AppPageScaffold(
       title: context.tr('notebookTitle'),
-      showPointsChip: true,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh_rounded),
-          onPressed: _loading ? null : () => unawaited(_load()),
-        ),
-      ],
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 8, AppSpacing.pageH, 4),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.pageH,
+              8,
+              AppSpacing.pageH,
+              4,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SegmentedButton<String>(
-                  segments: [
-                    ButtonSegment<String>(
-                      value: 'ko',
-                      label: Text(context.tr('notebookLangKo')),
-                      icon: const Icon(Icons.language, size: 18),
-                    ),
-                    ButtonSegment<String>(
-                      value: 'ja',
-                      label: Text(context.tr('notebookLangJa')),
-                      icon: const Icon(Icons.translate_rounded, size: 18),
-                    ),
-                  ],
-                  selected: {_notebookLang},
-                  onSelectionChanged: (s) {
-                    if (s.isEmpty) return;
-                    _onNotebookLangChanged(s.first);
-                  },
-                  style: SegmentedButton.styleFrom(
-                    backgroundColor: Holo.surfaceCard,
-                    foregroundColor: Holo.inkPlum,
-                    selectedBackgroundColor: Holo.pink,
-                    selectedForegroundColor: Colors.white,
-                    side: const BorderSide(color: Holo.cyan, width: 2),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.pill)),
-                  ),
-                ),
-                const SizedBox(height: 8),
                 Text(
                   context.tr('notebookSubtitle'),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        height: 1.35,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),
@@ -341,48 +326,150 @@ class WordBookScreenState extends State<WordBookScreen>
             child: !_langInitialized || _loading
                 ? const AppLoadingBody()
                 : _error != null
-                    ? AppErrorBody(
-                        message: _error!,
-                        onRetry: () => unawaited(_load()),
-                        retryLabel: context.tr('retry'),
-                      )
-                    : _items.isEmpty
-                        ? AppEmptyState(
-                            icon: Icons.menu_book_outlined,
-                            title: context.tr('notebookEmpty'),
-                            subtitle: _notebookLang == 'ko'
-                                ? context.tr('notebookEmptyHintKo')
-                                : context.tr('notebookEmptyHintJa'),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _load,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(
-                                AppSpacing.pageH,
-                                8,
-                                AppSpacing.pageH,
-                                AppSpacing.pageBottom,
+                ? AppErrorBody(
+                    message: _error!,
+                    onRetry: () => unawaited(_load()),
+                    retryLabel: context.tr('retry'),
+                  )
+                : _items.isEmpty
+                ? AppEmptyState(
+                    icon: Icons.menu_book_outlined,
+                    title: context.tr('notebookEmpty'),
+                    subtitle: _notebookLang == 'ko'
+                        ? context.tr('notebookEmptyHintKo')
+                        : context.tr('notebookEmptyHintJa'),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.pageH,
+                      8,
+                      AppSpacing.pageH,
+                      AppSpacing.pageBottom,
+                    ),
+                    itemCount: _items.length + 2,
+                    itemBuilder: (context, i) {
+                      if (i == 0) {
+                        return _StudyLauncherCard(
+                          count: _items.length,
+                          onTap: () {
+                            Navigator.push<void>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => NotebookStudyScreen(
+                                  items: List<SavedExpression>.of(_items),
+                                  notebookLanguage: _notebookLang,
+                                ),
                               ),
-                              itemCount: _items.length + 1,
-                              itemBuilder: (context, i) {
-                                if (i == 0) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 10),
-                                    child: Text(
-                                      context.tr('chatsDeleteSwipeHint'),
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                            height: 1.35,
-                                          ),
-                                    ),
-                                  );
-                                }
-                                return _dismissibleWordRow(context, _items[i - 1]);
-                              },
-                            ),
+                            );
+                          },
+                        );
+                      }
+                      if (i == 1) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            context.tr('chatsDeleteSwipeHint'),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  height: 1.35,
+                                ),
                           ),
+                        );
+                      }
+                      return _dismissibleWordRow(context, _items[i - 2]);
+                    },
+                  ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StudyLauncherCard extends StatelessWidget {
+  const _StudyLauncherCard({required this.count, required this.onTap});
+
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          child: Ink(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Holo.pink.withValues(alpha: 0.92),
+                  Holo.lilac.withValues(alpha: 0.92),
+                  Holo.cyan.withValues(alpha: 0.88),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(AppRadii.card),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.55)),
+              boxShadow: Holo.floatingShadow,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.20),
+                    borderRadius: BorderRadius.circular(17),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.36),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.style_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr('notebookStudyStart'),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                            ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        context.tr(
+                          'notebookStudyStartSubtitle',
+                          params: {'count': '$count'},
+                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.88),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward_rounded, color: Colors.white),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

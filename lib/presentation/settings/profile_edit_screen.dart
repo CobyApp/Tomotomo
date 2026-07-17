@@ -16,9 +16,9 @@ import '../locale/l10n_context.dart';
 /// Single local user id (no auth).
 const String _localUserId = 'local';
 
-/// Cyan-bordered holo field decoration shared by every text input on this form.
+/// Quiet card field decoration shared by every text input on this form.
 InputDecoration _holoFieldDecoration({String? labelText, String? hintText}) {
-  const radius = BorderRadius.all(Radius.circular(18));
+  const radius = BorderRadius.all(Radius.circular(16));
   return InputDecoration(
     labelText: labelText,
     hintText: hintText,
@@ -34,15 +34,15 @@ InputDecoration _holoFieldDecoration({String? labelText, String? hintText}) {
     ),
     border: const OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: Holo.cyan, width: 2),
+      borderSide: BorderSide(color: Holo.border),
     ),
     enabledBorder: const OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: Holo.cyan, width: 2),
+      borderSide: BorderSide(color: Holo.border),
     ),
     focusedBorder: const OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: Holo.pink, width: 2.5),
+      borderSide: BorderSide(color: Holo.pink, width: 1.5),
     ),
   );
 }

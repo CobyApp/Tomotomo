@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/ui/app_tokens.dart';
 import '../../../../core/ui/holo/holo_tokens.dart';
 import '../../../../domain/entities/character.dart';
 import '../../../../domain/entities/chat_message.dart' show ChatMessage;
@@ -82,10 +83,7 @@ class _ChatListState extends State<ChatList> {
             height: 32,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Holo.pink.withValues(alpha: 0.35),
-                width: 2,
-              ),
+              border: Border.all(color: Holo.pink.withValues(alpha: 0.18)),
               boxShadow: Holo.cardShadow,
             ),
             child: CircleAvatar(
@@ -109,9 +107,8 @@ class _ChatListState extends State<ChatList> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: Holo.surfaceCard,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Holo.cyan, width: 2),
-              boxShadow: Holo.cardShadow,
+              borderRadius: BorderRadius.circular(AppRadii.cardSmall),
+              border: Border.all(color: Holo.border),
             ),
             child: const _TypingDots(color: Holo.inkPlum),
           ),

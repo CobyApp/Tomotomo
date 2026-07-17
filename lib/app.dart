@@ -10,6 +10,7 @@ import 'domain/repositories/profile_repository.dart';
 import 'domain/repositories/character_record_repository.dart';
 import 'domain/repositories/saved_expression_repository.dart';
 import 'data/celebrity_persona/celebrity_persona_suggester.dart';
+import 'data/on_device/on_device_model_manager.dart';
 import 'presentation/main_shell/main_shell.dart';
 import 'presentation/locale/locale_notifier.dart';
 import 'presentation/theme/theme_notifier.dart';
@@ -17,6 +18,7 @@ import 'presentation/notebook/word_book_refresh_notifier.dart';
 import 'presentation/points/points_balance_notifier.dart';
 import 'domain/repositories/points_repository.dart';
 import 'core/ui/app_scaffold_messenger.dart';
+import 'presentation/on_device/on_device_model_setup_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -32,6 +34,7 @@ class App extends StatelessWidget {
         Provider<PointsRepository>.value(value: pointsRepository),
         Provider<LocalPointsRepositoryImpl>.value(value: localPointsRepository),
         ChangeNotifierProvider<RewardedAdService>.value(value: rewardedAdService),
+        ChangeNotifierProvider<OnDeviceModelManager>.value(value: onDeviceModelManager),
         ChangeNotifierProvider(
           create: (c) {
             final n = PointsBalanceNotifier(c.read<PointsRepository>());
@@ -58,7 +61,12 @@ class App extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            home: const MainShell(),
+            home: Consumer<OnDeviceModelManager>(
+              builder: (context, manager, _) {
+                if (manager.isReady) return const MainShell();
+                return const OnDeviceModelSetupScreen(requiredSetup: true);
+              },
+            ),
           );
         },
       ),

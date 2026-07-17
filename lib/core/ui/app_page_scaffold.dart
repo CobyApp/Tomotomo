@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'app_tokens.dart';
+import 'app_shell_background.dart';
+import 'holo/glitch_text.dart';
 import 'points_toolbar_chip.dart';
 
 /// Primary page layout: shared app bar title style. Main shell tabs use [transparentBackground]; pushed routes often set it false.
@@ -21,6 +23,7 @@ class AppPageScaffold extends StatelessWidget {
   final String? subtitle;
   final Widget body;
   final List<Widget>? actions;
+
   /// When true, prepends [PointsToolbarChip] to [actions] (main shell tabs).
   final bool showPointsChip;
   final PreferredSizeWidget? bottom;
@@ -32,10 +35,6 @@ class AppPageScaffold extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final hasSubtitle = subtitle != null && subtitle!.trim().isNotEmpty;
-
-    // Full-screen shell gradient behind Scaffold + AppBar. Transparent Scaffold alone
-    // under IndexedStack / pushed routes can composite to black (no ancestor paint).
-    final shellBackdrop = AppTheme.shellBackdropDecoration(scheme);
 
     final mergedActions = <Widget>[
       if (showPointsChip) const PointsToolbarChip(),
@@ -58,13 +57,13 @@ class AppPageScaffold extends StatelessWidget {
             child: body,
           );
 
-    return DecoratedBox(
-      decoration: shellBackdrop,
+    return AppShellBackground(
+      showOrbs: true,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          toolbarHeight: hasSubtitle ? 72 : kToolbarHeight,
-          titleSpacing: NavigationToolbar.kMiddleSpacing,
+          toolbarHeight: hasSubtitle ? 76 : 64,
+          titleSpacing: AppSpacing.pageH,
           surfaceTintColor: Colors.transparent,
           shadowColor: Colors.transparent,
           backgroundColor: Colors.transparent,
@@ -74,8 +73,12 @@ class AppPageScaffold extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(title, style: AppTextStyles.pageTitle(context)),
-                    const SizedBox(height: 2),
+                    GlitchText(
+                      title,
+                      style: AppTextStyles.pageTitle(context),
+                      offset: 1.1,
+                    ),
+                    const SizedBox(height: 3),
                     Text(
                       subtitle!.trim(),
                       maxLines: 2,
@@ -83,14 +86,20 @@ class AppPageScaffold extends StatelessWidget {
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: scheme.onSurfaceVariant,
                         fontWeight: FontWeight.w500,
-                        height: 1.25,
+                        height: 1.3,
                       ),
                     ),
                   ],
                 )
-              : Text(title, style: AppTextStyles.pageTitle(context)),
+              : GlitchText(
+                  title,
+                  style: AppTextStyles.pageTitle(context),
+                  offset: 1.1,
+                ),
           centerTitle: false,
-          actions: mergedActions.isEmpty ? null : mergedActions,
+          actions: mergedActions.isEmpty
+              ? null
+              : [...mergedActions, const SizedBox(width: 8)],
           bottom: bottom,
         ),
         floatingActionButton: floatingActionButton,

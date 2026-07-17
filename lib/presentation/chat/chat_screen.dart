@@ -202,7 +202,8 @@ class _ChatScreenContent extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           shadowColor: Colors.transparent,
-          shape: const Border(bottom: BorderSide(color: Holo.pink, width: 1.5)),
+          toolbarHeight: 64,
+          shape: const Border(bottom: BorderSide(color: Holo.border)),
           centerTitle: false,
           leading: IconButton(
             icon: const Icon(
@@ -217,7 +218,7 @@ class _ChatScreenContent extends StatelessWidget {
               Container(
                 width: 44,
                 height: 44,
-                padding: const EdgeInsets.all(2),
+                padding: const EdgeInsets.all(2.5),
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: Holo.holoGradient,
@@ -242,7 +243,7 @@ class _ChatScreenContent extends StatelessWidget {
                       : null,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,7 +253,8 @@ class _ChatScreenContent extends StatelessWidget {
                       character.displayNamePrimary,
                       style: AppTextStyles.listTitle(
                         context,
-                      ).copyWith(fontSize: 18),
+                      ).copyWith(fontSize: 17, fontWeight: FontWeight.w800),
+                      offset: 0.8,
                     ),
                     if (character.displayNameSecondary.isNotEmpty)
                       Text(
@@ -276,7 +278,7 @@ class _ChatScreenContent extends StatelessWidget {
               offset: const Offset(0, 40),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadii.cardSmall),
-                side: const BorderSide(color: Holo.cyan, width: 1.5),
+                side: const BorderSide(color: Holo.border),
               ),
               onSelected: (value) async {
                 switch (value) {

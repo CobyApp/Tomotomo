@@ -4,7 +4,7 @@
 
 Remove StoreKit in-app purchases and all unreachable Supabase, authentication,
 friends, blocking, and direct-message legacy behavior. Keep the app focused on
-local Hive storage, Gemini character chat, custom characters, the notebook
+local Hive storage, AI character chat, custom characters, the notebook
 widget, and rewarded-ad point earning.
 
 ## Product Scope
@@ -12,7 +12,7 @@ widget, and rewarded-ad point earning.
 ### Keep
 
 - Local profiles, characters, chats, points, themes, and saved expressions in Hive.
-- Gemini character chat and expression explanations used by active character chat.
+- AI character chat and expression explanations used by active character chat.
 - Custom character creation and X profile import.
 - Rewarded AdMob videos as the only way to earn additional points.
 - iOS and Android notebook widgets.
@@ -55,8 +55,8 @@ CocoaPods metadata removes the StoreKit plugin from registration.
 
 ## Documentation
 
-README and SETTINGS describe the actual local architecture and required Gemini
-and optional AdMob environment variables. Supabase-era architecture,
+README and SETTINGS describe the actual local architecture and optional AdMob
+environment variables. Supabase-era architecture,
 migrations, and superseded implementation plans are removed when they describe
 features that no longer exist.
 

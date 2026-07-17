@@ -164,21 +164,11 @@ class Character {
     final String nameJaLine;
     final String nameKanjiVal;
     final String selfRef;
-    if (isJaPersona) {
-      final ja = r.name.trim();
-      final ko = r.nameSecondary?.trim();
-      nameJaLine = ja;
-      nameKoLine = (ko != null && ko.isNotEmpty) ? ko : ja;
-      nameKanjiVal = ja;
-      selfRef = ja;
-    } else {
-      final ko = r.name.trim();
-      final jp = r.nameSecondary?.trim();
-      nameKoLine = ko;
-      nameJaLine = (jp != null && jp.isNotEmpty) ? jp : ko;
-      nameKanjiVal = nameJaLine;
-      selfRef = nameJaLine;
-    }
+    final displayName = r.name.trim();
+    nameJaLine = displayName;
+    nameKoLine = displayName;
+    nameKanjiVal = displayName;
+    selfRef = displayName;
 
     return Character(
       id: r.id,
@@ -212,7 +202,7 @@ class Character {
       imagePath: image,
       tutorLocale: 'ko',
       koreanNationalPersona: !isJaPersona,
-      omitSecondaryDisplayName: false,
+      omitSecondaryDisplayName: true,
     );
   }
 

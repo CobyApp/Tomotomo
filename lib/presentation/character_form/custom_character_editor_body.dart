@@ -2,10 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/ui/ui.dart';
+import '../../../core/locale/study_language.dart';
 import '../../../core/ui/holo/holo_tokens.dart';
 import '../../../core/ui/holo/holo_widgets.dart';
 import '../../../data/celebrity_persona/celebrity_persona_suggester.dart';
@@ -13,18 +15,19 @@ import '../../../domain/entities/character_record.dart';
 import '../../../domain/repositories/character_record_repository.dart';
 import '../../../domain/repositories/points_repository.dart';
 import '../locale/l10n_context.dart';
+import '../locale/locale_notifier.dart';
 import '../points/points_balance_notifier.dart';
 import '../points/points_topup_prompt.dart';
 
 /// Single local user id (no auth).
-/// Cyan-bordered holo field decoration shared by every text input on this form.
+/// Quiet card field decoration shared by every text input on this form.
 InputDecoration _holoFieldDecoration({
   String? labelText,
   String? hintText,
   Widget? prefixIcon,
   bool alignLabelWithHint = false,
 }) {
-  const radius = BorderRadius.all(Radius.circular(18));
+  const radius = BorderRadius.all(Radius.circular(16));
   return InputDecoration(
     labelText: labelText,
     hintText: hintText,
@@ -42,15 +45,15 @@ InputDecoration _holoFieldDecoration({
     ),
     border: const OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: Holo.cyan, width: 2),
+      borderSide: BorderSide(color: Holo.border),
     ),
     enabledBorder: const OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: Holo.cyan, width: 2),
+      borderSide: BorderSide(color: Holo.border),
     ),
     focusedBorder: const OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: Holo.pink, width: 2.5),
+      borderSide: BorderSide(color: Holo.pink, width: 1.5),
     ),
   );
 }
@@ -82,6 +85,34 @@ Future<String> _copyAvatarToAppDir(File src) async {
   return dest;
 }
 
+Future<String> _cacheRemoteAvatarToAppDir(String url) async {
+  final uri = Uri.parse(url);
+  final response = await http.get(uri).timeout(const Duration(seconds: 20));
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw HttpException('Avatar HTTP ${response.statusCode}', uri: uri);
+  }
+  if (response.bodyBytes.isEmpty ||
+      response.bodyBytes.length > 8 * 1024 * 1024) {
+    throw const FormatException('Invalid avatar image size');
+  }
+  final contentType = response.headers['content-type']?.toLowerCase() ?? '';
+  final ext = contentType.contains('png')
+      ? 'png'
+      : contentType.contains('webp')
+      ? 'webp'
+      : 'jpg';
+  final dir = await getApplicationDocumentsDirectory();
+  final avatarsDir = Directory('${dir.path}/avatars');
+  if (!await avatarsDir.exists()) {
+    await avatarsDir.create(recursive: true);
+  }
+  final file = File(
+    '${avatarsDir.path}/x_avatar_${DateTime.now().millisecondsSinceEpoch}.$ext',
+  );
+  await file.writeAsBytes(response.bodyBytes, flush: true);
+  return file.path;
+}
+
 /// Shared form for [CreateCharacterScreen] and [EditCharacterScreen].
 class CustomCharacterEditorBody extends StatefulWidget {
   const CustomCharacterEditorBody({super.key, this.existing});
@@ -97,19 +128,20 @@ class CustomCharacterEditorBody extends StatefulWidget {
 class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _nameSecondaryController = TextEditingController();
   final _taglineController = TextEditingController();
   final _memoController = TextEditingController();
   final _xUrlController = TextEditingController();
   final _xPasteController = TextEditingController();
 
   String _language = 'ja';
+  bool _languageInitialized = false;
   bool _saving = false;
   bool _uploadingAvatar = false;
   bool _importUrlBusy = false;
   bool _importPasteBusy = false;
   String? _error;
   String? _avatarUrl;
+  int _step = 0;
 
   CharacterRecord? get _existing => widget.existing;
 
@@ -119,10 +151,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     final r = _existing;
     if (r != null) {
       _nameController.text = r.name;
-      _nameSecondaryController.text = r.nameSecondary ?? '';
       _taglineController.text = r.tagline?.trim() ?? '';
       _memoController.text = r.speechStyle?.trim() ?? '';
       _language = r.language;
+      _languageInitialized = true;
       _avatarUrl = (r.avatarUrl != null && r.avatarUrl!.trim().isNotEmpty)
           ? r.avatarUrl
           : null;
@@ -130,9 +162,18 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_languageInitialized) return;
+    _language = studyLanguageForApp(
+      context.read<LocaleNotifier>().languageCode,
+    );
+    _languageInitialized = true;
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
-    _nameSecondaryController.dispose();
     _taglineController.dispose();
     _memoController.dispose();
     _xUrlController.dispose();
@@ -140,18 +181,24 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     super.dispose();
   }
 
-  void _applyPersonaSuggestion(CelebrityPersonaSuggestion s) {
+  Future<void> _applyPersonaSuggestion(CelebrityPersonaSuggestion s) async {
+    final remoteAvatar = s.avatarUrl?.trim();
     setState(() {
       _nameController.text = s.name;
-      _nameSecondaryController.text = s.nameSecondary ?? '';
       _taglineController.text = s.tagline?.trim() ?? '';
       _memoController.text = s.speechStyle ?? '';
-      _language = s.language == 'ko' ? 'ko' : 'ja';
-      final u = s.avatarUrl?.trim();
-      if (u != null && u.isNotEmpty) {
-        _avatarUrl = u;
+      if (remoteAvatar != null && remoteAvatar.isNotEmpty) {
+        _avatarUrl = remoteAvatar;
       }
     });
+    if (remoteAvatar == null || remoteAvatar.isEmpty) return;
+    try {
+      final localAvatar = await _cacheRemoteAvatarToAppDir(remoteAvatar);
+      if (!mounted || _avatarUrl != remoteAvatar) return;
+      setState(() => _avatarUrl = localAvatar);
+    } catch (_) {
+      // Keep the remote image as a usable fallback if local caching fails.
+    }
   }
 
   Future<bool> _spendPointsForXProfileImport() async {
@@ -190,9 +237,13 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       if (!okSpend) return;
       if (!mounted) return;
       final suggester = context.read<CelebrityPersonaSuggester>();
-      final s = await suggester.suggestFromXProfileUrl(url);
+      final s = await suggester.suggestFromXProfileUrl(
+        url,
+        targetLanguage: _language,
+      );
       if (!mounted) return;
-      _applyPersonaSuggestion(s);
+      await _applyPersonaSuggestion(s);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.trRead('characterImportFromXDone'))),
       );
@@ -221,9 +272,13 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       if (!okSpend) return;
       if (!mounted) return;
       final suggester = context.read<CelebrityPersonaSuggester>();
-      final s = await suggester.suggestFromProfileText(raw);
+      final s = await suggester.suggestFromProfileText(
+        raw,
+        targetLanguage: _language,
+      );
       if (!mounted) return;
-      _applyPersonaSuggestion(s);
+      await _applyPersonaSuggestion(s);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.trRead('characterImportFromXDone'))),
       );
@@ -252,7 +307,6 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     });
     final memo = _memoController.text.trim();
     final tagline = _taglineController.text.trim();
-    final secondary = _nameSecondaryController.text.trim();
     try {
       final repo = context.read<CharacterRecordRepository>();
       if (existing == null) {
@@ -273,7 +327,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
         context.read<PointsBalanceNotifier>().setBalance(spend.balance);
         final record = CharacterRecord.draft(
           name: name,
-          nameSecondary: secondary.isEmpty ? null : secondary,
+          nameSecondary: null,
           tagline: tagline.isEmpty ? null : tagline,
           speechStyle: memo.isEmpty ? null : memo,
           avatarUrl: _avatarUrl,
@@ -284,7 +338,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
         final updated = CharacterRecord(
           id: existing.id,
           name: name,
-          nameSecondary: secondary.isEmpty ? null : secondary,
+          nameSecondary: null,
           tagline: tagline.isEmpty ? null : tagline,
           speechStyle: memo.isEmpty ? null : memo,
           avatarUrl: _avatarUrl,
@@ -349,25 +403,17 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     setState(() => _avatarUrl = null);
   }
 
-  String _labelDisplayName(BuildContext context) => _language == 'ja'
-      ? context.tr('characterDisplayNameJa')
-      : context.tr('characterDisplayNameKo');
-
-  String _hintDisplayName(BuildContext context) => _language == 'ja'
-      ? context.tr('characterDisplayNameJaHint')
-      : context.tr('characterDisplayNameKoHint');
-
-  String _labelAltName(BuildContext context) => _language == 'ja'
-      ? context.tr('characterAltNameJa')
-      : context.tr('characterAltNameKo');
-
-  String _hintAltName(BuildContext context) => _language == 'ja'
-      ? context.tr('characterAltNameJaHint')
-      : context.tr('characterAltNameKoHint');
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final stepCount = _existing == null ? 3 : 2;
+    final logicalStep = _existing == null ? _step : _step + 1;
+    final isLastStep = _step == stepCount - 1;
+    final stepTitle = switch (logicalStep) {
+      0 => context.tr('characterStepImportTitle'),
+      1 => context.tr('characterStepProfileTitle'),
+      _ => context.tr('characterStepPersonalityTitle'),
+    };
 
     return Form(
       key: _formKey,
@@ -379,6 +425,51 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           AppSpacing.pageBottom,
         ),
         children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.tr(
+                        'characterStepProgress',
+                        params: {
+                          'current': '${_step + 1}',
+                          'total': '$stepCount',
+                        },
+                      ),
+                      style: const TextStyle(
+                        color: Holo.pink,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      stepTitle,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            color: Holo.inkPlum,
+                            fontWeight: FontWeight.w900,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: LinearProgressIndicator(
+              value: (_step + 1) / stepCount,
+              minHeight: 7,
+              backgroundColor: Holo.lilac.withValues(alpha: 0.16),
+              valueColor: const AlwaysStoppedAnimation(Holo.pink),
+            ),
+          ),
+          const SizedBox(height: 24),
           // ── Error banner ─────────────────────────────────────
           if (_error != null) ...[
             Container(
@@ -411,87 +502,89 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           ],
 
           // ── Avatar picker (centered, large circle) ─────────────────────
-          Center(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                GestureDetector(
-                  onTap: _uploadingAvatar ? null : _pickAvatar,
-                  child: Container(
-                    width: 110,
-                    height: 110,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: (_avatarUrl == null || _avatarUrl!.isEmpty)
-                          ? Holo.holoGradient
-                          : null,
-                      image: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
-                          ? DecorationImage(
-                              image: _avatarImageProvider(_avatarUrl!),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
-                      boxShadow: Holo.cardShadow,
-                    ),
-                    child: _uploadingAvatar
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              color: Colors.white,
-                              strokeCap: StrokeCap.round,
-                            ),
-                          )
-                        : (_avatarUrl == null || _avatarUrl!.isEmpty)
-                        ? const Center(
-                            child: Icon(
-                              Icons.face_rounded,
-                              size: 44,
-                              color: Colors.white,
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-                // Camera badge to re-open the picker.
-                Positioned(
-                  bottom: 2,
-                  right: 2,
-                  child: GestureDetector(
+          if (logicalStep == 1) ...[
+            Center(
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  GestureDetector(
                     onTap: _uploadingAvatar ? null : _pickAvatar,
                     child: Container(
-                      width: 34,
-                      height: 34,
+                      width: 110,
+                      height: 110,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Holo.pink,
-                        border: Border.all(color: Holo.surface, width: 2.5),
+                        gradient: (_avatarUrl == null || _avatarUrl!.isEmpty)
+                            ? Holo.holoGradient
+                            : null,
+                        image: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
+                            ? DecorationImage(
+                                image: _avatarImageProvider(_avatarUrl!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                         boxShadow: Holo.cardShadow,
                       ),
-                      child: const Icon(
-                        Icons.camera_alt_rounded,
-                        size: 16,
-                        color: Colors.white,
+                      child: _uploadingAvatar
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                color: Colors.white,
+                                strokeCap: StrokeCap.round,
+                              ),
+                            )
+                          : (_avatarUrl == null || _avatarUrl!.isEmpty)
+                          ? const Center(
+                              child: Icon(
+                                Icons.face_rounded,
+                                size: 44,
+                                color: Colors.white,
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                  // Camera badge to re-open the picker.
+                  Positioned(
+                    bottom: 2,
+                    right: 2,
+                    child: GestureDetector(
+                      onTap: _uploadingAvatar ? null : _pickAvatar,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Holo.pink,
+                          border: Border.all(color: Holo.surface, width: 2.5),
+                          boxShadow: Holo.cardShadow,
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          if (_avatarUrl != null && _avatarUrl!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Center(
-              child: TextButton.icon(
-                onPressed: _clearAvatar,
-                icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                label: Text(context.tr('characterRemoveAvatar')),
-                style: TextButton.styleFrom(foregroundColor: scheme.error),
+                ],
               ),
             ),
+            if (_avatarUrl != null && _avatarUrl!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton.icon(
+                  onPressed: _clearAvatar,
+                  icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                  label: Text(context.tr('characterRemoveAvatar')),
+                  style: TextButton.styleFrom(foregroundColor: scheme.error),
+                ),
+              ),
+            ],
+            const SizedBox(height: 28),
           ],
-          const SizedBox(height: 28),
 
-          if (_existing == null) ...[
+          if (_existing == null && logicalStep == 0) ...[
             _SectionCard(
               icon: Icons.link_rounded,
               title: context.tr('characterImportFromXTitle'),
@@ -599,153 +692,144 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             const SizedBox(height: 16),
           ],
 
-          // ── Tutor type ─────────────────────────────────────
-          _SectionCard(
-            icon: Icons.translate_rounded,
-            title: context.tr('characterTutorType'),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    _LangChip(
-                      codeLabel: 'JA',
-                      label: context.tr('characterTutorJaShort'),
-                      selected: _language == 'ja',
-                      onTap: () => setState(() => _language = 'ja'),
+          // ── Name & memo ───────────────────────────────────
+          if (logicalStep > 0)
+            _SectionCard(
+              icon: logicalStep == 1
+                  ? Icons.person_outline_rounded
+                  : Icons.auto_awesome_rounded,
+              title: logicalStep == 1
+                  ? context.tr('characterEditorProfileSection')
+                  : context.tr('characterStepPersonalityTitle'),
+              child: Column(
+                children: [
+                  if (logicalStep == 1) ...[
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: _holoFieldDecoration(
+                        labelText: context.tr('name'),
+                        hintText: context.tr('characterNameHint'),
+                        prefixIcon: const Icon(
+                          Icons.badge_outlined,
+                          color: Holo.pink,
+                        ),
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? context.tr('nameRequired')
+                          : null,
                     ),
-                    const SizedBox(width: 10),
-                    _LangChip(
-                      codeLabel: 'KO',
-                      label: context.tr('characterTutorKoShort'),
-                      selected: _language == 'ko',
-                      onTap: () => setState(() => _language = 'ko'),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _taglineController,
+                      decoration: _holoFieldDecoration(
+                        labelText: context.tr('characterTaglineLabel'),
+                        hintText: context.tr('characterTaglineHint'),
+                        prefixIcon: const Icon(
+                          Icons.format_quote_rounded,
+                          color: Holo.pink,
+                        ),
+                      ),
+                      maxLength: 40,
                     ),
                   ],
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Holo.lilac.withValues(alpha: 0.20),
-                    borderRadius: BorderRadius.circular(AppRadii.cardSmall),
-                  ),
-                  child: Text(
-                    _language == 'ja'
-                        ? context.tr('characterTutorJaHelp')
-                        : context.tr('characterTutorKoHelp'),
-                    style: const TextStyle(
-                      color: Holo.inkPlum,
-                      height: 1.4,
-                      fontSize: 13,
+                  if (logicalStep == 2) ...[
+                    Text(
+                      context.tr('characterPersonalityGuide'),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Holo.inkPlumSoft,
+                        height: 1.45,
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _memoController,
+                      decoration: _holoFieldDecoration(
+                        labelText: context.tr('characterMemo'),
+                        hintText: context.tr('characterMemoHint'),
+                        alignLabelWithHint: true,
+                        prefixIcon: const Padding(
+                          padding: EdgeInsets.only(bottom: 56),
+                          child: Icon(Icons.notes_rounded, color: Holo.pink),
+                        ),
+                      ),
+                      maxLines: 4,
+                      minLines: 3,
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-
-          // ── Name & memo ───────────────────────────────────
-          _SectionCard(
-            icon: Icons.person_outline_rounded,
-            title: context.tr('characterEditorProfileSection'),
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration: _holoFieldDecoration(
-                    labelText: _labelDisplayName(context),
-                    hintText: _hintDisplayName(context),
-                    prefixIcon: const Icon(
-                      Icons.badge_outlined,
-                      color: Holo.pink,
-                    ),
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? context.tr('nameRequired')
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _nameSecondaryController,
-                  decoration: _holoFieldDecoration(
-                    labelText: _labelAltName(context),
-                    hintText: _hintAltName(context),
-                    prefixIcon: const Icon(
-                      Icons.translate_rounded,
-                      color: Holo.pink,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _taglineController,
-                  decoration: _holoFieldDecoration(
-                    labelText: context.tr('characterTaglineLabel'),
-                    hintText: context.tr('characterTaglineHint'),
-                    prefixIcon: const Icon(
-                      Icons.format_quote_rounded,
-                      color: Holo.pink,
-                    ),
-                  ),
-                  maxLength: 40,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _memoController,
-                  decoration: _holoFieldDecoration(
-                    labelText: context.tr('characterMemo'),
-                    hintText: context.tr('characterMemoHint'),
-                    alignLabelWithHint: true,
-                    prefixIcon: const Padding(
-                      padding: EdgeInsets.only(bottom: 56),
-                      child: Icon(Icons.notes_rounded, color: Holo.pink),
-                    ),
-                  ),
-                  maxLines: 4,
-                  minLines: 3,
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 28),
 
           // ── Save button ───────────────────────────────────
-          Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_saving) ...[
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: Holo.pink,
+          Row(
+            children: [
+              if (_step > 0) ...[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _saving ? null : () => setState(() => _step--),
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    label: Text(context.tr('characterStepBack')),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(54),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                ],
-                HoloButton(
-                  icon: _existing == null
-                      ? Icons.add_rounded
-                      : Icons.check_rounded,
-                  label: context.tr(_existing == null ? 'create' : 'save'),
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                flex: 2,
+                child: FilledButton.icon(
                   onPressed: _saving
                       ? null
                       : () async {
+                          if (!isLastStep) {
+                            if (logicalStep == 1 &&
+                                !(_formKey.currentState?.validate() ?? false)) {
+                              return;
+                            }
+                            setState(() => _step++);
+                            return;
+                          }
                           if (_formKey.currentState?.validate() ?? false) {
                             await _save();
                           }
                         },
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(
+                          isLastStep
+                              ? Icons.check_rounded
+                              : Icons.arrow_forward_rounded,
+                        ),
+                  label: Text(
+                    context.tr(
+                      isLastStep
+                          ? (_existing == null ? 'create' : 'save')
+                          : 'characterStepNext',
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Holo.pink,
+                    minimumSize: const Size.fromHeight(54),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
         ],
@@ -790,72 +874,6 @@ class _SectionCard extends StatelessWidget {
           const SizedBox(height: 14),
           child,
         ],
-      ),
-    );
-  }
-}
-
-// ── Language selector chip ──────────────────────────────────────────────
-class _LangChip extends StatelessWidget {
-  const _LangChip({
-    required this.codeLabel,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String codeLabel;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadii.pill),
-          gradient: selected ? Holo.holoGradient : null,
-          color: selected ? null : Holo.surfaceCard,
-          border: selected ? null : Border.all(color: Holo.cyan, width: 2),
-          boxShadow: selected ? Holo.cardShadow : const [],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: selected
-                    ? Colors.white.withValues(alpha: 0.22)
-                    : Holo.lilac.withValues(alpha: 0.20),
-              ),
-              child: Text(
-                codeLabel,
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 11,
-                  letterSpacing: 0.4,
-                  color: selected ? Colors.white : Holo.inkPlumSoft,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                color: selected ? Colors.white : Holo.inkPlumSoft,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

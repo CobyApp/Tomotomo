@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/platform/ios_post_layout_frames.dart';
+import '../../../core/locale/study_language.dart';
 import '../../../core/ui/ui.dart';
 import '../../../core/ui/holo/holo_tokens.dart';
 import '../../../core/ui/holo/holo_widgets.dart';
@@ -41,7 +44,8 @@ class ChatsTab extends StatefulWidget {
   ChatsTabState createState() => ChatsTabState();
 }
 
-class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppResumedMixin {
+class ChatsTabState extends State<ChatsTab>
+    with WidgetsBindingObserver, OnAppResumedMixin {
   /// Bottom nav selected this tab — refresh room list.
   void reloadFromTabSelection() {
     unawaited(_load(silent: true));
@@ -75,10 +79,24 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
     }
     try {
       final repo = context.read<ChatRepository>();
+      final targetLanguage = studyLanguageForApp(
+        Localizations.localeOf(context).languageCode,
+      );
+      final characterRepo = context.read<CharacterRecordRepository>();
       final list = await repo.getRecentRooms();
+      final resolved = await Future.wait(
+        list.map((room) => _resolveCharacterForRoom(room, characterRepo)),
+      );
+      final filtered = <ChatRoomSummary>[];
+      for (var i = 0; i < list.length; i++) {
+        final character = resolved[i];
+        if (character == null) continue;
+        final language = character.koreanNationalPersona ? 'ko' : 'ja';
+        if (language == targetLanguage) filtered.add(list[i]);
+      }
       if (!mounted) return;
       setState(() {
-        _rooms = list;
+        _rooms = filtered;
         _loading = false;
         _error = null;
       });
@@ -91,7 +109,10 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
     }
   }
 
-  Widget _roomLeading(ChatRoomSummary r, {double radius = AppSizes.listAvatar}) {
+  Widget _roomLeading(
+    ChatRoomSummary r, {
+    double radius = AppSizes.listAvatar,
+  }) {
     final initial = r.title.isNotEmpty ? r.title.substring(0, 1) : '?';
     final net = r.avatarNetworkUrl?.trim();
     final avatarTextStyle = TextStyle(
@@ -110,9 +131,19 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
     } else {
       final asset = r.avatarAssetPath?.trim();
       if (asset != null && asset.isNotEmpty) {
-        avatar = CircleAvatar(radius: radius, backgroundColor: Holo.surfaceCard, backgroundImage: AssetImage(asset));
+        avatar = CircleAvatar(
+          radius: radius,
+          backgroundColor: Holo.surfaceCard,
+          backgroundImage: asset.startsWith('/')
+              ? FileImage(File(asset))
+              : AssetImage(asset) as ImageProvider,
+        );
       } else {
-        avatar = CircleAvatar(radius: radius, backgroundColor: Holo.surfaceCard, child: Text(initial, style: avatarTextStyle));
+        avatar = CircleAvatar(
+          radius: radius,
+          backgroundColor: Holo.surfaceCard,
+          child: Text(initial, style: avatarTextStyle),
+        );
       }
     }
     // Holo gradient ring frames the avatar; outer size covers the ring's own padding.
@@ -126,10 +157,10 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadii.card),
           onTap: () => _openRoom(r),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -145,7 +176,10 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
                           Expanded(
                             child: Text(
                               r.title,
-                              style: AppTextStyles.listTitle(context).copyWith(color: Holo.inkPlum, fontWeight: FontWeight.w800),
+                              style: AppTextStyles.listTitle(context).copyWith(
+                                color: Holo.inkPlum,
+                                fontWeight: FontWeight.w800,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -154,7 +188,8 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
                             const SizedBox(width: 8),
                             Text(
                               timeText,
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(
                                     color: Holo.inkPlumSoft,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -165,7 +200,9 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
                       const SizedBox(height: 4),
                       Text(
                         _messagePreview(context, r),
-                        style: AppTextStyles.listSubtitle(context).copyWith(color: Holo.inkPlumSoft),
+                        style: AppTextStyles.listSubtitle(
+                          context,
+                        ).copyWith(color: Holo.inkPlumSoft),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -182,7 +219,9 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
 
   String _messagePreview(BuildContext context, ChatRoomSummary r) {
     final raw = r.lastMessageContent;
-    if (raw == null || raw.trim().isEmpty) return context.tr('chatsListNoPreview');
+    if (raw == null || raw.trim().isEmpty) {
+      return context.tr('chatsListNoPreview');
+    }
     final t = raw.trim();
     return t;
   }
@@ -208,10 +247,18 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(ctx.tr('chatsDeleteTitle')),
-        content: Text(ctx.tr('chatsDeleteBodyCharacter', params: {'name': r.title})),
+        content: Text(
+          ctx.tr('chatsDeleteBodyCharacter', params: {'name': r.title}),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.tr('cancel'))),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx.tr('confirm'))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(ctx.tr('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(ctx.tr('confirm')),
+          ),
         ],
       ),
     );
@@ -235,7 +282,9 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
             return true;
           } catch (_) {
             if (!context.mounted) return false;
-            messenger.showSnackBar(SnackBar(content: Text(context.trRead('chatsRoomDeleteFailed'))));
+            messenger.showSnackBar(
+              SnackBar(content: Text(context.trRead('chatsRoomDeleteFailed'))),
+            );
             return false;
           }
         },
@@ -255,7 +304,11 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
             color: scheme.errorContainer,
             borderRadius: BorderRadius.circular(AppRadii.cardSmall),
           ),
-          child: Icon(Icons.delete_outline_rounded, color: scheme.onErrorContainer, size: 28),
+          child: Icon(
+            Icons.delete_outline_rounded,
+            color: scheme.onErrorContainer,
+            size: 28,
+          ),
         ),
         child: _chatRoomCard(context, r),
       ),
@@ -289,48 +342,44 @@ class ChatsTabState extends State<ChatsTab> with WidgetsBindingObserver, OnAppRe
   Widget build(BuildContext context) {
     return AppPageScaffold(
       title: context.tr('chatsTitle'),
-      showPointsChip: true,
       body: _loading
           ? const AppLoadingBody()
           : _error != null
-              ? AppErrorBody(
-                  message: _error!,
-                  onRetry: _load,
-                  retryLabel: context.tr('retry'),
-                )
-              : _rooms.isEmpty
-                  ? AppEmptyState(
-                      icon: Icons.chat_bubble_outline_rounded,
-                      title: context.tr('chatsEmpty'),
-                      subtitle: context.tr('chatsEmptyHint'),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.pageH,
-                          12,
-                          AppSpacing.pageH,
-                          AppSpacing.pageBottom,
-                        ),
-                        itemCount: _rooms.length + 1,
-                        itemBuilder: (context, i) {
-                          if (i == 0) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: Text(
-                                context.tr('chatsDeleteSwipeHint'),
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                      height: 1.35,
-                                    ),
-                              ),
-                            );
-                          }
-                          return _dismissibleChatRoomRow(context, _rooms[i - 1]);
-                        },
+          ? AppErrorBody(
+              message: _error!,
+              onRetry: _load,
+              retryLabel: context.tr('retry'),
+            )
+          : _rooms.isEmpty
+          ? AppEmptyState(
+              icon: Icons.chat_bubble_outline_rounded,
+              title: context.tr('chatsEmpty'),
+              subtitle: context.tr('chatsEmptyHint'),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.pageH,
+                12,
+                AppSpacing.pageH,
+                AppSpacing.pageBottom,
+              ),
+              itemCount: _rooms.length + 1,
+              itemBuilder: (context, i) {
+                if (i == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      context.tr('chatsDeleteSwipeHint'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.35,
                       ),
                     ),
+                  );
+                }
+                return _dismissibleChatRoomRow(context, _rooms[i - 1]);
+              },
+            ),
     );
   }
 }

@@ -7,6 +7,7 @@ class XReadablePage {
   const XReadablePage({required this.text, this.profileImageUrl});
 
   final String text;
+
   /// First HTTPS profile image URL found (e.g. pbs.twimg.com), if any.
   final String? profileImageUrl;
 }
@@ -16,22 +17,34 @@ class XReadablePage {
 /// Uses Jina AI Reader (`r.jina.ai`). X may return login walls; a second request
 /// tries image-summary headers. [profileImageUrl] is parsed from markdown/text.
 class XProfileReader {
-  XProfileReader({Duration? timeout}) : _timeout = timeout ?? const Duration(seconds: 28);
+  XProfileReader({Duration? timeout})
+    : _timeout = timeout ?? const Duration(seconds: 28);
 
   final Duration _timeout;
 
-  static final RegExp _xHost = RegExp(r'^(?:https?://)?(?:www\.)?(?:x\.com|twitter\.com)/', caseSensitive: false);
+  static final RegExp _xHost = RegExp(
+    r'^(?:https?://)?(?:www\.)?(?:x\.com|twitter\.com)/',
+    caseSensitive: false,
+  );
 
   /// Twitter/X CDN profile images (allowlist for suggested avatar).
   static final RegExp twimgProfileImagePattern = RegExp(
-    r'https://pbs\.twimg\.com/profile_images/\d+/[A-Za-z0-9_\-]+\.(?:jpg|jpeg|png|webp)(?:\?[^\s]*)?',
+    r'https://pbs\.twimg\.com/profile_images/\d+/[A-Za-z0-9_.\-]+(?:\?[^\s)\]"<>]*)?',
     caseSensitive: false,
   );
 
   /// First profile image URL in [text], or null.
   static String? extractProfileImageUrlFromText(String text) {
-    final m = twimgProfileImagePattern.firstMatch(text);
-    return m?.group(0)?.trim();
+    final m = twimgProfileImagePattern.firstMatch(
+      text.replaceAll('&amp;', '&'),
+    );
+    final raw = m?.group(0)?.trim();
+    if (raw == null || raw.isEmpty) return null;
+    final uri = Uri.tryParse(raw);
+    if (uri == null) return null;
+    return uri
+        .replace(queryParameters: {...uri.queryParameters, 'name': '400x400'})
+        .toString();
   }
 
   /// Returns canonical `https://x.com/username` or null if not an X/Twitter profile URL.
@@ -45,7 +58,10 @@ class XProfileReader {
     if (uri == null) return null;
     var host = uri.host.toLowerCase();
     if (host.startsWith('www.')) host = host.substring(4);
-    if (host != 'x.com' && host != 'twitter.com' && host != 'mobile.twitter.com' && host != 'mobile.x.com') {
+    if (host != 'x.com' &&
+        host != 'twitter.com' &&
+        host != 'mobile.twitter.com' &&
+        host != 'mobile.x.com') {
       return null;
     }
     var path = uri.path;
@@ -55,13 +71,27 @@ class XProfileReader {
 
     // x.com/i/user/123 → keep path (reader may still fail)
     final first = segments.first.toLowerCase();
-    const reserved = {'home', 'search', 'explore', 'settings', 'i', 'intent', 'share', 'login', 'signup', 'compose'};
+    const reserved = {
+      'home',
+      'search',
+      'explore',
+      'settings',
+      'i',
+      'intent',
+      'share',
+      'login',
+      'signup',
+      'compose',
+    };
     if (reserved.contains(first)) return null;
 
     // x.com/user/status/… → profile root only for persona import
     if (segments.length >= 2) {
       final second = segments[1].toLowerCase();
-      if (second == 'status' || second == 'photo' || second == 'video' || second == 'communitynotes') {
+      if (second == 'status' ||
+          second == 'photo' ||
+          second == 'video' ||
+          second == 'communitynotes') {
         segments = [segments[0]];
       }
     }
@@ -91,23 +121,32 @@ class XProfileReader {
     }
     var body = utf8.decode(res.bodyBytes, allowMalformed: true).trim();
 
-    // Retry with headers that may surface more content / image URLs on dynamic pages.
-    if (body.length < 40) {
+    var profileImageUrl = extractProfileImageUrlFromText(body);
+
+    // Retry when the first rendering omitted image metadata. Some X profiles
+    // return full text but hide their avatar unless image summaries are asked for.
+    if (body.length < 40 || profileImageUrl == null) {
       res = await getOnce({
         'Accept': 'text/plain',
         'X-With-Images-Summary': 'true',
       });
       if (res.statusCode >= 200 && res.statusCode < 300) {
-        body = utf8.decode(res.bodyBytes, allowMalformed: true).trim();
+        final imageBody = utf8
+            .decode(res.bodyBytes, allowMalformed: true)
+            .trim();
+        if (imageBody.length >= 40) body = imageBody;
+        profileImageUrl = extractProfileImageUrlFromText(imageBody);
       }
     }
 
     if (body.length < 40) {
-      throw Exception('Page text too short (login wall or block). Paste profile text below.');
+      throw Exception(
+        'Page text too short (login wall or block). Paste profile text below.',
+      );
     }
+    profileImageUrl ??= extractProfileImageUrlFromText(body);
     final text = body.length > 14000 ? body.substring(0, 14000) : body;
-    final img = extractProfileImageUrlFromText(text);
-    return XReadablePage(text: text, profileImageUrl: img);
+    return XReadablePage(text: text, profileImageUrl: profileImageUrl);
   }
 
   /// Backward-compatible: text only.

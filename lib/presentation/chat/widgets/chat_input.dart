@@ -36,7 +36,7 @@ class ChatInput extends StatelessWidget {
       ),
       decoration: const BoxDecoration(
         color: Holo.surfaceCard,
-        border: Border(top: BorderSide(color: Holo.pink, width: 1.5)),
+        border: Border(top: BorderSide(color: Holo.border)),
       ),
       child: SafeArea(
         top: false,
@@ -46,12 +46,9 @@ class ChatInput extends StatelessWidget {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Holo.surface,
+                  color: Holo.surfaceMuted,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Holo.cyan.withValues(alpha: 0.45),
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: Holo.border),
                 ),
                 child: TextField(
                   controller: controller,
@@ -65,7 +62,7 @@ class ChatInput extends StatelessWidget {
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 18,
-                      vertical: 12,
+                      vertical: 11,
                     ),
                   ),
                   style: const TextStyle(fontSize: 15.5, color: Holo.inkPlum),
@@ -94,8 +91,8 @@ class ChatInput extends StatelessWidget {
                   onTap: canTapSend ? onSend : null,
                   customBorder: const CircleBorder(),
                   child: SizedBox(
-                    width: 44,
-                    height: 44,
+                    width: 46,
+                    height: 46,
                     child: Icon(
                       isGenerating
                           ? Icons.hourglass_empty_rounded

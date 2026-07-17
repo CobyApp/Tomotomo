@@ -24,7 +24,7 @@
 ## 기술 스택
 
 - Flutter
-- Google Generative AI
+- Gemma 4 E2B + LiteRT-LM (`flutter_gemma`, 온디바이스 추론)
 - Provider (상태 관리)
 - Hive CE (로컬 저장소)
 - Google Mobile Ads (리워드 광고)
@@ -46,7 +46,7 @@
    ```bash
    cp .env.example .env
    ```
-   - `GEMINI_API_KEY` 설정
+   - AI API 키는 필요하지 않습니다.
    - 릴리스 광고를 사용할 경우 `ADMOB_REWARDED_ANDROID`와 `ADMOB_REWARDED_IOS` 설정
 
 4. 앱 실행
@@ -55,6 +55,11 @@
      ./run_on_iphone.sh
      ```
    - 시뮬레이터와 Android는 `flutter run`을 사용할 수 있습니다.
+
+5. 최초 실행 시 Gemma 4 E2B 모델(2.59GB)을 다운로드합니다.
+   - 모델은 고정된 Hugging Face 리비전에서 받고 크기와 SHA-256을 검증합니다.
+   - 설치 후 채팅·표현 분석·페르소나 생성은 온디바이스로 동작합니다.
+   - X 프로필 URL 가져오기와 리워드 광고는 네트워크를 사용합니다.
 
 ## 빌드 방법
 

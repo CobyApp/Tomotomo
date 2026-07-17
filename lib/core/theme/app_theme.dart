@@ -20,12 +20,18 @@ class AppTheme {
 
   /// Top color for shell gradient (used by [MainShell]).
   static Color shellGradientTop(ColorScheme scheme) {
-    return Color.alphaBlend(scheme.primary.withValues(alpha: 0.09), scheme.surface);
+    return Color.alphaBlend(
+      scheme.primary.withValues(alpha: 0.09),
+      scheme.surface,
+    );
   }
 
   /// Bottom color for shell gradient.
   static Color shellGradientBottom(ColorScheme scheme) {
-    return Color.alphaBlend(scheme.tertiary.withValues(alpha: 0.07), scheme.surface);
+    return Color.alphaBlend(
+      scheme.tertiary.withValues(alpha: 0.07),
+      scheme.surface,
+    );
   }
 
   /// Full-screen shell gradient behind [Scaffold] (main shell, [AppPageScaffold] root).
@@ -34,10 +40,7 @@ class AppTheme {
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [
-          shellGradientTop(scheme),
-          shellGradientBottom(scheme),
-        ],
+        colors: [shellGradientTop(scheme), shellGradientBottom(scheme)],
       ),
     );
   }
@@ -53,14 +56,32 @@ class AppTheme {
       seedColor: seed,
       brightness: Brightness.light,
       surface: surface,
-      surfaceContainerHighest: Color.alphaBlend(seed.withValues(alpha: 0.10), surface),
-      surfaceContainerHigh: Color.alphaBlend(seed.withValues(alpha: 0.07), surface),
-      surfaceContainer: Color.alphaBlend(seed.withValues(alpha: 0.055), surface),
-      surfaceContainerLow: Color.alphaBlend(seed.withValues(alpha: 0.04), surface),
-      surfaceContainerLowest: Color.alphaBlend(seed.withValues(alpha: 0.025), surface),
+      surfaceContainerHighest: Color.alphaBlend(
+        seed.withValues(alpha: 0.10),
+        surface,
+      ),
+      surfaceContainerHigh: Color.alphaBlend(
+        seed.withValues(alpha: 0.07),
+        surface,
+      ),
+      surfaceContainer: Color.alphaBlend(
+        seed.withValues(alpha: 0.055),
+        surface,
+      ),
+      surfaceContainerLow: Color.alphaBlend(
+        seed.withValues(alpha: 0.04),
+        surface,
+      ),
+      surfaceContainerLowest: Color.alphaBlend(
+        seed.withValues(alpha: 0.025),
+        surface,
+      ),
     );
 
-    final scaffoldTint = Color.alphaBlend(seed.withValues(alpha: 0.045), surface);
+    final scaffoldTint = Color.alphaBlend(
+      seed.withValues(alpha: 0.045),
+      surface,
+    );
 
     return ThemeData(
       useMaterial3: true,
@@ -94,8 +115,16 @@ class AppTheme {
           borderRadius: BorderRadius.circular(14),
           color: seed.withValues(alpha: 0.14),
         ),
-        labelStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800, fontSize: 13),
-        unselectedLabelStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w600, fontSize: 13),
+        labelStyle: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w800,
+          fontSize: 13,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 64,
@@ -128,7 +157,9 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(22),
-          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.35)),
+          side: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: 0.35),
+          ),
         ),
       ),
       listTileTheme: ListTileThemeData(
@@ -140,21 +171,34 @@ class AppTheme {
         style: FilledButton.styleFrom(
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-          textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700, fontSize: 15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
           side: BorderSide(color: scheme.outline.withValues(alpha: 0.40)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontWeight: FontWeight.w700,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -166,7 +210,9 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.25)),
+          borderSide: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: 0.25),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
@@ -176,8 +222,13 @@ class AppTheme {
           borderRadius: BorderRadius.circular(20),
           borderSide: BorderSide(color: scheme.error),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: 0.55)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
+        hintStyle: TextStyle(
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
+        ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: 3,
@@ -186,7 +237,10 @@ class AppTheme {
         backgroundColor: seed,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-        extendedPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+        extendedPadding: const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 0,
+        ),
       ),
       dividerTheme: DividerThemeData(
         color: scheme.outlineVariant.withValues(alpha: 0.35),
@@ -204,7 +258,10 @@ class AppTheme {
         behavior: SnackBarBehavior.floating,
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        contentTextStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w600),
+        contentTextStyle: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: scheme.surface,
@@ -221,16 +278,38 @@ class AppTheme {
         displayLarge: const TextStyle(fontFamily: fontFamily),
         displayMedium: const TextStyle(fontFamily: fontFamily),
         displaySmall: const TextStyle(fontFamily: fontFamily),
-        headlineLarge: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800),
-        headlineMedium: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800),
-        headlineSmall: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700),
-        titleLarge: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800, letterSpacing: -0.4),
-        titleMedium: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700),
-        titleSmall: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w600),
+        headlineLarge: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w800,
+        ),
+        headlineMedium: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w800,
+        ),
+        headlineSmall: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w700,
+        ),
+        titleLarge: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.4,
+        ),
+        titleMedium: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w700,
+        ),
+        titleSmall: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w600,
+        ),
         bodyLarge: const TextStyle(fontFamily: fontFamily, height: 1.45),
         bodyMedium: const TextStyle(fontFamily: fontFamily, height: 1.45),
         bodySmall: const TextStyle(fontFamily: fontFamily, height: 1.35),
-        labelLarge: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700),
+        labelLarge: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w700,
+        ),
         labelMedium: const TextStyle(fontFamily: fontFamily),
         labelSmall: const TextStyle(fontFamily: fontFamily),
       ),
@@ -241,10 +320,7 @@ class AppTheme {
   /// Same as [buildLightTheme] with defaults (e.g. tests).
   static ThemeData get light => buildLightTheme();
 
-  /// HOLO-KITSCH theme — single bright holographic theme seeded from [Holo.pink].
-  /// Surfaces use [Holo.surface]/[Holo.surfaceCard], ink text uses
-  /// [Holo.inkPlum]/[Holo.inkPlumSoft]. App bar is transparent; screens style
-  /// titles via [GlitchText]. Nav bar / tab bar restyled to holo accents.
+  /// Soft holographic theme used by the full application.
   static ThemeData buildHoloTheme({
     ChatThemeData chatExtension = const ChatThemeData(),
   }) {
@@ -275,9 +351,9 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         foregroundColor: Holo.inkPlum,
         titleTextStyle: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w900,
-          letterSpacing: -0.6,
+          fontSize: 24,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.7,
           color: Holo.inkPlum,
           fontFamily: fontFamily,
         ),
@@ -288,11 +364,19 @@ class AppTheme {
         labelColor: Holo.inkPlum,
         unselectedLabelColor: Holo.inkPlumSoft,
         indicator: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: Holo.pink.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(999),
+          color: Holo.pink.withValues(alpha: 0.12),
         ),
-        labelStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w900, fontSize: 13),
-        unselectedLabelStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w600, fontSize: 13),
+        labelStyle: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w800,
+          fontSize: 13,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 64,
@@ -307,7 +391,7 @@ class AppTheme {
             fontFamily: fontFamily,
             fontSize: 11,
             letterSpacing: 0.2,
-            fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             color: selected ? Holo.pink : Holo.inkPlumSoft,
           );
         }),
@@ -324,60 +408,79 @@ class AppTheme {
         color: Holo.surfaceCard,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: Holo.pink.withValues(alpha: 0.35), width: 2),
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Holo.border),
         ),
       ),
       listTileTheme: ListTileThemeData(
         iconColor: Holo.inkPlumSoft,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           elevation: 0,
           backgroundColor: Holo.pink,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-          textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800, fontSize: 15),
+          minimumSize: const Size(0, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontWeight: FontWeight.w800,
+            fontSize: 15,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: Holo.inkPlum,
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-          side: const BorderSide(color: Holo.cyan, width: 2),
+          minimumSize: const Size(0, 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          side: const BorderSide(color: Holo.border),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: Holo.pink,
-          textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontWeight: FontWeight.w800,
+          ),
+          minimumSize: const Size(44, 44),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Holo.surfaceCard,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: Holo.pink.withValues(alpha: 0.30), width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Holo.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Holo.pink, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Holo.pink, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: scheme.error, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: scheme.error),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
         hintStyle: TextStyle(color: Holo.inkPlumSoft.withValues(alpha: 0.7)),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
@@ -386,26 +489,32 @@ class AppTheme {
         highlightElevation: 5,
         backgroundColor: Holo.pink,
         foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-        extendedPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        extendedPadding: const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 0,
+        ),
       ),
       dividerTheme: DividerThemeData(
-        color: Holo.pink.withValues(alpha: 0.20),
+        color: Holo.border,
         thickness: 1,
         space: 1,
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: Holo.surfaceCard,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         elevation: 6,
-        shadowColor: Holo.pink.withValues(alpha: 0.14),
+        shadowColor: Holo.inkPlum.withValues(alpha: 0.12),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        contentTextStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w600),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        contentTextStyle: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: Holo.surfaceCard,
@@ -416,22 +525,47 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-        side: BorderSide(color: Holo.cyan.withValues(alpha: 0.45), width: 2),
+        side: const BorderSide(color: Holo.border),
       ),
       textTheme: TextTheme(
         displayLarge: const TextStyle(fontFamily: fontFamily),
         displayMedium: const TextStyle(fontFamily: fontFamily),
         displaySmall: const TextStyle(fontFamily: fontFamily),
-        headlineLarge: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w900),
-        headlineMedium: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w900),
-        headlineSmall: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800),
-        titleLarge: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w900, letterSpacing: -0.4),
-        titleMedium: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800),
-        titleSmall: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w600),
-        bodyLarge: const TextStyle(fontFamily: fontFamily, height: 1.45),
+        headlineLarge: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.8,
+        ),
+        headlineMedium: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.6,
+        ),
+        headlineSmall: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w800,
+        ),
+        titleLarge: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
+        titleMedium: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.25,
+        ),
+        titleSmall: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w600,
+        ),
+        bodyLarge: const TextStyle(fontFamily: fontFamily, height: 1.5),
         bodyMedium: const TextStyle(fontFamily: fontFamily, height: 1.45),
-        bodySmall: const TextStyle(fontFamily: fontFamily, height: 1.35),
-        labelLarge: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w800),
+        bodySmall: const TextStyle(fontFamily: fontFamily, height: 1.4),
+        labelLarge: const TextStyle(
+          fontFamily: fontFamily,
+          fontWeight: FontWeight.w700,
+        ),
         labelMedium: const TextStyle(fontFamily: fontFamily),
         labelSmall: const TextStyle(fontFamily: fontFamily),
       ),

@@ -3,8 +3,8 @@
 /// **Tutor mode** ([language]): `ja` → Japanese bubble + Korean study notes (learn Japanese).
 /// `ko` → Korean bubble + Japanese study notes (learn Korean). Mirror opposites; see `ai_prompts/`.
 ///
-/// **Names**: [name] is the primary display script for that mode (`ja` → Japanese line, `ko` → Korean).
-/// [nameSecondary] is the optional other script (e.g. Hangul for a `ja` tutor).
+/// **Name**: [name] is the only display name. [nameSecondary] remains solely
+/// for reading records created by older app versions.
 ///
 /// For chat UI and colors use [Character.fromRecord].
 class CharacterRecord {
@@ -32,12 +32,10 @@ class CharacterRecord {
     required this.updatedAt,
   });
 
-  /// Text for list subtitles: [tagline], else [nameSecondary], else first line of [speechStyle], else empty.
+  /// Text for list subtitles: [tagline], else first line of [speechStyle].
   String get listDetailLine {
     final tag = tagline?.trim();
     if (tag != null && tag.isNotEmpty) return tag;
-    final s = nameSecondary?.trim();
-    if (s != null && s.isNotEmpty) return s;
     final m = speechStyle?.trim();
     if (m != null && m.isNotEmpty) {
       final first = m.split(RegExp(r'\r?\n')).first.trim();

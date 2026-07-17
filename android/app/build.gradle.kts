@@ -24,7 +24,10 @@ android {
         applicationId = "com.example.aichat"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 24
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

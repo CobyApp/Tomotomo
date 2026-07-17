@@ -28,7 +28,7 @@ class AppListRow extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: marginBottom),
       child: Material(
-        color: Holo.surfaceCard,
+        color: Holo.surfaceCard.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(AppRadii.card),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadii.card),
@@ -36,11 +36,11 @@ class AppListRow extends StatelessWidget {
           child: Ink(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadii.card),
-              border: Border.all(color: Holo.pink.withValues(alpha: 0.35), width: 2),
+              border: Border.all(color: Holo.pink.withValues(alpha: 0.14)),
               boxShadow: Holo.cardShadow,
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
                   leading,
@@ -51,7 +51,9 @@ class AppListRow extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: AppTextStyles.listTitle(context).copyWith(color: Holo.inkPlum),
+                          style: AppTextStyles.listTitle(
+                            context,
+                          ).copyWith(color: Holo.inkPlum),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -59,7 +61,9 @@ class AppListRow extends StatelessWidget {
                           SizedBox(height: subtitleMaxLines > 1 ? 4 : 2),
                           Text(
                             subtitle!,
-                            style: AppTextStyles.listSubtitle(context).copyWith(color: Holo.inkPlumSoft),
+                            style: AppTextStyles.listSubtitle(
+                              context,
+                            ).copyWith(color: Holo.inkPlumSoft),
                             maxLines: subtitleMaxLines,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -105,7 +109,7 @@ class AppListRowCustom extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: marginBottom),
       child: Material(
-        color: Holo.surfaceCard,
+        color: Holo.surfaceCard.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(AppRadii.card),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadii.card),
@@ -113,11 +117,14 @@ class AppListRowCustom extends StatelessWidget {
           child: Ink(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadii.card),
-              border: Border.all(color: Holo.pink.withValues(alpha: 0.35), width: 2),
+              border: Border.all(color: Holo.pink.withValues(alpha: 0.14)),
               boxShadow: Holo.cardShadow,
             ),
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 14, vertical: verticalPadding),
+              padding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: verticalPadding,
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

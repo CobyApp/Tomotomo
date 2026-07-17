@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../app_tokens.dart';
 import '../app_glass_nav_bar.dart' show NavItemData;
 import 'holo_tokens.dart';
 
-/// HOLO-KITSCH bottom dock. Drop-in shape-compatible replacement for
+/// Soft holographic bottom dock. Drop-in shape-compatible replacement for
 /// [AppGlassNavBar]: same public constructor params ([currentIndex],
 /// [onSelect], [items]). Renders a glossy holo pill with a gradient-highlighted
 /// selected item.
@@ -20,29 +22,30 @@ class HoloNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const dockHeight = 64.0;
+    const dockHeight = 72.0;
 
     final panel = SizedBox(
       height: dockHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          color: Holo.surfaceCard,
-          // Subtle holographic tint over the card surface.
+          borderRadius: BorderRadius.circular(24),
+          color: Holo.surfaceCard.withValues(alpha: 0.74),
+          // Layered translucent color gives the dock a glass-like surface
+          // without using the iOS blur path that is unstable on some devices.
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Holo.pink.withValues(alpha: 0.10),
-              Holo.lilac.withValues(alpha: 0.08),
-              Holo.cyan.withValues(alpha: 0.10),
+              Colors.white.withValues(alpha: 0.72),
+              Holo.lilac.withValues(alpha: 0.16),
+              Holo.cyan.withValues(alpha: 0.13),
             ],
           ),
-          border: Border.all(color: Holo.pink.withValues(alpha: 0.35), width: 2),
-          boxShadow: Holo.cardShadow,
+          border: Border.all(color: Holo.pink.withValues(alpha: 0.22)),
+          boxShadow: Holo.floatingShadow,
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: List.generate(items.length, (i) {
@@ -65,11 +68,13 @@ class HoloNavBar extends StatelessWidget {
       top: false,
       minimum: EdgeInsets.zero,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(16, 0, 16, bottomGap),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: panel,
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.navDockInset,
+          0,
+          AppSpacing.navDockInset,
+          bottomGap,
         ),
+        child: ClipRRect(borderRadius: BorderRadius.circular(24), child: panel),
       ),
     );
   }
@@ -98,7 +103,10 @@ class _HoloNavCell extends StatelessWidget {
           message: data.label,
           waitDuration: const Duration(milliseconds: 450),
           child: InkWell(
-            onTap: onTap,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onTap();
+            },
             borderRadius: BorderRadius.circular(16),
             splashColor: Holo.pink.withValues(alpha: 0.08),
             highlightColor: Colors.transparent,
@@ -106,10 +114,19 @@ class _HoloNavCell extends StatelessWidget {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               decoration: BoxDecoration(
                 gradient: selected ? Holo.holoGradient : null,
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: Holo.pink.withValues(alpha: 0.22),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -117,17 +134,18 @@ class _HoloNavCell extends StatelessWidget {
                 children: [
                   Icon(
                     selected ? data.selectedIcon : data.icon,
-                    size: 22,
+                    size: 23,
                     color: selected ? Colors.white : Holo.inkPlumSoft,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
                     data.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: selected ? FontWeight.w900 : FontWeight.w600,
+                      fontSize: 11,
+                      height: 1.1,
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                       color: selected ? Colors.white : Holo.inkPlumSoft,
                     ),
                   ),

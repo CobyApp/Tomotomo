@@ -10,15 +10,15 @@
 cp .env.example .env
 ```
 
-### Gemini
+### 온디바이스 AI
 
-| 키 | 필수 | 설명 |
-|---|---|---|
-| `GEMINI_API_KEY` | 예 | Google AI Studio에서 발급한 API 키 |
-| `GEMINI_MODEL` | 아니요 | 기본값 `gemini-2.5-flash-lite` |
-| `GEMINI_TEMPERATURE` | 아니요 | 기본값 `0.2` |
-| `GEMINI_MAX_OUTPUT_TOKENS` | 아니요 | 기본값 `768` |
-| `GEMINI_MAX_CHAT_CONTENTS` | 아니요 | 요청에 포함할 최근 대화 수 |
+AI용 환경 변수나 API 키는 필요하지 않습니다. 최초 실행에서 Gemma 4 E2B 모델(2.59GB)을 설치하며, 설치 파일은 고정 리비전·파일 크기·SHA-256으로 검증합니다. 설치 뒤 캐릭터 채팅, 표현 분석, X 페르소나 생성은 LiteRT-LM을 통해 기기 안에서 실행됩니다.
+
+- Android: API 24 이상, ARM64 기기
+- iOS: iOS 16 이상, ARM64 기기
+- GPU를 우선 사용하고 사용할 수 없으면 CPU로 폴백합니다.
+- 설정의 `온디바이스 AI 모델`에서 모델을 삭제하거나 다시 설치할 수 있습니다.
+- 모델 다운로드, X 공개 프로필 가져오기, 리워드 광고에는 네트워크가 필요합니다.
 
 ### 리워드 광고
 

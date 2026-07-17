@@ -281,9 +281,13 @@ class Vocabulary {
       'pronunciation_ja',
       'pronunciationJa',
       'yomi_ja',
+      'yomikata',
+      'furigana',
+      'ruby',
       'katakana',
       'よみ',
       '読み',
+      '読み方',
     ]);
 
     return Vocabulary(word: word, reading: reading, meaning: meaning);

@@ -19,43 +19,7 @@ class ShellDecoCircle extends StatelessWidget {
   }
 }
 
-/// Faint repeating horizontal scanlines over the holo wash — CRT/hologram flavor.
-/// Non-interactive; sits between the gradient wash and the orbs/content.
-class _ScanlineOverlay extends StatelessWidget {
-  const _ScanlineOverlay();
-
-  @override
-  Widget build(BuildContext context) {
-    return const IgnorePointer(
-      child: CustomPaint(
-        painter: _ScanlinePainter(),
-        size: Size.infinite,
-      ),
-    );
-  }
-}
-
-class _ScanlinePainter extends CustomPainter {
-  const _ScanlinePainter();
-
-  static const double _lineGap = 4;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Holo.inkPlum.withValues(alpha: 0.04)
-      ..strokeWidth = 1;
-    for (double y = 0; y < size.height; y += _lineGap) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _ScanlinePainter oldDelegate) => false;
-}
-
-/// Full-screen backdrop: pastel HOLO-KITSCH gradient wash + scanline overlay +
-/// optional gradient orbs (learning / SNS style).
+/// Full-screen backdrop with a pastel wash and optional ambient color orbs.
 class AppShellBackground extends StatelessWidget {
   const AppShellBackground({
     super.key,
@@ -73,7 +37,7 @@ class AppShellBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = gradientPrimaryTop
-        ? [Holo.pink.withValues(alpha: 0.35), Holo.surface]
+        ? [Holo.pink.withValues(alpha: 0.14), Holo.surface]
         : Holo.pageGradient.colors;
 
     return Stack(
@@ -88,22 +52,30 @@ class AppShellBackground extends StatelessWidget {
             ),
           ),
         ),
-        const _ScanlineOverlay(),
         if (showOrbs) ...[
           Positioned(
             top: -60,
             right: -50,
-            child: ShellDecoCircle(size: 220, color: Holo.pink.withValues(alpha: 0.14)),
+            child: ShellDecoCircle(
+              size: 220,
+              color: Holo.pink.withValues(alpha: 0.08),
+            ),
           ),
           Positioned(
             top: 100,
             left: -80,
-            child: ShellDecoCircle(size: 180, color: Holo.lilac.withValues(alpha: 0.12)),
+            child: ShellDecoCircle(
+              size: 180,
+              color: Holo.lilac.withValues(alpha: 0.08),
+            ),
           ),
           Positioned(
             bottom: 60,
             right: -40,
-            child: ShellDecoCircle(size: 140, color: Holo.cyan.withValues(alpha: 0.10)),
+            child: ShellDecoCircle(
+              size: 140,
+              color: Holo.cyan.withValues(alpha: 0.06),
+            ),
           ),
         ],
         child,

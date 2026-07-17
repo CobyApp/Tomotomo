@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/home_widget/notebook_home_widget_sync.dart';
+import '../../core/locale/study_language.dart';
 import '../../core/platform/ios_post_layout_frames.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
 import '../../core/ui/holo/holo_nav_bar.dart';
@@ -27,8 +28,10 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
   static const String _localUserId = 'local';
-  final GlobalKey<WordBookScreenState> _wordBookKey = GlobalKey<WordBookScreenState>();
-  final GlobalKey<CharactersTabState> _charactersTabKey = GlobalKey<CharactersTabState>();
+  final GlobalKey<WordBookScreenState> _wordBookKey =
+      GlobalKey<WordBookScreenState>();
+  final GlobalKey<CharactersTabState> _charactersTabKey =
+      GlobalKey<CharactersTabState>();
   final GlobalKey<ChatsTabState> _chatsTabKey = GlobalKey<ChatsTabState>();
   late final List<Widget> _pages;
 
@@ -52,7 +55,7 @@ class _MainShellState extends State<MainShell> {
         unawaited(
           syncNotebookToHomeWidget(
             repo,
-            defaultLangIfUnset: appLang == 'ja' ? 'ja' : 'ko',
+            defaultLangIfUnset: studyLanguageForApp(appLang),
           ),
         );
       }());
@@ -88,10 +91,11 @@ class _MainShellState extends State<MainShell> {
     return DecoratedBox(
       decoration: const BoxDecoration(gradient: Holo.pageGradient),
       child: Scaffold(
+        extendBody: true,
         backgroundColor: Colors.transparent,
-        body: IndexedStack(
-          index: _index,
-          children: _pages,
+        body: Padding(
+          padding: const EdgeInsets.only(bottom: 78),
+          child: IndexedStack(index: _index, children: _pages),
         ),
         bottomNavigationBar: HoloNavBar(
           currentIndex: _index,

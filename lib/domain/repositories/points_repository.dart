@@ -3,11 +3,8 @@ abstract class PointsRepository {
   /// Deducts [amount] for [reason]. Returns updated balance or failure.
   Future<SpendPointsOutcome> spendPoints(int amount, String reason);
 
-  /// Cached Gemini line analysis for a message and UI language.
-  Future<LineAnalysisCacheRow?> getLineAnalysisCache(
-    String messageServerId,
-    String appLang,
-  );
+  /// Cached AI line analysis for a message and UI language.
+  Future<LineAnalysisCacheRow?> getLineAnalysisCache(String messageServerId, String appLang);
 
   Future<void> saveLineAnalysisCache(
     String messageServerId,
@@ -23,11 +20,7 @@ class SpendPointsOutcome {
   final int balance;
   final String? error;
 
-  const SpendPointsOutcome({
-    required this.ok,
-    required this.balance,
-    this.error,
-  });
+  const SpendPointsOutcome({required this.ok, required this.balance, this.error});
 }
 
 class LineAnalysisCacheRow {

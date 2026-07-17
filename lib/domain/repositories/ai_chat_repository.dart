@@ -2,9 +2,9 @@ import '../entities/character.dart';
 import '../entities/chat_message.dart';
 
 /// Contract for AI-generated chat responses.
-/// Implementations can use Gemini, another HTTP API, or mocks for tests.
+/// Production inference runs locally; tests may provide an in-memory fake.
 abstract class AiChatRepository {
-  /// [appUiLanguageCode] is used for tutor system prompts (e.g. [learning_note] language).
+  /// [appUiLanguageCode] determines the learner's explanation language.
   void initializeForCharacter(
     Character character, {
     String appUiLanguageCode = 'ko',

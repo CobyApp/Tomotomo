@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Remove StoreKit/IAP and unreachable Supabase/social/DM functionality while preserving the local Gemini tutor, Hive data, notebook widget, and rewarded-ad point flow.
+**Goal:** Remove StoreKit/IAP and unreachable Supabase/social/DM functionality while preserving the local AI tutor, Hive data, notebook widget, and rewarded-ad point flow.
 
 **Architecture:** Collapse the point wallet to active spend, cache, and rewarded-ad operations. Simplify chat and character models to AI tutor conversations only. Regenerate Flutter and CocoaPods dependency metadata so native plugin registration matches the remaining code.
 
-**Tech Stack:** Flutter, Dart, Hive CE, Provider, Google Generative AI, Google Mobile Ads, CocoaPods, Xcode
+**Tech Stack:** Flutter, Dart, Hive CE, Provider, local AI runtime, Google Mobile Ads, CocoaPods, Xcode
 
 ---
 
@@ -49,7 +49,7 @@
 - Modify: `lib/presentation/chat/chat_screen.dart`
 - Modify: `lib/presentation/chat/chat_viewmodel.dart`
 - Modify: `lib/presentation/chat/chat_expression_sheet.dart`
-- Modify: `lib/data/repositories/gemini_ai_repository_impl.dart`
+- Modify: `lib/data/repositories/ai_repository_impl.dart`
 - Modify: `lib/domain/repositories/ai_chat_repository.dart`
 - Modify: `lib/domain/entities/chat_message.dart`
 - Delete: `lib/domain/entities/block_relation.dart`
@@ -84,7 +84,7 @@
 
 - [ ] Remove unreferenced authentication, friends, blocked-user, public-character, DM, IAP, and Supabase string keys from both locale maps.
 - [ ] Remove Supabase-era comments and error guidance.
-- [ ] Rewrite README and SETTINGS around local Hive data, Gemini configuration, AdMob configuration, iPhone profile execution, and signing.
+- [ ] Rewrite README and SETTINGS around local Hive data, AI configuration, AdMob configuration, iPhone profile execution, and signing.
 - [ ] Delete obsolete backend migrations and plans that explicitly preserve removed IAP/Supabase behavior.
 - [ ] Search the remaining docs and user-facing strings for `Supabase`, `in_app_purchase`, `StoreKit`, login/friend/block/DM references and resolve all stale matches.
 

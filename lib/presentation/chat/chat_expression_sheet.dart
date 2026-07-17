@@ -66,10 +66,10 @@ Future<void> showChatExpressionSheet(
               return Material(
                 color: Holo.surfaceCard,
                 elevation: 10,
-                shadowColor: Holo.pink.withValues(alpha: 0.28),
+                shadowColor: Holo.inkPlum.withValues(alpha: 0.16),
                 shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-                  side: BorderSide(color: Holo.pink, width: 1.5),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                  side: BorderSide(color: Holo.border),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Column(
@@ -83,7 +83,7 @@ Future<void> showChatExpressionSheet(
                           width: 40,
                           height: 5,
                           decoration: BoxDecoration(
-                            color: Holo.cyan.withValues(alpha: 0.7),
+                            color: Holo.inkPlumSoft.withValues(alpha: 0.35),
                             borderRadius: BorderRadius.circular(2.5),
                           ),
                         ),
@@ -145,12 +145,29 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
 
   bool get _hasBundledAnalysis {
     final message = widget.message;
-    final translation = message.lineTranslation?.trim() ?? '';
-    final explanation = message.explanation?.trim() ?? '';
-    final vocabulary = message.vocabulary;
-    return translation.isNotEmpty &&
-        (explanation.isNotEmpty ||
-            (vocabulary != null && vocabulary.isNotEmpty));
+    return _isCompleteAnalysis(
+      translation: message.lineTranslation,
+      explanation: message.explanation,
+      vocabulary: message.vocabulary,
+    );
+  }
+
+  bool _isCompleteAnalysis({
+    required String? translation,
+    required String? explanation,
+    required List<Vocabulary>? vocabulary,
+  }) {
+    if ((translation?.trim().isEmpty ?? true) ||
+        (explanation?.trim().isEmpty ?? true) ||
+        vocabulary == null ||
+        vocabulary.length < 2) {
+      return false;
+    }
+    return vocabulary.every(
+      (item) =>
+          (item.reading?.trim().isNotEmpty ?? false) &&
+          item.meaning.runes.length >= 15,
+    );
   }
 
   @override
@@ -162,9 +179,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     }
   }
 
-  List<Vocabulary>? _vocabularyFromCache(
-    List<Map<String, dynamic>> values,
-  ) {
+  List<Vocabulary>? _vocabularyFromCache(List<Map<String, dynamic>> values) {
     final vocabulary = <Vocabulary>[];
     for (final value in values) {
       final parsed = Vocabulary.tryParseLoose(
@@ -195,9 +210,11 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
         if (!mounted) return;
         if (cached != null) {
           final vocabulary = _vocabularyFromCache(cached.vocabularyJson);
-          if ((cached.lineTranslation?.trim().isNotEmpty ?? false) ||
-              (cached.explanation?.trim().isNotEmpty ?? false) ||
-              (vocabulary?.isNotEmpty ?? false)) {
+          if (_isCompleteAnalysis(
+            translation: cached.lineTranslation,
+            explanation: cached.explanation,
+            vocabulary: vocabulary,
+          )) {
             setState(() {
               _fetchedAnalysis = ChatMessage(
                 serverId: widget.message.serverId,
@@ -256,7 +273,8 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
   String? get _effectiveExplanation =>
       _fetchedAnalysis?.explanation ?? widget.message.explanation;
 
-  bool get _vocabMeaningUsesHangul => widget.character.expectsKoreanStudyNotes;
+  bool get _vocabMeaningUsesHangul =>
+      context.read<LocaleNotifier>().languageCode == 'ko';
 
   Future<void> _saveWordToNotebook(int index, Vocabulary v) async {
     if (_savedWordIndices.contains(index) || _savingIndices.contains(index)) {
@@ -350,7 +368,8 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final showTranslation = translation != null && translation.isNotEmpty;
     final showNote = note != null && note.isNotEmpty;
 
-    final translationUsesHangul = character.expectsKoreanStudyNotes;
+    final translationUsesHangul =
+        context.read<LocaleNotifier>().languageCode == 'ko';
 
     Widget sectionBlock(
       String label,
@@ -540,7 +559,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
               }),
             ] else if (_analysisLoading || _analysisError != null)
               const SizedBox.shrink()
-            else if (character.expectsKoreanStudyNotes)
+            else if (_vocabMeaningUsesHangul)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: Text(
@@ -553,7 +572,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                   ),
                 ),
               )
-            else if (character.expectsJapaneseStudyNotes)
+            else
               Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: Text(

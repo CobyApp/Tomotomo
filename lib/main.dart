@@ -15,6 +15,7 @@ void main() async {
   await openAllBoxes();
 
   setupInjection();
+  await onDeviceModelManager.initialize();
 
   unawaited(_initAds());
 

@@ -10,7 +10,10 @@ import '../../domain/repositories/character_record_repository.dart';
 import '../../domain/repositories/theme_repository.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
 import '../../data/repositories/local_chat_repository_impl.dart';
-import '../../data/repositories/gemini_ai_repository_impl.dart';
+import '../../data/repositories/litert_lm_ai_repository_impl.dart';
+import '../../data/on_device/flutter_gemma_ai_runtime.dart';
+import '../../data/on_device/on_device_ai_runtime.dart';
+import '../../data/on_device/on_device_model_manager.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import '../../data/repositories/local_points_repository_impl.dart';
 import '../../data/repositories/character_record_repository_impl.dart';
@@ -20,45 +23,36 @@ import '../../presentation/points/points_balance_notifier.dart';
 import '../../data/celebrity_persona/celebrity_persona_suggester.dart';
 
 /// Registers app-wide dependencies. Single place for DI (Dependency Inversion).
-/// Optional overrides for tests (avoid real API keys / network).
-void setupInjection({
-  String? geminiApiKey,
-  String? geminiModel,
-  double? geminiTemperature,
-  int? geminiMaxOutputTokens,
-}) {
+/// Optional runtime override keeps platform inference out of unit tests.
+void setupInjection({OnDeviceAiRuntime? aiRuntime}) {
   chatRepository = LocalChatRepositoryImpl(Hive.box(HiveBoxes.chats));
   final pts = LocalPointsRepositoryImpl(Hive.box(HiveBoxes.points));
   pointsRepository = pts;
   localPointsRepository = pts;
   rewardedAdService = RewardedAdService();
-  aiChatRepository = GeminiAiRepositoryImpl(
-    apiKey: geminiApiKey,
-    model: geminiModel,
-    temperature: geminiTemperature,
-    maxOutputTokens: geminiMaxOutputTokens,
-  );
+  onDeviceAiRuntime = aiRuntime ?? FlutterGemmaAiRuntime();
+  onDeviceModelManager = OnDeviceModelManager(onDeviceAiRuntime);
+  aiChatRepository = LiteRtLmAiRepositoryImpl(onDeviceAiRuntime);
   profileRepository = ProfileRepositoryImpl(Hive.box(HiveBoxes.settings));
-  characterRecordRepository =
-      CharacterRecordRepositoryImpl(Hive.box(HiveBoxes.characters));
+  characterRecordRepository = CharacterRecordRepositoryImpl(Hive.box(HiveBoxes.characters));
   themeRepository = ThemeRepositoryImpl(Hive.box(HiveBoxes.settings));
-  savedExpressionRepository =
-      SavedExpressionRepositoryImpl(Hive.box(HiveBoxes.wordbook));
-  celebrityPersonaSuggester = CelebrityPersonaSuggester(
-    apiKey: geminiApiKey,
-    model: geminiModel,
-  );
+  savedExpressionRepository = SavedExpressionRepositoryImpl(Hive.box(HiveBoxes.wordbook));
+  celebrityPersonaSuggester = CelebrityPersonaSuggester(onDeviceAiRuntime);
 }
 
 /// Set by [setupInjection]. Used by [App] to provide to widget tree.
 late ChatRepository chatRepository;
 late PointsRepository pointsRepository;
+
 /// Concrete points repo (same instance as [pointsRepository]) so the ad UI
 /// can call rewarded-ad-specific methods not on the [PointsRepository] interface.
 late LocalPointsRepositoryImpl localPointsRepository;
 late RewardedAdService rewardedAdService;
+late OnDeviceAiRuntime onDeviceAiRuntime;
+late OnDeviceModelManager onDeviceModelManager;
 late AiChatRepository aiChatRepository;
 late ProfileRepository profileRepository;
+
 /// Assigned when [PointsBalanceNotifier] is created in [App].
 PointsBalanceNotifier? pointsBalanceNotifier;
 late CharacterRecordRepository characterRecordRepository;
