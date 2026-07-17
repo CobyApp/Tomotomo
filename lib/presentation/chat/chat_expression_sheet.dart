@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/ui/app_tokens.dart';
-import '../../core/ui/holo/holo_tokens.dart';
-import '../../core/ui/holo/holo_widgets.dart';
+import '../../core/ui/paper/paper_tokens.dart';
+import '../../core/ui/paper/paper_widgets.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/saved_expression.dart';
@@ -63,15 +63,16 @@ Future<void> showChatExpressionSheet(
             snapSizes: const <double>[0.32, 0.58, 0.9, 1.0],
             snapAnimationDuration: const Duration(milliseconds: 280),
             builder: (ctx, scrollController) {
-              return Material(
-                color: Holo.surfaceCard,
-                elevation: 10,
-                shadowColor: Holo.inkPlum.withValues(alpha: 0.16),
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-                  side: BorderSide(color: Holo.border),
-                ),
+              final p = ctx.paper;
+              return Container(
                 clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: p.card,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
+                  border: Border.all(color: p.cardEdge),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -83,7 +84,7 @@ Future<void> showChatExpressionSheet(
                           width: 40,
                           height: 5,
                           decoration: BoxDecoration(
-                            color: Holo.inkPlumSoft.withValues(alpha: 0.35),
+                            color: p.cardEdge,
                             borderRadius: BorderRadius.circular(2.5),
                           ),
                         ),
@@ -324,11 +325,12 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final character = widget.character;
     final tr = sheetContext.tr;
     final scheme = Theme.of(sheetContext).colorScheme;
+    final p = context.paper;
 
     final messageStyle = TextStyle(
       fontSize: 17,
       height: 1.5,
-      color: Holo.inkPlum,
+      color: p.ink,
       fontWeight: FontWeight.w500,
       fontFamily: character.assistantMessagePrefersHangulFont
           ? 'Pretendard'
@@ -337,20 +339,20 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final meaningStyle = TextStyle(
       fontSize: 14,
       height: 1.42,
-      color: Holo.inkPlumSoft,
+      color: p.ink,
       fontFamily: _vocabMeaningUsesHangul ? 'Pretendard' : null,
     );
-    final sectionLabelStyle = const TextStyle(
+    final sectionLabelStyle = TextStyle(
       fontSize: 13,
       height: 1.2,
-      fontWeight: FontWeight.w900,
-      color: Holo.pink,
-      letterSpacing: 0.15,
+      fontWeight: FontWeight.w800,
+      color: p.coral,
+      letterSpacing: 0.4,
     );
     final sectionBodyStyle = TextStyle(
       fontSize: 15,
       height: 1.5,
-      color: Holo.inkPlum,
+      color: p.ink,
       fontFamily: character.assistantMessagePrefersHangulFont
           ? 'Pretendard'
           : null,
@@ -359,7 +361,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final wordStyle = TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.w700,
-      color: Holo.inkPlum,
+      color: p.ink,
       fontFamily: vocabWordUsesPretendard ? 'Pretendard' : null,
     );
 
@@ -377,12 +379,14 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       bool useHangulBody = false,
     }) {
       return Padding(
-        padding: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.only(top: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(label, style: sectionLabelStyle),
             const SizedBox(height: 6),
+            _DashedRule(color: p.cardEdge),
+            const SizedBox(height: 8),
             Text(
               body,
               style: sectionBodyStyle.copyWith(
@@ -407,8 +411,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
         28 + bottomPad,
       ),
       children: [
-        HoloCard(
-          dashed: true,
+        PaperCard(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           child: Text(message.content, style: messageStyle),
         ),
@@ -421,18 +424,18 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                 padding: const EdgeInsets.only(top: 12),
                 child: Row(
                   children: [
-                    const SizedBox(
+                    SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Holo.pink,
+                        color: p.coral,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Text(
                       tr('expressionAnalysisLoading'),
-                      style: const TextStyle(color: Holo.inkPlumSoft),
+                      style: TextStyle(color: p.inkSoft),
                     ),
                   ],
                 ),
@@ -448,10 +451,11 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                       style: TextStyle(color: scheme.error),
                     ),
                     const SizedBox(height: 8),
-                    HoloButton(
+                    PaperButton(
                       label: tr('retry'),
                       icon: Icons.refresh_rounded,
                       onPressed: _loadAnalysis,
+                      expand: false,
                     ),
                   ],
                 ),
@@ -472,7 +476,12 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
             if (_effectiveVocabulary != null &&
                 _effectiveVocabulary!.isNotEmpty) ...[
               const SizedBox(height: 14),
-              Divider(height: 1, color: Holo.pink.withValues(alpha: 0.2)),
+              Text(
+                tr('expressionVocabularyLabel'),
+                style: sectionLabelStyle,
+              ),
+              const SizedBox(height: 6),
+              _DashedRule(color: p.cardEdge),
               const SizedBox(height: 10),
               ..._effectiveVocabulary!.asMap().entries.map((e) {
                 final i = e.key;
@@ -492,8 +501,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            HoloChip(
-                              filled: false,
+                            StampTicket(
                               child: Text.rich(
                                 TextSpan(
                                   style: wordStyle,
@@ -502,17 +510,17 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                                     if (hasReading)
                                       TextSpan(
                                         text: ' (${vocab.reading})',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w500,
                                           fontSize: 14,
-                                          color: Holo.inkPlumSoft,
+                                          color: p.inkSoft,
                                         ),
                                       ),
                                   ],
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 5),
+                            const SizedBox(height: 6),
                             Text(vocab.meaning, style: meaningStyle),
                           ],
                         ),
@@ -527,13 +535,13 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                           width: 44,
                           height: 44,
                           child: _savingIndices.contains(i)
-                              ? const Center(
+                              ? Center(
                                   child: SizedBox(
                                     width: 22,
                                     height: 22,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: Holo.pink,
+                                      color: p.coral,
                                     ),
                                   ),
                                 )
@@ -548,7 +556,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                                         ? Icons.check_circle_rounded
                                         : Icons.add_circle_rounded,
                                     size: 28,
-                                    color: done ? Holo.cyan : Holo.pink,
+                                    color: done ? p.stampBlue : p.coral,
                                   ),
                                 ),
                         ),
@@ -567,7 +575,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                   style: TextStyle(
                     fontSize: 14,
                     height: 1.4,
-                    color: scheme.tertiary,
+                    color: p.inkSoft,
                     fontFamily: 'Pretendard',
                   ),
                 ),
@@ -580,7 +588,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                   style: TextStyle(
                     fontSize: 14,
                     height: 1.4,
-                    color: scheme.tertiary,
+                    color: p.inkSoft,
                   ),
                 ),
               ),
@@ -589,4 +597,44 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       ],
     );
   }
+}
+
+/// Thin dashed rule under a section label — matches [JournalNote]'s divider
+/// styling without depending on its private painter.
+class _DashedRule extends StatelessWidget {
+  const _DashedRule({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(double.infinity, 1),
+      painter: _DashedRulePainter(color: color),
+    );
+  }
+}
+
+class _DashedRulePainter extends CustomPainter {
+  const _DashedRulePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const dashWidth = 5.0;
+    const dashGap = 4.0;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+    var x = 0.0;
+    while (x < size.width) {
+      canvas.drawLine(Offset(x, 0), Offset(x + dashWidth, 0), paint);
+      x += dashWidth + dashGap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRulePainter oldDelegate) =>
+      oldDelegate.color != color;
 }

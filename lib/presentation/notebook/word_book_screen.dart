@@ -5,9 +5,12 @@ import 'package:provider/provider.dart';
 
 import '../../core/home_widget/notebook_home_widget_sync.dart';
 import '../../core/locale/study_language.dart';
-import '../../core/ui/ui.dart';
-import '../../core/ui/holo/holo_tokens.dart';
-import '../../core/ui/holo/holo_widgets.dart';
+import '../../core/ui/app_tokens.dart';
+import '../../core/ui/paper/paper_scaffold.dart';
+import '../../core/ui/paper/paper_status_views.dart';
+import '../../core/ui/paper/paper_theme.dart';
+import '../../core/ui/paper/paper_tokens.dart';
+import '../../core/ui/paper/paper_widgets.dart';
 import '../../core/widgets/on_app_resumed_mixin.dart';
 import '../../domain/entities/saved_expression.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
@@ -180,7 +183,7 @@ class WordBookScreenState extends State<WordBookScreen>
   }
 
   Widget _dismissibleWordRow(BuildContext context, SavedExpression e) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.paper;
     final legacyBlock = e.explanation?.trim();
     final hasLegacy = legacyBlock != null && legacyBlock.isNotEmpty;
     final (reading, meaningBody) = _parseNotebookTranslation(e.translation);
@@ -188,14 +191,22 @@ class WordBookScreenState extends State<WordBookScreen>
     final word = (e.content ?? '').trim().isEmpty ? '—' : e.content!.trim();
     final usePretendard = e.notebookLang == 'ko';
 
-    // Mirrors chat expression sheet: headline word chip, optional reading chip, then gloss line.
-    final chipTextStyle = TextStyle(
+    // Mirrors chat expression sheet: cute headword, optional reading, then gloss line.
+    final wordStyle = cuteDisplay(
+      fontSize: 18,
+      fontWeight: FontWeight.w800,
+      color: p.ink,
+    );
+    final readingStyle = TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      color: p.inkSoft,
       fontFamily: usePretendard ? 'Pretendard' : null,
     );
     final meaningStyle = TextStyle(
       fontSize: 13,
       height: 1.4,
-      color: Holo.inkPlumSoft,
+      color: p.ink,
       fontFamily: usePretendard ? 'Pretendard' : null,
     );
 
@@ -234,16 +245,17 @@ class WordBookScreenState extends State<WordBookScreen>
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 22),
           decoration: BoxDecoration(
-            color: scheme.errorContainer,
-            borderRadius: BorderRadius.circular(AppRadii.card),
+            color: p.coral.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(PaperRadii.card),
+            border: Border.all(color: p.coral.withValues(alpha: 0.3)),
           ),
           child: Icon(
             Icons.delete_outline_rounded,
-            color: scheme.onErrorContainer,
+            color: p.coralDeep,
             size: 28,
           ),
         ),
-        child: HoloCard(
+        child: PaperCard(
           child: SizedBox(
             width: double.infinity,
             child: Column(
@@ -254,12 +266,9 @@ class WordBookScreenState extends State<WordBookScreen>
                   spacing: 8,
                   runSpacing: 4,
                   children: [
-                    HoloChip(child: Text(word, style: chipTextStyle)),
+                    Text(word, style: wordStyle),
                     if (reading != null && reading.isNotEmpty)
-                      HoloChip(
-                        filled: false,
-                        child: Text(reading, style: chipTextStyle),
-                      ),
+                      Text('($reading)', style: readingStyle),
                   ],
                 ),
                 if (hasGlossLine) ...[
@@ -268,14 +277,14 @@ class WordBookScreenState extends State<WordBookScreen>
                 ],
                 if (hasLegacy) ...[
                   const SizedBox(height: 10),
-                  Divider(height: 1, color: Holo.pink.withValues(alpha: 0.2)),
+                  Divider(height: 1, color: p.cardEdge),
                   const SizedBox(height: 8),
                   Text(
                     context.tr('notebookLegacyNoteLabel'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: Holo.inkPlumSoft,
+                      color: p.inkSoft,
                       fontFamily: usePretendard ? 'Pretendard' : null,
                     ),
                   ),
@@ -284,7 +293,7 @@ class WordBookScreenState extends State<WordBookScreen>
                     legacyBlock,
                     maxLines: 6,
                     overflow: TextOverflow.ellipsis,
-                    style: meaningStyle,
+                    style: meaningStyle.copyWith(color: p.inkSoft),
                   ),
                 ],
               ],
@@ -297,7 +306,8 @@ class WordBookScreenState extends State<WordBookScreen>
 
   @override
   Widget build(BuildContext context) {
-    return AppPageScaffold(
+    final p = context.paper;
+    return PaperScaffold(
       title: context.tr('notebookTitle'),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -314,25 +324,24 @@ class WordBookScreenState extends State<WordBookScreen>
               children: [
                 Text(
                   context.tr('notebookSubtitle'),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    height: 1.35,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: p.inkSoft, height: 1.35),
                 ),
               ],
             ),
           ),
           Expanded(
             child: !_langInitialized || _loading
-                ? const AppLoadingBody()
+                ? const PaperLoadingBody()
                 : _error != null
-                ? AppErrorBody(
+                ? PaperErrorBody(
                     message: _error!,
                     onRetry: () => unawaited(_load()),
                     retryLabel: context.tr('retry'),
                   )
                 : _items.isEmpty
-                ? AppEmptyState(
+                ? PaperEmptyState(
                     icon: Icons.menu_book_outlined,
                     title: context.tr('notebookEmpty'),
                     subtitle: _notebookLang == 'ko'
@@ -370,12 +379,7 @@ class WordBookScreenState extends State<WordBookScreen>
                           child: Text(
                             context.tr('chatsDeleteSwipeHint'),
                             style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                  height: 1.35,
-                                ),
+                                ?.copyWith(color: p.inkSoft, height: 1.35),
                           ),
                         );
                       }
@@ -397,28 +401,22 @@ class _StudyLauncherCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.paper;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadii.card),
+          borderRadius: BorderRadius.circular(PaperRadii.card),
           child: Ink(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Holo.pink.withValues(alpha: 0.92),
-                  Holo.lilac.withValues(alpha: 0.92),
-                  Holo.cyan.withValues(alpha: 0.88),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(AppRadii.card),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.55)),
-              boxShadow: Holo.floatingShadow,
+              color: p.coral,
+              borderRadius: BorderRadius.circular(PaperRadii.card),
+              boxShadow: [
+                BoxShadow(color: p.coralDeep, offset: const Offset(0, 3)),
+              ],
             ),
             child: Row(
               children: [
