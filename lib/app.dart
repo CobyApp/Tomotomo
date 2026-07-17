@@ -54,6 +54,8 @@ class App extends StatelessWidget {
             scaffoldMessengerKey: appScaffoldMessengerKey,
             title: 'トモトモ',
             theme: context.watch<ThemeNotifier>().theme,
+            darkTheme: context.watch<ThemeNotifier>().darkTheme,
+            themeMode: context.watch<ThemeNotifier>().mode,
             locale: context.watch<LocaleNotifier>().locale,
             supportedLocales: const [Locale('ko'), Locale('ja')],
             localizationsDelegates: const [
