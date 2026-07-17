@@ -6,10 +6,10 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/ui/ui.dart';
+import '../../../core/ui/app_tokens.dart';
 import '../../../core/locale/study_language.dart';
-import '../../../core/ui/holo/holo_tokens.dart';
-import '../../../core/ui/holo/holo_widgets.dart';
+import '../../../core/ui/paper/paper_tokens.dart';
+import '../../../core/ui/paper/paper_widgets.dart';
 import '../../../data/celebrity_persona/celebrity_persona_suggester.dart';
 import '../../../domain/entities/character_record.dart';
 import '../../../domain/repositories/character_record_repository.dart';
@@ -20,40 +20,37 @@ import '../points/points_balance_notifier.dart';
 import '../points/points_topup_prompt.dart';
 
 /// Single local user id (no auth).
-/// Quiet card field decoration shared by every text input on this form.
-InputDecoration _holoFieldDecoration({
+/// Quiet paper-card field decoration shared by every text input on this form.
+InputDecoration _paperFieldDecoration(
+  BuildContext context, {
   String? labelText,
   String? hintText,
   Widget? prefixIcon,
   bool alignLabelWithHint = false,
 }) {
-  const radius = BorderRadius.all(Radius.circular(16));
+  final p = context.paper;
+  final radius = BorderRadius.circular(PaperRadii.button);
   return InputDecoration(
     labelText: labelText,
     hintText: hintText,
     prefixIcon: prefixIcon,
     alignLabelWithHint: alignLabelWithHint,
     filled: true,
-    fillColor: Holo.surfaceCard,
-    labelStyle: const TextStyle(
-      color: Holo.inkPlum,
-      fontWeight: FontWeight.w700,
-    ),
-    floatingLabelStyle: const TextStyle(
-      color: Holo.inkPlum,
-      fontWeight: FontWeight.w800,
-    ),
-    border: const OutlineInputBorder(
+    fillColor: p.card,
+    labelStyle: TextStyle(color: p.ink, fontWeight: FontWeight.w700),
+    floatingLabelStyle: TextStyle(color: p.ink, fontWeight: FontWeight.w800),
+    hintStyle: TextStyle(color: p.inkSoft),
+    border: OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: Holo.border),
+      borderSide: BorderSide(color: p.cardEdge),
     ),
-    enabledBorder: const OutlineInputBorder(
+    enabledBorder: OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: Holo.border),
+      borderSide: BorderSide(color: p.cardEdge),
     ),
-    focusedBorder: const OutlineInputBorder(
+    focusedBorder: OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: Holo.pink, width: 1.5),
+      borderSide: BorderSide(color: p.coral, width: 2),
     ),
   );
 }
@@ -406,6 +403,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final p = context.paper;
     final stepCount = _existing == null ? 3 : 2;
     final logicalStep = _existing == null ? _step : _step + 1;
     final isLastStep = _step == stepCount - 1;
@@ -439,8 +437,8 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                           'total': '$stepCount',
                         },
                       ),
-                      style: const TextStyle(
-                        color: Holo.pink,
+                      style: TextStyle(
+                        color: p.coral,
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
                       ),
@@ -449,10 +447,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                     Text(
                       stepTitle,
                       style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            color: Holo.inkPlum,
-                            fontWeight: FontWeight.w900,
-                          ),
+                          ?.copyWith(color: p.ink, fontWeight: FontWeight.w900),
                     ),
                   ],
                 ),
@@ -465,8 +460,8 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             child: LinearProgressIndicator(
               value: (_step + 1) / stepCount,
               minHeight: 7,
-              backgroundColor: Holo.lilac.withValues(alpha: 0.16),
-              valueColor: const AlwaysStoppedAnimation(Holo.pink),
+              backgroundColor: p.cardEdge,
+              valueColor: AlwaysStoppedAnimation(p.coral),
             ),
           ),
           const SizedBox(height: 24),
@@ -514,8 +509,8 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                       height: 110,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: (_avatarUrl == null || _avatarUrl!.isEmpty)
-                            ? Holo.holoGradient
+                        color: (_avatarUrl == null || _avatarUrl!.isEmpty)
+                            ? p.coral
                             : null,
                         image: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
                             ? DecorationImage(
@@ -523,7 +518,14 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                                 fit: BoxFit.cover,
                               )
                             : null,
-                        boxShadow: Holo.cardShadow,
+                        boxShadow: [
+                          BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
+                          BoxShadow(
+                            color: p.softShadow,
+                            blurRadius: 18,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
                       child: _uploadingAvatar
                           ? const Center(
@@ -555,9 +557,11 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                         height: 34,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Holo.pink,
-                          border: Border.all(color: Holo.surface, width: 2.5),
-                          boxShadow: Holo.cardShadow,
+                          color: p.coral,
+                          border: Border.all(color: p.card, width: 2.5),
+                          boxShadow: [
+                            BoxShadow(color: p.hardShadow, offset: const Offset(0, 2)),
+                          ],
                         ),
                         child: const Icon(
                           Icons.camera_alt_rounded,
@@ -593,21 +597,18 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                 children: [
                   Text(
                     context.tr('characterImportFromXLegal'),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Holo.inkPlumSoft,
-                      height: 1.35,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: p.inkSoft, height: 1.35),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _xUrlController,
                     enabled: !_anyPersonaImportBusy,
-                    decoration: _holoFieldDecoration(
+                    decoration: _paperFieldDecoration(
+                      context,
                       labelText: context.tr('characterImportFromXHint'),
-                      prefixIcon: const Icon(
-                        Icons.tag_rounded,
-                        color: Holo.pink,
-                      ),
+                      prefixIcon: Icon(Icons.tag_rounded, color: p.coral),
                     ),
                     keyboardType: TextInputType.url,
                     autocorrect: false,
@@ -618,17 +619,18 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (_importUrlBusy) ...[
-                          const SizedBox(
+                          SizedBox(
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Holo.pink,
+                              color: p.coral,
                             ),
                           ),
                           const SizedBox(width: 10),
                         ],
-                        HoloButton(
+                        PaperButton(
+                          expand: false,
                           icon: Icons.auto_fix_high_rounded,
                           label: _importUrlBusy
                               ? context.tr('characterImportFromXBusy')
@@ -645,7 +647,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                     context.tr('characterImportFromXPaste'),
                     style: AppTextStyles.sectionLabel(
                       context,
-                    ).copyWith(fontSize: 13, color: Holo.inkPlum),
+                    ).copyWith(fontSize: 13, color: p.ink),
                   ),
                   const SizedBox(height: 6),
                   TextField(
@@ -653,7 +655,8 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                     enabled: !_anyPersonaImportBusy,
                     maxLines: 5,
                     minLines: 3,
-                    decoration: _holoFieldDecoration(
+                    decoration: _paperFieldDecoration(
+                      context,
                       hintText: context.tr('characterImportFromXPasteHint'),
                       alignLabelWithHint: true,
                     ),
@@ -664,17 +667,18 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (_importPasteBusy) ...[
-                          const SizedBox(
+                          SizedBox(
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Holo.pink,
+                              color: p.coral,
                             ),
                           ),
                           const SizedBox(width: 10),
                         ],
-                        HoloButton(
+                        PaperButton(
+                          expand: false,
                           icon: Icons.content_paste_rounded,
                           label: _importPasteBusy
                               ? context.tr('characterImportFromXBusy')
@@ -706,13 +710,11 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                   if (logicalStep == 1) ...[
                     TextFormField(
                       controller: _nameController,
-                      decoration: _holoFieldDecoration(
+                      decoration: _paperFieldDecoration(
+                        context,
                         labelText: context.tr('name'),
                         hintText: context.tr('characterNameHint'),
-                        prefixIcon: const Icon(
-                          Icons.badge_outlined,
-                          color: Holo.pink,
-                        ),
+                        prefixIcon: Icon(Icons.badge_outlined, color: p.coral),
                       ),
                       textCapitalization: TextCapitalization.words,
                       validator: (v) => (v == null || v.trim().isEmpty)
@@ -722,12 +724,13 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _taglineController,
-                      decoration: _holoFieldDecoration(
+                      decoration: _paperFieldDecoration(
+                        context,
                         labelText: context.tr('characterTaglineLabel'),
                         hintText: context.tr('characterTaglineHint'),
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           Icons.format_quote_rounded,
-                          color: Holo.pink,
+                          color: p.coral,
                         ),
                       ),
                       maxLength: 40,
@@ -736,21 +739,21 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                   if (logicalStep == 2) ...[
                     Text(
                       context.tr('characterPersonalityGuide'),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Holo.inkPlumSoft,
-                        height: 1.45,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.45),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _memoController,
-                      decoration: _holoFieldDecoration(
+                      decoration: _paperFieldDecoration(
+                        context,
                         labelText: context.tr('characterMemo'),
                         hintText: context.tr('characterMemoHint'),
                         alignLabelWithHint: true,
-                        prefixIcon: const Padding(
-                          padding: EdgeInsets.only(bottom: 56),
-                          child: Icon(Icons.notes_rounded, color: Holo.pink),
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.only(bottom: 56),
+                          child: Icon(Icons.notes_rounded, color: p.coral),
                         ),
                       ),
                       maxLines: 4,
@@ -772,9 +775,11 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                     icon: const Icon(Icons.arrow_back_rounded),
                     label: Text(context.tr('characterStepBack')),
                     style: OutlinedButton.styleFrom(
+                      foregroundColor: p.ink,
+                      side: BorderSide(color: p.cardEdge),
                       minimumSize: const Size.fromHeight(54),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(PaperRadii.button),
                       ),
                     ),
                   ),
@@ -783,10 +788,35 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
               ],
               Expanded(
                 flex: 2,
-                child: FilledButton.icon(
-                  onPressed: _saving
-                      ? null
-                      : () async {
+                child: _saving
+                    ? Container(
+                        height: 54,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: p.inkSoft,
+                          borderRadius: BorderRadius.circular(
+                            PaperRadii.button,
+                          ),
+                        ),
+                        child: const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      )
+                    : PaperButton(
+                        icon: isLastStep
+                            ? Icons.check_rounded
+                            : Icons.arrow_forward_rounded,
+                        label: context.tr(
+                          isLastStep
+                              ? (_existing == null ? 'create' : 'save')
+                              : 'characterStepNext',
+                        ),
+                        onPressed: () async {
                           if (!isLastStep) {
                             if (logicalStep == 1 &&
                                 !(_formKey.currentState?.validate() ?? false)) {
@@ -799,35 +829,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                             await _save();
                           }
                         },
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Icon(
-                          isLastStep
-                              ? Icons.check_rounded
-                              : Icons.arrow_forward_rounded,
-                        ),
-                  label: Text(
-                    context.tr(
-                      isLastStep
-                          ? (_existing == null ? 'create' : 'save')
-                          : 'characterStepNext',
-                    ),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Holo.pink,
-                    minimumSize: const Size.fromHeight(54),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                ),
+                      ),
               ),
             ],
           ),
@@ -852,21 +854,22 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return HoloCard(
+    final p = context.paper;
+    return PaperCard(
       padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 22, color: Holo.pink),
+              Icon(icon, size: 22, color: p.coral),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   title,
                   style: AppTextStyles.sectionLabel(
                     context,
-                  ).copyWith(color: Holo.inkPlum),
+                  ).copyWith(color: p.ink),
                 ),
               ),
             ],

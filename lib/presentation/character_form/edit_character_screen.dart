@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/ui/ui.dart';
+import '../../core/ui/paper/paper_scaffold.dart';
 import '../../domain/entities/character_record.dart';
 import '../locale/l10n_context.dart';
 import 'custom_character_editor_body.dart';
@@ -13,7 +13,7 @@ class EditCharacterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppPageScaffold(
+    return PaperScaffold(
       title: context.tr('editCharacterTitle'),
       subtitle: context.tr('editCharacterSubtitle'),
       transparentBackground: false,

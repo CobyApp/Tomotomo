@@ -8,9 +8,11 @@ import 'package:provider/provider.dart';
 
 import '../../../core/platform/ios_post_layout_frames.dart';
 import '../../../core/locale/study_language.dart';
-import '../../../core/ui/ui.dart';
-import '../../../core/ui/holo/holo_tokens.dart';
-import '../../../core/ui/holo/holo_widgets.dart';
+import '../../../core/ui/app_tokens.dart';
+import '../../../core/ui/paper/paper_scaffold.dart';
+import '../../../core/ui/paper/paper_status_views.dart';
+import '../../../core/ui/paper/paper_tokens.dart';
+import '../../../core/ui/paper/paper_widgets.dart';
 import '../../../core/widgets/on_app_resumed_mixin.dart';
 import '../../../data/character/characters_data.dart';
 import '../../../domain/entities/character.dart';
@@ -109,110 +111,91 @@ class ChatsTabState extends State<ChatsTab>
     }
   }
 
-  Widget _roomLeading(
-    ChatRoomSummary r, {
-    double radius = AppSizes.listAvatar,
-  }) {
+  Widget _roomLeading(ChatRoomSummary r, {double size = 52}) {
+    final p = context.paper;
     final initial = r.title.isNotEmpty ? r.title.substring(0, 1) : '?';
     final net = r.avatarNetworkUrl?.trim();
-    final avatarTextStyle = TextStyle(
-      fontSize: radius * 0.65,
-      color: Holo.inkPlum,
-      fontWeight: FontWeight.w800,
-    );
-    Widget avatar;
+    Widget inner;
     if (net != null && net.isNotEmpty) {
-      avatar = CircleAvatar(
-        radius: radius,
-        backgroundColor: Holo.surfaceCard,
-        foregroundImage: NetworkImage(net),
-        child: Text(initial, style: avatarTextStyle),
-      );
+      inner = Image(image: NetworkImage(net), fit: BoxFit.cover);
     } else {
       final asset = r.avatarAssetPath?.trim();
       if (asset != null && asset.isNotEmpty) {
-        avatar = CircleAvatar(
-          radius: radius,
-          backgroundColor: Holo.surfaceCard,
-          backgroundImage: asset.startsWith('/')
-              ? FileImage(File(asset))
-              : AssetImage(asset) as ImageProvider,
-        );
+        final provider = asset.startsWith('/')
+            ? FileImage(File(asset)) as ImageProvider
+            : AssetImage(asset) as ImageProvider;
+        inner = Image(image: provider, fit: BoxFit.cover);
       } else {
-        avatar = CircleAvatar(
-          radius: radius,
-          backgroundColor: Holo.surfaceCard,
-          child: Text(initial, style: avatarTextStyle),
+        inner = Center(
+          child: Text(
+            initial,
+            style: TextStyle(
+              fontSize: size * 0.42,
+              fontWeight: FontWeight.w800,
+              color: p.coral,
+            ),
+          ),
         );
       }
     }
-    // Holo gradient ring frames the avatar; outer size covers the ring's own padding.
-    return HoloGradientRing(size: radius * 2 + 4, child: avatar);
+    return PolaroidAvatar(size: size, child: inner);
   }
 
   Widget _chatRoomCard(BuildContext context, ChatRoomSummary r) {
+    final p = context.paper;
     final timeText = _listTimeLabel(context, r.lastMessageAt);
-    return HoloCard(
-      padding: EdgeInsets.zero,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          onTap: () => _openRoom(r),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
+    return PaperCard(
+      onTap: () => _openRoom(r),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _roomLeading(r),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _roomLeading(r),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              r.title,
-                              style: AppTextStyles.listTitle(context).copyWith(
-                                color: Holo.inkPlum,
-                                fontWeight: FontWeight.w800,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (timeText.isNotEmpty) ...[
-                            const SizedBox(width: 8),
-                            Text(
-                              timeText,
-                              style: Theme.of(context).textTheme.labelMedium
-                                  ?.copyWith(
-                                    color: Holo.inkPlumSoft,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _messagePreview(context, r),
-                        style: AppTextStyles.listSubtitle(
-                          context,
-                        ).copyWith(color: Holo.inkPlumSoft),
-                        maxLines: 2,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        r.title,
+                        style: AppTextStyles.listTitle(context).copyWith(
+                          color: p.ink,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                    ),
+                    if (timeText.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        timeText,
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: p.inkSoft,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
                     ],
-                  ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _messagePreview(context, r),
+                  style: AppTextStyles.listSubtitle(
+                    context,
+                  ).copyWith(color: p.inkSoft),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -265,7 +248,7 @@ class ChatsTabState extends State<ChatsTab>
   }
 
   Widget _dismissibleChatRoomRow(BuildContext context, ChatRoomSummary r) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = context.paper;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Dismissible(
@@ -301,12 +284,13 @@ class ChatsTabState extends State<ChatsTab>
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 22),
           decoration: BoxDecoration(
-            color: scheme.errorContainer,
-            borderRadius: BorderRadius.circular(AppRadii.cardSmall),
+            color: p.coral.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(PaperRadii.card),
+            border: Border.all(color: p.coral.withValues(alpha: 0.3)),
           ),
           child: Icon(
             Icons.delete_outline_rounded,
-            color: scheme.onErrorContainer,
+            color: p.coralDeep,
             size: 28,
           ),
         ),
@@ -340,18 +324,19 @@ class ChatsTabState extends State<ChatsTab>
 
   @override
   Widget build(BuildContext context) {
-    return AppPageScaffold(
+    final p = context.paper;
+    return PaperScaffold(
       title: context.tr('chatsTitle'),
       body: _loading
-          ? const AppLoadingBody()
+          ? const PaperLoadingBody()
           : _error != null
-          ? AppErrorBody(
+          ? PaperErrorBody(
               message: _error!,
               onRetry: _load,
               retryLabel: context.tr('retry'),
             )
           : _rooms.isEmpty
-          ? AppEmptyState(
+          ? PaperEmptyState(
               icon: Icons.chat_bubble_outline_rounded,
               title: context.tr('chatsEmpty'),
               subtitle: context.tr('chatsEmptyHint'),
@@ -370,10 +355,9 @@ class ChatsTabState extends State<ChatsTab>
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Text(
                       context.tr('chatsDeleteSwipeHint'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        height: 1.35,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: p.inkSoft, height: 1.35),
                     ),
                   );
                 }
