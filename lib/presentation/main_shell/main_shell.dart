@@ -6,8 +6,8 @@ import '../../core/home_widget/notebook_home_widget_sync.dart';
 import '../../core/locale/study_language.dart';
 import '../../core/platform/ios_post_layout_frames.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
-import '../../core/ui/holo/holo_nav_bar.dart';
-import '../../core/ui/holo/holo_tokens.dart';
+import '../../core/ui/paper/paper_nav_bar.dart';
+import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/ui.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../points/points_balance_notifier.dart';
@@ -88,8 +88,8 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(gradient: Holo.pageGradient),
+    return ColoredBox(
+      color: context.paper.paperBg,
       child: Scaffold(
         extendBody: true,
         backgroundColor: Colors.transparent,
@@ -97,7 +97,7 @@ class _MainShellState extends State<MainShell> {
           padding: const EdgeInsets.only(bottom: 78),
           child: IndexedStack(index: _index, children: _pages),
         ),
-        bottomNavigationBar: HoloNavBar(
+        bottomNavigationBar: PaperNavBar(
           currentIndex: _index,
           onSelect: _onNavSelect,
           items: [

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../presentation/locale/l10n_context.dart';
 import '../../presentation/points/points_balance_notifier.dart';
 import '../../presentation/points/points_usage_screen.dart';
-import 'holo/holo_tokens.dart';
+import 'paper/paper_tokens.dart';
 
 void openPointsUsageScreen(BuildContext context) {
   Navigator.of(context).push<void>(
@@ -66,6 +66,7 @@ class _PointsChipAnimatedState extends State<_PointsChipAnimated>
   @override
   Widget build(BuildContext context) {
     final label = widget.balance != null ? '${widget.balance}' : '—';
+    final p = context.paper;
 
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 2),
@@ -79,27 +80,27 @@ class _PointsChipAnimatedState extends State<_PointsChipAnimated>
             child: AnimatedBuilder(
               animation: _flash,
               builder: (context, child) {
-                // Short pop + color flash toward lemon on balance increase, settles back to normal chip look.
+                // Short pop + stamp-ink flash toward stampBlue on balance
+                // increase, settles back to the plain dashed-ticket look.
                 final t = _flash.value;
                 final pulse = t < 0.5 ? t * 2 : (1 - t) * 2;
                 final scale = 1.0 + 0.16 * pulse;
                 final borderColor =
-                    Color.lerp(Holo.border, Holo.lemon, pulse) ?? Holo.border;
+                    Color.lerp(p.coral, p.stampBlue, pulse) ?? p.coral;
                 return Transform.scale(
                   scale: scale,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
+                      horizontal: 11,
                       vertical: 7,
                     ),
                     decoration: BoxDecoration(
-                      color: Holo.surfaceCard,
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: borderColor),
+                      border: Border.all(color: borderColor, width: 1.5),
                       boxShadow: pulse > 0
                           ? [
                               BoxShadow(
-                                color: Holo.lemon.withValues(
+                                color: p.stampBlue.withValues(
                                   alpha: 0.45 * pulse,
                                 ),
                                 blurRadius: 14,
@@ -110,17 +111,17 @@ class _PointsChipAnimatedState extends State<_PointsChipAnimated>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.auto_awesome_rounded,
-                          size: 16,
-                          color: Holo.pink,
+                          size: 15,
+                          color: borderColor,
                         ),
                         const SizedBox(width: 5),
                         Text(
                           label,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w800,
-                            color: Holo.inkPlum,
+                            color: borderColor,
                             fontSize: 13,
                           ),
                         ),

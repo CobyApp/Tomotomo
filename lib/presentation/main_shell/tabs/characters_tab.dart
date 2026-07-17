@@ -11,8 +11,10 @@ import '../../../domain/repositories/chat_repository.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
 import '../../../domain/repositories/character_record_repository.dart';
 import '../../../core/ui/ui.dart';
-import '../../../core/ui/holo/holo_tokens.dart';
-import '../../../core/ui/holo/holo_widgets.dart';
+import '../../../core/ui/paper/paper_tokens.dart';
+import '../../../core/ui/paper/paper_widgets.dart';
+import '../../../core/ui/paper/paper_scaffold.dart';
+import '../../../core/ui/paper/paper_status_views.dart';
 import '../../../data/character/characters_data.dart';
 import '../../chat/chat_screen.dart';
 import '../../character_form/create_character_screen.dart';
@@ -97,34 +99,36 @@ class CharactersTabState extends State<CharactersTab>
     if (created == true) unawaited(_load());
   }
 
-  // ── avatar helper ────────────────────────────────────────
-  Widget _avatarWidget(String? url, String name, {double radius = 28}) {
+  // ── avatar helpers ───────────────────────────────────────
+  Widget _builtInAvatar(Character c, {double size = 64}) {
+    return PolaroidAvatar(
+      size: size,
+      child: Image(image: c.imageProvider, fit: BoxFit.cover),
+    );
+  }
+
+  Widget _recordAvatar(String? url, String name, {double size = 60}) {
+    final p = context.paper;
     Widget inner;
     if (url != null && url.isNotEmpty) {
-      inner = CircleAvatar(
-        radius: radius,
-        backgroundColor: Holo.surfaceCard,
-        backgroundImage: url.startsWith('http')
-            ? NetworkImage(url)
-            : FileImage(File(url)) as ImageProvider,
-      );
+      final provider = url.startsWith('http')
+          ? NetworkImage(url)
+          : FileImage(File(url)) as ImageProvider;
+      inner = Image(image: provider, fit: BoxFit.cover);
     } else {
-      // Initial letter avatar on a holo card backdrop.
       final initial = name.isNotEmpty ? name.substring(0, 1) : '?';
-      inner = CircleAvatar(
-        radius: radius,
-        backgroundColor: Holo.surfaceCard,
+      inner = Center(
         child: Text(
           initial,
           style: TextStyle(
-            fontSize: radius * 0.80,
+            fontSize: size * 0.42,
             fontWeight: FontWeight.w800,
-            color: Holo.inkPlum,
+            color: p.coral,
           ),
         ),
       );
     }
-    return HoloGradientRing(size: radius * 2 + 4, child: inner);
+    return PolaroidAvatar(size: size, child: inner);
   }
 
   @override
@@ -142,19 +146,14 @@ class CharactersTabState extends State<CharactersTab>
         )
         .toList(growable: false);
 
-    return AppPageScaffold(
-      title: context.tr('charactersTitle'),
-      actions: [
-        IconButton(
-          tooltip: context.tr('charactersEmptyMyCta'),
-          onPressed: _loading || _error != null ? null : _openCreateCharacter,
-          icon: const Icon(Icons.person_add_alt_1_rounded),
-        ),
-      ],
+    return PaperScaffold(
+      title: 'トモトモ',
+      useWordmark: true,
+      showPointsChip: true,
       body: _loading
-          ? const AppLoadingBody()
+          ? const PaperLoadingBody()
           : _error != null
-          ? AppErrorBody(
+          ? PaperErrorBody(
               message: _error!,
               onRetry: _load,
               retryLabel: context.tr('retry'),
@@ -167,18 +166,26 @@ class CharactersTabState extends State<CharactersTab>
                 100,
               ),
               children: [
-                ...visibleBuiltIns.map(_builtInTile),
+                PaperButton(
+                  icon: Icons.person_add_alt_1_rounded,
+                  label: context.tr('charactersEmptyMyCta'),
+                  onPressed: _openCreateCharacter,
+                ),
+                const SizedBox(height: AppSpacing.sectionAfter),
+                ...visibleBuiltIns.asMap().entries.map(
+                  (entry) => _builtInTile(entry.value, featured: entry.key == 0),
+                ),
                 ...visibleRecords.map(
                   (record) => _recordTile(record, isMine: true),
                 ),
                 if (visibleRecords.isEmpty)
-                  _EmptyMyCharacterCard(onTap: _openCreateCharacter),
+                  PaperEmptyHint(text: context.tr('charactersEmptyMyCta')),
               ],
             ),
     );
   }
 
-  Widget _builtInTile(Character c) {
+  Widget _builtInTile(Character c, {bool featured = false}) {
     void openChat() => Navigator.push(
       context,
       MaterialPageRoute(
@@ -189,58 +196,52 @@ class CharactersTabState extends State<CharactersTab>
         ),
       ),
     );
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: HoloCard(
-        padding: EdgeInsets.zero,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          onTap: openChat,
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+    final p = context.paper;
+    final card = PaperCard(
+      onTap: openChat,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _builtInAvatar(c),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                HoloGradientRing(
-                  size: 82,
-                  child: CircleAvatar(
-                    radius: 38,
-                    backgroundColor: Holo.surfaceCard,
-                    backgroundImage: c.imageProvider,
-                  ),
+                Text(
+                  c.displayNamePrimary,
+                  style: AppTextStyles.listTitle(
+                    context,
+                  ).copyWith(fontSize: 18, fontWeight: FontWeight.w900, color: p.ink),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        c.displayNamePrimary,
-                        style: AppTextStyles.listTitle(
-                          context,
-                        ).copyWith(fontSize: 18, fontWeight: FontWeight.w900),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        c.tagline.isNotEmpty ? c.tagline : c.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.listSubtitle(
-                          context,
-                        ).copyWith(height: 1.4, color: Holo.inkPlumSoft),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Holo.inkPlumSoft,
+                const SizedBox(height: 6),
+                Text(
+                  c.tagline.isNotEmpty ? c.tagline : c.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.listSubtitle(
+                    context,
+                  ).copyWith(height: 1.4, color: p.inkSoft),
                 ),
               ],
             ),
           ),
-        ),
+          Icon(Icons.chevron_right_rounded, color: p.inkSoft),
+        ],
       ),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: featured
+          ? Stack(
+              clipBehavior: Clip.none,
+              children: [
+                card,
+                const Positioned(top: -6, left: 22, child: WashiTape()),
+              ],
+            )
+          : card,
     );
   }
 
@@ -261,183 +262,125 @@ class CharactersTabState extends State<CharactersTab>
   }
 
   Widget _recordTile(CharacterRecord r, {bool isMine = false}) {
+    final p = context.paper;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.listGap),
-      child: HoloCard(
-        padding: EdgeInsets.zero,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(AppRadii.card),
-            onTap: () => _pushChatWithRecord(r),
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Row(
+      child: PaperCard(
+        onTap: () => _pushChatWithRecord(r),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            _recordAvatar(r.avatarUrl, r.name),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _avatarWidget(r.avatarUrl, r.name, radius: 38),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          r.name,
-                          style: AppTextStyles.listTitle(context).copyWith(
-                            color: Holo.inkPlum,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        if ((r.tagline?.trim().isNotEmpty ?? false))
-                          Text(
-                            r.tagline!.trim(),
-                            style: AppTextStyles.listSubtitle(context).copyWith(
-                              color: Holo.inkPlum,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _recordBio(r),
-                          style: AppTextStyles.listSubtitle(
-                            context,
-                          ).copyWith(color: Holo.inkPlumSoft, height: 1.4),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                  Text(
+                    r.name,
+                    style: AppTextStyles.listTitle(context).copyWith(
+                      color: p.ink,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(width: 8),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (isMine)
-                        _RecordMenu(
-                          onEdit: () async {
-                            final updated = await Navigator.push<bool>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => EditCharacterScreen(record: r),
-                              ),
-                            );
-                            if (updated == true) unawaited(_load());
-                          },
-                          onDelete: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: Text(
-                                  context.tr('charactersDeleteTitle'),
-                                ),
-                                content: Text(
-                                  context.tr(
-                                    'charactersDeleteBody',
-                                    params: {'name': r.name},
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: Text(context.tr('cancel')),
-                                  ),
-                                  FilledButton(
-                                    onPressed: () => Navigator.pop(ctx, true),
-                                    child: Text(context.tr('charactersDelete')),
-                                  ),
-                                ],
-                              ),
-                            );
-                            if (confirm != true || !mounted) return;
-                            try {
-                              await context
-                                  .read<CharacterRecordRepository>()
-                                  .deleteCharacter(r.id);
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    context.tr('charactersDeleted'),
-                                  ),
-                                ),
-                              );
-                              unawaited(_load());
-                            } catch (e) {
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    '${context.tr('charactersDeleteFailed')}: $e',
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                          editLabel: context.tr('charactersEdit'),
-                          deleteLabel: context.tr('charactersDelete'),
-                        ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: Holo.inkPlumSoft,
+                  const SizedBox(height: 4),
+                  if ((r.tagline?.trim().isNotEmpty ?? false))
+                    Text(
+                      r.tagline!.trim(),
+                      style: AppTextStyles.listSubtitle(context).copyWith(
+                        color: p.coral,
+                        fontWeight: FontWeight.w700,
                       ),
-                    ],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _recordBio(r),
+                    style: AppTextStyles.listSubtitle(
+                      context,
+                    ).copyWith(color: p.inkSoft, height: 1.4),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Empty "my character" card ────────────────────────────────
-class _EmptyMyCharacterCard extends StatelessWidget {
-  const _EmptyMyCharacterCard({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return HoloCard(
-      dashed: true,
-      padding: EdgeInsets.zero,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
-            child: Row(
+            const SizedBox(width: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: Holo.holoGradient,
+                if (isMine)
+                  _RecordMenu(
+                    onEdit: () async {
+                      final updated = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditCharacterScreen(record: r),
+                        ),
+                      );
+                      if (updated == true) unawaited(_load());
+                    },
+                    onDelete: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: Text(
+                            context.tr('charactersDeleteTitle'),
+                          ),
+                          content: Text(
+                            context.tr(
+                              'charactersDeleteBody',
+                              params: {'name': r.name},
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: Text(context.tr('cancel')),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: Text(context.tr('charactersDelete')),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm != true || !mounted) return;
+                      try {
+                        await context
+                            .read<CharacterRecordRepository>()
+                            .deleteCharacter(r.id);
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              context.tr('charactersDeleted'),
+                            ),
+                          ),
+                        );
+                        unawaited(_load());
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '${context.tr('charactersDeleteFailed')}: $e',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    editLabel: context.tr('charactersEdit'),
+                    deleteLabel: context.tr('charactersDelete'),
                   ),
-                  child: const Icon(Icons.add_rounded, color: Colors.white),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    context.tr('charactersEmptyMyCta'),
-                    style: const TextStyle(
-                      color: Holo.inkPlum,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
+                Icon(Icons.chevron_right_rounded, color: p.inkSoft),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -459,10 +402,14 @@ class _RecordMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.paper;
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert_rounded, color: Holo.inkPlumSoft),
-      color: Holo.surfaceCard,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      icon: Icon(Icons.more_vert_rounded, color: p.inkSoft),
+      color: p.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: p.cardEdge),
+      ),
       onSelected: (v) {
         if (v == 'edit') onEdit();
         if (v == 'delete') onDelete();
@@ -472,9 +419,9 @@ class _RecordMenu extends StatelessWidget {
           value: 'edit',
           child: Row(
             children: [
-              const Icon(Icons.edit_outlined, size: 18),
+              Icon(Icons.edit_outlined, size: 18, color: p.ink),
               const SizedBox(width: 10),
-              Text(editLabel),
+              Text(editLabel, style: TextStyle(color: p.ink)),
             ],
           ),
         ),
