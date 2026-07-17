@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/ui/holo/holo_tokens.dart';
-import '../../core/ui/ui.dart';
+import '../../core/ui/app_settings_tile.dart';
+import '../../core/ui/app_status_views.dart';
+import '../../core/ui/app_tokens.dart';
+import '../../core/ui/paper/paper_scaffold.dart';
+import '../../core/ui/paper/paper_tokens.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../locale/l10n_context.dart';
@@ -15,7 +18,7 @@ class LanguageSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppPageScaffold(
+    return PaperScaffold(
       title: context.tr('languageTitle'),
       subtitle: context.tr('languageSubtitle'),
       transparentBackground: false,
@@ -28,9 +31,13 @@ class LanguageSettingsScreen extends StatelessWidget {
           final profile = snap.data;
           if (profile == null) {
             return Center(
-              child: Text(context.tr('profileEditLoadError'), style: const TextStyle(color: Holo.inkPlumSoft)),
+              child: Text(
+                context.tr('profileEditLoadError'),
+                style: TextStyle(color: context.paper.inkSoft),
+              ),
             );
           }
+          final p = context.paper;
           return ListView(
             padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 16, AppSpacing.pageH, AppSpacing.pageBottom),
             children: [
@@ -42,7 +49,7 @@ class LanguageSettingsScreen extends StatelessWidget {
                     title: context.tr('langKorean'),
                     showChevron: false,
                     trailing: profile.appLanguage == 'ko'
-                        ? const Icon(Icons.check_circle_rounded, color: Holo.pink, size: 24)
+                        ? Icon(Icons.check_circle_rounded, color: p.coral, size: 24)
                         : null,
                     onTap: () => _set(context, 'ko', profile),
                   ),
@@ -51,7 +58,7 @@ class LanguageSettingsScreen extends StatelessWidget {
                     title: context.tr('langJapanese'),
                     showChevron: false,
                     trailing: profile.appLanguage == 'ja'
-                        ? const Icon(Icons.check_circle_rounded, color: Holo.pink, size: 24)
+                        ? Icon(Icons.check_circle_rounded, color: p.coral, size: 24)
                         : null,
                     onTap: () => _set(context, 'ja', profile),
                   ),

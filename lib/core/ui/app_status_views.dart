@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
 import 'app_tokens.dart';
-import 'holo/holo_tokens.dart';
-import 'holo/holo_widgets.dart';
+import 'paper/paper_tokens.dart';
+import 'paper/paper_widgets.dart';
 
+/// Paper-styled loading state. Kept as a distinct type (rather than a
+/// re-export of [PaperLoadingBody]) so callers unaffected by this migration
+/// keep referencing a stable name.
 class AppLoadingBody extends StatelessWidget {
   const AppLoadingBody({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final p = context.paper;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(
+          SizedBox(
             width: 36,
             height: 36,
             child: CircularProgressIndicator(
               strokeWidth: 3,
-              color: Holo.pink,
+              color: p.coral,
               strokeCap: StrokeCap.round,
             ),
           ),
@@ -41,6 +45,7 @@ class AppErrorBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.paper;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.pageH),
@@ -52,29 +57,25 @@ class AppErrorBody extends StatelessWidget {
               height: 72,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Holo.pink.withValues(alpha: 0.10),
-                border: Border.all(color: Holo.pink.withValues(alpha: 0.16)),
+                color: p.coral.withValues(alpha: 0.10),
+                border: Border.all(color: p.coral.withValues(alpha: 0.30)),
               ),
-              child: const Icon(
-                Icons.error_outline_rounded,
-                size: 34,
-                color: Holo.pink,
-              ),
+              child: Icon(Icons.error_outline_rounded, size: 34, color: p.coral),
             ),
             const SizedBox(height: 18),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                height: 1.45,
-                color: Holo.inkPlum,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(height: 1.45, color: p.ink),
             ),
             const SizedBox(height: 20),
-            HoloButton(
+            PaperButton(
               icon: Icons.refresh_rounded,
               label: retryLabel,
               onPressed: onRetry,
+              expand: false,
             ),
           ],
         ),
@@ -94,9 +95,10 @@ class AppEmptyHint extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(4, 0, 4, 16),
       child: Text(
         text,
-        style: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(color: Holo.inkPlumSoft, height: 1.35),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: context.paper.inkSoft,
+          height: 1.35,
+        ),
       ),
     );
   }
@@ -118,6 +120,7 @@ class AppEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.paper;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -128,15 +131,22 @@ class AppEmptyState extends StatelessWidget {
               width: 88,
               height: 88,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                gradient: Holo.holoGradient,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.65)),
-                boxShadow: Holo.cardShadow,
+                borderRadius: BorderRadius.circular(24),
+                color: p.card,
+                border: Border.all(color: p.cardEdge),
+                boxShadow: [
+                  BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
+                  BoxShadow(
+                    color: p.softShadow,
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: Center(
                 child: emoji != null
                     ? Text(emoji!, style: const TextStyle(fontSize: 38))
-                    : Icon(icon, size: 38, color: Colors.white),
+                    : Icon(icon, size: 38, color: p.coral),
               ),
             ),
             const SizedBox(height: 20),
@@ -144,7 +154,7 @@ class AppEmptyState extends StatelessWidget {
               title,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
-                color: Holo.inkPlum,
+                color: p.ink,
               ),
               textAlign: TextAlign.center,
             ),
@@ -152,10 +162,9 @@ class AppEmptyState extends StatelessWidget {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Holo.inkPlumSoft,
-                height: 1.5,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.5),
             ),
           ],
         ),

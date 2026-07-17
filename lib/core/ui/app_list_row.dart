@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_tokens.dart';
-import 'holo/holo_tokens.dart';
+import 'paper/paper_tokens.dart';
 
 /// Primary list row: avatar / leading + text column + optional trailing (AI badge, etc.).
 class AppListRow extends StatelessWidget {
@@ -25,19 +25,27 @@ class AppListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.paper;
     return Padding(
       padding: EdgeInsets.only(bottom: marginBottom),
       child: Material(
-        color: Holo.surfaceCard.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(AppRadii.card),
+        color: p.card,
+        borderRadius: BorderRadius.circular(PaperRadii.card),
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadii.card),
+          borderRadius: BorderRadius.circular(PaperRadii.card),
           onTap: onTap,
           child: Ink(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadii.card),
-              border: Border.all(color: Holo.pink.withValues(alpha: 0.14)),
-              boxShadow: Holo.cardShadow,
+              borderRadius: BorderRadius.circular(PaperRadii.card),
+              border: Border.all(color: p.cardEdge),
+              boxShadow: [
+                BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
+                BoxShadow(
+                  color: p.softShadow,
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -53,7 +61,7 @@ class AppListRow extends StatelessWidget {
                           title,
                           style: AppTextStyles.listTitle(
                             context,
-                          ).copyWith(color: Holo.inkPlum),
+                          ).copyWith(color: p.ink),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -63,7 +71,7 @@ class AppListRow extends StatelessWidget {
                             subtitle!,
                             style: AppTextStyles.listSubtitle(
                               context,
-                            ).copyWith(color: Holo.inkPlumSoft),
+                            ).copyWith(color: p.inkSoft),
                             maxLines: subtitleMaxLines,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -106,19 +114,27 @@ class AppListRowCustom extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.paper;
     return Padding(
       padding: EdgeInsets.only(bottom: marginBottom),
       child: Material(
-        color: Holo.surfaceCard.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(AppRadii.card),
+        color: p.card,
+        borderRadius: BorderRadius.circular(PaperRadii.card),
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadii.card),
+          borderRadius: BorderRadius.circular(PaperRadii.card),
           onTap: onTap,
           child: Ink(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadii.card),
-              border: Border.all(color: Holo.pink.withValues(alpha: 0.14)),
-              boxShadow: Holo.cardShadow,
+              borderRadius: BorderRadius.circular(PaperRadii.card),
+              border: Border.all(color: p.cardEdge),
+              boxShadow: [
+                BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
+                BoxShadow(
+                  color: p.softShadow,
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Padding(
               padding: EdgeInsets.symmetric(

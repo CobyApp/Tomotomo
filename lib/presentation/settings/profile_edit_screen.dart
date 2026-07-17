@@ -6,9 +6,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/ui/holo/holo_tokens.dart';
-import '../../core/ui/holo/holo_widgets.dart';
-import '../../core/ui/ui.dart';
+import '../../core/ui/app_status_views.dart';
+import '../../core/ui/app_tokens.dart';
+import '../../core/ui/paper/paper_scaffold.dart';
+import '../../core/ui/paper/paper_tokens.dart';
+import '../../core/ui/paper/paper_widgets.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../locale/l10n_context.dart';
@@ -16,33 +18,33 @@ import '../locale/l10n_context.dart';
 /// Single local user id (no auth).
 const String _localUserId = 'local';
 
-/// Quiet card field decoration shared by every text input on this form.
-InputDecoration _holoFieldDecoration({String? labelText, String? hintText}) {
-  const radius = BorderRadius.all(Radius.circular(16));
+/// Quiet paper-card field decoration shared by every text input on this form.
+InputDecoration _paperFieldDecoration(
+  BuildContext context, {
+  String? labelText,
+  String? hintText,
+}) {
+  final p = context.paper;
+  final radius = BorderRadius.circular(PaperRadii.button);
   return InputDecoration(
     labelText: labelText,
     hintText: hintText,
     filled: true,
-    fillColor: Holo.surfaceCard,
-    labelStyle: const TextStyle(
-      color: Holo.inkPlum,
-      fontWeight: FontWeight.w700,
-    ),
-    floatingLabelStyle: const TextStyle(
-      color: Holo.inkPlum,
-      fontWeight: FontWeight.w800,
-    ),
-    border: const OutlineInputBorder(
+    fillColor: p.card,
+    labelStyle: TextStyle(color: p.ink, fontWeight: FontWeight.w700),
+    floatingLabelStyle: TextStyle(color: p.ink, fontWeight: FontWeight.w800),
+    hintStyle: TextStyle(color: p.inkSoft),
+    border: OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: Holo.border),
+      borderSide: BorderSide(color: p.cardEdge),
     ),
-    enabledBorder: const OutlineInputBorder(
+    enabledBorder: OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: Holo.border),
+      borderSide: BorderSide(color: p.cardEdge),
     ),
-    focusedBorder: const OutlineInputBorder(
+    focusedBorder: OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: Holo.pink, width: 1.5),
+      borderSide: BorderSide(color: p.coral, width: 2),
     ),
   );
 }
@@ -206,6 +208,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.paper;
     final Widget body;
     final List<Widget>? actions;
 
@@ -227,15 +230,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         Padding(
           padding: const EdgeInsets.only(right: 12),
           child: _saving
-              ? const SizedBox(
+              ? SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Holo.pink,
+                    color: p.coral,
                   ),
                 )
-              : HoloButton(
+              : PaperButton(
+                  expand: false,
                   icon: Icons.check_rounded,
                   label: context.tr('save'),
                   onPressed: _save,
@@ -254,71 +258,63 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Holo.pink.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadii.cardSmall),
-                border: Border.all(
-                  color: Holo.pink.withValues(alpha: 0.4),
-                  width: 2,
-                ),
+                color: p.coral.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(PaperRadii.card),
+                border: Border.all(color: p.coral.withValues(alpha: 0.4), width: 2),
               ),
-              child: Text(_error!, style: const TextStyle(color: Holo.inkPlum)),
+              child: Text(_error!, style: TextStyle(color: p.ink)),
             ),
             const SizedBox(height: 16),
           ],
           Center(
             child: Stack(
+              clipBehavior: Clip.none,
               alignment: Alignment.bottomRight,
               children: [
-                HoloGradientRing(
-                  size: 112,
-                  child: Material(
-                    color: Holo.surfaceCard,
-                    shape: const CircleBorder(),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
-                      child: SizedBox(
-                        width: 112,
-                        height: 112,
-                        child: _uploadingAvatar
-                            ? const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Holo.pink,
-                                ),
-                              )
-                            : hasPhoto
-                            ? (_isNetworkImagePath(_avatarUrl!.trim())
-                                  ? Image.network(
-                                      _avatarUrl!.trim(),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => const Icon(
-                                        Icons.broken_image_outlined,
-                                        size: 40,
-                                        color: Holo.inkPlumSoft,
-                                      ),
-                                    )
-                                  : Image.file(
-                                      File(_avatarUrl!.trim()),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => const Icon(
-                                        Icons.broken_image_outlined,
-                                        size: 40,
-                                        color: Holo.inkPlumSoft,
-                                      ),
-                                    ))
-                            : const Icon(
-                                Icons.person_outline,
-                                size: 48,
-                                color: Holo.inkPlumSoft,
-                              ),
-                      ),
-                    ),
+                GestureDetector(
+                  onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
+                  child: PolaroidAvatar(
+                    size: 120,
+                    rotate: -0.03,
+                    child: _uploadingAvatar
+                        ? SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: p.coral,
+                            ),
+                          )
+                        : hasPhoto
+                        ? (_isNetworkImagePath(_avatarUrl!.trim())
+                              ? Image.network(
+                                  _avatarUrl!.trim(),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => Icon(
+                                    Icons.broken_image_outlined,
+                                    size: 40,
+                                    color: p.inkSoft,
+                                  ),
+                                )
+                              : Image.file(
+                                  File(_avatarUrl!.trim()),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => Icon(
+                                    Icons.broken_image_outlined,
+                                    size: 40,
+                                    color: p.inkSoft,
+                                  ),
+                                ))
+                        : Icon(
+                            Icons.person_outline,
+                            size: 48,
+                            color: p.coral,
+                          ),
                   ),
                 ),
                 Positioned(
-                  right: 0,
-                  bottom: 0,
+                  right: 2,
+                  bottom: 6,
                   child: GestureDetector(
                     onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
                     child: Container(
@@ -326,9 +322,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       height: 34,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Holo.pink,
-                        border: Border.all(color: Holo.surface, width: 2.5),
-                        boxShadow: Holo.cardShadow,
+                        color: p.coral,
+                        border: Border.all(color: p.card, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(color: p.hardShadow, offset: const Offset(0, 2)),
+                        ],
                       ),
                       child: const Icon(
                         Icons.camera_alt_rounded,
@@ -351,10 +349,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     },
               child: Text(
                 context.tr('profileEditClearPhoto'),
-                style: const TextStyle(
-                  color: Holo.inkPlumSoft,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(color: p.inkSoft, fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -362,14 +357,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           Text(
             context.tr('profilePhotoGalleryHint'),
             textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: Holo.inkPlumSoft),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: p.inkSoft),
           ),
           const SizedBox(height: 28),
           TextFormField(
             controller: _displayNameController,
-            decoration: _holoFieldDecoration(
+            decoration: _paperFieldDecoration(
+              context,
               labelText: context.tr('displayNameLabel'),
               hintText: context.tr('displayNameHint'),
             ),
@@ -379,7 +373,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       );
     }
 
-    return AppPageScaffold(
+    return PaperScaffold(
       title: context.tr('profileEditTitle'),
       subtitle: context.tr('profileEditSubtitle'),
       transparentBackground: false,

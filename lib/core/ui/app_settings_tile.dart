@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'app_tokens.dart';
-import 'holo/holo_tokens.dart';
+import 'paper/paper_tokens.dart';
 
-/// Group of settings rows inside one holo card.
+/// Group of settings rows inside one paper card.
 class AppSettingsPanel extends StatelessWidget {
   const AppSettingsPanel({
     super.key,
@@ -15,20 +15,25 @@ class AppSettingsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.paper;
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        color: Holo.surfaceCard.withValues(alpha: 0.82),
-        border: Border.all(color: Holo.pink.withValues(alpha: 0.14)),
-        boxShadow: Holo.cardShadow,
+        borderRadius: BorderRadius.circular(PaperRadii.card),
+        color: p.card,
+        border: Border.all(color: p.cardEdge),
+        boxShadow: [
+          BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
+          BoxShadow(color: p.softShadow, blurRadius: 18, offset: const Offset(0, 8)),
+        ],
       ),
-      child: Column(children: _divided(children)),
+      child: Column(children: _divided(context, children)),
     );
   }
 
-  List<Widget> _divided(List<Widget> items) {
+  List<Widget> _divided(BuildContext context, List<Widget> items) {
     if (items.isEmpty) return items;
+    final cardEdge = context.paper.cardEdge;
     final out = <Widget>[];
     for (var i = 0; i < items.length; i++) {
       out.add(items[i]);
@@ -38,7 +43,7 @@ class AppSettingsPanel extends StatelessWidget {
             height: 1,
             indent: dividerIndent,
             endIndent: 0,
-            color: Holo.border,
+            color: cardEdge,
           ),
         );
       }
@@ -71,8 +76,9 @@ class AppSettingsNavTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ic = iconColor ?? Holo.pink;
-    final tc = titleColor ?? Holo.inkPlum;
+    final p = context.paper;
+    final ic = iconColor ?? p.coral;
+    final tc = titleColor ?? p.ink;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -97,7 +103,7 @@ class AppSettingsNavTile extends StatelessWidget {
               subtitle!,
               style: AppTextStyles.listSubtitle(
                 context,
-              ).copyWith(color: Holo.inkPlumSoft),
+              ).copyWith(color: p.inkSoft),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             )
@@ -107,7 +113,7 @@ class AppSettingsNavTile extends StatelessWidget {
           (showChevron
               ? Icon(
                   Icons.chevron_right_rounded,
-                  color: Holo.inkPlumSoft.withValues(alpha: 0.7),
+                  color: p.inkSoft.withValues(alpha: 0.7),
                 )
               : null),
       onTap: onTap,

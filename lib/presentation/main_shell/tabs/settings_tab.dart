@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../points/points_balance_notifier.dart';
-import '../../../core/ui/ui.dart';
+import '../../../core/ui/app_settings_tile.dart';
+import '../../../core/ui/app_tokens.dart';
+import '../../../core/ui/paper/paper_scaffold.dart';
+import '../../../core/ui/paper/paper_theme.dart';
+import '../../../core/ui/paper/paper_tokens.dart';
 import '../../locale/l10n_context.dart';
 import '../../settings/language_settings_screen.dart';
 import '../../settings/profile_edit_screen.dart';
@@ -14,7 +18,7 @@ class SettingsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppPageScaffold(
+    return PaperScaffold(
       title: context.tr('settingsTitle'),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -123,7 +127,14 @@ class _SettingsGroupLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
-      child: Text(label, style: AppTextStyles.sectionLabel(context)),
+      child: Text(
+        label,
+        style: cuteDisplay(
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
+          color: context.paper.coral,
+        ),
+      ),
     );
   }
 }
