@@ -40,7 +40,13 @@ Future<void> showChatExpressionSheet(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     useSafeArea: false,
+    // The inner DraggableScrollableSheet owns vertical drag handling (it
+    // resizes between snapSizes); enableDrag stays false so the outer sheet
+    // route doesn't fight it for the gesture. Tapping the scrim above the
+    // sheet, and the explicit close button in the header, are the two ways
+    // out — see the grab handle + close (X) row below.
     enableDrag: false,
+    isDismissible: true,
     barrierColor: Colors.black.withValues(alpha: 0.42),
     builder: (sheetContext) {
       final mq = MediaQuery.of(sheetContext);
@@ -76,18 +82,37 @@ Future<void> showChatExpressionSheet(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Taller grab area (iOS HIG–friendly) without huge visual gap.
+                    // Header: grab handle centered, explicit close (X) button
+                    // so there's always an obvious, discoverable way to leave
+                    // the sheet beyond drag/scrim gestures.
                     SizedBox(
-                      height: 36,
-                      child: Center(
-                        child: Container(
-                          width: 40,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: p.cardEdge,
-                            borderRadius: BorderRadius.circular(2.5),
+                      height: 44,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: p.inkSoft.withValues(alpha: 0.55),
+                              borderRadius: BorderRadius.circular(2.5),
+                            ),
                           ),
-                        ),
+                          Positioned(
+                            right: 4,
+                            child: Tooltip(
+                              message: ctx.tr('expressionSheetCloseTooltip'),
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.close_rounded,
+                                  color: p.inkSoft,
+                                  size: 22,
+                                ),
+                                onPressed: () => Navigator.of(ctx).pop(),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Expanded(
@@ -476,10 +501,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
             if (_effectiveVocabulary != null &&
                 _effectiveVocabulary!.isNotEmpty) ...[
               const SizedBox(height: 14),
-              Text(
-                tr('expressionVocabularyLabel'),
-                style: sectionLabelStyle,
-              ),
+              Text(tr('expressionVocabularyLabel'), style: sectionLabelStyle),
               const SizedBox(height: 6),
               _DashedRule(color: p.cardEdge),
               const SizedBox(height: 10),
@@ -585,11 +607,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                 padding: const EdgeInsets.only(top: 12),
                 child: Text(
                   tr('expressionMissingVocabularyJa'),
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.4,
-                    color: p.inkSoft,
-                  ),
+                  style: TextStyle(fontSize: 14, height: 1.4, color: p.inkSoft),
                 ),
               ),
           ],
