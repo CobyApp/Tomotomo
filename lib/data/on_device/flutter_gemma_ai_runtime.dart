@@ -166,7 +166,7 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
     required String systemInstruction,
     required String prompt,
     double temperature = 0.2,
-    int maxTokens = 4096,
+    int maxTokens = 2048,
   }) {
     final result = Completer<String>();
     _queue = _queue.catchError((_) {}).then((_) async {

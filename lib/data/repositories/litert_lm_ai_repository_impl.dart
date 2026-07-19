@@ -61,7 +61,7 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
     final raw = await _runtime.generateText(
       systemInstruction: buildChatReplySystemPrompt(character),
       prompt: prompt.toString(),
-      maxTokens: 4096,
+      maxTokens: 2048,
     );
     final parsed = chatMessageFromAiJsonMap(extractJsonObject(raw), character);
     _history.add((
@@ -101,7 +101,7 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
         systemInstruction: systemInstruction,
         prompt: prompt,
         temperature: 0.1,
-        maxTokens: 4096,
+        maxTokens: 2048,
       );
       return chatMessageFromAiJsonMap(
         extractJsonObject(raw),
