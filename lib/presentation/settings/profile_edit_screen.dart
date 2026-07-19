@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../core/ui/paper/paper_loading.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -230,14 +231,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         Padding(
           padding: const EdgeInsets.only(right: 12),
           child: _saving
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: p.coral,
-                  ),
-                )
+              ? SizedBox(width: 20, height: 20, child: PaperLoading(size: 9))
               : PaperButton(
                   expand: false,
                   icon: Icons.check_rounded,
@@ -260,7 +254,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               decoration: BoxDecoration(
                 color: p.coral.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(PaperRadii.card),
-                border: Border.all(color: p.coral.withValues(alpha: 0.4), width: 2),
+                border: Border.all(
+                  color: p.coral.withValues(alpha: 0.4),
+                  width: 2,
+                ),
               ),
               child: Text(_error!, style: TextStyle(color: p.ink)),
             ),
@@ -280,10 +277,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         ? SizedBox(
                             width: 28,
                             height: 28,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: p.coral,
-                            ),
+                            child: PaperLoading(size: 9),
                           )
                         : hasPhoto
                         ? (_isNetworkImagePath(_avatarUrl!.trim())
@@ -305,11 +299,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                     color: p.inkSoft,
                                   ),
                                 ))
-                        : Icon(
-                            Icons.person_outline,
-                            size: 48,
-                            color: p.coral,
-                          ),
+                        : Icon(Icons.person_outline, size: 48, color: p.coral),
                   ),
                 ),
                 Positioned(
@@ -325,7 +315,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         color: p.coral,
                         border: Border.all(color: p.card, width: 2.5),
                         boxShadow: [
-                          BoxShadow(color: p.hardShadow, offset: const Offset(0, 2)),
+                          BoxShadow(
+                            color: p.hardShadow,
+                            offset: const Offset(0, 2),
+                          ),
                         ],
                       ),
                       child: const Icon(
@@ -357,7 +350,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           Text(
             context.tr('profilePhotoGalleryHint'),
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: p.inkSoft),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: p.inkSoft),
           ),
           const SizedBox(height: 28),
           TextFormField(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/ui/paper/paper_loading.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -452,10 +453,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                     SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: p.coral,
-                      ),
+                      child: PaperLoading(size: 9),
                     ),
                     const SizedBox(width: 10),
                     Text(
@@ -561,10 +559,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                                   child: SizedBox(
                                     width: 22,
                                     height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: p.coral,
-                                    ),
+                                    child: PaperLoading(size: 9),
                                   ),
                                 )
                               : IconButton(

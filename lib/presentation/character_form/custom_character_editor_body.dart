@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../../core/ui/app_tokens.dart';
 import '../../../core/ui/paper/paper_theme.dart';
 import '../../../core/ui/paper/paper_tokens.dart';
+import '../../../core/ui/paper/paper_loading.dart';
 import '../../../core/ui/paper/paper_widgets.dart';
 import '../../../data/celebrity_persona/celebrity_persona_suggester.dart';
 import '../../../domain/entities/character_record.dart';
@@ -431,23 +432,12 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     required String label,
     required VoidCallback? onPressed,
   }) {
-    final p = context.paper;
-    if (_saving) {
-      return Container(
-        height: 54,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: p.inkSoft,
-          borderRadius: BorderRadius.circular(PaperRadii.button),
-        ),
-        child: const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
-        ),
-      );
-    }
-    return PaperButton(icon: icon, label: label, onPressed: onPressed);
+    return PaperButton(
+      icon: icon,
+      label: label,
+      onPressed: onPressed,
+      busy: _saving,
+    );
   }
 
   // ── PHASE 1: X import (default entry for a new friend) ────────
@@ -474,10 +464,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             children: [
               Text(
                 context.tr('characterImportFromXLegal'),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: p.inkSoft,
-                  height: 1.35,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: p.inkSoft, height: 1.35),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -492,29 +481,11 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                 autocorrect: false,
               ),
               const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (_importUrlBusy) ...[
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: p.coral,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                  ],
-                  PaperButton(
-                    expand: false,
-                    icon: Icons.auto_fix_high_rounded,
-                    label: _importUrlBusy
-                        ? context.tr('characterImportFromXBusy')
-                        : context.tr('characterImportFromXButton'),
-                    onPressed: _importUrlBusy ? null : _importPersonaFromXUrl,
-                  ),
-                ],
+              PaperButton(
+                icon: Icons.auto_fix_high_rounded,
+                label: context.tr('characterImportFromXButton'),
+                onPressed: _importPersonaFromXUrl,
+                busy: _importUrlBusy,
               ),
             ],
           ),
@@ -611,10 +582,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             child: Text(
               tagline,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: p.inkSoft,
-                height: 1.4,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.4),
             ),
           ),
         ],
@@ -625,10 +595,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             title: context.tr('createSummarySpeechLabel'),
             child: Text(
               speech,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: p.ink,
-                height: 1.5,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: p.ink, height: 1.5),
             ),
           ),
         const SizedBox(height: 28),
@@ -787,7 +756,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                           )
                         : null,
                     boxShadow: [
-                      BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
+                      BoxShadow(
+                        color: p.hardShadow,
+                        offset: const Offset(0, 3),
+                      ),
                       BoxShadow(
                         color: p.softShadow,
                         blurRadius: 18,
@@ -797,11 +769,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                   ),
                   child: _uploadingAvatar
                       ? const Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            color: Colors.white,
-                            strokeCap: StrokeCap.round,
-                          ),
+                          child: PaperLoading(size: 9, color: Colors.white),
                         )
                       : (_avatarUrl == null || _avatarUrl!.isEmpty)
                       ? const Center(

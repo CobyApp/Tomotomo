@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'core/ui/paper/paper_loading.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'core/ads/rewarded_ad_service.dart';
@@ -38,8 +39,12 @@ class App extends StatelessWidget {
         Provider<ProfileRepository>.value(value: profileRepository),
         Provider<PointsRepository>.value(value: pointsRepository),
         Provider<LocalPointsRepositoryImpl>.value(value: localPointsRepository),
-        ChangeNotifierProvider<RewardedAdService>.value(value: rewardedAdService),
-        ChangeNotifierProvider<OnDeviceModelManager>.value(value: onDeviceModelManager),
+        ChangeNotifierProvider<RewardedAdService>.value(
+          value: rewardedAdService,
+        ),
+        ChangeNotifierProvider<OnDeviceModelManager>.value(
+          value: onDeviceModelManager,
+        ),
         ChangeNotifierProvider(
           create: (c) {
             final n = PointsBalanceNotifier(c.read<PointsRepository>());
@@ -47,7 +52,9 @@ class App extends StatelessWidget {
             return n;
           },
         ),
-        ChangeNotifierProvider(create: (c) => LocaleNotifier(c.read<ProfileRepository>())),
+        ChangeNotifierProvider(
+          create: (c) => LocaleNotifier(c.read<ProfileRepository>()),
+        ),
         ChangeNotifierProvider(
           create: (_) {
             final n = FriendLanguageNotifier(profileRepository);
@@ -65,10 +72,16 @@ class App extends StatelessWidget {
             return n;
           },
         ),
-        Provider<CharacterRecordRepository>.value(value: characterRecordRepository),
-        Provider<SavedExpressionRepository>.value(value: savedExpressionRepository),
+        Provider<CharacterRecordRepository>.value(
+          value: characterRecordRepository,
+        ),
+        Provider<SavedExpressionRepository>.value(
+          value: savedExpressionRepository,
+        ),
         ChangeNotifierProvider(create: (_) => WordBookRefreshNotifier()),
-        Provider<CelebrityPersonaSuggester>.value(value: celebrityPersonaSuggester),
+        Provider<CelebrityPersonaSuggester>.value(
+          value: celebrityPersonaSuggester,
+        ),
         Provider<ChatBackgroundStore>.value(value: chatBackgroundStore),
       ],
       child: Builder(
@@ -90,7 +103,10 @@ class App extends StatelessWidget {
               final mq = MediaQuery.of(context);
               return MediaQuery(
                 data: mq.copyWith(
-                  textScaler: mq.textScaler.clamp(minScaleFactor: 1.0, maxScaleFactor: 1.3),
+                  textScaler: mq.textScaler.clamp(
+                    minScaleFactor: 1.0,
+                    maxScaleFactor: 1.3,
+                  ),
                 ),
                 child: child!,
               );
@@ -102,7 +118,8 @@ class App extends StatelessWidget {
                 }
                 return Consumer<OnboardingNotifier>(
                   builder: (context, onboarding, _) {
-                    if (onboarding.isLoading) return const _OnboardingGateLoading();
+                    if (onboarding.isLoading)
+                      return const _OnboardingGateLoading();
                     if (onboarding.onboarded == false) {
                       return const OnboardingScreen();
                     }
@@ -127,9 +144,7 @@ class _OnboardingGateLoading extends StatelessWidget {
     final p = context.paper;
     return Scaffold(
       backgroundColor: p.paperBg,
-      body: Center(
-        child: CircularProgressIndicator(strokeWidth: 2, color: p.coral),
-      ),
+      body: Center(child: PaperLoading(size: 9)),
     );
   }
 }

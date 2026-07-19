@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../core/ui/paper/paper_loading.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -175,7 +176,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 child: Text(
                   _error!,
-                  style: TextStyle(color: p.coralDeep, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: p.coralDeep,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             Padding(
@@ -204,10 +208,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             child: SizedBox(
                               width: 24,
                               height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: p.coral,
-                              ),
+                              child: PaperLoading(size: 9),
                             ),
                           )
                         : PaperButton(
@@ -377,7 +378,12 @@ class _StepProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.paper;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 8, AppSpacing.pageH, 4),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.pageH,
+        8,
+        AppSpacing.pageH,
+        4,
+      ),
       child: Row(
         children: List.generate(count, (i) {
           final active = i <= step;
