@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/ui/app_tokens.dart';
+import '../../core/ui/paper/paper_dialog.dart';
 import '../../core/ui/paper/paper_scaffold.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_widgets.dart';
@@ -177,24 +178,14 @@ class OnDeviceModelSetupScreen extends StatelessWidget {
     BuildContext context,
     OnDeviceModelManager manager,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.tr('onDeviceModelDelete')),
-        content: Text(context.tr('onDeviceModelDeleteConfirm')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(context.tr('cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(context.tr('confirm')),
-          ),
-        ],
-      ),
+    final confirmed = await showPaperConfirm(
+      context,
+      title: context.tr('onDeviceModelDelete'),
+      message: context.tr('onDeviceModelDeleteConfirm'),
+      confirmLabel: context.tr('confirm'),
+      destructive: true,
     );
-    if (confirmed == true) await manager.deleteModel();
+    if (confirmed) await manager.deleteModel();
   }
 }
 

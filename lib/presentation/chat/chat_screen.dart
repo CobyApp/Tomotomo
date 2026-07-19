@@ -7,6 +7,7 @@ import '../../core/ui/points_toolbar_chip.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_theme.dart';
 import '../../core/ui/paper/paper_widgets.dart';
+import '../../core/ui/paper/paper_dialog.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
@@ -106,26 +107,13 @@ class _ChatScreenState extends State<ChatScreen>
     ChatViewModel viewModel,
   ) async {
     final name = widget.character.displayNamePrimary;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.tr('chatsDeleteTitle')),
-        content: Text(
-          context.tr('chatsDeleteBodyCharacter', params: {'name': name}),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(context.tr('cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(context.tr('confirm')),
-          ),
-        ],
-      ),
+    final ok = await showPaperConfirm(
+      context,
+      title: context.tr('chatsDeleteTitle'),
+      message: context.tr('chatsDeleteBodyCharacter', params: {'name': name}),
+      confirmLabel: context.tr('confirm'),
     );
-    if (ok != true || !mounted) return;
+    if (!ok || !mounted) return;
     try {
       await viewModel.leaveRoom();
       if (!context.mounted) return;
@@ -292,13 +280,14 @@ class _ChatScreenContent extends StatelessWidget {
                     value: 'report',
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.flag_outlined,
-                          size: 22,
-                          color: p.ink,
-                        ),
+                        Icon(Icons.flag_outlined, size: 22, color: p.ink),
                         const SizedBox(width: 12),
-                        Expanded(child: Text(tr('chatMenuReport'), style: TextStyle(color: p.ink))),
+                        Expanded(
+                          child: Text(
+                            tr('chatMenuReport'),
+                            style: TextStyle(color: p.ink),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -307,13 +296,14 @@ class _ChatScreenContent extends StatelessWidget {
                     value: 'leave',
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.logout_rounded,
-                          size: 22,
-                          color: p.ink,
-                        ),
+                        Icon(Icons.logout_rounded, size: 22, color: p.ink),
                         const SizedBox(width: 12),
-                        Expanded(child: Text(tr('chatMenuLeave'), style: TextStyle(color: p.ink))),
+                        Expanded(
+                          child: Text(
+                            tr('chatMenuLeave'),
+                            style: TextStyle(color: p.ink),
+                          ),
+                        ),
                       ],
                     ),
                   ),

@@ -13,6 +13,7 @@ import '../../../domain/repositories/character_record_repository.dart';
 import '../../../core/ui/ui.dart';
 import '../../../core/ui/paper/paper_tokens.dart';
 import '../../../core/ui/paper/paper_widgets.dart';
+import '../../../core/ui/paper/paper_dialog.dart';
 import '../../../core/ui/paper/paper_scaffold.dart';
 import '../../../core/ui/paper/paper_status_views.dart';
 import '../../../data/character/characters_data.dart';
@@ -173,7 +174,8 @@ class CharactersTabState extends State<CharactersTab>
                 ),
                 const SizedBox(height: AppSpacing.sectionAfter),
                 ...visibleBuiltIns.asMap().entries.map(
-                  (entry) => _builtInTile(entry.value, featured: entry.key == 0),
+                  (entry) =>
+                      _builtInTile(entry.value, featured: entry.key == 0),
                 ),
                 ...visibleRecords.map(
                   (record) => _recordTile(record, isMine: true),
@@ -211,9 +213,11 @@ class CharactersTabState extends State<CharactersTab>
               children: [
                 Text(
                   c.displayNamePrimary,
-                  style: AppTextStyles.listTitle(
-                    context,
-                  ).copyWith(fontSize: 18, fontWeight: FontWeight.w900, color: p.ink),
+                  style: AppTextStyles.listTitle(context).copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: p.ink,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -290,10 +294,9 @@ class CharactersTabState extends State<CharactersTab>
                   if ((r.tagline?.trim().isNotEmpty ?? false))
                     Text(
                       r.tagline!.trim(),
-                      style: AppTextStyles.listSubtitle(context).copyWith(
-                        color: p.coral,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: AppTextStyles.listSubtitle(
+                        context,
+                      ).copyWith(color: p.coral, fontWeight: FontWeight.w700),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -325,31 +328,17 @@ class CharactersTabState extends State<CharactersTab>
                       if (updated == true) unawaited(_load());
                     },
                     onDelete: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: Text(
-                            context.tr('charactersDeleteTitle'),
-                          ),
-                          content: Text(
-                            context.tr(
-                              'charactersDeleteBody',
-                              params: {'name': r.name},
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, false),
-                              child: Text(context.tr('cancel')),
-                            ),
-                            FilledButton(
-                              onPressed: () => Navigator.pop(ctx, true),
-                              child: Text(context.tr('charactersDelete')),
-                            ),
-                          ],
+                      final confirm = await showPaperConfirm(
+                        context,
+                        title: context.tr('charactersDeleteTitle'),
+                        message: context.tr(
+                          'charactersDeleteBody',
+                          params: {'name': r.name},
                         ),
+                        confirmLabel: context.tr('charactersDelete'),
+                        destructive: true,
                       );
-                      if (confirm != true || !mounted) return;
+                      if (!confirm || !mounted) return;
                       try {
                         await context
                             .read<CharacterRecordRepository>()
@@ -357,9 +346,7 @@ class CharactersTabState extends State<CharactersTab>
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(
-                              context.tr('charactersDeleted'),
-                            ),
+                            content: Text(context.tr('charactersDeleted')),
                           ),
                         );
                         unawaited(_load());

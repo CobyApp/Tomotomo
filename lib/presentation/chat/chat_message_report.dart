@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/ui/paper/paper_dialog.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../locale/l10n_context.dart';
@@ -52,24 +53,14 @@ Future<void> confirmAndReportChatMessage(
   required Character character,
 }) async {
   final tr = context.tr;
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(tr('chatReportDialogTitle')),
-      content: Text(tr('chatReportDialogBody')),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: Text(tr('chatReportCancel')),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: Text(tr('chatReportConfirm')),
-        ),
-      ],
-    ),
+  final ok = await showPaperConfirm(
+    context,
+    title: tr('chatReportDialogTitle'),
+    message: tr('chatReportDialogBody'),
+    confirmLabel: tr('chatReportConfirm'),
+    cancelLabel: tr('chatReportCancel'),
   );
-  if (ok != true || !context.mounted) return;
+  if (!ok || !context.mounted) return;
   await _openReportMailDraft(context, message: message);
 }
 
@@ -80,24 +71,14 @@ Future<void> confirmAndReportChatRoom(
   String? chatRoomId,
 }) async {
   final tr = context.tr;
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(tr('chatRoomReportDialogTitle')),
-      content: Text(tr('chatRoomReportDialogBody')),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: Text(tr('chatReportCancel')),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: Text(tr('chatReportConfirm')),
-        ),
-      ],
-    ),
+  final ok = await showPaperConfirm(
+    context,
+    title: tr('chatRoomReportDialogTitle'),
+    message: tr('chatRoomReportDialogBody'),
+    confirmLabel: tr('chatReportConfirm'),
+    cancelLabel: tr('chatReportCancel'),
   );
-  if (ok != true || !context.mounted) return;
+  if (!ok || !context.mounted) return;
   final subject = tr('chatRoomReportSubject');
   final typeLine = tr('chatRoomReportTypeAi');
   final body =

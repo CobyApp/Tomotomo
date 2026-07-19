@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../../core/platform/ios_post_layout_frames.dart';
 import '../../../core/locale/study_language.dart';
 import '../../../core/ui/app_tokens.dart';
+import '../../../core/ui/paper/paper_dialog.dart';
 import '../../../core/ui/paper/paper_scaffold.dart';
 import '../../../core/ui/paper/paper_status_views.dart';
 import '../../../core/ui/paper/paper_tokens.dart';
@@ -162,10 +163,9 @@ class ChatsTabState extends State<ChatsTab>
                     Expanded(
                       child: Text(
                         r.title,
-                        style: AppTextStyles.listTitle(context).copyWith(
-                          color: p.ink,
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: AppTextStyles.listTitle(
+                          context,
+                        ).copyWith(color: p.ink, fontWeight: FontWeight.w800),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -225,25 +225,16 @@ class ChatsTabState extends State<ChatsTab>
     return DateFormat.yMd(loc).format(d);
   }
 
-  Future<bool?> _confirmDeleteRoom(BuildContext context, ChatRoomSummary r) {
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.tr('chatsDeleteTitle')),
-        content: Text(
-          ctx.tr('chatsDeleteBodyCharacter', params: {'name': r.title}),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(ctx.tr('cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(ctx.tr('confirm')),
-          ),
-        ],
+  Future<bool> _confirmDeleteRoom(BuildContext context, ChatRoomSummary r) {
+    return showPaperConfirm(
+      context,
+      title: context.tr('chatsDeleteTitle'),
+      message: context.tr(
+        'chatsDeleteBodyCharacter',
+        params: {'name': r.title},
       ),
+      confirmLabel: context.tr('confirm'),
+      destructive: true,
     );
   }
 
@@ -355,9 +346,10 @@ class ChatsTabState extends State<ChatsTab>
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Text(
                       context.tr('chatsDeleteSwipeHint'),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: p.inkSoft, height: 1.35),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: p.inkSoft,
+                        height: 1.35,
+                      ),
                     ),
                   );
                 }
