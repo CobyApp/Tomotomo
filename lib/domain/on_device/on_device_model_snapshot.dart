@@ -1,4 +1,11 @@
-enum OnDeviceModelPhase { checking, notInstalled, downloading, ready, error }
+enum OnDeviceModelPhase {
+  checking,
+  notInstalled,
+  downloading,
+  finalizing,
+  ready,
+  error,
+}
 
 class OnDeviceModelSnapshot {
   const OnDeviceModelSnapshot({

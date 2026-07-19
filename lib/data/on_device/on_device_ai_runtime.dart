@@ -3,6 +3,7 @@ abstract interface class OnDeviceAiRuntime {
   Future<bool> isModelInstalled();
   Future<void> installModel({
     required void Function(double progress) onProgress,
+    void Function()? onVerifying,
   });
   void cancelInstall();
   Future<void> deleteModel();

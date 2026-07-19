@@ -44,6 +44,7 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
   @override
   Future<void> installModel({
     required void Function(double progress) onProgress,
+    void Function()? onVerifying,
   }) async {
     _cancelToken = CancelToken();
     // A previous download interrupted by an app kill/background leaves an
@@ -63,6 +64,9 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
           .withCancelToken(_cancelToken!)
           .withProgress((value) => onProgress(value / 100))
           .install();
+      // The download is complete; hashing the ~2.59GB artifact takes tens of
+      // seconds. Signal the UI so 100% isn't perceived as a frozen download.
+      onVerifying?.call();
       if (!await _verifyInstalledArtifact(forceHash: true)) {
         await _deleteInstalledArtifact();
         throw const FormatException('다운로드한 Gemma 모델의 무결성 검증에 실패했습니다.');

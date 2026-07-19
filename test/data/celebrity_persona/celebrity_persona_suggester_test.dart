@@ -18,6 +18,7 @@ final class _TokenLimitedRuntime implements OnDeviceAiRuntime {
   @override
   Future<void> installModel({
     required void Function(double progress) onProgress,
+    void Function()? onVerifying,
   }) async {}
   @override
   Future<bool> isModelInstalled() async => true;

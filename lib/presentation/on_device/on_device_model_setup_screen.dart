@@ -245,6 +245,27 @@ class _ModelStatus extends StatelessWidget {
         ),
       );
     }
+    if (snapshot.phase == OnDeviceModelPhase.finalizing) {
+      return _StatusCard(
+        icon: Icons.hourglass_bottom_rounded,
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 3, color: p.coral),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                context.tr('onDeviceModelFinalizing'),
+                style: TextStyle(fontWeight: FontWeight.w700, color: p.ink),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     if (snapshot.phase == OnDeviceModelPhase.ready) {
       return _StatusCard(
         icon: Icons.check_rounded,

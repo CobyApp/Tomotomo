@@ -38,10 +38,12 @@ final class _FakeRuntime implements OnDeviceAiRuntime {
   @override
   Future<void> installModel({
     required void Function(double progress) onProgress,
+    void Function()? onVerifying,
   }) async {
     progressCallback = onProgress;
     onProgress(0.5);
     await installBlock?.future;
+    onVerifying?.call();
     installed = true;
   }
 

@@ -50,6 +50,15 @@ class OnDeviceModelManager extends ChangeNotifier {
             ),
           );
         },
+        // Download finished; artifact integrity is being verified (slow hash).
+        // Move off `downloading` so late progress updates are ignored and the
+        // UI shows a finalizing indicator instead of a stuck 100% bar.
+        onVerifying: () => _setSnapshot(
+          const OnDeviceModelSnapshot(
+            phase: OnDeviceModelPhase.finalizing,
+            progress: 1,
+          ),
+        ),
       );
       _setSnapshot(
         OnDeviceModelSnapshot(
