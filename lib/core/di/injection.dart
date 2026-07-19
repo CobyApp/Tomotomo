@@ -19,6 +19,7 @@ import '../../data/repositories/local_points_repository_impl.dart';
 import '../../data/repositories/character_record_repository_impl.dart';
 import '../../data/repositories/theme_repository_impl.dart';
 import '../../data/repositories/saved_expression_repository_impl.dart';
+import '../../data/rag/local_rag_retriever.dart';
 import '../../data/chat_background/chat_background_store.dart';
 import '../../presentation/points/points_balance_notifier.dart';
 import '../../data/celebrity_persona/celebrity_persona_suggester.dart';
@@ -33,11 +34,16 @@ void setupInjection({OnDeviceAiRuntime? aiRuntime}) {
   rewardedAdService = RewardedAdService();
   onDeviceAiRuntime = aiRuntime ?? FlutterGemmaAiRuntime();
   onDeviceModelManager = OnDeviceModelManager(onDeviceAiRuntime);
-  aiChatRepository = LiteRtLmAiRepositoryImpl(onDeviceAiRuntime);
+  savedExpressionRepository = SavedExpressionRepositoryImpl(Hive.box(HiveBoxes.wordbook));
+  // Offline local RAG: feeds saved vocabulary + relevant past turns into replies.
+  localRagRetriever = LocalRagRetriever(savedExpressionRepository, chatRepository);
+  aiChatRepository = LiteRtLmAiRepositoryImpl(
+    onDeviceAiRuntime,
+    ragRetriever: localRagRetriever,
+  );
   profileRepository = ProfileRepositoryImpl(Hive.box(HiveBoxes.settings));
   characterRecordRepository = CharacterRecordRepositoryImpl(Hive.box(HiveBoxes.characters));
   themeRepository = ThemeRepositoryImpl(Hive.box(HiveBoxes.settings));
-  savedExpressionRepository = SavedExpressionRepositoryImpl(Hive.box(HiveBoxes.wordbook));
   celebrityPersonaSuggester = CelebrityPersonaSuggester(onDeviceAiRuntime);
   chatBackgroundStore = ChatBackgroundStore(Hive.box(HiveBoxes.settings));
 }
@@ -60,5 +66,6 @@ PointsBalanceNotifier? pointsBalanceNotifier;
 late CharacterRecordRepository characterRecordRepository;
 late ThemeRepository themeRepository;
 late SavedExpressionRepository savedExpressionRepository;
+late LocalRagRetriever localRagRetriever;
 late CelebrityPersonaSuggester celebrityPersonaSuggester;
 late ChatBackgroundStore chatBackgroundStore;

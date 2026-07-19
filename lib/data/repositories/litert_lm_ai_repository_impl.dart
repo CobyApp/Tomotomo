@@ -4,13 +4,18 @@ import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
 import '../on_device/on_device_ai_runtime.dart';
+import '../rag/local_rag_retriever.dart';
 import 'ai_response_parser.dart';
 import 'ai_system_prompt_builder.dart';
 
 final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
-  LiteRtLmAiRepositoryImpl(this._runtime);
+  LiteRtLmAiRepositoryImpl(this._runtime, {LocalRagRetriever? ragRetriever})
+    : _rag = ragRetriever;
 
   final OnDeviceAiRuntime _runtime;
+
+  /// Offline local RAG (saved vocabulary + relevant past turns). Optional.
+  final LocalRagRetriever? _rag;
   Character? _character;
   String _appUiLanguageCode = 'ko';
   final List<({String role, String text})> _history = [];
@@ -51,7 +56,27 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
               '${_takeRunes(turn.text, _maxHistoryRunes)}',
         )
         .join('\n');
-    final prompt = StringBuffer()
+    // Offline local RAG: saved vocabulary + relevant older turns.
+    String memory = '';
+    if (_rag != null) {
+      try {
+        memory = await _rag.retrieveContext(
+          character: character,
+          userMessage: userMessage,
+        );
+      } catch (_) {
+        memory = '';
+      }
+    }
+
+    final prompt = StringBuffer();
+    if (memory.isNotEmpty) {
+      prompt
+        ..writeln('MEMORY (learner context; use if helpful, never quote it)')
+        ..writeln(memory)
+        ..writeln();
+    }
+    prompt
       ..writeln('RECENT DIALOGUE (oldest to newest)')
       ..writeln(transcript.isEmpty ? '(none)' : transcript)
       ..writeln()
