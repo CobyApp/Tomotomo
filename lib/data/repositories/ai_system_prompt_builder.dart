@@ -58,7 +58,9 @@ String _levelGuidance(String level, bool speaksKorean) {
 }
 
 /// System instruction used only to create the next chat bubble.
-String buildChatReplySystemPrompt(Character character) {
+/// [userName] is the learner's own name, when known, so the friend can address
+/// them naturally.
+String buildChatReplySystemPrompt(Character character, {String? userName}) {
   final speaksKorean = character.koreanNationalPersona;
   final replyLanguage = speaksKorean
       ? 'natural Korean (Hangul)'
@@ -67,11 +69,18 @@ String buildChatReplySystemPrompt(Character character) {
       ? 'Japanese sentences'
       : 'Korean sentences';
 
+  final name = userName?.trim();
+  final aboutUser = (name != null && name.isNotEmpty)
+      ? "\n\nABOUT THE PERSON YOU'RE TALKING WITH\n"
+            "Their name is $name. Address them by name naturally now and then, "
+            'the way a real friend would — not in every message.'
+      : '';
+
   return '''
-You are the tutor persona described below. Create only the tutor's next reply.
+You are the friend persona described below. Create only the friend's next reply.
 
 PERSONA
-${_personaSummary(character)}
+${_personaSummary(character)}$aboutUser
 
 SPEAKING LEVEL
 ${_levelGuidance(character.level, speaksKorean)}
@@ -85,7 +94,7 @@ REPLY RULES
 
 OUTPUT
 Return exactly one valid JSON object with one key and no markdown:
-{"content":"the tutor reply"}
+{"content":"the friend reply"}
 '''
       .trim();
 }
@@ -106,7 +115,7 @@ String buildExpressionAnalysisSystemPrompt({
       : 'Write the complete Hiragana reading for every Japanese word or expression; include the reading even when the word is already Kana.';
 
   return '''
-You are a precise language-learning annotator. Analyze one existing $sourceLanguage tutor message. Do not continue the conversation and do not answer the message.
+You are a precise language-learning annotator. Analyze one existing $sourceLanguage message from the friend. Do not continue the conversation and do not answer the message.
 
 ANALYSIS RULES
 1. Copy the supplied utterance exactly into "content". Never correct, shorten, or rewrite it.

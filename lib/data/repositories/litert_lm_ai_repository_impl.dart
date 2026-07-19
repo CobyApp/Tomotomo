@@ -18,6 +18,7 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
   final LocalRagRetriever? _rag;
   Character? _character;
   String _appUiLanguageCode = 'ko';
+  String? _userName;
   final List<({String role, String text})> _history = [];
 
   static const int _maxHistoryEntries = 6;
@@ -28,6 +29,7 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
   void initializeForCharacter(
     Character character, {
     String appUiLanguageCode = 'ko',
+    String? userName,
   }) {
     final language = appUiLanguageCode.trim().isEmpty
         ? 'ko'
@@ -37,6 +39,8 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
     }
     _character = character;
     _appUiLanguageCode = language;
+    final trimmed = userName?.trim();
+    if (trimmed != null && trimmed.isNotEmpty) _userName = trimmed;
   }
 
   @override
@@ -84,7 +88,7 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
       ..writeln(jsonEncode(_takeRunes(userMessage, _maxCurrentMessageRunes)));
 
     final raw = await _runtime.generateText(
-      systemInstruction: buildChatReplySystemPrompt(character),
+      systemInstruction: buildChatReplySystemPrompt(character, userName: _userName),
       prompt: prompt.toString(),
       maxTokens: 2048,
     );

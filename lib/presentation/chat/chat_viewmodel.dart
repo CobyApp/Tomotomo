@@ -11,6 +11,8 @@ import '../../domain/repositories/ai_chat_repository.dart';
 import 'chat_generation_registry.dart';
 
 /// Local single-user id (no auth).
+const String _localUserId = 'local';
+
 /// Short assistant line matching the character’s main chat language (no stack traces or API text).
 String _aiChatErrorBubbleText(Character character) {
   if (character.koreanNationalPersona) {
@@ -44,6 +46,24 @@ class ChatViewModel extends ChangeNotifier {
       character,
       appUiLanguageCode: appUiLanguageCode,
     );
+    unawaited(_primeUserName(appUiLanguageCode));
+  }
+
+  /// Loads the learner's own name from their profile so the friend can address
+  /// them by name. Best-effort; a reply works fine without it.
+  Future<void> _primeUserName(String appUiLanguageCode) async {
+    try {
+      final profile = await profileRepository.getProfile(_localUserId);
+      final name = profile?.displayName?.trim();
+      if (name == null || name.isEmpty || _disposed) return;
+      aiChatRepository.initializeForCharacter(
+        character,
+        appUiLanguageCode: appUiLanguageCode,
+        userName: name,
+      );
+    } catch (_) {
+      // Ignore — the friend simply won't use the learner's name.
+    }
   }
 
   List<ChatMessage> get messages => _messages;
