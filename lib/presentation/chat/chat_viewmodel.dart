@@ -8,6 +8,7 @@ import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
+import 'chat_generation_registry.dart';
 
 /// Local single-user id (no auth).
 /// Short assistant line matching the character’s main chat language (no stack traces or API text).
@@ -57,10 +58,26 @@ class ChatViewModel extends ChangeNotifier {
     unawaited(_reloadMessages());
   }
 
+  void _safeNotify() {
+    if (!_disposed) notifyListeners();
+  }
+
   Future<void> _loadMessages() async {
     try {
       _messages = await chatRepository.getMessages(character);
-      notifyListeners();
+      // A reply may still be generating for this room (user left mid-reply and
+      // came back). Show the loading bubble and refresh when it finishes.
+      final pending = ChatGenerationRegistry.instance.inFlight(character.id);
+      if (pending != null) {
+        _isGenerating = true;
+        pending.whenComplete(() async {
+          if (_disposed) return;
+          _isGenerating = false;
+          _safeNotify();
+          await _reloadMessages();
+        });
+      }
+      _safeNotify();
     } catch (e) {
       debugPrint('Failed to load messages: $e');
     }
@@ -70,7 +87,7 @@ class ChatViewModel extends ChangeNotifier {
     if (_isGenerating) return;
     try {
       _messages = await chatRepository.getMessages(character);
-      notifyListeners();
+      _safeNotify();
     } catch (e) {
       debugPrint('Message reload failed: $e');
     }
@@ -122,24 +139,36 @@ class ChatViewModel extends ChangeNotifier {
       final i = _messages.length - 1;
       _messages[i] = _messages[i].copyWith(serverId: userRowId);
     }
-    notifyListeners();
+    _safeNotify();
 
     _isGenerating = true;
-    notifyListeners();
+    _safeNotify();
 
+    // Run generation through the registry so it keeps going and persists the
+    // reply even if the user leaves this screen mid-generation.
+    await ChatGenerationRegistry.instance.run(
+      character.id,
+      () => _generateAndSave(userMessage),
+    );
+
+    if (_disposed) return;
+    _isGenerating = false;
+    _safeNotify();
+    await _reloadMessages();
+  }
+
+  /// Generates the AI reply and persists it. Runs independent of the screen —
+  /// must NOT touch UI state or bail on [_disposed]; it always saves so the
+  /// answer finishes even after leaving the chat.
+  Future<void> _generateAndSave(String userMessage) async {
     try {
       final aiMessage = await aiChatRepository.generateResponse(userMessage);
-      _messages.add(aiMessage);
-      final aiRowId = await chatRepository.saveMessage(character, aiMessage);
-      if (aiRowId != null) {
-        final i = _messages.length - 1;
-        _messages[i] = _messages[i].copyWith(serverId: aiRowId);
-      }
+      await chatRepository.saveMessage(character, aiMessage);
       final spend = await pointsRepository.spendPoints(1, 'character_chat');
       if (spend.ok) {
         pointsBalanceNotifier?.setBalance(spend.balance);
       } else {
-        if (spend.error == 'insufficient_points') {
+        if (spend.error == 'insufficient_points' && !_disposed) {
           onInsufficientPoints?.call();
         }
         debugPrint('Point spend failed after AI reply: ${spend.error}');
@@ -151,16 +180,11 @@ class ChatViewModel extends ChangeNotifier {
         role: 'assistant',
         timestamp: DateTime.now(),
       );
-      _messages.add(errorBubble);
-      notifyListeners();
       try {
         await chatRepository.saveMessage(character, errorBubble);
       } catch (saveErr) {
         debugPrint('Failed to persist AI error message: $saveErr');
       }
-    } finally {
-      _isGenerating = false;
-      notifyListeners();
     }
   }
 
@@ -172,7 +196,7 @@ class ChatViewModel extends ChangeNotifier {
       _isGenerating = false;
 
       aiChatRepository.resetChat();
-      notifyListeners();
+      _safeNotify();
     } catch (e) {
       debugPrint('Failed to reset chat: $e');
     }
@@ -192,7 +216,7 @@ class ChatViewModel extends ChangeNotifier {
     messageController.clear();
     _isGenerating = false;
     aiChatRepository.resetChat();
-    notifyListeners();
+    _safeNotify();
   }
 
   @override
