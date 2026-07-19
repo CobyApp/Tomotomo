@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/ui/app_status_views.dart';
+import '../../core/ui/paper/paper_status_views.dart';
 import '../../core/ui/app_tokens.dart';
 import '../../core/ui/paper/paper_scaffold.dart';
 import '../../core/ui/paper/paper_tokens.dart';
@@ -214,10 +214,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final List<Widget>? actions;
 
     if (_loading) {
-      body = const AppLoadingBody();
+      body = const PaperLoadingBody();
       actions = null;
     } else if (_profile == null) {
-      body = AppErrorBody(
+      body = PaperErrorBody(
         message: _error == 'missing'
             ? context.tr('profileEditLoadError')
             : (_error ?? context.tr('profileEditLoadError')),

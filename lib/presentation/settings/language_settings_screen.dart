@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/ui/app_settings_tile.dart';
-import '../../core/ui/app_status_views.dart';
+import '../../core/ui/paper/paper_status_views.dart';
 import '../../core/ui/app_tokens.dart';
 import '../../core/ui/paper/paper_scaffold.dart';
 import '../../core/ui/paper/paper_tokens.dart';
@@ -25,7 +25,7 @@ class LanguageSettingsScreen extends StatelessWidget {
         future: _loadProfile(context),
         builder: (context, snap) {
           if (!snap.hasData) {
-            return const AppLoadingBody();
+            return const PaperLoadingBody();
           }
           final profile = snap.data;
           if (profile == null) {
