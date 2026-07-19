@@ -41,7 +41,7 @@ class AppStrings {
     'pointsHelpTitle': '포인트 안내',
     'pointsHelpLead': '친구와 이야기하거나 표현을 볼 때 포인트를 써요.',
     'pointsHelpSectionWhen': '언제 쓰이나요?',
-    'pointsHelpItemXImport': '새 친구 만들기에서 X 프로필 가져오기(URL 또는 붙여넣기)를 할 때마다 5포인트예요.',
+    'pointsHelpItemXImport': '새 친구 만들기에서 X 프로필을 가져올 때마다 5포인트예요.',
     'pointsHelpItemCharacterChat':
         '친구와 채팅에서 답장이 성공할 때마다 1포인트예요. (보낸 직후 답장이 올 때 차감)',
     'pointsHelpItemCustomCreate':
@@ -245,7 +245,7 @@ class AppStrings {
     'pointsHelpTitle': 'ポイントについて',
     'pointsHelpLead': '友だちと話したり表現を見るときにポイントを使います。',
     'pointsHelpSectionWhen': 'いつ消費されますか？',
-    'pointsHelpItemXImport': '新しい友だち作成でXプロフィール取り込み（URLまたは貼り付け）をするたびに5ptです。',
+    'pointsHelpItemXImport': '新しい友だち作成でXプロフィールを取り込むたびに5ptです。',
     'pointsHelpItemCharacterChat':
         '友だちとのチャットで、返信が成功するたびに1ptです。（送信後に返信が届いたときに減ります）',
     'pointsHelpItemCustomCreate':
