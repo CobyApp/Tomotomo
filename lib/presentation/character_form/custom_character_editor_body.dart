@@ -110,6 +110,10 @@ Future<String> _cacheRemoteAvatarToAppDir(String url) async {
   return file.path;
 }
 
+/// How the user fills in a new friend on the first step: type everything
+/// manually, or scrape an X/Twitter profile to auto-fill.
+enum _CreateMethod { manual, twitter }
+
 /// Shared form for [CreateCharacterScreen] and [EditCharacterScreen].
 class CustomCharacterEditorBody extends StatefulWidget {
   const CustomCharacterEditorBody({super.key, this.existing});
@@ -139,6 +143,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   String? _error;
   String? _avatarUrl;
   int _step = 0;
+  _CreateMethod _createMethod = _CreateMethod.manual;
 
   CharacterRecord? get _existing => widget.existing;
 
@@ -418,53 +423,45 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.pageH,
-          16,
+          10,
           AppSpacing.pageH,
           AppSpacing.pageBottom,
         ),
         children: [
+          // ── Compact step header: "N/total" + thin bar, then step title ──
           Row(
             children: [
+              Text(
+                '${_step + 1}/$stepCount',
+                style: TextStyle(
+                  color: p.coral,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.tr(
-                        'characterStepProgress',
-                        params: {
-                          'current': '${_step + 1}',
-                          'total': '$stepCount',
-                        },
-                      ),
-                      style: TextStyle(
-                        color: p.coral,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      stepTitle,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(color: p.ink, fontWeight: FontWeight.w900),
-                    ),
-                  ],
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: (_step + 1) / stepCount,
+                    minHeight: 6,
+                    backgroundColor: p.cardEdge,
+                    valueColor: AlwaysStoppedAnimation(p.coral),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(99),
-            child: LinearProgressIndicator(
-              value: (_step + 1) / stepCount,
-              minHeight: 7,
-              backgroundColor: p.cardEdge,
-              valueColor: AlwaysStoppedAnimation(p.coral),
+          const SizedBox(height: 10),
+          Text(
+            stepTitle,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: p.ink,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           // ── Error banner ─────────────────────────────────────
           if (_error != null) ...[
             Container(
@@ -589,10 +586,31 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           ],
 
           if (_existing == null && logicalStep == 0) ...[
-            _SectionCard(
-              icon: Icons.link_rounded,
-              title: context.tr('characterImportFromXTitle'),
-              child: Column(
+            // Either/or: type everything manually, or import from X/Twitter.
+            _MethodTabs(
+              value: _createMethod,
+              onChanged: _anyPersonaImportBusy
+                  ? null
+                  : (m) => setState(() => _createMethod = m),
+            ),
+            const SizedBox(height: 16),
+            if (_createMethod == _CreateMethod.manual)
+              _SectionCard(
+                icon: Icons.edit_rounded,
+                title: context.tr('createMethodManual'),
+                child: Text(
+                  context.tr('createMethodManualHint'),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: p.inkSoft,
+                    height: 1.45,
+                  ),
+                ),
+              )
+            else
+              _SectionCard(
+                icon: Icons.link_rounded,
+                title: context.tr('characterImportFromXTitle'),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
@@ -877,6 +895,87 @@ class _SectionCard extends StatelessWidget {
           const SizedBox(height: 14),
           child,
         ],
+      ),
+    );
+  }
+}
+
+// ── Create-method segmented control (manual vs X/Twitter import) ─────
+class _MethodTabs extends StatelessWidget {
+  const _MethodTabs({required this.value, required this.onChanged});
+
+  final _CreateMethod value;
+  final ValueChanged<_CreateMethod>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: p.card,
+        borderRadius: BorderRadius.circular(PaperRadii.button),
+        border: Border.all(color: p.cardEdge),
+      ),
+      child: Row(
+        children: [
+          _tab(
+            context,
+            _CreateMethod.manual,
+            Icons.edit_rounded,
+            context.tr('createMethodManual'),
+          ),
+          _tab(
+            context,
+            _CreateMethod.twitter,
+            Icons.alternate_email_rounded,
+            context.tr('createMethodTwitter'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tab(
+    BuildContext context,
+    _CreateMethod method,
+    IconData icon,
+    String label,
+  ) {
+    final p = context.paper;
+    final selected = value == method;
+    final fg = selected ? Colors.white : p.inkSoft;
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onChanged == null ? null : () => onChanged!(method),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: selected ? p.coral : Colors.transparent,
+            borderRadius: BorderRadius.circular(PaperRadii.button - 4),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: fg),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: fg,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

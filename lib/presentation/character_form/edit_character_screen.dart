@@ -15,7 +15,6 @@ class EditCharacterScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return PaperScaffold(
       title: context.tr('editCharacterTitle'),
-      subtitle: context.tr('editCharacterSubtitle'),
       transparentBackground: false,
       body: CustomCharacterEditorBody(existing: record),
     );
