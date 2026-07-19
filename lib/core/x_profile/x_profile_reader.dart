@@ -138,13 +138,121 @@ class XProfileReader {
       statusCode == 451 ||
       statusCode >= 500;
 
+  /// First path segment (the @username) of a normalized X URL, or null.
+  static String? _usernameFromUrl(String canonicalXUrl) {
+    final uri = Uri.tryParse(canonicalXUrl);
+    if (uri == null) return null;
+    final segs = uri.pathSegments.where((e) => e.isNotEmpty).toList();
+    if (segs.isEmpty) return null;
+    final u = segs.first.trim();
+    if (u.isEmpty || u == 'i') return null;
+    return u;
+  }
+
+  /// Keyless path: X's public syndication (embed) endpoint returns the profile
+  /// (name, bio, avatar, recent posts) as JSON — unlike r.jina.ai, it does not
+  /// block anonymous access to x.com.
+  Future<XReadablePage?> _fetchFromSyndication(String username) async {
+    final uri = Uri.parse(
+      'https://syndication.twitter.com/srv/timeline-profile/screen-name/$username',
+    );
+    http.Response res;
+    try {
+      res = await http
+          .get(uri, headers: {'User-Agent': _userAgent, 'Accept': 'text/html'})
+          .timeout(_timeout);
+    } catch (_) {
+      return null;
+    }
+    if (res.statusCode < 200 || res.statusCode >= 300) return null;
+    final html = utf8.decode(res.bodyBytes, allowMalformed: true);
+    final m = RegExp(
+      r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
+      dotAll: true,
+    ).firstMatch(html);
+    if (m == null) return null;
+    dynamic data;
+    try {
+      data = jsonDecode(m.group(1)!);
+    } catch (_) {
+      return null;
+    }
+
+    String? name, description, location, avatar;
+    final tweets = <String>[];
+    void walk(dynamic o) {
+      if (o is Map) {
+        if (o.containsKey('screen_name') && o.containsKey('name')) {
+          name ??= (o['name'] as String?)?.trim();
+          description ??= (o['description'] as String?)?.trim();
+          location ??= (o['location'] as String?)?.trim();
+          final img = o['profile_image_url_https'] as String?;
+          if (avatar == null && img != null && img.isNotEmpty) avatar = img;
+        }
+        final ft = o['full_text'];
+        if (ft is String && ft.trim().isNotEmpty && tweets.length < 40) {
+          tweets.add(ft.trim());
+        }
+        for (final v in o.values) {
+          walk(v);
+        }
+      } else if (o is List) {
+        for (final v in o) {
+          walk(v);
+        }
+      }
+    }
+
+    walk(data);
+    if ((name == null || name!.isEmpty) &&
+        (description == null || description!.isEmpty) &&
+        tweets.isEmpty) {
+      return null;
+    }
+
+    final buf = StringBuffer();
+    if (name != null && name!.isNotEmpty) buf.writeln('Name: $name');
+    buf.writeln('X: @$username');
+    if (description != null && description!.isNotEmpty) {
+      buf.writeln('Bio: $description');
+    }
+    if (location != null && location!.isNotEmpty) {
+      buf.writeln('Location: $location');
+    }
+    if (tweets.isNotEmpty) {
+      buf.writeln('\nRecent posts:');
+      for (final t in tweets) {
+        buf.writeln('- ${t.replaceAll('\n', ' ').trim()}');
+      }
+    }
+    var text = buf.toString().trim();
+    if (text.length < 20) return null;
+    if (text.length > 14000) text = text.substring(0, 14000);
+
+    String? avatarUrl;
+    if (avatar != null && avatar!.isNotEmpty) {
+      // `_normal.jpg` → `_400x400.jpg` for a higher-res avatar.
+      avatarUrl = avatar!.replaceAll(RegExp(r'_normal\.'), '_400x400.');
+    }
+    return XReadablePage(text: text, profileImageUrl: avatarUrl);
+  }
+
   /// GET reader text for [canonicalXUrl] (must be normalized).
   Future<XReadablePage> fetchReadablePage(String canonicalXUrl) async {
     if (!_xHost.hasMatch(canonicalXUrl)) {
       throw FormatException('Not an X/Twitter URL: $canonicalXUrl');
     }
-    // Jina Reader expects the target URL appended RAW (not percent-encoded), so
-    // the request path is `https://r.jina.ai/https://x.com/username`.
+
+    // 1) Keyless primary path: X syndication embed endpoint.
+    final username = _usernameFromUrl(canonicalXUrl);
+    if (username != null) {
+      final syndicated = await _fetchFromSyndication(username);
+      if (syndicated != null) return syndicated;
+    }
+
+    // 2) Fallback: Jina Reader. It blocks anonymous x.com access, so this
+    // mostly helps when a JINA_API_KEY is configured. Jina expects the target
+    // URL appended RAW: `https://r.jina.ai/https://x.com/username`.
     final readerUri = Uri.parse('https://r.jina.ai/$canonicalXUrl');
 
     Future<http.Response> getOnce(Map<String, String> headers) =>
