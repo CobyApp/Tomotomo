@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:background_downloader/background_downloader.dart'
+    show FileDownloader;
 import 'package:crypto/crypto.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
@@ -16,6 +18,8 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
   Future<void> _queue = Future<void>.value();
   String? _activeBackend;
   static const _verifiedPreference = 'gemma4_e2b_artifact_verified';
+  // Download group used by flutter_gemma's SmartDownloader.
+  static const _downloadGroup = 'smart_downloads';
 
   @override
   String? get activeBackend => _activeBackend;
@@ -42,6 +46,11 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
     required void Function(double progress) onProgress,
   }) async {
     _cancelToken = CancelToken();
+    // A previous download interrupted by an app kill/background leaves an
+    // orphaned background task. flutter_gemma's SmartDownloader reuses a
+    // deterministic task id and attaches to that dead task instead of starting
+    // fresh, so progress never advances (stuck at 0%). Clear it first.
+    await _clearStaleDownloadState();
     try {
       await FlutterGemma.installModel(
             modelType: ModelType.gemma4,
@@ -64,7 +73,22 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
   }
 
   @override
-  void cancelInstall() => _cancelToken?.cancel('사용자가 다운로드를 취소했습니다.');
+  void cancelInstall() {
+    _cancelToken?.cancel('사용자가 다운로드를 취소했습니다.');
+    // Remove the task so the next attempt starts a fresh download.
+    unawaited(_clearStaleDownloadState());
+  }
+
+  /// Removes any orphaned/stale download task left by a previous interrupted
+  /// download so a re-download starts cleanly (prevents the stuck-at-0% bug).
+  Future<void> _clearStaleDownloadState() async {
+    try {
+      await FileDownloader().reset(group: _downloadGroup);
+      await FileDownloader().database.deleteAllRecords(group: _downloadGroup);
+    } catch (_) {
+      // Best-effort: an empty/absent group is fine.
+    }
+  }
 
   @override
   Future<void> deleteModel() async {
