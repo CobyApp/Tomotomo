@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../app_tokens.dart';
-import '../app_glass_nav_bar.dart' show NavItemData;
 import 'paper_tokens.dart';
 
-/// PAPER-CARTOON bottom dock. Drop-in shape-compatible replacement for
-/// [AppGlassNavBar] / [HoloNavBar]: same public constructor params
-/// ([currentIndex], [onSelect], [items]; reuses [NavItemData]). Renders a
-/// clean paper bar with a coral-selected line-icon cell and a top hairline.
+/// Data for a single bottom-nav destination used by [PaperNavBar].
+class NavItemData {
+  const NavItemData({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+}
+
+/// PAPER-CARTOON bottom dock. Renders a clean paper bar with a
+/// coral-selected line-icon cell and a top hairline.
 class PaperNavBar extends StatelessWidget {
   const PaperNavBar({
     super.key,

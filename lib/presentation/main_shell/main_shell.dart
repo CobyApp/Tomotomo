@@ -8,7 +8,6 @@ import '../../core/platform/ios_post_layout_frames.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
 import '../../core/ui/paper/paper_nav_bar.dart';
 import '../../core/ui/paper/paper_tokens.dart';
-import '../../core/ui/ui.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../points/points_balance_notifier.dart';
 import '../locale/l10n_context.dart';

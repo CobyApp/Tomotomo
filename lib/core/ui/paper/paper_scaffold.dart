@@ -4,12 +4,11 @@ import '../points_toolbar_chip.dart';
 import 'paper_tokens.dart';
 import 'wordmark_glitch.dart';
 
-/// PAPER-CARTOON page layout. Drop-in shape-compatible replacement for
-/// [AppPageScaffold] / [HoloScaffold]: same public constructor params
-/// ([title], [subtitle], [body], [actions], [bottom], [floatingActionButton],
-/// [transparentBackground], [showPointsChip]), plus an additive [useWordmark]
-/// flag for the app root screen. Renders the paper background with a subtle
-/// dotted grain overlay and a cute display / [WordmarkGlitch] app-bar title.
+/// PAPER-CARTOON page layout: [title], [subtitle], [body], [actions],
+/// [bottom], [floatingActionButton], [transparentBackground],
+/// [showPointsChip], plus an additive [useWordmark] flag for the app root
+/// screen. Renders the paper background with a subtle dotted grain overlay
+/// and a cute display / [WordmarkGlitch] app-bar title.
 class PaperScaffold extends StatelessWidget {
   const PaperScaffold({
     super.key,

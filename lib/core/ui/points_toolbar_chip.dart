@@ -12,7 +12,7 @@ void openPointsUsageScreen(BuildContext context) {
   );
 }
 
-/// Compact balance display for [AppPageScaffold.actions] / chat app bars. Tap opens [PointsUsageScreen].
+/// Compact balance display for scaffold action bars / chat app bars. Tap opens [PointsUsageScreen].
 /// Thin wrapper that watches the balance and hands it down to [_PointsChipAnimated]
 /// as a constructor value, so balance changes are visible to [State.didUpdateWidget].
 class PointsToolbarChip extends StatelessWidget {
