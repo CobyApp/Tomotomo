@@ -11,10 +11,14 @@ import '../../core/ui/paper/paper_dialog.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
+import '../../data/chat_background/chat_background.dart';
+import '../../data/chat_background/chat_background_presets.dart';
+import '../../data/chat_background/chat_background_store.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../points/points_topup_prompt.dart';
 import 'chat_message_report.dart';
+import 'chat_background_picker.dart';
 import 'chat_viewmodel.dart';
 import 'widgets/chat_list.dart';
 import 'widgets/chat_input.dart';
@@ -40,10 +44,14 @@ class _ChatScreenState extends State<ChatScreen>
   late AnimationController _controller;
   final ScrollController _scrollController = ScrollController();
   late final ChatViewModel _viewModel;
+  late final ChatBackgroundStore _bgStore;
+  late ChatBackground _background;
 
   @override
   void initState() {
     super.initState();
+    _bgStore = context.read<ChatBackgroundStore>();
+    _background = _bgStore.get(widget.character.id);
     _viewModel = ChatViewModel(
       character: widget.character,
       chatRepository: widget.chatRepository,
@@ -90,16 +98,30 @@ class _ChatScreenState extends State<ChatScreen>
             character: widget.character,
             scrollController: _scrollController,
             chatRoomId: viewModel.chatRoomId,
+            background: _background,
             onReportRoom: (ctx) => confirmAndReportChatRoom(
               ctx,
               character: widget.character,
               chatRoomId: viewModel.chatRoomId,
             ),
             onLeaveRoom: (ctx) => _confirmLeaveRoom(ctx, viewModel),
+            onOpenBackground: _openBackgroundPicker,
           );
         },
       ),
     );
+  }
+
+  Future<void> _openBackgroundPicker(BuildContext context) async {
+    final result = await openChatBackgroundPicker(
+      context,
+      characterId: widget.character.id,
+      current: _background,
+      store: _bgStore,
+    );
+    if (result != null && mounted) {
+      setState(() => _background = result);
+    }
   }
 
   Future<void> _confirmLeaveRoom(
@@ -155,15 +177,19 @@ class _ChatScreenContent extends StatelessWidget {
   final Character character;
   final ScrollController scrollController;
   final String? chatRoomId;
+  final ChatBackground background;
   final Future<void> Function(BuildContext context) onReportRoom;
   final Future<void> Function(BuildContext context) onLeaveRoom;
+  final Future<void> Function(BuildContext context) onOpenBackground;
 
   const _ChatScreenContent({
     required this.character,
     required this.scrollController,
     required this.chatRoomId,
+    required this.background,
     required this.onReportRoom,
     required this.onLeaveRoom,
+    required this.onOpenBackground,
   });
 
   void _scrollToBottom() {
@@ -182,8 +208,9 @@ class _ChatScreenContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.paper;
 
-    return ColoredBox(
-      color: p.paperBg,
+    return buildChatBackground(
+      context,
+      background,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
@@ -265,6 +292,9 @@ class _ChatScreenContent extends StatelessWidget {
               ),
               onSelected: (value) async {
                 switch (value) {
+                  case 'background':
+                    await onOpenBackground(context);
+                    break;
                   case 'report':
                     await onReportRoom(context);
                     break;
@@ -276,6 +306,26 @@ class _ChatScreenContent extends StatelessWidget {
               itemBuilder: (ctx) {
                 final tr = ctx.tr;
                 return <PopupMenuEntry<String>>[
+                  PopupMenuItem<String>(
+                    value: 'background',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.wallpaper_rounded,
+                          size: 22,
+                          color: p.ink,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            tr('chatMenuBackground'),
+                            style: TextStyle(color: p.ink),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
                   PopupMenuItem<String>(
                     value: 'report',
                     child: Row(

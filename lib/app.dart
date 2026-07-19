@@ -10,6 +10,7 @@ import 'domain/repositories/profile_repository.dart';
 import 'domain/repositories/character_record_repository.dart';
 import 'domain/repositories/saved_expression_repository.dart';
 import 'data/celebrity_persona/celebrity_persona_suggester.dart';
+import 'data/chat_background/chat_background_store.dart';
 import 'data/on_device/on_device_model_manager.dart';
 import 'presentation/main_shell/main_shell.dart';
 import 'presentation/locale/locale_notifier.dart';
@@ -47,6 +48,7 @@ class App extends StatelessWidget {
         Provider<SavedExpressionRepository>.value(value: savedExpressionRepository),
         ChangeNotifierProvider(create: (_) => WordBookRefreshNotifier()),
         Provider<CelebrityPersonaSuggester>.value(value: celebrityPersonaSuggester),
+        Provider<ChatBackgroundStore>.value(value: chatBackgroundStore),
       ],
       child: Builder(
         builder: (context) {

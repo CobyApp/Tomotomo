@@ -19,6 +19,7 @@ import '../../data/repositories/local_points_repository_impl.dart';
 import '../../data/repositories/character_record_repository_impl.dart';
 import '../../data/repositories/theme_repository_impl.dart';
 import '../../data/repositories/saved_expression_repository_impl.dart';
+import '../../data/chat_background/chat_background_store.dart';
 import '../../presentation/points/points_balance_notifier.dart';
 import '../../data/celebrity_persona/celebrity_persona_suggester.dart';
 
@@ -38,6 +39,7 @@ void setupInjection({OnDeviceAiRuntime? aiRuntime}) {
   themeRepository = ThemeRepositoryImpl(Hive.box(HiveBoxes.settings));
   savedExpressionRepository = SavedExpressionRepositoryImpl(Hive.box(HiveBoxes.wordbook));
   celebrityPersonaSuggester = CelebrityPersonaSuggester(onDeviceAiRuntime);
+  chatBackgroundStore = ChatBackgroundStore(Hive.box(HiveBoxes.settings));
 }
 
 /// Set by [setupInjection]. Used by [App] to provide to widget tree.
@@ -59,3 +61,4 @@ late CharacterRecordRepository characterRecordRepository;
 late ThemeRepository themeRepository;
 late SavedExpressionRepository savedExpressionRepository;
 late CelebrityPersonaSuggester celebrityPersonaSuggester;
+late ChatBackgroundStore chatBackgroundStore;
