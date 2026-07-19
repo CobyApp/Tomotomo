@@ -203,7 +203,7 @@ class _ModelStatus extends StatelessWidget {
       return _StatusCard(
         icon: Icons.search_rounded,
         child: Center(
-          child: SizedBox(width: 24, height: 24, child: PaperLoading(size: 9)),
+          child: PaperLoading(size: 9),
         ),
       );
     }
@@ -247,7 +247,7 @@ class _ModelStatus extends StatelessWidget {
         icon: Icons.hourglass_bottom_rounded,
         child: Row(
           children: [
-            SizedBox(width: 20, height: 20, child: PaperLoading(size: 9)),
+            PaperLoading(size: 9),
             const SizedBox(width: 12),
             Expanded(
               child: Text(

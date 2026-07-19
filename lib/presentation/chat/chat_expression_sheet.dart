@@ -450,11 +450,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                 padding: const EdgeInsets.only(top: 12),
                 child: Row(
                   children: [
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: PaperLoading(size: 9),
-                    ),
+                    PaperLoading(size: 9),
                     const SizedBox(width: 10),
                     Text(
                       tr('expressionAnalysisLoading'),
@@ -556,11 +552,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                           height: 44,
                           child: _savingIndices.contains(i)
                               ? Center(
-                                  child: SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: PaperLoading(size: 9),
-                                  ),
+                                  child: PaperLoading(size: 9),
                                 )
                               : IconButton(
                                   visualDensity: VisualDensity.compact,

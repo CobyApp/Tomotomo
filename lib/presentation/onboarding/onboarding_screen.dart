@@ -205,11 +205,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Expanded(
                     child: _saving
                         ? Center(
-                            child: SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: PaperLoading(size: 9),
-                            ),
+                            child: PaperLoading(size: 9),
                           )
                         : PaperButton(
                             label: isLast

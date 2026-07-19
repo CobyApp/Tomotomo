@@ -231,7 +231,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         Padding(
           padding: const EdgeInsets.only(right: 12),
           child: _saving
-              ? SizedBox(width: 20, height: 20, child: PaperLoading(size: 9))
+              ? PaperLoading(size: 9)
               : PaperButton(
                   expand: false,
                   icon: Icons.check_rounded,
@@ -274,11 +274,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     size: 120,
                     rotate: -0.03,
                     child: _uploadingAvatar
-                        ? SizedBox(
-                            width: 28,
-                            height: 28,
-                            child: PaperLoading(size: 9),
-                          )
+                        ? PaperLoading(size: 9)
                         : hasPhoto
                         ? (_isNetworkImagePath(_avatarUrl!.trim())
                               ? Image.network(
