@@ -14,6 +14,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
   static const _kDisplayName = 'profile_display_name';
   static const _kAvatarUrl = 'profile_avatar_url';
   static const _kCreatedAt = 'profile_created_at';
+  static const _kOnboarded = 'profile_onboarded';
+  static const _kNationality = 'profile_nationality';
+  static const _kFriendLanguage = 'profile_friend_language';
 
   @override
   Future<Profile?> getProfile(String userId) async {
@@ -53,6 +56,38 @@ class ProfileRepositoryImpl implements ProfileRepository {
     await _persist(profile, createdAt: createdAt ?? profile.createdAt);
     final updated = await getProfile(profile.id);
     return updated ?? profile;
+  }
+
+  @override
+  Future<bool> isOnboarded() async {
+    return _store.getValue(_kOnboarded) == true;
+  }
+
+  @override
+  Future<void> setOnboarded() async {
+    await _store.putValue(_kOnboarded, true);
+  }
+
+  @override
+  Future<String?> getNationality() async {
+    return _store.getValue(_kNationality) as String?;
+  }
+
+  @override
+  Future<void> setNationality(String? value) async {
+    await _store.putValue(_kNationality, value);
+  }
+
+  @override
+  Future<String?> getFriendLanguage() async {
+    final v = _store.getValue(_kFriendLanguage) as String?;
+    return (v == 'ko' || v == 'ja') ? v : null;
+  }
+
+  @override
+  Future<void> setFriendLanguage(String code) async {
+    if (code != 'ko' && code != 'ja') return;
+    await _store.putValue(_kFriendLanguage, code);
   }
 
   Future<void> _persist(Profile profile, {required DateTime createdAt}) async {

@@ -39,4 +39,24 @@ void main() {
     expect(reloaded!.displayName, 'ゆき');
     expect(reloaded.appLanguage, 'ja');
   });
+
+  test('onboarded flag defaults false and round-trips', () async {
+    expect(await repo.isOnboarded(), isFalse);
+    await repo.setOnboarded();
+    expect(await repo.isOnboarded(), isTrue);
+  });
+
+  test('nationality round-trips', () async {
+    expect(await repo.getNationality(), isNull);
+    await repo.setNationality('ko');
+    expect(await repo.getNationality(), 'ko');
+  });
+
+  test('friend language defaults null and only accepts ko/ja', () async {
+    expect(await repo.getFriendLanguage(), isNull);
+    await repo.setFriendLanguage('en');
+    expect(await repo.getFriendLanguage(), isNull);
+    await repo.setFriendLanguage('ko');
+    expect(await repo.getFriendLanguage(), 'ko');
+  });
 }

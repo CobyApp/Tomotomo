@@ -14,11 +14,15 @@ import 'data/chat_background/chat_background_store.dart';
 import 'data/on_device/on_device_model_manager.dart';
 import 'presentation/main_shell/main_shell.dart';
 import 'presentation/locale/locale_notifier.dart';
+import 'presentation/locale/friend_language_notifier.dart';
+import 'presentation/onboarding/onboarding_notifier.dart';
+import 'presentation/onboarding/onboarding_screen.dart';
 import 'presentation/theme/theme_notifier.dart';
 import 'presentation/notebook/word_book_refresh_notifier.dart';
 import 'presentation/points/points_balance_notifier.dart';
 import 'domain/repositories/points_repository.dart';
 import 'core/ui/app_scaffold_messenger.dart';
+import 'core/ui/paper/paper_tokens.dart';
 import 'presentation/on_device/on_device_model_setup_screen.dart';
 
 class App extends StatelessWidget {
@@ -44,6 +48,23 @@ class App extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(create: (c) => LocaleNotifier(c.read<ProfileRepository>())),
+        ChangeNotifierProvider(
+          create: (_) {
+            final n = FriendLanguageNotifier(profileRepository);
+            n.load();
+            return n;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            final n = OnboardingNotifier(
+              profileRepository,
+              characterRecordRepository,
+            );
+            n.load();
+            return n;
+          },
+        ),
         Provider<CharacterRecordRepository>.value(value: characterRecordRepository),
         Provider<SavedExpressionRepository>.value(value: savedExpressionRepository),
         ChangeNotifierProvider(create: (_) => WordBookRefreshNotifier()),
@@ -76,12 +97,38 @@ class App extends StatelessWidget {
             },
             home: Consumer<OnDeviceModelManager>(
               builder: (context, manager, _) {
-                if (manager.isReady) return const MainShell();
-                return const OnDeviceModelSetupScreen(requiredSetup: true);
+                if (!manager.isReady) {
+                  return const OnDeviceModelSetupScreen(requiredSetup: true);
+                }
+                return Consumer<OnboardingNotifier>(
+                  builder: (context, onboarding, _) {
+                    if (onboarding.isLoading) return const _OnboardingGateLoading();
+                    if (onboarding.onboarded == false) {
+                      return const OnboardingScreen();
+                    }
+                    return const MainShell();
+                  },
+                );
               },
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Brief paper-colored placeholder while the onboarding gate resolves.
+class _OnboardingGateLoading extends StatelessWidget {
+  const _OnboardingGateLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    return Scaffold(
+      backgroundColor: p.paperBg,
+      body: Center(
+        child: CircularProgressIndicator(strokeWidth: 2, color: p.coral),
       ),
     );
   }

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/home_widget/notebook_home_widget_sync.dart';
-import '../../core/locale/study_language.dart';
+import '../locale/friend_language_notifier.dart';
 import '../../core/ui/app_tokens.dart';
 import '../../core/ui/paper/paper_dialog.dart';
 import '../../core/ui/paper/paper_scaffold.dart';
@@ -49,7 +49,9 @@ class WordBookScreenState extends State<WordBookScreen>
   }
 
   String _targetLanguageCode() {
-    return studyLanguageForApp(context.read<LocaleNotifier>().languageCode);
+    return context.read<FriendLanguageNotifier>().resolve(
+      context.read<LocaleNotifier>().languageCode,
+    );
   }
 
   @override

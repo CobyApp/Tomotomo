@@ -7,7 +7,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/ui/app_tokens.dart';
-import '../../../core/locale/study_language.dart';
 import '../../../core/ui/paper/paper_theme.dart';
 import '../../../core/ui/paper/paper_tokens.dart';
 import '../../../core/ui/paper/paper_widgets.dart';
@@ -15,6 +14,7 @@ import '../../../data/celebrity_persona/celebrity_persona_suggester.dart';
 import '../../../domain/entities/character_record.dart';
 import '../../../domain/repositories/character_record_repository.dart';
 import '../../../domain/repositories/points_repository.dart';
+import '../locale/friend_language_notifier.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../points/points_balance_notifier.dart';
@@ -167,7 +167,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_languageInitialized) return;
-    _language = studyLanguageForApp(
+    _language = context.read<FriendLanguageNotifier>().resolve(
       context.read<LocaleNotifier>().languageCode,
     );
     _languageInitialized = true;

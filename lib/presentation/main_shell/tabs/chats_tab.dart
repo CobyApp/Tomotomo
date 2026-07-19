@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/platform/ios_post_layout_frames.dart';
-import '../../../core/locale/study_language.dart';
+import '../../locale/friend_language_notifier.dart';
 import '../../../core/ui/app_tokens.dart';
 import '../../../core/ui/paper/paper_dialog.dart';
 import '../../../core/ui/paper/paper_scaffold.dart';
@@ -82,7 +82,7 @@ class ChatsTabState extends State<ChatsTab>
     }
     try {
       final repo = context.read<ChatRepository>();
-      final targetLanguage = studyLanguageForApp(
+      final targetLanguage = context.read<FriendLanguageNotifier>().resolve(
         Localizations.localeOf(context).languageCode,
       );
       final characterRepo = context.read<CharacterRecordRepository>();

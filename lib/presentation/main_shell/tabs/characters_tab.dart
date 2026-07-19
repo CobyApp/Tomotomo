@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/widgets/on_app_resumed_mixin.dart';
-import '../../../core/locale/study_language.dart';
+import '../../locale/friend_language_notifier.dart';
 import '../../../domain/entities/character.dart';
 import '../../../domain/entities/character_record.dart';
 import '../../../domain/repositories/chat_repository.dart';
@@ -134,7 +134,7 @@ class CharactersTabState extends State<CharactersTab>
 
   @override
   Widget build(BuildContext context) {
-    final targetLanguage = studyLanguageForApp(
+    final targetLanguage = context.watch<FriendLanguageNotifier>().resolve(
       Localizations.localeOf(context).languageCode,
     );
     final visibleRecords = _myCharacters
