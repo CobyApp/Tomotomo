@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'paper_tokens.dart';
 
-/// Cute display text style: Korean via Jua (CuteKo), Japanese kana/kanji via
-/// M PLUS Rounded 1c (CuteJp), falling back to Pretendard for anything else.
+/// Cute display text style: Korean via Do Hyeon (CuteKo), Japanese kana/kanji
+/// via M PLUS Rounded 1c (CuteJp), falling back to Pretendard for anything else.
 TextStyle cuteDisplay({double? fontSize, FontWeight? fontWeight, Color? color}) {
   return TextStyle(
     fontFamily: 'CuteKo',

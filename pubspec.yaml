@@ -112,10 +112,10 @@ flutter:
         - asset: assets/fonts/Pretendard-Bold.otf
           weight: 700
     # Cute display fonts (titles / wordmark / word cards). KO glyphs render via
-    # Jua; JP kana/kanji fall through to M PLUS Rounded 1c via fontFamilyFallback.
+    # Do Hyeon; JP kana/kanji fall through to M PLUS Rounded 1c via fontFamilyFallback.
     - family: CuteKo
       fonts:
-        - asset: assets/fonts/Jua-Regular.ttf
+        - asset: assets/fonts/DoHyeon-Regular.ttf
     - family: CuteJp
       fonts:
         - asset: assets/fonts/MPLUSRounded1c-Medium.ttf
