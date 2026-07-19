@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/ui/app_tokens.dart';
 import '../../../core/locale/study_language.dart';
+import '../../../core/ui/paper/paper_theme.dart';
 import '../../../core/ui/paper/paper_tokens.dart';
 import '../../../core/ui/paper/paper_widgets.dart';
 import '../../../data/celebrity_persona/celebrity_persona_suggester.dart';
@@ -110,9 +111,11 @@ Future<String> _cacheRemoteAvatarToAppDir(String url) async {
   return file.path;
 }
 
-/// How the user fills in a new friend on the first step: type everything
-/// manually, or scrape an X/Twitter profile to auto-fill.
-enum _CreateMethod { manual, twitter }
+/// Which surface the new-friend create flow is showing:
+/// [xImport] is the default (scrape an X profile to build a friend),
+/// [summary] reviews the auto-filled result before saving, and
+/// [manual] is the de-emphasized "type everything myself" path.
+enum _CreatePhase { xImport, summary, manual }
 
 /// Shared form for [CreateCharacterScreen] and [EditCharacterScreen].
 class CustomCharacterEditorBody extends StatefulWidget {
@@ -132,18 +135,15 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   final _taglineController = TextEditingController();
   final _memoController = TextEditingController();
   final _xUrlController = TextEditingController();
-  final _xPasteController = TextEditingController();
 
   String _language = 'ja';
   bool _languageInitialized = false;
   bool _saving = false;
   bool _uploadingAvatar = false;
   bool _importUrlBusy = false;
-  bool _importPasteBusy = false;
   String? _error;
   String? _avatarUrl;
-  int _step = 0;
-  _CreateMethod _createMethod = _CreateMethod.manual;
+  _CreatePhase _phase = _CreatePhase.xImport;
 
   CharacterRecord? get _existing => widget.existing;
 
@@ -179,7 +179,6 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     _taglineController.dispose();
     _memoController.dispose();
     _xUrlController.dispose();
-    _xPasteController.dispose();
     super.dispose();
   }
 
@@ -246,6 +245,8 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       if (!mounted) return;
       await _applyPersonaSuggestion(s);
       if (!mounted) return;
+      // Auto-filled everything: move to the review/summary surface.
+      setState(() => _phase = _CreatePhase.summary);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.trRead('characterImportFromXDone'))),
       );
@@ -257,43 +258,6 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       if (mounted) setState(() => _importUrlBusy = false);
     }
   }
-
-  Future<void> _importPersonaFromPaste() async {
-    final raw = _xPasteController.text.trim();
-    if (raw.length < 20) {
-      setState(() => _error = context.trRead('characterImportFromXPasteHint'));
-      return;
-    }
-    FocusScope.of(context).unfocus();
-    setState(() {
-      _error = null;
-      _importPasteBusy = true;
-    });
-    try {
-      final okSpend = await _spendPointsForXProfileImport();
-      if (!okSpend) return;
-      if (!mounted) return;
-      final suggester = context.read<CelebrityPersonaSuggester>();
-      final s = await suggester.suggestFromProfileText(
-        raw,
-        targetLanguage: _language,
-      );
-      if (!mounted) return;
-      await _applyPersonaSuggestion(s);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.trRead('characterImportFromXDone'))),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      final message = '${context.trRead('characterImportFromXError')} $e';
-      setState(() => _error = message);
-    } finally {
-      if (mounted) setState(() => _importPasteBusy = false);
-    }
-  }
-
-  bool get _anyPersonaImportBusy => _importUrlBusy || _importPasteBusy;
 
   Future<void> _save() async {
     if (_saving) return;
@@ -407,453 +371,493 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final p = context.paper;
-    final stepCount = _existing == null ? 3 : 2;
-    final logicalStep = _existing == null ? _step : _step + 1;
-    final isLastStep = _step == stepCount - 1;
-    final stepTitle = switch (logicalStep) {
-      0 => context.tr('characterStepImportTitle'),
-      1 => context.tr('characterStepProfileTitle'),
-      _ => context.tr('characterStepPersonalityTitle'),
-    };
+    // Editing an existing friend always uses the manual editable form.
+    if (_existing != null) {
+      return _buildManualForm(context, isEdit: true);
+    }
+    switch (_phase) {
+      case _CreatePhase.xImport:
+        return _buildXImport(context);
+      case _CreatePhase.summary:
+        return _buildSummary(context);
+      case _CreatePhase.manual:
+        return _buildManualForm(context, isEdit: false);
+    }
+  }
 
-    return Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.pageH,
-          10,
-          AppSpacing.pageH,
-          AppSpacing.pageBottom,
-        ),
+  EdgeInsets get _pagePadding => const EdgeInsets.fromLTRB(
+    AppSpacing.pageH,
+    10,
+    AppSpacing.pageH,
+    AppSpacing.pageBottom,
+  );
+
+  // ── Error banner ─────────────────────────────────────────────
+  Widget _errorBanner(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+      ),
+      child: Row(
         children: [
-          // ── Compact step header: "N/total" + thin bar, then step title ──
-          Row(
+          Icon(
+            Icons.error_outline_rounded,
+            color: scheme.onErrorContainer,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _error!,
+              style: TextStyle(
+                color: scheme.onErrorContainer,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Primary CTA that swaps to a spinner while saving ──────────
+  Widget _primaryButton(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    final p = context.paper;
+    if (_saving) {
+      return Container(
+        height: 54,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: p.inkSoft,
+          borderRadius: BorderRadius.circular(PaperRadii.button),
+        ),
+        child: const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+        ),
+      );
+    }
+    return PaperButton(icon: icon, label: label, onPressed: onPressed);
+  }
+
+  // ── PHASE 1: X import (default entry for a new friend) ────────
+  Widget _buildXImport(BuildContext context) {
+    final p = context.paper;
+    return ListView(
+      padding: _pagePadding,
+      children: [
+        if (_error != null) _errorBanner(context),
+        Text(
+          context.tr('characterImportFromXLead'),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: p.ink,
+            fontWeight: FontWeight.w800,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          icon: Icons.link_rounded,
+          title: context.tr('characterImportFromXTitle'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                '${_step + 1}/$stepCount',
-                style: TextStyle(
-                  color: p.coral,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                context.tr('characterImportFromXLegal'),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: p.inkSoft,
+                  height: 1.35,
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(99),
-                  child: LinearProgressIndicator(
-                    value: (_step + 1) / stepCount,
-                    minHeight: 6,
-                    backgroundColor: p.cardEdge,
-                    valueColor: AlwaysStoppedAnimation(p.coral),
-                  ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _xUrlController,
+                enabled: !_importUrlBusy,
+                decoration: _paperFieldDecoration(
+                  context,
+                  labelText: context.tr('characterImportFromXHint'),
+                  prefixIcon: Icon(Icons.tag_rounded, color: p.coral),
                 ),
+                keyboardType: TextInputType.url,
+                autocorrect: false,
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_importUrlBusy) ...[
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: p.coral,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  PaperButton(
+                    expand: false,
+                    icon: Icons.auto_fix_high_rounded,
+                    label: _importUrlBusy
+                        ? context.tr('characterImportFromXBusy')
+                        : context.tr('characterImportFromXButton'),
+                    onPressed: _importUrlBusy ? null : _importPersonaFromXUrl,
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 10),
+        ),
+        const SizedBox(height: 18),
+        // De-emphasized secondary path: type everything by hand.
+        Center(
+          child: TextButton(
+            onPressed: _importUrlBusy
+                ? null
+                : () => setState(() {
+                    _error = null;
+                    _phase = _CreatePhase.manual;
+                  }),
+            style: TextButton.styleFrom(foregroundColor: p.inkSoft),
+            child: Text(
+              context.tr('createManualLink'),
+              style: TextStyle(
+                color: p.inkSoft,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                decoration: TextDecoration.underline,
+                decorationColor: p.inkSoft,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  // ── PHASE 2: review the auto-filled friend, then save ─────────
+  Widget _buildSummary(BuildContext context) {
+    final p = context.paper;
+    final name = _nameController.text.trim();
+    final tagline = _taglineController.text.trim();
+    final speech = _memoController.text.trim();
+    final hasAvatar = _avatarUrl != null && _avatarUrl!.isNotEmpty;
+    return ListView(
+      padding: _pagePadding,
+      children: [
+        // Back to try a different profile URL.
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _saving
+                ? null
+                : () => setState(() {
+                    _error = null;
+                    _phase = _CreatePhase.xImport;
+                  }),
+            icon: const Icon(Icons.arrow_back_rounded, size: 18),
+            label: Text(context.tr('characterStepBack')),
+            style: TextButton.styleFrom(foregroundColor: p.inkSoft),
+          ),
+        ),
+        const SizedBox(height: 4),
+        if (_error != null) _errorBanner(context),
+        Text(
+          context.tr('createSummaryTitle'),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: p.ink,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 20),
+        if (hasAvatar) ...[
+          Center(
+            child: PolaroidAvatar(
+              size: 132,
+              child: Image(
+                image: _avatarImageProvider(_avatarUrl!),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+        ],
+        Center(
+          child: Text(
+            name,
+            textAlign: TextAlign.center,
+            style: cuteDisplay(
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              color: p.ink,
+            ),
+          ),
+        ),
+        if (tagline.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Center(
+            child: Text(
+              tagline,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: p.inkSoft,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 22),
+        if (speech.isNotEmpty)
+          _SectionCard(
+            icon: Icons.auto_awesome_rounded,
+            title: context.tr('createSummarySpeechLabel'),
+            child: Text(
+              speech,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: p.ink,
+                height: 1.5,
+              ),
+            ),
+          ),
+        const SizedBox(height: 28),
+        _primaryButton(
+          context,
+          icon: Icons.check_rounded,
+          label: context.tr('createSummarySave'),
+          onPressed: _save,
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  // ── Manual editable form (secondary create path + editing) ────
+  Widget _buildManualForm(BuildContext context, {required bool isEdit}) {
+    final p = context.paper;
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: _pagePadding,
+        children: [
+          if (!isEdit)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _saving
+                    ? null
+                    : () => setState(() {
+                        _error = null;
+                        _phase = _CreatePhase.xImport;
+                      }),
+                icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                label: Text(context.tr('characterStepBack')),
+                style: TextButton.styleFrom(foregroundColor: p.inkSoft),
+              ),
+            ),
           Text(
-            stepTitle,
+            context.tr('characterStepProfileTitle'),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: p.ink,
               fontWeight: FontWeight.w900,
             ),
           ),
           const SizedBox(height: 16),
-          // ── Error banner ─────────────────────────────────────
-          if (_error != null) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: scheme.errorContainer,
-                borderRadius: BorderRadius.circular(AppRadii.card),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.error_outline_rounded,
-                    color: scheme.onErrorContainer,
-                    size: 20,
+          if (_error != null) _errorBanner(context),
+          _buildAvatarPicker(context),
+          _SectionCard(
+            icon: Icons.person_outline_rounded,
+            title: context.tr('characterEditorProfileSection'),
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: _paperFieldDecoration(
+                    context,
+                    labelText: context.tr('name'),
+                    hintText: context.tr('characterNameHint'),
+                    prefixIcon: Icon(Icons.badge_outlined, color: p.coral),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _error!,
-                      style: TextStyle(
-                        color: scheme.onErrorContainer,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // ── Avatar picker (centered, large circle) ─────────────────────
-          if (logicalStep == 1) ...[
-            Center(
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  GestureDetector(
-                    onTap: _uploadingAvatar ? null : _pickAvatar,
-                    child: Container(
-                      width: 110,
-                      height: 110,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: (_avatarUrl == null || _avatarUrl!.isEmpty)
-                            ? p.coral
-                            : null,
-                        image: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
-                            ? DecorationImage(
-                                image: _avatarImageProvider(_avatarUrl!),
-                                fit: BoxFit.cover,
-                              )
-                            : null,
-                        boxShadow: [
-                          BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
-                          BoxShadow(
-                            color: p.softShadow,
-                            blurRadius: 18,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: _uploadingAvatar
-                          ? const Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 3,
-                                color: Colors.white,
-                                strokeCap: StrokeCap.round,
-                              ),
-                            )
-                          : (_avatarUrl == null || _avatarUrl!.isEmpty)
-                          ? const Center(
-                              child: Icon(
-                                Icons.face_rounded,
-                                size: 44,
-                                color: Colors.white,
-                              ),
-                            )
-                          : null,
-                    ),
-                  ),
-                  // Camera badge to re-open the picker.
-                  Positioned(
-                    bottom: 2,
-                    right: 2,
-                    child: GestureDetector(
-                      onTap: _uploadingAvatar ? null : _pickAvatar,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: p.coral,
-                          border: Border.all(color: p.card, width: 2.5),
-                          boxShadow: [
-                            BoxShadow(color: p.hardShadow, offset: const Offset(0, 2)),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt_rounded,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (_avatarUrl != null && _avatarUrl!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Center(
-                child: TextButton.icon(
-                  onPressed: _clearAvatar,
-                  icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                  label: Text(context.tr('characterRemoveAvatar')),
-                  style: TextButton.styleFrom(foregroundColor: scheme.error),
+                  textCapitalization: TextCapitalization.words,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? context.tr('nameRequired')
+                      : null,
                 ),
-              ),
-            ],
-            const SizedBox(height: 28),
-          ],
-
-          if (_existing == null && logicalStep == 0) ...[
-            // Either/or: type everything manually, or import from X/Twitter.
-            _MethodTabs(
-              value: _createMethod,
-              onChanged: _anyPersonaImportBusy
-                  ? null
-                  : (m) => setState(() => _createMethod = m),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _taglineController,
+                  decoration: _paperFieldDecoration(
+                    context,
+                    labelText: context.tr('characterTaglineLabel'),
+                    hintText: context.tr('characterTaglineHint'),
+                    prefixIcon: Icon(
+                      Icons.format_quote_rounded,
+                      color: p.coral,
+                    ),
+                  ),
+                  maxLength: 40,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            if (_createMethod == _CreateMethod.manual)
-              _SectionCard(
-                icon: Icons.edit_rounded,
-                title: context.tr('createMethodManual'),
-                child: Text(
-                  context.tr('createMethodManualHint'),
+          ),
+          const SizedBox(height: 16),
+          _SectionCard(
+            icon: Icons.auto_awesome_rounded,
+            title: context.tr('characterStepPersonalityTitle'),
+            child: Column(
+              children: [
+                Text(
+                  context.tr('characterPersonalityGuide'),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: p.inkSoft,
                     height: 1.45,
                   ),
                 ),
-              )
-            else
-              _SectionCard(
-                icon: Icons.link_rounded,
-                title: context.tr('characterImportFromXTitle'),
-                child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    context.tr('characterImportFromXLegal'),
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: p.inkSoft, height: 1.35),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _xUrlController,
-                    enabled: !_anyPersonaImportBusy,
-                    decoration: _paperFieldDecoration(
-                      context,
-                      labelText: context.tr('characterImportFromXHint'),
-                      prefixIcon: Icon(Icons.tag_rounded, color: p.coral),
-                    ),
-                    keyboardType: TextInputType.url,
-                    autocorrect: false,
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_importUrlBusy) ...[
-                          SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: p.coral,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                        ],
-                        PaperButton(
-                          expand: false,
-                          icon: Icons.auto_fix_high_rounded,
-                          label: _importUrlBusy
-                              ? context.tr('characterImportFromXBusy')
-                              : context.tr('characterImportFromXButton'),
-                          onPressed: _anyPersonaImportBusy
-                              ? null
-                              : _importPersonaFromXUrl,
-                        ),
-                      ],
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _memoController,
+                  decoration: _paperFieldDecoration(
+                    context,
+                    labelText: context.tr('characterMemo'),
+                    hintText: context.tr('characterMemoHint'),
+                    alignLabelWithHint: true,
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.only(bottom: 56),
+                      child: Icon(Icons.notes_rounded, color: p.coral),
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  Text(
-                    context.tr('characterImportFromXPaste'),
-                    style: AppTextStyles.sectionLabel(
-                      context,
-                    ).copyWith(fontSize: 13, color: p.ink),
-                  ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: _xPasteController,
-                    enabled: !_anyPersonaImportBusy,
-                    maxLines: 5,
-                    minLines: 3,
-                    decoration: _paperFieldDecoration(
-                      context,
-                      hintText: context.tr('characterImportFromXPasteHint'),
-                      alignLabelWithHint: true,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_importPasteBusy) ...[
-                          SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: p.coral,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                        ],
-                        PaperButton(
-                          expand: false,
-                          icon: Icons.content_paste_rounded,
-                          label: _importPasteBusy
-                              ? context.tr('characterImportFromXBusy')
-                              : context.tr('characterImportFromXManualButton'),
-                          onPressed: _anyPersonaImportBusy
-                              ? null
-                              : _importPersonaFromPaste,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // ── Name & memo ───────────────────────────────────
-          if (logicalStep > 0)
-            _SectionCard(
-              icon: logicalStep == 1
-                  ? Icons.person_outline_rounded
-                  : Icons.auto_awesome_rounded,
-              title: logicalStep == 1
-                  ? context.tr('characterEditorProfileSection')
-                  : context.tr('characterStepPersonalityTitle'),
-              child: Column(
-                children: [
-                  if (logicalStep == 1) ...[
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: _paperFieldDecoration(
-                        context,
-                        labelText: context.tr('name'),
-                        hintText: context.tr('characterNameHint'),
-                        prefixIcon: Icon(Icons.badge_outlined, color: p.coral),
-                      ),
-                      textCapitalization: TextCapitalization.words,
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? context.tr('nameRequired')
-                          : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _taglineController,
-                      decoration: _paperFieldDecoration(
-                        context,
-                        labelText: context.tr('characterTaglineLabel'),
-                        hintText: context.tr('characterTaglineHint'),
-                        prefixIcon: Icon(
-                          Icons.format_quote_rounded,
-                          color: p.coral,
-                        ),
-                      ),
-                      maxLength: 40,
-                    ),
-                  ],
-                  if (logicalStep == 2) ...[
-                    Text(
-                      context.tr('characterPersonalityGuide'),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.45),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _memoController,
-                      decoration: _paperFieldDecoration(
-                        context,
-                        labelText: context.tr('characterMemo'),
-                        hintText: context.tr('characterMemoHint'),
-                        alignLabelWithHint: true,
-                        prefixIcon: Padding(
-                          padding: const EdgeInsets.only(bottom: 56),
-                          child: Icon(Icons.notes_rounded, color: p.coral),
-                        ),
-                      ),
-                      maxLines: 4,
-                      minLines: 3,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          const SizedBox(height: 28),
-
-          // ── Save button ───────────────────────────────────
-          Row(
-            children: [
-              if (_step > 0) ...[
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _saving ? null : () => setState(() => _step--),
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    label: Text(context.tr('characterStepBack')),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: p.ink,
-                      side: BorderSide(color: p.cardEdge),
-                      minimumSize: const Size.fromHeight(54),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(PaperRadii.button),
-                      ),
-                    ),
-                  ),
+                  maxLines: 4,
+                  minLines: 3,
                 ),
-                const SizedBox(width: 10),
               ],
-              Expanded(
-                flex: 2,
-                child: _saving
-                    ? Container(
-                        height: 54,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: p.inkSoft,
-                          borderRadius: BorderRadius.circular(
-                            PaperRadii.button,
-                          ),
-                        ),
-                        child: const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.2,
-                            color: Colors.white,
-                          ),
-                        ),
-                      )
-                    : PaperButton(
-                        icon: isLastStep
-                            ? Icons.check_rounded
-                            : Icons.arrow_forward_rounded,
-                        label: context.tr(
-                          isLastStep
-                              ? (_existing == null ? 'create' : 'save')
-                              : 'characterStepNext',
-                        ),
-                        onPressed: () async {
-                          if (!isLastStep) {
-                            if (logicalStep == 1 &&
-                                !(_formKey.currentState?.validate() ?? false)) {
-                              return;
-                            }
-                            setState(() => _step++);
-                            return;
-                          }
-                          if (_formKey.currentState?.validate() ?? false) {
-                            await _save();
-                          }
-                        },
-                      ),
-              ),
-            ],
+            ),
+          ),
+          const SizedBox(height: 28),
+          _primaryButton(
+            context,
+            icon: Icons.check_rounded,
+            label: context.tr(isEdit ? 'save' : 'create'),
+            onPressed: () async {
+              if (_formKey.currentState?.validate() ?? false) {
+                await _save();
+              }
+            },
           ),
           const SizedBox(height: 12),
         ],
       ),
+    );
+  }
+
+  // ── Avatar picker (centered, large circle) ────────────────────
+  Widget _buildAvatarPicker(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final p = context.paper;
+    return Column(
+      children: [
+        Center(
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              GestureDetector(
+                onTap: _uploadingAvatar ? null : _pickAvatar,
+                child: Container(
+                  width: 110,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: (_avatarUrl == null || _avatarUrl!.isEmpty)
+                        ? p.coral
+                        : null,
+                    image: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
+                        ? DecorationImage(
+                            image: _avatarImageProvider(_avatarUrl!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    boxShadow: [
+                      BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
+                      BoxShadow(
+                        color: p.softShadow,
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: _uploadingAvatar
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: Colors.white,
+                            strokeCap: StrokeCap.round,
+                          ),
+                        )
+                      : (_avatarUrl == null || _avatarUrl!.isEmpty)
+                      ? const Center(
+                          child: Icon(
+                            Icons.face_rounded,
+                            size: 44,
+                            color: Colors.white,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+              // Camera badge to re-open the picker.
+              Positioned(
+                bottom: 2,
+                right: 2,
+                child: GestureDetector(
+                  onTap: _uploadingAvatar ? null : _pickAvatar,
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: p.coral,
+                      border: Border.all(color: p.card, width: 2.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: p.hardShadow,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_avatarUrl != null && _avatarUrl!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Center(
+            child: TextButton.icon(
+              onPressed: _clearAvatar,
+              icon: const Icon(Icons.delete_outline_rounded, size: 16),
+              label: Text(context.tr('characterRemoveAvatar')),
+              style: TextButton.styleFrom(foregroundColor: scheme.error),
+            ),
+          ),
+        ],
+        const SizedBox(height: 28),
+      ],
     );
   }
 }
@@ -895,87 +899,6 @@ class _SectionCard extends StatelessWidget {
           const SizedBox(height: 14),
           child,
         ],
-      ),
-    );
-  }
-}
-
-// ── Create-method segmented control (manual vs X/Twitter import) ─────
-class _MethodTabs extends StatelessWidget {
-  const _MethodTabs({required this.value, required this.onChanged});
-
-  final _CreateMethod value;
-  final ValueChanged<_CreateMethod>? onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.paper;
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: p.card,
-        borderRadius: BorderRadius.circular(PaperRadii.button),
-        border: Border.all(color: p.cardEdge),
-      ),
-      child: Row(
-        children: [
-          _tab(
-            context,
-            _CreateMethod.manual,
-            Icons.edit_rounded,
-            context.tr('createMethodManual'),
-          ),
-          _tab(
-            context,
-            _CreateMethod.twitter,
-            Icons.alternate_email_rounded,
-            context.tr('createMethodTwitter'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _tab(
-    BuildContext context,
-    _CreateMethod method,
-    IconData icon,
-    String label,
-  ) {
-    final p = context.paper;
-    final selected = value == method;
-    final fg = selected ? Colors.white : p.inkSoft;
-    return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onChanged == null ? null : () => onChanged!(method),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: selected ? p.coral : Colors.transparent,
-            borderRadius: BorderRadius.circular(PaperRadii.button - 4),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 18, color: fg),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: fg,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
