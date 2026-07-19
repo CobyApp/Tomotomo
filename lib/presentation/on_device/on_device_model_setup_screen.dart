@@ -1,3 +1,5 @@
+import 'package:background_downloader/background_downloader.dart'
+    show FileDownloader, TaskNotification, PermissionType;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -67,7 +69,7 @@ class OnDeviceModelSetupScreen extends StatelessWidget {
             PaperButton(
               icon: Icons.download_rounded,
               label: context.tr('onDeviceModelDownload'),
-              onPressed: manager.install,
+              onPressed: () => _startInstall(context, manager),
             ),
           if (snapshot.phase == OnDeviceModelPhase.downloading)
             SizedBox(
@@ -133,6 +135,42 @@ class OnDeviceModelSetupScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Configures a system notification (with a live progress bar on Android) for
+  /// the flutter_gemma download group so progress is visible even when the app
+  /// is backgrounded/closed, then starts the install.
+  Future<void> _startInstall(
+    BuildContext context,
+    OnDeviceModelManager manager,
+  ) async {
+    // Read localized notification text before any await (no context across gaps).
+    final running = TaskNotification(
+      context.trRead('modelNotifRunningTitle'),
+      context.trRead('modelNotifRunningBody'),
+    );
+    final complete = TaskNotification(
+      context.trRead('modelNotifCompleteTitle'),
+      context.trRead('modelNotifCompleteBody'),
+    );
+    final error = TaskNotification(
+      context.trRead('modelNotifErrorTitle'),
+      context.trRead('modelNotifErrorBody'),
+    );
+    try {
+      await FileDownloader().permissions.request(PermissionType.notifications);
+      // 'smart_downloads' is the group used by flutter_gemma's SmartDownloader.
+      FileDownloader().configureNotificationForGroup(
+        'smart_downloads',
+        running: running,
+        complete: complete,
+        error: error,
+        progressBar: true,
+      );
+    } catch (_) {
+      // Notifications are best-effort; the download still proceeds without them.
+    }
+    await manager.install();
   }
 
   Future<void> _confirmDelete(
