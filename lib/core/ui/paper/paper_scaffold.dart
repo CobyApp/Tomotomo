@@ -66,7 +66,7 @@ class PaperScaffold extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               titleWidget,
-              const SizedBox(height: 3),
+              const SizedBox(height: 2),
               Text(
                 subtitle!.trim(),
                 maxLines: 2,
@@ -74,7 +74,8 @@ class PaperScaffold extends StatelessWidget {
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: p.inkSoft,
                   fontWeight: FontWeight.w500,
-                  height: 1.3,
+                  fontSize: 11,
+                  height: 1.2,
                 ),
               ),
             ],
@@ -89,7 +90,7 @@ class PaperScaffold extends StatelessWidget {
         Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
-            toolbarHeight: hasSubtitle ? 76 : 64,
+            toolbarHeight: hasSubtitle ? 68 : 56,
             titleSpacing: AppSpacing.pageH,
             surfaceTintColor: Colors.transparent,
             shadowColor: Colors.transparent,

@@ -312,25 +312,6 @@ class WordBookScreenState extends State<WordBookScreen>
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.pageH,
-              8,
-              AppSpacing.pageH,
-              4,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  context.tr('notebookSubtitle'),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: p.inkSoft, height: 1.35),
-                ),
-              ],
-            ),
-          ),
           Expanded(
             child: !_langInitialized || _loading
                 ? const PaperLoadingBody()

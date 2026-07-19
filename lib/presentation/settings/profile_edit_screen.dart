@@ -249,7 +249,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       body = ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.pageH,
-          16,
+          AppSpacing.pageTop,
           AppSpacing.pageH,
           AppSpacing.pageBottom,
         ),
@@ -375,7 +375,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
     return PaperScaffold(
       title: context.tr('profileEditTitle'),
-      subtitle: context.tr('profileEditSubtitle'),
       transparentBackground: false,
       actions: actions,
       body: body,

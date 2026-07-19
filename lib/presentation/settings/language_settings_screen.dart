@@ -20,7 +20,6 @@ class LanguageSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return PaperScaffold(
       title: context.tr('languageTitle'),
-      subtitle: context.tr('languageSubtitle'),
       transparentBackground: false,
       body: FutureBuilder<Profile?>(
         future: _loadProfile(context),
@@ -39,7 +38,7 @@ class LanguageSettingsScreen extends StatelessWidget {
           }
           final p = context.paper;
           return ListView(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 16, AppSpacing.pageH, AppSpacing.pageBottom),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, AppSpacing.pageTop, AppSpacing.pageH, AppSpacing.pageBottom),
             children: [
               AppSettingsPanel(
                 dividerIndent: 16,
