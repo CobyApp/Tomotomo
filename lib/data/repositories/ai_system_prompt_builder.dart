@@ -30,6 +30,33 @@ Self-reference: ${_oneLine(character.selfReference, maxRunes: 40)}
       .trim();
 }
 
+/// Register + difficulty instruction for the learner's chosen speech level.
+/// [speaksKorean] picks the language-appropriate register hint.
+String _levelGuidance(String level, bool speaksKorean) {
+  final casual = speaksKorean ? '반말/편한 말투' : 'フレンドリーなタメ口';
+  final trendy = speaksKorean ? '요즘 쓰는 MZ 표현' : '若者言葉・流行り言葉';
+  final polite = speaksKorean ? '존댓말·격식 있는 표현' : '敬語・丁寧語';
+  switch (level) {
+    case 'beginner':
+      return 'The learner is a BEGINNER. Use very simple, short sentences and '
+          'basic everyday vocabulary. Warm, casual, friendly tone ($casual). '
+          'Avoid rare words, idioms, and complex grammar.';
+    case 'advanced':
+      return 'The learner is ADVANCED. Speak like a native at a natural, rich '
+          'level — idioms, nuance, and varied vocabulary are welcome. Casual or '
+          'polite as fits the relationship.';
+    case 'business':
+      return 'This is BUSINESS/FORMAL practice. Use a polite, professional '
+          'register ($polite). Clear, courteous, professional wording. Avoid '
+          'slang and overly casual speech.';
+    case 'intermediate':
+    default:
+      return 'The learner is INTERMEDIATE. Use natural everyday conversational '
+          'language of moderate difficulty. Casual, friendly speech; you may '
+          'sprinkle common $trendy naturally (not excessively).';
+  }
+}
+
 /// System instruction used only to create the next chat bubble.
 String buildChatReplySystemPrompt(Character character) {
   final speaksKorean = character.koreanNationalPersona;
@@ -45,6 +72,9 @@ You are the tutor persona described below. Create only the tutor's next reply.
 
 PERSONA
 ${_personaSummary(character)}
+
+SPEAKING LEVEL
+${_levelGuidance(character.level, speaksKorean)}
 
 REPLY RULES
 1. Reply in $replyLanguage. Do not include $forbiddenScript or a translation.

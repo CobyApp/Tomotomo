@@ -138,6 +138,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   final _xUrlController = TextEditingController();
 
   String _language = 'ja';
+  String _level = 'intermediate';
   bool _languageInitialized = false;
   bool _saving = false;
   bool _uploadingAvatar = false;
@@ -157,6 +158,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       _taglineController.text = r.tagline?.trim() ?? '';
       _memoController.text = r.speechStyle?.trim() ?? '';
       _language = r.language;
+      _level = r.level;
       _languageInitialized = true;
       _avatarUrl = (r.avatarUrl != null && r.avatarUrl!.trim().isNotEmpty)
           ? r.avatarUrl
@@ -299,6 +301,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           speechStyle: memo.isEmpty ? null : memo,
           avatarUrl: _avatarUrl,
           language: _language,
+          level: _level,
         );
         await repo.createCharacter(record);
       } else {
@@ -310,6 +313,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           speechStyle: memo.isEmpty ? null : memo,
           avatarUrl: _avatarUrl,
           language: _language,
+          level: _level,
           createdAt: existing.createdAt,
           updatedAt: DateTime.now(),
         );
@@ -600,6 +604,8 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
               ).textTheme.bodyMedium?.copyWith(color: p.ink, height: 1.5),
             ),
           ),
+        const SizedBox(height: 16),
+        _levelSection(context),
         const SizedBox(height: 28),
         _primaryButton(
           context,
@@ -609,6 +615,45 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
         ),
         const SizedBox(height: 12),
       ],
+    );
+  }
+
+  // ── Speaking-level selector (register + difficulty) ───────────
+  Widget _levelSection(BuildContext context) {
+    final p = context.paper;
+    const levels = [
+      ('beginner', 'levelBeginner'),
+      ('intermediate', 'levelIntermediate'),
+      ('advanced', 'levelAdvanced'),
+      ('business', 'levelBusiness'),
+    ];
+    return _SectionCard(
+      icon: Icons.school_outlined,
+      title: context.tr('levelSectionTitle'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr('levelSectionHint'),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: p.inkSoft, height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final (value, key) in levels)
+                _LevelChip(
+                  label: context.tr(key),
+                  selected: _level == value,
+                  onTap: () => setState(() => _level = value),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -712,6 +757,8 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          _levelSection(context),
           const SizedBox(height: 28),
           _primaryButton(
             context,
@@ -831,6 +878,51 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
 }
 
 // ── Section card ────────────────────────────────────────────────
+/// A selectable pill for the speaking-level choice (coral when selected).
+class _LevelChip extends StatelessWidget {
+  const _LevelChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(PaperRadii.pill),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          decoration: BoxDecoration(
+            color: selected ? p.coralDeep : p.card,
+            borderRadius: BorderRadius.circular(PaperRadii.pill),
+            border: Border.all(
+              color: selected ? p.coralDeep : p.cardEdge,
+              width: 1.5,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.white : p.ink,
+              fontWeight: FontWeight.w800,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.icon,

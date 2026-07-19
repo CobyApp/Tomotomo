@@ -111,7 +111,7 @@ final List<Character> characters = [
     name: '유우나',
     nameJp: 'ゆうな',
     nameKanji: '天音 ゆうな',
-    level: '초급',
+    level: 'beginner',
     tagline: _characterTaglines['yuna']!,
     description:
         '명랑하고 수다스러운 고등학생. 새로운 것에 흥미가 많고, 다소 덜렁대지만 귀여운 성격으로 주변을 웃게 만드는 분위기 메이커입니다.',
@@ -143,7 +143,7 @@ final List<Character> characters = [
     name: '준호',
     nameJp: 'ジュンホ',
     nameKanji: '朴 俊浩',
-    level: '중급',
+    level: 'intermediate',
     tagline: _characterTaglines['junho']!,
     description:
         '서울 IT 스타트업에서 일하는 개발자. 일본 출장·애니 덕후 경험이 있어 한국어 회화를 도와 주고, 설명·노트는 日本語로 답니다. 단어장에는 말풍선의 한국어 표현이 올라가고 의미는 일본어로 적힙니다.',

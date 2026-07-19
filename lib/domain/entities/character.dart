@@ -150,7 +150,6 @@ class Character {
   /// `ko` → Korean-speaking persona (friend), Japanese glosses on vocabulary in JSON.
   static Character fromRecord(CharacterRecord r) {
     final isJaPersona = r.language == 'ja';
-    final levelLabel = isJaPersona ? '일본어' : '한국어';
     final image = r.avatarUrl ?? '';
     final descParts = <String>[
       if (r.tagline != null && r.tagline!.trim().isNotEmpty) r.tagline!.trim(),
@@ -175,7 +174,7 @@ class Character {
       name: nameKoLine,
       nameJp: nameJaLine,
       nameKanji: nameKanjiVal,
-      level: levelLabel,
+      level: r.level,
       tagline: r.tagline?.trim() ?? '',
       description: descParts.isEmpty ? '' : descParts.join('\n'),
       age: 0,

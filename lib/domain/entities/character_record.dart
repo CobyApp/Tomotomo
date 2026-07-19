@@ -17,6 +17,10 @@ class CharacterRecord {
   final String? tagline;
   final String? speechStyle;
   final String language;
+
+  /// Learner speech level: 'beginner' | 'intermediate' | 'advanced' | 'business'.
+  /// Shapes the friend's register (반말/MZ/경어 …) + difficulty in the chat prompt.
+  final String level;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -28,6 +32,7 @@ class CharacterRecord {
     this.tagline,
     this.speechStyle,
     this.language = 'ja',
+    this.level = 'intermediate',
     required this.createdAt,
     required this.updatedAt,
   });
@@ -53,6 +58,7 @@ class CharacterRecord {
     String? tagline,
     String? speechStyle,
     String language = 'ja',
+    String level = 'intermediate',
   }) {
     final now = DateTime.now();
     return CharacterRecord(
@@ -63,6 +69,7 @@ class CharacterRecord {
       tagline: tagline,
       speechStyle: speechStyle,
       language: language,
+      level: level,
       createdAt: now,
       updatedAt: now,
     );
@@ -77,6 +84,7 @@ class CharacterRecord {
       tagline: json['tagline'] as String?,
       speechStyle: json['speech_style'] as String?,
       language: json['language'] as String? ?? 'ja',
+      level: json['level'] as String? ?? 'intermediate',
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -91,6 +99,7 @@ class CharacterRecord {
       'tagline': tagline,
       'speech_style': speechStyle,
       'language': language,
+      'level': level,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
