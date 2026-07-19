@@ -63,6 +63,15 @@ class App extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
+            builder: (context, child) {
+              final mq = MediaQuery.of(context);
+              return MediaQuery(
+                data: mq.copyWith(
+                  textScaler: mq.textScaler.clamp(minScaleFactor: 1.0, maxScaleFactor: 1.3),
+                ),
+                child: child!,
+              );
+            },
             home: Consumer<OnDeviceModelManager>(
               builder: (context, manager, _) {
                 if (manager.isReady) return const MainShell();
