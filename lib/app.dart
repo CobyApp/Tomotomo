@@ -118,8 +118,9 @@ class App extends StatelessWidget {
                 }
                 return Consumer<OnboardingNotifier>(
                   builder: (context, onboarding, _) {
-                    if (onboarding.isLoading)
+                    if (onboarding.isLoading) {
                       return const _OnboardingGateLoading();
+                    }
                     if (onboarding.onboarded == false) {
                       return const OnboardingScreen();
                     }
