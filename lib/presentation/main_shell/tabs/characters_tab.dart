@@ -179,7 +179,7 @@ class CharactersTabState extends State<CharactersTab>
                   (record) => _recordTile(record, isMine: true),
                 ),
                 if (visibleRecords.isEmpty)
-                  PaperEmptyHint(text: context.tr('charactersEmptyMyCta')),
+                  PaperEmptyHint(text: context.tr('charactersEmptyMyHint')),
               ],
             ),
     );
