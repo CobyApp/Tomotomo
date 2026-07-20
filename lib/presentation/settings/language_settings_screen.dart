@@ -44,7 +44,6 @@ class LanguageSettingsScreen extends StatelessWidget {
                 dividerIndent: 16,
                 children: [
                   AppSettingsNavTile(
-                    icon: Icons.translate_rounded,
                     title: context.tr('langKorean'),
                     showChevron: false,
                     trailing: profile.appLanguage == 'ko'
@@ -53,7 +52,6 @@ class LanguageSettingsScreen extends StatelessWidget {
                     onTap: () => _set(context, 'ko', profile),
                   ),
                   AppSettingsNavTile(
-                    icon: Icons.language_rounded,
                     title: context.tr('langJapanese'),
                     showChevron: false,
                     trailing: profile.appLanguage == 'ja'
@@ -62,7 +60,6 @@ class LanguageSettingsScreen extends StatelessWidget {
                     onTap: () => _set(context, 'ja', profile),
                   ),
                   AppSettingsNavTile(
-                    icon: Icons.language_rounded,
                     title: context.tr('langEnglish'),
                     showChevron: false,
                     trailing: profile.appLanguage == 'en'
@@ -71,7 +68,6 @@ class LanguageSettingsScreen extends StatelessWidget {
                     onTap: () => _set(context, 'en', profile),
                   ),
                   AppSettingsNavTile(
-                    icon: Icons.language_rounded,
                     title: context.tr('langChinese'),
                     showChevron: false,
                     trailing: profile.appLanguage == 'zh'

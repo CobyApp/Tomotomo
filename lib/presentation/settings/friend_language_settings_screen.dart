@@ -44,7 +44,6 @@ class FriendLanguageSettingsScreen extends StatelessWidget {
             children: [
               for (final (code, key) in _languages)
                 AppSettingsNavTile(
-                  icon: Icons.people_alt_rounded,
                   title: context.tr(key),
                   showChevron: false,
                   trailing: current == code

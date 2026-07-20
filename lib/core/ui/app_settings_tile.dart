@@ -55,7 +55,7 @@ class AppSettingsPanel extends StatelessWidget {
 class AppSettingsNavTile extends StatelessWidget {
   const AppSettingsNavTile({
     super.key,
-    required this.icon,
+    this.icon,
     required this.title,
     this.subtitle,
     this.onTap,
@@ -65,7 +65,7 @@ class AppSettingsNavTile extends StatelessWidget {
     this.trailing,
   });
 
-  final IconData icon;
+  final IconData? icon;
   final String title;
   final String? subtitle;
   final VoidCallback? onTap;
@@ -83,15 +83,17 @@ class AppSettingsNavTile extends StatelessWidget {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       minTileHeight: 68,
-      leading: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: ic.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(13),
-        ),
-        child: Icon(icon, color: ic, size: 22),
-      ),
+      leading: icon == null
+          ? null
+          : Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: ic.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Icon(icon, color: ic, size: 22),
+            ),
       title: Text(
         title,
         style: AppTextStyles.listTitle(
