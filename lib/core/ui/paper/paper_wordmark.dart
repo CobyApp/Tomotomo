@@ -13,28 +13,12 @@ class PaperWordmark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    return IntrinsicWidth(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            text,
-            style: cuteDisplay(
-              fontSize: fontSize,
-              fontWeight: FontWeight.w800,
-              color: p.coral,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Container(
-            height: 2.5,
-            decoration: BoxDecoration(
-              color: p.coral.withValues(alpha: 0.45),
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-        ],
+    return Text(
+      text,
+      style: cuteDisplay(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w800,
+        color: p.coral,
       ),
     );
   }

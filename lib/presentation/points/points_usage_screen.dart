@@ -85,7 +85,7 @@ class _PointsUsageScreenState extends State<PointsUsageScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.pageH,
-          8,
+          AppSpacing.pageTop,
           AppSpacing.pageH,
           AppSpacing.pageBottom,
         ),

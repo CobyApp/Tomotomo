@@ -196,6 +196,7 @@ class AppStrings {
     'displayNameHint': '앱에 보일 닉네임',
     'displayNameRequired': '표시 이름을 입력하세요.',
     'onDeviceModelTitle': '친구와 대화 준비하기',
+    'onDeviceModelArtifactLabel': '대화 엔진',
     'onDeviceModelHeadline': '이 기기에 친구용 대화 엔진을 설치해요',
     'onDeviceModelDescription':
         '최초 1회 약 2.59GB를 다운로드합니다. 설치 후 채팅과 표현 분석은 인터넷 없이 기기 안에서 처리됩니다.',
@@ -436,6 +437,7 @@ class AppStrings {
     'displayNameHint': 'ニックネーム',
     'displayNameRequired': '表示名を入力してください。',
     'onDeviceModelTitle': '友だちと話す準備',
+    'onDeviceModelArtifactLabel': '会話エンジン',
     'onDeviceModelHeadline': 'この端末に友だち用の会話エンジンをインストールします',
     'onDeviceModelDescription':
         '初回のみ約2.59GBをダウンロードします。インストール後、チャットと表現分析は端末内で処理されます。',
@@ -701,6 +703,7 @@ class AppStrings {
     'displayNameHint': 'Nickname shown in the app',
     'displayNameRequired': 'Please enter a display name.',
     'onDeviceModelTitle': 'Get Ready to Chat with Friends',
+    'onDeviceModelArtifactLabel': 'Chat engine',
     'onDeviceModelHeadline':
         'Install the chat engine for friends on this device',
     'onDeviceModelDescription':
@@ -948,6 +951,7 @@ class AppStrings {
     'displayNameHint': '应用中显示的昵称',
     'displayNameRequired': '请输入显示名称。',
     'onDeviceModelTitle': '准备与朋友聊天',
+    'onDeviceModelArtifactLabel': '对话引擎',
     'onDeviceModelHeadline': '在此设备上安装朋友专用的对话引擎',
     'onDeviceModelDescription':
         '首次约需下载2.59GB。安装后，聊天和表达分析将在设备上离线处理。',

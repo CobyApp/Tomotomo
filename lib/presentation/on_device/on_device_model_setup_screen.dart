@@ -115,7 +115,7 @@ class OnDeviceModelSetupScreen extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    OnDeviceModelConfig.version,
+                    context.tr('onDeviceModelArtifactLabel'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
