@@ -46,6 +46,34 @@ void main() {
     expect(fetched!.level, 'business');
   });
 
+  test('seedBuiltInsIfNeeded seeds once and later deletions stick', () async {
+    final now = DateTime(2026, 1, 1);
+    final seeds = [
+      CharacterRecord(
+        id: 'yuna',
+        name: 'Yuna',
+        language: 'ja',
+        createdAt: now,
+        updatedAt: now,
+      ),
+      CharacterRecord(
+        id: 'junho',
+        name: 'Junho',
+        language: 'ko',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ];
+    await repo.seedBuiltInsIfNeeded(seeds);
+    expect((await repo.getMyCharacters()).map((c) => c.id).toSet(),
+        {'yuna', 'junho'});
+
+    // Delete one, then re-run seeding: it must NOT come back.
+    await repo.deleteCharacter('yuna');
+    await repo.seedBuiltInsIfNeeded(seeds);
+    expect((await repo.getMyCharacters()).map((c) => c.id).toSet(), {'junho'});
+  });
+
   test('update preserves the speaking level', () async {
     final created = await repo.createCharacter(
       CharacterRecord.draft(name: 'Riku', level: 'beginner'),

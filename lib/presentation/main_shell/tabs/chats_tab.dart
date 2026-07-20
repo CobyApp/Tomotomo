@@ -29,13 +29,14 @@ Future<Character?> _resolveCharacterForRoom(
   ChatRoomSummary room,
   CharacterRecordRepository charRepo,
 ) async {
-  // Built-in packaged tutors first.
+  // Prefer the stored record (built-ins are seeded as editable records, so a
+  // user's edits/deletions win).
+  final r = await charRepo.getCharacter(room.roomId);
+  if (r != null) return Character.fromRecord(r);
+  // Fall back to the packaged persona for rooms opened before seeding.
   for (final c in characters) {
     if (c.id == room.roomId) return c;
   }
-  // Then the user's local custom characters.
-  final r = await charRepo.getCharacter(room.roomId);
-  if (r != null) return Character.fromRecord(r);
   return null;
 }
 

@@ -16,7 +16,6 @@ import '../../../core/ui/paper/paper_widgets.dart';
 import '../../../core/ui/paper/paper_dialog.dart';
 import '../../../core/ui/paper/paper_scaffold.dart';
 import '../../../core/ui/paper/paper_status_views.dart';
-import '../../../data/character/characters_data.dart';
 import '../../chat/chat_screen.dart';
 import '../../character_form/create_character_screen.dart';
 import '../../character_form/edit_character_screen.dart';
@@ -100,21 +99,16 @@ class CharactersTabState extends State<CharactersTab>
     if (created == true) unawaited(_load());
   }
 
-  // ── avatar helpers ───────────────────────────────────────
-  Widget _builtInAvatar(Character c, {double size = 64}) {
-    return PolaroidAvatar(
-      size: size,
-      child: Image(image: c.imageProvider, fit: BoxFit.cover),
-    );
-  }
-
+  // ── avatar helper ─────────────────────────────────────────
   Widget _recordAvatar(String? url, String name, {double size = 60}) {
     final p = context.paper;
     Widget inner;
     if (url != null && url.isNotEmpty) {
-      final provider = url.startsWith('http')
+      final ImageProvider provider = url.startsWith('http')
           ? NetworkImage(url)
-          : FileImage(File(url)) as ImageProvider;
+          : url.startsWith('assets/')
+          ? AssetImage(url)
+          : FileImage(File(url));
       inner = Image(image: provider, fit: BoxFit.cover);
     } else {
       final initial = name.isNotEmpty ? name.substring(0, 1) : '?';
@@ -140,9 +134,6 @@ class CharactersTabState extends State<CharactersTab>
     );
     final visibleRecords = _myCharacters
         .where((record) => record.language == targetLanguage)
-        .toList(growable: false);
-    final visibleBuiltIns = characters
-        .where((character) => character.friendLanguage == targetLanguage)
         .toList(growable: false);
 
     return PaperScaffold(
@@ -174,15 +165,6 @@ class CharactersTabState extends State<CharactersTab>
                 100,
               ),
               children: [
-                if (visibleBuiltIns.isNotEmpty)
-                  PaperSectionLabel(context.tr('charactersSectionRecommended')),
-                ...visibleBuiltIns.asMap().entries.map(
-                  (entry) =>
-                      _builtInTile(entry.value, featured: entry.key == 0),
-                ),
-                if (visibleBuiltIns.isNotEmpty)
-                  const SizedBox(height: AppSpacing.sectionAfter),
-                PaperSectionLabel(context.tr('charactersSectionMine')),
                 ...visibleRecords.map(
                   (record) => _recordTile(record, isMine: true),
                 ),
@@ -193,68 +175,6 @@ class CharactersTabState extends State<CharactersTab>
     );
   }
 
-
-  Widget _builtInTile(Character c, {bool featured = false}) {
-    void openChat() => Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChatScreen(
-          character: c,
-          chatRepository: context.read<ChatRepository>(),
-          aiChatRepository: context.read<AiChatRepository>(),
-        ),
-      ),
-    );
-    final p = context.paper;
-    final card = PaperCard(
-      onTap: openChat,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _builtInAvatar(c),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  c.displayNamePrimary,
-                  style: AppTextStyles.listTitle(context).copyWith(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: p.ink,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  c.tagline.isNotEmpty ? c.tagline : c.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.listSubtitle(
-                    context,
-                  ).copyWith(height: 1.4, color: p.inkSoft),
-                ),
-              ],
-            ),
-          ),
-          Icon(Icons.chevron_right_rounded, color: p.inkSoft),
-        ],
-      ),
-    );
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: featured
-          ? Stack(
-              clipBehavior: Clip.none,
-              children: [
-                card,
-                const Positioned(top: -6, left: 22, child: WashiTape()),
-              ],
-            )
-          : card,
-    );
-  }
 
   String _recordSubtitle(BuildContext context, CharacterRecord r) {
     final line = r.listDetailLine;

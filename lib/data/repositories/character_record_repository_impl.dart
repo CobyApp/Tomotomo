@@ -68,4 +68,18 @@ class CharacterRecordRepositoryImpl implements CharacterRecordRepository {
   Future<void> deleteCharacter(String id) async {
     await _store.deleteItem(id);
   }
+
+  static const _seededKey = '__builtins_seeded__';
+
+  @override
+  Future<void> seedBuiltInsIfNeeded(List<CharacterRecord> builtIns) async {
+    if (_store.getValue(_seededKey) == true) return;
+    for (final r in builtIns) {
+      // Skip an id that already exists (e.g. a user who created one manually).
+      if (_store.getItem(r.id) == null) {
+        await _store.putItem(r.id, r.toJson());
+      }
+    }
+    await _store.putValue(_seededKey, true);
+  }
 }
