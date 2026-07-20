@@ -4,8 +4,7 @@ import '../../points/points_balance_notifier.dart';
 import '../../../core/ui/app_settings_tile.dart';
 import '../../../core/ui/app_tokens.dart';
 import '../../../core/ui/paper/paper_scaffold.dart';
-import '../../../core/ui/paper/paper_theme.dart';
-import '../../../core/ui/paper/paper_tokens.dart';
+import '../../../core/ui/paper/paper_widgets.dart';
 import '../../locale/l10n_context.dart';
 import '../../settings/language_settings_screen.dart';
 import '../../settings/friend_language_settings_screen.dart';
@@ -29,7 +28,7 @@ class SettingsTab extends StatelessWidget {
           AppSpacing.pageBottom,
         ),
         children: [
-          _SettingsGroupLabel(context.tr('settingsProfileSection')),
+          PaperSectionLabel(context.tr('settingsProfileSection')),
           AppSettingsPanel(
             children: [
               Consumer<PointsBalanceNotifier>(
@@ -82,7 +81,7 @@ class SettingsTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          _SettingsGroupLabel(context.tr('settingsAppSection')),
+          PaperSectionLabel(context.tr('settingsAppSection')),
           AppSettingsPanel(
             children: [
               AppSettingsNavTile(
@@ -132,23 +131,3 @@ class SettingsTab extends StatelessWidget {
   }
 }
 
-class _SettingsGroupLabel extends StatelessWidget {
-  const _SettingsGroupLabel(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
-      child: Text(
-        label,
-        style: cuteDisplay(
-          fontSize: 14,
-          fontWeight: FontWeight.w800,
-          color: context.paper.coral,
-        ),
-      ),
-    );
-  }
-}

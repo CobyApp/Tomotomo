@@ -11,7 +11,6 @@ import '../../../domain/repositories/chat_repository.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
 import '../../../domain/repositories/character_record_repository.dart';
 import '../../../core/ui/ui.dart';
-import '../../../core/ui/paper/paper_theme.dart';
 import '../../../core/ui/paper/paper_tokens.dart';
 import '../../../core/ui/paper/paper_widgets.dart';
 import '../../../core/ui/paper/paper_dialog.dart';
@@ -180,14 +179,14 @@ class CharactersTabState extends State<CharactersTab>
               ),
               children: [
                 if (visibleBuiltIns.isNotEmpty)
-                  _sectionLabel(context.tr('charactersSectionRecommended')),
+                  PaperSectionLabel(context.tr('charactersSectionRecommended')),
                 ...visibleBuiltIns.asMap().entries.map(
                   (entry) =>
                       _builtInTile(entry.value, featured: entry.key == 0),
                 ),
                 if (visibleBuiltIns.isNotEmpty)
                   const SizedBox(height: AppSpacing.sectionAfter),
-                _sectionLabel(context.tr('charactersSectionMine')),
+                PaperSectionLabel(context.tr('charactersSectionMine')),
                 ...visibleRecords.map(
                   (record) => _recordTile(record, isMine: true),
                 ),
@@ -198,20 +197,6 @@ class CharactersTabState extends State<CharactersTab>
     );
   }
 
-  Widget _sectionLabel(String text) {
-    final p = context.paper;
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, top: 2, bottom: 10),
-      child: Text(
-        text,
-        style: cuteDisplay(
-          fontSize: 15,
-          fontWeight: FontWeight.w800,
-          color: p.inkSoft,
-        ),
-      ),
-    );
-  }
 
   Widget _builtInTile(Character c, {bool featured = false}) {
     void openChat() => Navigator.push(

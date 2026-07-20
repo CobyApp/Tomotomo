@@ -1,6 +1,30 @@
 import 'package:flutter/material.dart';
 import 'paper_loading.dart';
+import 'paper_theme.dart';
 import 'paper_tokens.dart';
+
+/// Small coral group heading used above card groups and list sections. One
+/// shared style so every screen's section labels match.
+class PaperSectionLabel extends StatelessWidget {
+  const PaperSectionLabel(this.label, {super.key});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
+      child: Text(
+        label,
+        style: cuteDisplay(
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
+          color: context.paper.coral,
+        ),
+      ),
+    );
+  }
+}
 
 /// Layered "cut-paper" card: hairline edge + hard offset + soft blur shadow.
 class PaperCard extends StatelessWidget {
