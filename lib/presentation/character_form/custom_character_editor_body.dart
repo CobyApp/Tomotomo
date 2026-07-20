@@ -647,7 +647,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             runSpacing: 8,
             children: [
               for (final (value, key) in levels)
-                _LevelChip(
+                PaperChip(
                   label: context.tr(key),
                   selected: _level == value,
                   onTap: () => setState(() => _level = value),
@@ -686,7 +686,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             runSpacing: 8,
             children: [
               for (final (value, key) in languages)
-                _LevelChip(
+                PaperChip(
                   label: context.tr(key),
                   selected: _language == value,
                   onTap: () => setState(() => _language = value),
@@ -922,49 +922,6 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
 
 // ── Section card ────────────────────────────────────────────────
 /// A selectable pill for the speaking-level choice (coral when selected).
-class _LevelChip extends StatelessWidget {
-  const _LevelChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.paper;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(PaperRadii.pill),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-          decoration: BoxDecoration(
-            color: selected ? p.coralDeep : p.card,
-            borderRadius: BorderRadius.circular(PaperRadii.pill),
-            border: Border.all(
-              color: selected ? p.coralDeep : p.cardEdge,
-              width: 1.5,
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected ? Colors.white : p.ink,
-              fontWeight: FontWeight.w800,
-              fontSize: 14,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _SectionCard extends StatelessWidget {
   const _SectionCard({

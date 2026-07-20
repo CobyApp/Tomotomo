@@ -341,21 +341,20 @@ class WordBookScreenState extends State<WordBookScreen>
               ),
               child: Wrap(
                 spacing: 8,
+                runSpacing: 8,
                 children: [
                   for (final seg in _availableSegments)
-                    ChoiceChip(
-                      label: Text(
-                        context.tr(
-                          const {
-                            'ko': 'friendLangKo',
-                            'ja': 'friendLangJa',
-                            'en': 'friendLangEn',
-                            'zh': 'friendLangZh',
-                          }[seg]!,
-                        ),
+                    PaperChip(
+                      label: context.tr(
+                        const {
+                          'ko': 'friendLangKo',
+                          'ja': 'friendLangJa',
+                          'en': 'friendLangEn',
+                          'zh': 'friendLangZh',
+                        }[seg]!,
                       ),
                       selected: _notebookLang == seg,
-                      onSelected: (_) => _selectSegment(seg),
+                      onTap: () => _selectSegment(seg),
                     ),
                 ],
               ),

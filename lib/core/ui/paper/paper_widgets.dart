@@ -26,6 +26,54 @@ class PaperSectionLabel extends StatelessWidget {
   }
 }
 
+/// Selectable pill chip in the paper style (coral when selected). One shared
+/// control for every chip row — speaking level, friend language, notebook
+/// segment — so they all look and behave identically.
+class PaperChip extends StatelessWidget {
+  const PaperChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(PaperRadii.pill),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          decoration: BoxDecoration(
+            color: selected ? p.coralDeep : p.card,
+            borderRadius: BorderRadius.circular(PaperRadii.pill),
+            border: Border.all(
+              color: selected ? p.coralDeep : p.cardEdge,
+              width: 1.5,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.white : p.ink,
+              fontWeight: FontWeight.w800,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Layered "cut-paper" card: hairline edge + hard offset + soft blur shadow.
 class PaperCard extends StatelessWidget {
   const PaperCard({super.key, required this.child, this.padding, this.onTap});
