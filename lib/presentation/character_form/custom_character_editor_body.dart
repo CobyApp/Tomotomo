@@ -435,12 +435,14 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     required IconData icon,
     required String label,
     required VoidCallback? onPressed,
+    int? costPoints,
   }) {
     return PaperButton(
       icon: icon,
       label: label,
       onPressed: onPressed,
       busy: _saving,
+      costPoints: costPoints,
     );
   }
 
@@ -490,6 +492,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                 label: context.tr('characterImportFromXButton'),
                 onPressed: _importPersonaFromXUrl,
                 busy: _importUrlBusy,
+                costPoints: 5,
               ),
             ],
           ),
@@ -613,6 +616,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           context,
           icon: Icons.check_rounded,
           label: context.tr('createSummarySave'),
+          costPoints: 10,
           onPressed: _save,
         ),
         const SizedBox(height: 12),
@@ -800,6 +804,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             context,
             icon: Icons.check_rounded,
             label: context.tr(isEdit ? 'save' : 'create'),
+            costPoints: isEdit ? null : 10,
             onPressed: () async {
               if (_formKey.currentState?.validate() ?? false) {
                 await _save();

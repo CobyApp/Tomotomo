@@ -119,11 +119,16 @@ class PaperButton extends StatefulWidget {
     this.icon,
     this.expand = true,
     this.busy = false,
+    this.costPoints,
   });
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
   final bool expand;
+
+  /// When set, shows a small "{n}P" cost pill after the label — used on
+  /// point-spending actions so the cost sits next to the action itself.
+  final int? costPoints;
 
   /// When true, shows a small white [PaperLoading] instead of the label and
   /// ignores taps — same size/shape, no layout jump.
@@ -187,6 +192,27 @@ class _PaperButtonState extends State<PaperButton> {
                       fontSize: 15,
                     ),
                   ),
+                  if (widget.costPoints != null) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '${widget.costPoints}P',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
       ),

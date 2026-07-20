@@ -12,7 +12,6 @@ class CreateCharacterScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return PaperScaffold(
       title: context.tr('createCharacterTitle'),
-      showPointsChip: true,
       transparentBackground: false,
       body: const CustomCharacterEditorBody(),
     );
