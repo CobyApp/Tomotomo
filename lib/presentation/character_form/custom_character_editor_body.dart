@@ -67,9 +67,10 @@ bool _isNetworkImagePath(String value) {
 
 /// Image provider for either a remote http(s) URL or a local file path.
 ImageProvider _avatarImageProvider(String value) {
-  return _isNetworkImagePath(value)
-      ? NetworkImage(value)
-      : FileImage(File(value));
+  if (_isNetworkImagePath(value)) return NetworkImage(value);
+  // Built-in friends carry a bundled asset path.
+  if (value.startsWith('assets/')) return AssetImage(value);
+  return FileImage(File(value));
 }
 
 /// Copies a picked image [src] into the app documents dir, returns the stored path.
