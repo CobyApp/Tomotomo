@@ -16,6 +16,16 @@ enum VocabularyMeaningPickMode {
   preferChineseGloss,
 }
 
+/// Gloss preference driven by the learner's app UI language, so cached and
+/// freshly-parsed vocabulary meanings are picked consistently in every language.
+VocabularyMeaningPickMode meaningPickModeForApp(String appLanguageCode) {
+  final lang = appLanguageCode.toLowerCase();
+  if (lang.startsWith('ja')) return VocabularyMeaningPickMode.preferJapaneseGloss;
+  if (lang.startsWith('en')) return VocabularyMeaningPickMode.preferEnglishGloss;
+  if (lang.startsWith('zh')) return VocabularyMeaningPickMode.preferChineseGloss;
+  return VocabularyMeaningPickMode.preferKoreanGloss;
+}
+
 class ChatMessage {
   /// Persistent local message identifier; null for optimistic rows.
   final String? serverId;

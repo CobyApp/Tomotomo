@@ -206,13 +206,14 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     }
   }
 
-  List<Vocabulary>? _vocabularyFromCache(List<Map<String, dynamic>> values) {
+  List<Vocabulary>? _vocabularyFromCache(
+    List<Map<String, dynamic>> values,
+    String appLanguage,
+  ) {
     final vocabulary = <Vocabulary>[];
+    final meaningMode = meaningPickModeForApp(appLanguage);
     for (final value in values) {
-      final parsed = Vocabulary.tryParseLoose(
-        value,
-        meaningMode: widget.character.vocabularyMeaningPickMode,
-      );
+      final parsed = Vocabulary.tryParseLoose(value, meaningMode: meaningMode);
       if (parsed != null) vocabulary.add(parsed);
     }
     return vocabulary.isEmpty ? null : vocabulary;
@@ -236,7 +237,10 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
         );
         if (!mounted) return;
         if (cached != null) {
-          final vocabulary = _vocabularyFromCache(cached.vocabularyJson);
+          final vocabulary = _vocabularyFromCache(
+            cached.vocabularyJson,
+            appLanguage,
+          );
           if (_isCompleteAnalysis(
             translation: cached.lineTranslation,
             explanation: cached.explanation,
