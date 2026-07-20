@@ -240,9 +240,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // ── Step 1: app language ──────────────────────────────────────
   Widget _stepAppLanguage(BuildContext context) {
     final appLang = _profile?.appLanguage;
+    final p = context.paper;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Center(
+          child: Container(
+            width: 84,
+            height: 84,
+            margin: const EdgeInsets.only(top: 4, bottom: 18),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: p.softShadow,
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Image.asset('assets/images/app_icon.png', fit: BoxFit.cover),
+          ),
+        ),
         _StepHeading(
           title: context.tr('onboardingStep1Title'),
           subtitle: context.tr('onboardingStep1Subtitle'),
