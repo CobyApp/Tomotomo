@@ -148,20 +148,16 @@ class CharactersTabState extends State<CharactersTab>
     return PaperScaffold(
       title: 'トモトモ',
       useWordmark: true,
-      showPointsChip: true,
-      floatingActionButton: (_loading || _error != null)
+      actions: (_loading || _error != null)
           ? null
-          : FloatingActionButton.extended(
-              onPressed: _openCreateCharacter,
-              backgroundColor: p.coral,
-              foregroundColor: Colors.white,
-              elevation: 3,
-              icon: const Icon(Icons.person_add_alt_1_rounded),
-              label: Text(
-                context.tr('charactersEmptyMyCta'),
-                style: const TextStyle(fontWeight: FontWeight.w800),
+          : [
+              IconButton(
+                onPressed: _openCreateCharacter,
+                icon: const Icon(Icons.person_add_alt_1_rounded),
+                color: p.coral,
+                tooltip: context.tr('charactersEmptyMyCta'),
               ),
-            ),
+            ],
       body: _loading
           ? const PaperLoadingBody()
           : _error != null
