@@ -70,8 +70,10 @@ Map<String, dynamic>? _fallbackMapFromLooseJsonText(String s) {
 
   final meaningJa = _extractJsonStringValue(s, 'meaning_ja') ?? _extractJsonStringValue(s, 'meaningJa');
   final meaningKo = _extractJsonStringValue(s, 'meaning_ko') ?? _extractJsonStringValue(s, 'meaningKo');
+  final meaningEn = _extractJsonStringValue(s, 'meaning_en') ?? _extractJsonStringValue(s, 'meaningEn');
+  final meaningZh = _extractJsonStringValue(s, 'meaning_zh') ?? _extractJsonStringValue(s, 'meaningZh');
   final meaning = _extractJsonStringValue(s, 'meaning');
-  final hasMeaning = [meaningJa, meaningKo, meaning]
+  final hasMeaning = [meaningJa, meaningKo, meaningEn, meaningZh, meaning]
       .any((e) => e != null && e.toString().trim().isNotEmpty);
   if (!hasMeaning) {
     return {'content': content};
@@ -85,6 +87,8 @@ Map<String, dynamic>? _fallbackMapFromLooseJsonText(String s) {
   if (reading != null && reading.trim().isNotEmpty) item['reading'] = reading.trim();
   if (meaningJa != null && meaningJa.trim().isNotEmpty) item['meaning_ja'] = meaningJa.trim();
   if (meaningKo != null && meaningKo.trim().isNotEmpty) item['meaning_ko'] = meaningKo.trim();
+  if (meaningEn != null && meaningEn.trim().isNotEmpty) item['meaning_en'] = meaningEn.trim();
+  if (meaningZh != null && meaningZh.trim().isNotEmpty) item['meaning_zh'] = meaningZh.trim();
   if (meaning != null && meaning.trim().isNotEmpty) item['meaning'] = meaning.trim();
 
   return {'content': content, 'vocabulary': [item]};
@@ -221,6 +225,8 @@ Map<String, dynamic> _normalizeVocabularyEntryAliases(Map<String, dynamic> m) {
 
   copyIfEmpty('meaning_ko', ['korean', 'ko_gloss', 'korean_gloss', 'definition_ko', 'def_ko']);
   copyIfEmpty('meaning_ja', ['ja_gloss', 'ja_meaning', 'japanese_meaning', 'nihongo', 'def_ja', 'definition_ja']);
+  copyIfEmpty('meaning_en', ['english', 'en_gloss', 'english_meaning', 'definition_en', 'def_en']);
+  copyIfEmpty('meaning_zh', ['chinese', 'zh_gloss', 'chinese_meaning', 'definition_zh', 'def_zh']);
   copyIfEmpty('word', ['headword', 'lemma', 'token', '表記', '見出し語', 'surface_form', 'surfaceForm']);
   copyIfEmpty('reading', ['yomi', 'furigana', 'romaji', 'pronunciation']);
 
@@ -276,6 +282,8 @@ Map<String, dynamic> _hoistFlatVocabularyIntoArray(Map<String, dynamic> root) {
     'gloss_ko',
     'ko_meaning',
   ]);
+  final meaningEn = _firstNonEmptyString(root, const ['meaning_en', 'meaningEn', 'gloss_en']);
+  final meaningZh = _firstNonEmptyString(root, const ['meaning_zh', 'meaningZh', 'gloss_zh']);
   final meaning = _firstNonEmptyString(root, const [
     'meaning',
     'definition',
@@ -284,7 +292,13 @@ Map<String, dynamic> _hoistFlatVocabularyIntoArray(Map<String, dynamic> root) {
     'mean',
     '뜻',
   ]);
-  if (meaningJa == null && meaningKo == null && meaning == null) return root;
+  if (meaningJa == null &&
+      meaningKo == null &&
+      meaningEn == null &&
+      meaningZh == null &&
+      meaning == null) {
+    return root;
+  }
 
   final content = _firstNonEmptyString(root, const [
         'content',
@@ -319,6 +333,8 @@ Map<String, dynamic> _hoistFlatVocabularyIntoArray(Map<String, dynamic> root) {
   if (reading != null && reading.isNotEmpty) item['reading'] = reading;
   if (meaningJa != null && meaningJa.isNotEmpty) item['meaning_ja'] = meaningJa;
   if (meaningKo != null && meaningKo.isNotEmpty) item['meaning_ko'] = meaningKo;
+  if (meaningEn != null && meaningEn.isNotEmpty) item['meaning_en'] = meaningEn;
+  if (meaningZh != null && meaningZh.isNotEmpty) item['meaning_zh'] = meaningZh;
   if (meaning != null && meaning.isNotEmpty) item['meaning'] = meaning;
 
   final out = Map<String, dynamic>.from(root);

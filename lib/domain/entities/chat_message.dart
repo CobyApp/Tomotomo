@@ -8,6 +8,12 @@ enum VocabularyMeaningPickMode {
 
   /// Japanese immersion or local cache: prefer generic `meaning`, then others.
   neutral,
+
+  /// English study notes: prefer English gloss keys.
+  preferEnglishGloss,
+
+  /// Chinese study notes: prefer Chinese gloss keys.
+  preferChineseGloss,
 }
 
 class ChatMessage {
@@ -207,6 +213,12 @@ class Vocabulary {
         'phrase_ko',
         'surface_ko',
       ]),
+      VocabularyMeaningPickMode.preferEnglishGloss ||
+      VocabularyMeaningPickMode.preferChineseGloss => pickString(const [
+        'word', 'term', 'expression', '単語', 'japanese', 'surface',
+        'headword', 'lemma', 'token', 'phrase', 'word_ko', 'wordKo',
+        'phrase_ko', 'surface_ko', 'hanzi', 'pinyin_word',
+      ]),
     };
 
     final String? meaning = switch (meaningMode) {
@@ -268,6 +280,18 @@ class Vocabulary {
         'meaning_ja',
         'meaningJa',
         'gloss_ja',
+      ]),
+      VocabularyMeaningPickMode.preferEnglishGloss => pickString(const [
+        'meaning_en', 'meaningEn', 'english_meaning', 'gloss_en', 'en_meaning',
+        'english', 'en_gloss',
+        'meaning', 'definition', 'gloss', 'translation', 'mean',
+        'meaning_ko', 'meaningKo', 'meaning_ja', 'meaningJa',
+      ]),
+      VocabularyMeaningPickMode.preferChineseGloss => pickString(const [
+        'meaning_zh', 'meaningZh', 'chinese_meaning', 'gloss_zh', 'zh_meaning',
+        'chinese', 'zh_gloss',
+        'meaning', 'definition', 'gloss', 'translation', 'mean',
+        'meaning_ko', 'meaningKo', 'meaning_ja', 'meaningJa',
       ]),
     };
     if (word == null || meaning == null) return null;

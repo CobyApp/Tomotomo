@@ -121,9 +121,14 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
     final encodedUtterance = jsonEncode(
       _takeRunes(utterance, _maxCurrentMessageRunes),
     );
-    final meaningMode = appUiLanguageCode.toLowerCase().startsWith('ja')
+    final lang = appUiLanguageCode.toLowerCase();
+    final meaningMode = lang.startsWith('ja')
         ? VocabularyMeaningPickMode.preferJapaneseGloss
-        : VocabularyMeaningPickMode.preferKoreanGloss;
+        : lang.startsWith('en')
+            ? VocabularyMeaningPickMode.preferEnglishGloss
+            : lang.startsWith('zh')
+                ? VocabularyMeaningPickMode.preferChineseGloss
+                : VocabularyMeaningPickMode.preferKoreanGloss;
 
     Future<ChatMessage> analyze(String prompt) async {
       final raw = await _runtime.generateText(
