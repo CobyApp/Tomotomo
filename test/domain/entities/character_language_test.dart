@@ -28,7 +28,8 @@ void main() {
   test('migration: no friendLanguage falls back to old fields', () {
     expect(_base(koreanPersona: true).friendLanguage, 'ko');
     expect(_base(tutorLocale: 'ja').friendLanguage, 'ja');
-    expect(_base().friendLanguage, 'ko'); // default
+    // Legacy default (koreanNationalPersona == false) meant a Japanese friend.
+    expect(_base().friendLanguage, 'ja');
   });
 
   test('fromRecord maps record.language to friendLanguage', () {

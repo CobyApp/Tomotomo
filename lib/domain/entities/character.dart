@@ -117,9 +117,11 @@ class Character {
     if (raw != null && kSupportedLanguages.contains(normalizeLang(raw))) {
       return normalizeLang(raw);
     }
-    if (tutorLocale == 'ja') return 'ja';
+    // Legacy migration: the only two historical personas were the Korean friend
+    // (koreanNationalPersona == true) and the Japanese friend (everything else,
+    // including tutorLocale == 'ja'). Default to Japanese for that legacy case.
     if (_koreanNationalPersonaRaw) return 'ko';
-    return 'ko';
+    return 'ja';
   }
 
   /// Backward-compatible: true when the friend speaks Korean.
