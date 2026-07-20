@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../../core/locale/languages.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -666,12 +668,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   // ── Friend language selector ──────────────────────────────────
   Widget _languageSection(BuildContext context) {
     final p = context.paper;
-    const languages = [
-      ('ko', 'friendLangKo'),
-      ('ja', 'friendLangJa'),
-      ('en', 'friendLangEn'),
-      ('zh', 'friendLangZh'),
-    ];
+    const languages = ['ko', 'ja', 'en', 'zh'];
     return _SectionCard(
       icon: Icons.translate_rounded,
       title: context.tr('friendLangSectionTitle'),
@@ -689,9 +686,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final (value, key) in languages)
+              for (final value in languages)
                 PaperChip(
-                  label: context.tr(key),
+                  label: languageEndonym(value),
                   selected: _language == value,
                   onTap: () => setState(() => _language = value),
                 ),

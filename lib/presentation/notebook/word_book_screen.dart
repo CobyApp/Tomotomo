@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/locale/languages.dart';
+
 import '../../core/home_widget/notebook_home_widget_sync.dart';
 import '../locale/friend_language_notifier.dart';
 import '../../core/ui/app_tokens.dart';
@@ -345,14 +347,7 @@ class WordBookScreenState extends State<WordBookScreen>
                 children: [
                   for (final seg in _availableSegments)
                     PaperChip(
-                      label: context.tr(
-                        const {
-                          'ko': 'friendLangKo',
-                          'ja': 'friendLangJa',
-                          'en': 'friendLangEn',
-                          'zh': 'friendLangZh',
-                        }[seg]!,
-                      ),
+                      label: languageEndonym(seg),
                       selected: _notebookLang == seg,
                       onTap: () => _selectSegment(seg),
                     ),

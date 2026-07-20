@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/locale/languages.dart';
 import '../../core/ui/app_settings_tile.dart';
 import '../../core/ui/app_tokens.dart';
 import '../../core/ui/paper/paper_scaffold.dart';
@@ -20,12 +21,7 @@ const String _localUserId = 'local';
 class LanguageSettingsScreen extends StatelessWidget {
   const LanguageSettingsScreen({super.key});
 
-  static const List<(String, String)> _languages = [
-    ('ko', 'friendLangKo'),
-    ('ja', 'friendLangJa'),
-    ('en', 'friendLangEn'),
-    ('zh', 'friendLangZh'),
-  ];
+  static const List<String> _languages = ['ko', 'ja', 'en', 'zh'];
 
   @override
   Widget build(BuildContext context) {
@@ -78,9 +74,9 @@ class LanguageSettingsScreen extends StatelessWidget {
               AppSettingsPanel(
                 dividerIndent: 16,
                 children: [
-                  for (final (code, key) in _languages)
+                  for (final code in _languages)
                     tile(
-                      context.tr(key),
+                      languageEndonym(code),
                       appLanguage == code,
                       () => context.read<LocaleNotifier>().setAppLanguage(
                         code,
@@ -94,9 +90,9 @@ class LanguageSettingsScreen extends StatelessWidget {
               AppSettingsPanel(
                 dividerIndent: 16,
                 children: [
-                  for (final (code, key) in _languages)
+                  for (final code in _languages)
                     tile(
-                      context.tr(key),
+                      languageEndonym(code),
                       friendLanguage == code,
                       () => context.read<FriendLanguageNotifier>().setLanguage(
                         code,

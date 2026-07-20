@@ -13,6 +13,22 @@ String normalizeLang(String? code) {
   return 'ko';
 }
 
+/// The name of a language in its OWN script (endonym), for language pickers —
+/// so a user can recognize and pick it regardless of the current UI language.
+String languageEndonym(String code) {
+  switch (normalizeLang(code)) {
+    case 'ja':
+      return '日本語';
+    case 'en':
+      return 'English';
+    case 'zh':
+      return '中文';
+    case 'ko':
+    default:
+      return '한국어';
+  }
+}
+
 /// Pronunciation-aid system used for a friend language's vocabulary.
 enum ReadingSystem { hiragana, romaja, pinyin, ipa }
 
