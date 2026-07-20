@@ -11,6 +11,7 @@ import '../../../domain/repositories/chat_repository.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
 import '../../../domain/repositories/character_record_repository.dart';
 import '../../../core/ui/ui.dart';
+import '../../../core/ui/paper/paper_theme.dart';
 import '../../../core/ui/paper/paper_tokens.dart';
 import '../../../core/ui/paper/paper_widgets.dart';
 import '../../../core/ui/paper/paper_dialog.dart';
@@ -134,6 +135,7 @@ class CharactersTabState extends State<CharactersTab>
 
   @override
   Widget build(BuildContext context) {
+    final p = context.paper;
     final targetLanguage = context.watch<FriendLanguageNotifier>().resolve(
       Localizations.localeOf(context).languageCode,
     );
@@ -148,6 +150,19 @@ class CharactersTabState extends State<CharactersTab>
       title: 'トモトモ',
       useWordmark: true,
       showPointsChip: true,
+      floatingActionButton: (_loading || _error != null)
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _openCreateCharacter,
+              backgroundColor: p.coral,
+              foregroundColor: Colors.white,
+              elevation: 3,
+              icon: const Icon(Icons.person_add_alt_1_rounded),
+              label: Text(
+                context.tr('charactersEmptyMyCta'),
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
       body: _loading
           ? const PaperLoadingBody()
           : _error != null
@@ -164,16 +179,15 @@ class CharactersTabState extends State<CharactersTab>
                 100,
               ),
               children: [
-                PaperButton(
-                  icon: Icons.person_add_alt_1_rounded,
-                  label: context.tr('charactersEmptyMyCta'),
-                  onPressed: _openCreateCharacter,
-                ),
-                const SizedBox(height: AppSpacing.sectionAfter),
+                if (visibleBuiltIns.isNotEmpty)
+                  _sectionLabel(context.tr('charactersSectionRecommended')),
                 ...visibleBuiltIns.asMap().entries.map(
                   (entry) =>
                       _builtInTile(entry.value, featured: entry.key == 0),
                 ),
+                if (visibleBuiltIns.isNotEmpty)
+                  const SizedBox(height: AppSpacing.sectionAfter),
+                _sectionLabel(context.tr('charactersSectionMine')),
                 ...visibleRecords.map(
                   (record) => _recordTile(record, isMine: true),
                 ),
@@ -181,6 +195,21 @@ class CharactersTabState extends State<CharactersTab>
                   PaperEmptyHint(text: context.tr('charactersEmptyMyHint')),
               ],
             ),
+    );
+  }
+
+  Widget _sectionLabel(String text) {
+    final p = context.paper;
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, top: 2, bottom: 10),
+      child: Text(
+        text,
+        style: cuteDisplay(
+          fontSize: 15,
+          fontWeight: FontWeight.w800,
+          color: p.inkSoft,
+        ),
+      ),
     );
   }
 
