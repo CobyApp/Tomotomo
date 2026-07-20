@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/image/image_crop.dart';
 import '../../core/locale/languages.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -349,13 +350,16 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       imageQuality: 85,
     );
     if (x == null || !mounted) return;
+    // Let the user crop/resize (square for avatars). Cancel aborts the change.
+    final cropped = await cropImagePath(x.path, square: true);
+    if (cropped == null || !mounted) return;
     setState(() {
       _error = null;
       _uploadingAvatar = true;
     });
     try {
       // No server upload: copy the picked file into the app documents dir.
-      final path = await _copyAvatarToAppDir(File(x.path));
+      final path = await _copyAvatarToAppDir(File(cropped));
       if (!mounted) return;
       setState(() {
         _avatarUrl = path;

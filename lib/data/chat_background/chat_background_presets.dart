@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../core/ui/paper/paper_tokens.dart';
@@ -122,12 +124,30 @@ BoxDecoration chatBackgroundDecoration(
   );
 }
 
-/// Wraps [child] in the chat-room background wash for [bg].
+/// Wraps [child] in the chat-room background for [bg]. Uses a custom photo when
+/// [ChatBackground.imagePath] is set (with a paper scrim so text stays
+/// readable — [intensity] controls how clearly the photo shows), otherwise the
+/// preset color wash.
 Widget buildChatBackground(
   BuildContext context,
   ChatBackground bg, {
   Widget? child,
 }) {
+  final path = bg.imagePath;
+  if (path != null && path.isNotEmpty && File(path).existsSync()) {
+    final base = context.paper.paperBg;
+    // Higher intensity → clearer photo (less paper scrim). Keep a small minimum
+    // scrim so message text remains legible over busy photos.
+    final scrimAlpha = (1.0 - bg.intensity.clamp(0.0, 1.0)) * 0.72 + 0.12;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.file(File(path), fit: BoxFit.cover),
+        ColoredBox(color: base.withValues(alpha: scrimAlpha.clamp(0.0, 1.0))),
+        ?child,
+      ],
+    );
+  }
   return DecoratedBox(
     decoration: chatBackgroundDecoration(context, bg),
     child: child,

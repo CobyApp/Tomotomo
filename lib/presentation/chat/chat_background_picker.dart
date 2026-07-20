@@ -1,6 +1,12 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+
+import '../../core/image/image_crop.dart';
 import '../../core/ui/paper/paper_bottom_sheet.dart';
+import '../../core/ui/paper/paper_loading.dart';
 import '../../core/ui/paper/paper_theme.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_widgets.dart';
@@ -31,6 +37,19 @@ Future<ChatBackground?> openChatBackgroundPicker(
   );
 }
 
+/// Copies a picked background image into the app documents dir, returns path.
+Future<String> _copyBgToAppDir(File src) async {
+  final dir = await getApplicationDocumentsDirectory();
+  final bgDir = Directory('${dir.path}/chat_backgrounds');
+  if (!await bgDir.exists()) await bgDir.create(recursive: true);
+  final ext = src.path.split('.').last;
+  final dest = File(
+    '${bgDir.path}/bg_${src.hashCode}_${src.lengthSync()}.$ext',
+  );
+  await src.copy(dest.path);
+  return dest.path;
+}
+
 class _ChatBackgroundPickerBody extends StatefulWidget {
   const _ChatBackgroundPickerBody({
     required this.characterId,
@@ -50,9 +69,36 @@ class _ChatBackgroundPickerBody extends StatefulWidget {
 class _ChatBackgroundPickerBodyState extends State<_ChatBackgroundPickerBody> {
   late String _presetId = widget.initial.presetId;
   late double _intensity = widget.initial.intensity;
+  late String? _imagePath = widget.initial.imagePath;
+  bool _picking = false;
 
-  ChatBackground get _draft =>
-      ChatBackground(presetId: _presetId, intensity: _intensity);
+  ChatBackground get _draft => ChatBackground(
+    presetId: _presetId,
+    intensity: _intensity,
+    imagePath: _imagePath,
+  );
+
+  Future<void> _pickBgImage() async {
+    if (_picking) return;
+    setState(() => _picking = true);
+    try {
+      final x = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1600,
+        imageQuality: 88,
+      );
+      if (x == null || !mounted) return;
+      final cropped = await cropImagePath(x.path);
+      if (cropped == null || !mounted) return;
+      final stored = await _copyBgToAppDir(File(cropped));
+      if (!mounted) return;
+      setState(() => _imagePath = stored);
+    } catch (_) {
+      // Best-effort; leave the current selection unchanged on failure.
+    } finally {
+      if (mounted) setState(() => _picking = false);
+    }
+  }
 
   Future<void> _apply() async {
     final bg = _draft;
@@ -82,9 +128,47 @@ class _ChatBackgroundPickerBodyState extends State<_ChatBackgroundPickerBody> {
           _PreviewCard(background: _draft),
           const SizedBox(height: 18),
           _PresetSwatchRow(
-            selectedId: _presetId,
+            selectedId: _imagePath == null ? _presetId : null,
             intensity: _intensity,
-            onSelected: (id) => setState(() => _presetId = id),
+            // Choosing a color preset clears any custom photo.
+            onSelected: (id) => setState(() {
+              _presetId = id;
+              _imagePath = null;
+            }),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _picking ? null : _pickBgImage,
+                  icon: _picking
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: PaperLoading(size: 6),
+                        )
+                      : const Icon(Icons.photo_library_rounded, size: 18),
+                  label: Text(context.tr('chatBgFromGallery')),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: p.ink,
+                    side: BorderSide(color: p.cardEdge),
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(PaperRadii.button),
+                    ),
+                  ),
+                ),
+              ),
+              if (_imagePath != null) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () => setState(() => _imagePath = null),
+                  icon: Icon(Icons.close_rounded, color: p.inkSoft),
+                  tooltip: context.tr('chatBgRemovePhoto'),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 18),
           _IntensitySlider(
@@ -112,13 +196,15 @@ class _PreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(PaperRadii.card),
-      child: DecoratedBox(
-        decoration: chatBackgroundDecoration(context, background).copyWith(
-          border: Border.all(color: p.cardEdge),
-          borderRadius: BorderRadius.circular(PaperRadii.card),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: p.cardEdge),
+        borderRadius: BorderRadius.circular(PaperRadii.card),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: buildChatBackground(
+        context,
+        background,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
           child: Column(
@@ -210,7 +296,7 @@ class _PresetSwatchRow extends StatelessWidget {
     required this.onSelected,
   });
 
-  final String selectedId;
+  final String? selectedId;
   final double intensity;
   final ValueChanged<String> onSelected;
 
