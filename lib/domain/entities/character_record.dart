@@ -1,7 +1,6 @@
 /// Custom character stored locally in Hive.
 ///
-/// **Tutor mode** ([language]): `ja` → Japanese bubble + Korean study notes (learn Japanese).
-/// `ko` → Korean bubble + Japanese study notes (learn Korean). Mirror opposites; see `ai_prompts/`.
+/// Friend language ([language]): 'ko' | 'ja' | 'en' | 'zh' (Simplified).
 ///
 /// **Name**: [name] is the only display name. [nameSecondary] remains solely
 /// for reading records created by older app versions.
