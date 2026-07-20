@@ -4,7 +4,7 @@ import '../../core/ui/paper/paper_bottom_sheet.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_widgets.dart';
 import '../locale/l10n_context.dart';
-import 'points_topup_screen.dart';
+import 'points_usage_screen.dart';
 
 Future<void> showPointsTopUpPrompt(BuildContext context) async {
   final open = await showPaperSheet<bool>(
@@ -61,7 +61,7 @@ Future<void> showPointsTopUpPrompt(BuildContext context) async {
   );
   if (open == true && context.mounted) {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (_) => const PointsTopUpScreen()),
+      MaterialPageRoute<void>(builder: (_) => const PointsUsageScreen()),
     );
   }
 }

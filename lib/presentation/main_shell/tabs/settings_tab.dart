@@ -7,10 +7,8 @@ import '../../../core/ui/paper/paper_scaffold.dart';
 import '../../../core/ui/paper/paper_widgets.dart';
 import '../../locale/l10n_context.dart';
 import '../../settings/language_settings_screen.dart';
-import '../../settings/friend_language_settings_screen.dart';
 import '../../settings/profile_edit_screen.dart';
 import '../../points/points_usage_screen.dart';
-import '../../points/points_topup_screen.dart';
 import '../../on_device/on_device_model_setup_screen.dart';
 
 class SettingsTab extends StatelessWidget {
@@ -53,19 +51,6 @@ class SettingsTab extends StatelessWidget {
                 },
               ),
               AppSettingsNavTile(
-                icon: Icons.add_card_rounded,
-                title: context.tr('pointsEarnTitle'),
-                subtitle: context.tr('pointsEarnSubtitle'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const PointsTopUpScreen(),
-                    ),
-                  );
-                },
-              ),
-              AppSettingsNavTile(
                 icon: Icons.person_outlined,
                 title: context.tr('settingsEditProfile'),
                 subtitle: context.tr('settingsEditProfileSubtitle'),
@@ -86,26 +71,13 @@ class SettingsTab extends StatelessWidget {
             children: [
               AppSettingsNavTile(
                 icon: Icons.language_rounded,
-                title: context.tr('settingsAppLanguage'),
+                title: context.tr('languageMenuTitle'),
                 subtitle: context.tr('settingsAppLanguageSubtitle'),
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => const LanguageSettingsScreen(),
-                    ),
-                  );
-                },
-              ),
-              AppSettingsNavTile(
-                icon: Icons.people_alt_rounded,
-                title: context.tr('settingsFriendLanguage'),
-                subtitle: context.tr('settingsFriendLanguageSubtitle'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const FriendLanguageSettingsScreen(),
                     ),
                   );
                 },

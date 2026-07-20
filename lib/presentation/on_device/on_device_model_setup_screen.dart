@@ -36,34 +36,34 @@ class OnDeviceModelSetupScreen extends StatelessWidget {
         children: [
           Center(
             child: Container(
-              width: 88,
-              height: 88,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
                 color: p.coral.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: p.coral.withValues(alpha: 0.20)),
               ),
-              child: Icon(Icons.auto_awesome_rounded, size: 40, color: p.coral),
+              child: Icon(Icons.auto_awesome_rounded, size: 30, color: p.coral),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
             context.tr('onDeviceModelHeadline'),
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w800,
               color: p.ink,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             context.tr('onDeviceModelDescription'),
             textAlign: TextAlign.center,
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.55),
+            ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.5),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 22),
           _ModelStatus(snapshot: snapshot),
           const SizedBox(height: 16),
           if (snapshot.phase == OnDeviceModelPhase.notInstalled ||
