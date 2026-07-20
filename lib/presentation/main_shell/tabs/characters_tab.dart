@@ -141,10 +141,7 @@ class CharactersTabState extends State<CharactersTab>
         .where((record) => record.language == targetLanguage)
         .toList(growable: false);
     final visibleBuiltIns = characters
-        .where(
-          (character) =>
-              (character.koreanNationalPersona ? 'ko' : 'ja') == targetLanguage,
-        )
+        .where((character) => character.friendLanguage == targetLanguage)
         .toList(growable: false);
 
     return PaperScaffold(

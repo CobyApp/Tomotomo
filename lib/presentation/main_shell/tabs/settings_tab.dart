@@ -8,6 +8,7 @@ import '../../../core/ui/paper/paper_theme.dart';
 import '../../../core/ui/paper/paper_tokens.dart';
 import '../../locale/l10n_context.dart';
 import '../../settings/language_settings_screen.dart';
+import '../../settings/friend_language_settings_screen.dart';
 import '../../settings/profile_edit_screen.dart';
 import '../../points/points_usage_screen.dart';
 import '../../points/points_topup_screen.dart';
@@ -93,6 +94,19 @@ class SettingsTab extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) => const LanguageSettingsScreen(),
+                    ),
+                  );
+                },
+              ),
+              AppSettingsNavTile(
+                icon: Icons.people_alt_rounded,
+                title: context.tr('settingsFriendLanguage'),
+                subtitle: context.tr('settingsFriendLanguageSubtitle'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const FriendLanguageSettingsScreen(),
                     ),
                   );
                 },
