@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/locale/languages.dart';
 import 'character_record.dart';
 import 'chat_message.dart';
 
@@ -51,11 +52,14 @@ class Character {
   final String imageUrl;
   final String imagePath;
 
-  /// `ko`: vocabulary meanings in Korean for Japanese dialogue. `ja`: full Japanese immersion (meanings in Japanese).
+  /// Legacy immersion hint; retained for backward compat. Derived from friendLanguage.
   final String tutorLocale;
 
-  /// Korean-national friend: [ChatMessage.content] in Korean; vocabulary highlights **Korean** phrases (gloss in Japanese).
-  final bool koreanNationalPersona;
+  /// Explicit friend language when known (`ko`|`ja`|`en`|`zh`); else null → derive.
+  final String? _friendLanguageRaw;
+
+  /// Legacy flag; retained for backward compat.
+  final bool _koreanNationalPersonaRaw;
 
   /// When true, [displayNameSecondary] is always empty (packaged default tutors).
   final bool omitSecondaryDisplayName;
@@ -87,9 +91,11 @@ class Character {
     required this.imageUrl,
     required this.imagePath,
     this.tutorLocale = 'ko',
-    this.koreanNationalPersona = false,
+    String? friendLanguage,
+    bool koreanNationalPersona = false,
     this.omitSecondaryDisplayName = false,
-  });
+  })  : _friendLanguageRaw = friendLanguage,
+        _koreanNationalPersonaRaw = koreanNationalPersona;
 
   String get displayImageUrl => imageUrl;
 
@@ -104,12 +110,23 @@ class Character {
   /// Prefer Pretendard / Hangul-friendly font for [ChatMessage.content] in the expression sheet.
   bool get assistantMessagePrefersHangulFont => koreanNationalPersona;
 
-  /// Notebook tab for vocabulary [+] saves: **script of the headword** — Korean words → `ko`, Japanese → `ja`.
-  String get defaultNotebookLangForVocabSave {
+  /// The language the friend speaks and replies in. Explicit when set;
+  /// otherwise migrated from legacy fields.
+  String get friendLanguage {
+    final raw = _friendLanguageRaw;
+    if (raw != null && kSupportedLanguages.contains(normalizeLang(raw))) {
+      return normalizeLang(raw);
+    }
     if (tutorLocale == 'ja') return 'ja';
-    if (koreanNationalPersona) return 'ko';
-    return 'ja';
+    if (_koreanNationalPersonaRaw) return 'ko';
+    return 'ko';
   }
+
+  /// Backward-compatible: true when the friend speaks Korean.
+  bool get koreanNationalPersona => friendLanguage == 'ko';
+
+  /// Notebook segment for vocabulary [+] saves: the friend language's script.
+  String get defaultNotebookLangForVocabSave => friendLanguage;
 
   /// How to read `vocabulary[].*` meaning fields from AI/DB JSON for this persona.
   VocabularyMeaningPickMode get vocabularyMeaningPickMode {
@@ -200,7 +217,7 @@ class Character {
       imageUrl: image,
       imagePath: image,
       tutorLocale: 'ko',
-      koreanNationalPersona: !isJaPersona,
+      friendLanguage: r.language,
       omitSecondaryDisplayName: true,
     );
   }
@@ -245,6 +262,7 @@ class Character {
       imageUrl: json['imageUrl'] as String,
       imagePath: json['imagePath'] as String,
       tutorLocale: json['tutorLocale'] as String? ?? 'ko',
+      friendLanguage: json['friendLanguage'] as String?,
       koreanNationalPersona: json['koreanNationalPersona'] as bool? ?? false,
       omitSecondaryDisplayName:
           json['omitSecondaryDisplayName'] as bool? ?? false,
@@ -283,6 +301,7 @@ class Character {
       'imageUrl': imageUrl,
       'imagePath': imagePath,
       'tutorLocale': tutorLocale,
+      'friendLanguage': friendLanguage,
       'koreanNationalPersona': koreanNationalPersona,
       'omitSecondaryDisplayName': omitSecondaryDisplayName,
     };

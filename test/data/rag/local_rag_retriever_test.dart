@@ -33,6 +33,10 @@ const _character = Character(
   emotionalResponses: {},
   imageUrl: '',
   imagePath: '',
+  // Japanese-speaking friend persona; was implicit via legacy field
+  // defaults, now declared explicitly since the default friendLanguage
+  // fallback (nothing specified) is 'ko', matching normalizeLang(null).
+  friendLanguage: 'ja',
 );
 
 final class _FakeWordbook implements SavedExpressionRepository {
