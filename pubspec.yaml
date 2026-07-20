@@ -49,6 +49,7 @@ dependencies:
   # Transitive via flutter_gemma; declared so we can clear orphaned download
   # tasks (see FlutterGemmaAiRuntime._clearStaleDownloadState).
   background_downloader: ^9.5.6
+  flutter_local_notifications: ^22.1.0
   google_mobile_ads: ^5.2.0
 
 dev_dependencies:

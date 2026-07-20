@@ -6,6 +6,7 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'app.dart';
 import 'core/di/injection.dart';
 import 'core/local/hive_boxes.dart';
+import 'core/notifications/local_notifications.dart';
 import 'data/character/characters_data.dart';
 import 'domain/entities/character_record.dart';
 
@@ -18,6 +19,7 @@ void main() async {
 
   setupInjection();
   await _seedBuiltInFriends();
+  await LocalNotifications.init();
   await onDeviceModelManager.initialize();
 
   unawaited(_initAds());

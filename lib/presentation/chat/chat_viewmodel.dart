@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/di/injection.dart';
+import '../../core/notifications/local_notifications.dart';
 import '../../core/ui/app_scaffold_messenger.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
@@ -125,7 +126,16 @@ class ChatViewModel extends ChangeNotifier {
     final userMessage = messageController.text.trim();
     if (userMessage.isEmpty || _isGenerating) return;
     messageController.clear();
+    // Ask for notification permission the first time — so we can tell the user
+    // when a reply finishes while they're away.
+    unawaited(LocalNotifications.ensurePermission());
     await _sendUserMessage(userMessage);
+  }
+
+  /// Compact one-line preview of the reply for a notification body.
+  static String _notificationPreview(String content) {
+    final t = content.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return t.length <= 100 ? t : '${t.substring(0, 99)}…';
   }
 
   Future<void> _sendUserMessage(String userMessage) async {
@@ -184,6 +194,16 @@ class ChatViewModel extends ChangeNotifier {
     try {
       final aiMessage = await aiChatRepository.generateResponse(userMessage);
       await chatRepository.saveMessage(character, aiMessage);
+      // If the user left the app while the reply was generating, notify them.
+      if (WidgetsBinding.instance.lifecycleState !=
+          AppLifecycleState.resumed) {
+        unawaited(
+          LocalNotifications.showChatReply(
+            title: character.displayNamePrimary,
+            body: _notificationPreview(aiMessage.content),
+          ),
+        );
+      }
       final spend = await pointsRepository.spendPoints(1, 'character_chat');
       if (spend.ok) {
         pointsBalanceNotifier?.setBalance(spend.balance);
