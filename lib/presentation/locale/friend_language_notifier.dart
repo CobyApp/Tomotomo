@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/locale/languages.dart';
 import '../../core/locale/study_language.dart';
 import '../../domain/repositories/profile_repository.dart';
 
@@ -13,7 +14,7 @@ class FriendLanguageNotifier extends ChangeNotifier {
 
   final ProfileRepository _profileRepo;
 
-  /// Explicitly chosen friend language (`ko` | `ja`), or null when unset.
+  /// Explicitly chosen friend language (`ko` | `ja` | `en` | `zh`), or null when unset.
   String? _chosen;
   String? get chosen => _chosen;
 
@@ -31,7 +32,7 @@ class FriendLanguageNotifier extends ChangeNotifier {
 
   /// Persists a new friend-language choice and updates the in-memory value.
   Future<void> setLanguage(String code) async {
-    if (code != 'ko' && code != 'ja') return;
+    if (!kSupportedLanguages.contains(code)) return;
     await _profileRepo.setFriendLanguage(code);
     _chosen = code;
     notifyListeners();

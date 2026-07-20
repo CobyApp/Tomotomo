@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../core/locale/languages.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
 
-/// UI language from profile `app_language` (`ko` | `ja`).
+/// UI language from profile `app_language` (`ko` | `ja` | `en` | `zh`).
 class LocaleNotifier extends ChangeNotifier {
   LocaleNotifier(this._profileRepo);
 
@@ -15,7 +16,7 @@ class LocaleNotifier extends ChangeNotifier {
   Future<void> loadFromProfile(String userId) async {
     try {
       final p = await _profileRepo.getProfile(userId);
-      if (p != null && (p.appLanguage == 'ko' || p.appLanguage == 'ja')) {
+      if (p != null && kSupportedLanguages.contains(p.appLanguage)) {
         _languageCode = p.appLanguage;
         notifyListeners();
       }
@@ -24,7 +25,7 @@ class LocaleNotifier extends ChangeNotifier {
 
   /// Persists locally and updates the in-memory locale.
   Future<void> setAppLanguage(String code, Profile profile) async {
-    if (code != 'ko' && code != 'ja') return;
+    if (!kSupportedLanguages.contains(code)) return;
     final updated = profile.copyWith(appLanguage: code);
     await _profileRepo.updateProfile(updated);
     _languageCode = code;
