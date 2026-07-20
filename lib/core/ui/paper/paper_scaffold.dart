@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import '../app_tokens.dart';
 import '../points_toolbar_chip.dart';
 import 'paper_tokens.dart';
-import 'wordmark_glitch.dart';
+import 'paper_wordmark.dart';
 
 /// PAPER-CARTOON page layout: [title], [subtitle], [body], [actions],
 /// [bottom], [floatingActionButton], [transparentBackground],
 /// [showPointsChip], plus an additive [useWordmark] flag for the app root
 /// screen. Renders the paper background with a subtle dotted grain overlay
-/// and a cute display / [WordmarkGlitch] app-bar title.
+/// and a cute display / [PaperWordmark] app-bar title.
 class PaperScaffold extends StatelessWidget {
   const PaperScaffold({
     super.key,
@@ -34,7 +34,7 @@ class PaperScaffold extends StatelessWidget {
   final Widget? floatingActionButton;
   final bool transparentBackground;
 
-  /// When true, renders [title] via [WordmarkGlitch] (app root). Sub-screens
+  /// When true, renders [title] via [PaperWordmark] (app root). Sub-screens
   /// use a plain cute display title.
   final bool useWordmark;
 
@@ -50,7 +50,7 @@ class PaperScaffold extends StatelessWidget {
     ];
 
     final titleWidget = useWordmark
-        ? WordmarkGlitch(title, fontSize: hasSubtitle ? 22 : 24)
+        ? PaperWordmark(title, fontSize: hasSubtitle ? 22 : 24)
         : Text(
             title,
             style: theme.textTheme.titleLarge?.copyWith(

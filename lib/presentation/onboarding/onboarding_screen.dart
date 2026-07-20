@@ -249,28 +249,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 20),
         _ChoiceCard(
-          emoji: '🇰🇷',
+          leading: _LangStamp('한'),
           label: '한국어',
           selected: appLang == 'ko',
           onTap: () => _selectAppLanguage('ko'),
         ),
         const SizedBox(height: 14),
         _ChoiceCard(
-          emoji: '🇯🇵',
+          leading: _LangStamp('あ'),
           label: '日本語',
           selected: appLang == 'ja',
           onTap: () => _selectAppLanguage('ja'),
         ),
         const SizedBox(height: 14),
         _ChoiceCard(
-          emoji: '🇺🇸',
+          leading: _LangStamp('A'),
           label: 'English',
           selected: appLang == 'en',
           onTap: () => _selectAppLanguage('en'),
         ),
         const SizedBox(height: 14),
         _ChoiceCard(
-          emoji: '🇨🇳',
+          leading: _LangStamp('中'),
           label: '中文',
           selected: appLang == 'zh',
           onTap: () => _selectAppLanguage('zh'),
@@ -324,7 +324,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 12),
         _ChoiceCard(
-          emoji: '🇰🇷',
+          leading: _LangStamp('한'),
           label: context.tr('onboardingNationalityKo'),
           selected: _nationality == 'ko',
           compact: true,
@@ -332,7 +332,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 10),
         _ChoiceCard(
-          emoji: '🇯🇵',
+          leading: _LangStamp('あ'),
           label: context.tr('onboardingNationalityJa'),
           selected: _nationality == 'ja',
           compact: true,
@@ -340,7 +340,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 10),
         _ChoiceCard(
-          emoji: '🇺🇸',
+          leading: _LangStamp('A'),
           label: context.tr('onboardingNationalityEn'),
           selected: _nationality == 'en',
           compact: true,
@@ -348,7 +348,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 10),
         _ChoiceCard(
-          emoji: '🇨🇳',
+          leading: _LangStamp('中'),
           label: context.tr('onboardingNationalityZh'),
           selected: _nationality == 'zh',
           compact: true,
@@ -356,7 +356,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 10),
         _ChoiceCard(
-          emoji: '🌏',
+          leading: _LangStamp('', icon: Icons.public_rounded),
           label: context.tr('onboardingNationalityOther'),
           selected: _nationality == 'other',
           compact: true,
@@ -377,28 +377,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 20),
         _ChoiceCard(
-          emoji: '🇯🇵',
+          leading: _LangStamp('あ'),
           label: context.tr('onboardingFriendJa'),
           selected: _friendLanguage == 'ja',
           onTap: () => setState(() => _friendLanguage = 'ja'),
         ),
         const SizedBox(height: 14),
         _ChoiceCard(
-          emoji: '🇰🇷',
+          leading: _LangStamp('한'),
           label: context.tr('onboardingFriendKo'),
           selected: _friendLanguage == 'ko',
           onTap: () => setState(() => _friendLanguage = 'ko'),
         ),
         const SizedBox(height: 14),
         _ChoiceCard(
-          emoji: '🇺🇸',
+          leading: _LangStamp('A'),
           label: context.tr('onboardingFriendEn'),
           selected: _friendLanguage == 'en',
           onTap: () => setState(() => _friendLanguage = 'en'),
         ),
         const SizedBox(height: 14),
         _ChoiceCard(
-          emoji: '🇨🇳',
+          leading: _LangStamp('中'),
           label: context.tr('onboardingFriendZh'),
           selected: _friendLanguage == 'zh',
           onTap: () => setState(() => _friendLanguage = 'zh'),
@@ -476,14 +476,14 @@ class _StepHeading extends StatelessWidget {
 /// Tappable paper choice card with a coral selected state.
 class _ChoiceCard extends StatelessWidget {
   const _ChoiceCard({
-    required this.emoji,
+    required this.leading,
     required this.label,
     required this.selected,
     required this.onTap,
     this.compact = false,
   });
 
-  final String emoji;
+  final Widget leading;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -519,7 +519,7 @@ class _ChoiceCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Text(emoji, style: TextStyle(fontSize: compact ? 24 : 30)),
+            leading,
             const SizedBox(width: 16),
             Expanded(
               child: Text(
@@ -536,6 +536,41 @@ class _ChoiceCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Paper "stamp" badge used on onboarding choice cards instead of glossy flag
+/// emojis — each language shows its own script character (한 / あ / A / 中),
+/// keeping the leading mark consistent with the paper-cartoon theme.
+class _LangStamp extends StatelessWidget {
+  const _LangStamp(this.symbol, {this.icon});
+
+  final String symbol;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    return Container(
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: p.coral.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: p.coral.withValues(alpha: 0.5), width: 1.5),
+      ),
+      child: icon != null
+          ? Icon(icon, color: p.coral, size: 22)
+          : Text(
+              symbol,
+              style: cuteDisplay(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: p.coral,
+              ),
+            ),
     );
   }
 }
