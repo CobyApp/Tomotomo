@@ -11,7 +11,6 @@ import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_widgets.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
-import '../locale/friend_language_notifier.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import 'onboarding_notifier.dart';
@@ -30,14 +29,13 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const _stepCount = 3;
+  static const _stepCount = 2;
 
   final _nicknameController = TextEditingController();
 
   Profile? _profile;
   int _step = 0;
   String? _nationality; // 'ko' | 'ja' | 'en' | 'zh' | 'other'
-  String? _friendLanguage; // 'ko' | 'ja' | 'en' | 'zh'
   bool _saving = false;
   String? _error;
 
@@ -80,8 +78,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       case 1:
         return _nicknameController.text.trim().isNotEmpty &&
             _nationality != null;
-      case 2:
-        return _friendLanguage != null;
       default:
         return false;
     }
@@ -107,8 +103,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _finish() async {
     final profile = _profile;
-    final friend = _friendLanguage;
-    if (profile == null || friend == null) return;
+    if (profile == null) return;
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty) {
       setState(() => _error = context.trRead('onboardingNicknameRequired'));
@@ -120,12 +115,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
     try {
       final repo = context.read<ProfileRepository>();
-      await repo.updateProfile(
-        profile.copyWith(displayName: nickname, learningLanguage: friend),
-      );
+      await repo.updateProfile(profile.copyWith(displayName: nickname));
       await repo.setNationality(_nationality);
-      if (!mounted) return;
-      await context.read<FriendLanguageNotifier>().setLanguage(friend);
       if (!mounted) return;
       // Flips the gate in [App]; the main shell mounts on the next rebuild.
       await context.read<OnboardingNotifier>().complete();
@@ -230,10 +221,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     switch (_step) {
       case 0:
         return _stepAppLanguage(context);
-      case 1:
-        return _stepProfile(context);
       default:
-        return _stepFriendLanguage(context);
+        return _stepProfile(context);
     }
   }
 
@@ -386,46 +375,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── Step 3: friend language ───────────────────────────────────
-  Widget _stepFriendLanguage(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _StepHeading(
-          title: context.tr('onboardingStep3Title'),
-          subtitle: context.tr('onboardingStep3Subtitle'),
-        ),
-        const SizedBox(height: 20),
-        _ChoiceCard(
-          leading: _LangStamp('あ'),
-          label: context.tr('onboardingFriendJa'),
-          selected: _friendLanguage == 'ja',
-          onTap: () => setState(() => _friendLanguage = 'ja'),
-        ),
-        const SizedBox(height: 14),
-        _ChoiceCard(
-          leading: _LangStamp('한'),
-          label: context.tr('onboardingFriendKo'),
-          selected: _friendLanguage == 'ko',
-          onTap: () => setState(() => _friendLanguage = 'ko'),
-        ),
-        const SizedBox(height: 14),
-        _ChoiceCard(
-          leading: _LangStamp('A'),
-          label: context.tr('onboardingFriendEn'),
-          selected: _friendLanguage == 'en',
-          onTap: () => setState(() => _friendLanguage = 'en'),
-        ),
-        const SizedBox(height: 14),
-        _ChoiceCard(
-          leading: _LangStamp('中'),
-          label: context.tr('onboardingFriendZh'),
-          selected: _friendLanguage == 'zh',
-          onTap: () => setState(() => _friendLanguage = 'zh'),
-        ),
-      ],
-    );
-  }
 }
 
 /// Slim three-segment progress bar across the top of the flow.

@@ -6,10 +6,8 @@ import '../../core/ui/app_tokens.dart';
 import '../../core/ui/paper/paper_scaffold.dart';
 import '../../core/ui/paper/paper_status_views.dart';
 import '../../core/ui/paper/paper_tokens.dart';
-import '../../core/ui/paper/paper_widgets.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
-import '../locale/friend_language_notifier.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 
@@ -43,9 +41,6 @@ class LanguageSettingsScreen extends StatelessWidget {
           }
           final p = context.paper;
           final appLanguage = context.watch<LocaleNotifier>().languageCode;
-          final friendLanguage = context
-              .watch<FriendLanguageNotifier>()
-              .resolve(appLanguage);
 
           Widget tile(
             String label,
@@ -70,7 +65,6 @@ class LanguageSettingsScreen extends StatelessWidget {
               AppSpacing.pageBottom,
             ),
             children: [
-              PaperSectionLabel(context.tr('settingsAppLanguage')),
               AppSettingsPanel(
                 dividerIndent: 16,
                 children: [
@@ -81,21 +75,6 @@ class LanguageSettingsScreen extends StatelessWidget {
                       () => context.read<LocaleNotifier>().setAppLanguage(
                         code,
                         profile,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              PaperSectionLabel(context.tr('friendLanguageTitle')),
-              AppSettingsPanel(
-                dividerIndent: 16,
-                children: [
-                  for (final code in _languages)
-                    tile(
-                      languageEndonym(code),
-                      friendLanguage == code,
-                      () => context.read<FriendLanguageNotifier>().setLanguage(
-                        code,
                       ),
                     ),
                 ],
