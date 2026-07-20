@@ -61,6 +61,24 @@ class LanguageSettingsScreen extends StatelessWidget {
                         : null,
                     onTap: () => _set(context, 'ja', profile),
                   ),
+                  AppSettingsNavTile(
+                    icon: Icons.language_rounded,
+                    title: context.tr('langEnglish'),
+                    showChevron: false,
+                    trailing: profile.appLanguage == 'en'
+                        ? Icon(Icons.check_circle_rounded, color: p.coral, size: 24)
+                        : null,
+                    onTap: () => _set(context, 'en', profile),
+                  ),
+                  AppSettingsNavTile(
+                    icon: Icons.language_rounded,
+                    title: context.tr('langChinese'),
+                    showChevron: false,
+                    trailing: profile.appLanguage == 'zh'
+                        ? Icon(Icons.check_circle_rounded, color: p.coral, size: 24)
+                        : null,
+                    onTap: () => _set(context, 'zh', profile),
+                  ),
                 ],
               ),
             ],

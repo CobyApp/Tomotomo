@@ -605,6 +605,8 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             ),
           ),
         const SizedBox(height: 16),
+        _languageSection(context),
+        const SizedBox(height: 16),
         _levelSection(context),
         const SizedBox(height: 28),
         _primaryButton(
@@ -649,6 +651,45 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                   label: context.tr(key),
                   selected: _level == value,
                   onTap: () => setState(() => _level = value),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Friend language selector ──────────────────────────────────
+  Widget _languageSection(BuildContext context) {
+    final p = context.paper;
+    const languages = [
+      ('ko', 'friendLangKo'),
+      ('ja', 'friendLangJa'),
+      ('en', 'friendLangEn'),
+      ('zh', 'friendLangZh'),
+    ];
+    return _SectionCard(
+      icon: Icons.translate_rounded,
+      title: context.tr('friendLangSectionTitle'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr('friendLangSectionHint'),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: p.inkSoft, height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final (value, key) in languages)
+                _LevelChip(
+                  label: context.tr(key),
+                  selected: _language == value,
+                  onTap: () => setState(() => _language = value),
                 ),
             ],
           ),
@@ -757,6 +798,8 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          _languageSection(context),
           const SizedBox(height: 16),
           _levelSection(context),
           const SizedBox(height: 28),

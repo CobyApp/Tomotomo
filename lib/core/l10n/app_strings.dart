@@ -232,6 +232,8 @@ class AppStrings {
     'friendLangJa': '일본어',
     'friendLangEn': '영어',
     'friendLangZh': '중국어',
+    'friendLangSectionTitle': '친구의 언어',
+    'friendLangSectionHint': '이 친구와 어떤 언어로 대화할지 정해요.',
   };
 
   static const Map<String, String> _ja = {
@@ -462,6 +464,8 @@ class AppStrings {
     'friendLangJa': '日本語',
     'friendLangEn': '英語',
     'friendLangZh': '中国語',
+    'friendLangSectionTitle': '友だちの言語',
+    'friendLangSectionHint': 'この友だちと話す言語を選びます。',
   };
 
   static const Map<String, String> _en = {
@@ -720,6 +724,8 @@ class AppStrings {
     'friendLangJa': 'Japanese',
     'friendLangEn': 'English',
     'friendLangZh': 'Chinese',
+    'friendLangSectionTitle': "Friend's language",
+    'friendLangSectionHint': 'Choose which language you chat with this friend in.',
   };
 
   static const Map<String, String> _zh = {
@@ -952,6 +958,8 @@ class AppStrings {
     'friendLangJa': '日语',
     'friendLangEn': '英语',
     'friendLangZh': '中文',
+    'friendLangSectionTitle': '朋友的语言',
+    'friendLangSectionHint': '选择你和这位朋友交流的语言。',
   };
 
   static String of(

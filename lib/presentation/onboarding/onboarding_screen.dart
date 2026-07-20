@@ -36,8 +36,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Profile? _profile;
   int _step = 0;
-  String? _nationality; // 'ko' | 'ja' | 'other'
-  String? _friendLanguage; // 'ko' | 'ja'
+  String? _nationality; // 'ko' | 'ja' | 'en' | 'zh' | 'other'
+  String? _friendLanguage; // 'ko' | 'ja' | 'en' | 'zh'
   bool _saving = false;
   String? _error;
 
@@ -261,6 +261,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           selected: appLang == 'ja',
           onTap: () => _selectAppLanguage('ja'),
         ),
+        const SizedBox(height: 14),
+        _ChoiceCard(
+          emoji: '🇺🇸',
+          label: 'English',
+          selected: appLang == 'en',
+          onTap: () => _selectAppLanguage('en'),
+        ),
+        const SizedBox(height: 14),
+        _ChoiceCard(
+          emoji: '🇨🇳',
+          label: '中文',
+          selected: appLang == 'zh',
+          onTap: () => _selectAppLanguage('zh'),
+        ),
       ],
     );
   }
@@ -326,6 +340,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 10),
         _ChoiceCard(
+          emoji: '🇺🇸',
+          label: context.tr('onboardingNationalityEn'),
+          selected: _nationality == 'en',
+          compact: true,
+          onTap: () => setState(() => _nationality = 'en'),
+        ),
+        const SizedBox(height: 10),
+        _ChoiceCard(
+          emoji: '🇨🇳',
+          label: context.tr('onboardingNationalityZh'),
+          selected: _nationality == 'zh',
+          compact: true,
+          onTap: () => setState(() => _nationality = 'zh'),
+        ),
+        const SizedBox(height: 10),
+        _ChoiceCard(
           emoji: '🌏',
           label: context.tr('onboardingNationalityOther'),
           selected: _nationality == 'other',
@@ -358,6 +388,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           label: context.tr('onboardingFriendKo'),
           selected: _friendLanguage == 'ko',
           onTap: () => setState(() => _friendLanguage = 'ko'),
+        ),
+        const SizedBox(height: 14),
+        _ChoiceCard(
+          emoji: '🇺🇸',
+          label: context.tr('onboardingFriendEn'),
+          selected: _friendLanguage == 'en',
+          onTap: () => setState(() => _friendLanguage = 'en'),
+        ),
+        const SizedBox(height: 14),
+        _ChoiceCard(
+          emoji: '🇨🇳',
+          label: context.tr('onboardingFriendZh'),
+          selected: _friendLanguage == 'zh',
+          onTap: () => setState(() => _friendLanguage = 'zh'),
         ),
       ],
     );
