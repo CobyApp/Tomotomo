@@ -721,14 +721,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                 style: TextButton.styleFrom(foregroundColor: p.inkSoft),
               ),
             ),
-          Text(
-            context.tr('characterStepProfileTitle'),
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: p.ink,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 16),
+          if (!isEdit) const SizedBox(height: 4),
           if (_error != null) _errorBanner(context),
           _buildAvatarPicker(context),
           _SectionCard(
