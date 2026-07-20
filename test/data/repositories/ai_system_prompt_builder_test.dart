@@ -47,4 +47,33 @@ void main() {
       isNot(contains("ABOUT THE PERSON YOU'RE TALKING WITH")),
     );
   });
+
+  test('reply prompt uses the friend language', () {
+    final en = buildChatReplySystemPrompt(_friend('en'));
+    expect(en, contains('natural English'));
+    final zh = buildChatReplySystemPrompt(_friend('zh'));
+    expect(zh, contains('Simplified Chinese'));
+  });
+
+  test('analysis prompt explains in the app language', () {
+    final p = buildExpressionAnalysisSystemPrompt(
+      character: _friend('ja'), appUiLanguageCode: 'en');
+    expect(p, contains('English'));
+    expect(p, contains('meaning_en'));
+  });
+
+  test('analysis reading rule matches the friend language', () {
+    final zh = buildExpressionAnalysisSystemPrompt(
+      character: _friend('zh'), appUiLanguageCode: 'ko');
+    expect(zh.toLowerCase(), contains('pinyin'));
+  });
 }
+
+Character _friend(String friendLanguage) => Character(
+      id: 'x', name: 'n', nameJp: 'n', nameKanji: 'n', level: 'intermediate',
+      description: '', age: 0, schoolYear: '', occupation: '',
+      traits: const [], interests: const [], speechStyle: '',
+      primaryColor: const Color(0xFF000000), secondaryColor: const Color(0xFFFFFFFF),
+      hairStyle: '', hairColor: '', eyeColor: '', outfit: '', accessories: const [],
+      selfReference: '', commonPhrases: const [], emotionalResponses: const {},
+      imageUrl: '', imagePath: '', friendLanguage: friendLanguage);

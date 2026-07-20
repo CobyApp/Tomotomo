@@ -145,7 +145,7 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
     }
 
     var parsed = await analyze('UTTERANCE TO ANALYZE\n$encodedUtterance');
-    if (_analysisNeedsRepair(parsed)) {
+    if (_analysisNeedsRepair(parsed, character)) {
       parsed = await analyze(
         'UTTERANCE TO ANALYZE\n$encodedUtterance\n\n'
         'CORRECTION REQUIRED: The previous result was incomplete. Return a '
@@ -168,18 +168,17 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
   void resetChat() => _history.clear();
 }
 
-bool _analysisNeedsRepair(ChatMessage message) {
+bool _analysisNeedsRepair(ChatMessage message, Character character) {
   if ((message.lineTranslation?.trim().isEmpty ?? true) ||
       (message.explanation?.trim().isEmpty ?? true)) {
     return true;
   }
   final vocabulary = message.vocabulary;
   if (vocabulary == null || vocabulary.length < 2) return true;
-  return vocabulary.any(
-    (item) =>
-        (item.reading?.trim().isEmpty ?? true) ||
-        item.meaning.runes.length < 15,
-  );
+  final requireReading = character.friendLanguage != 'en';
+  return vocabulary.any((item) =>
+      (requireReading && (item.reading?.trim().isEmpty ?? true)) ||
+      item.meaning.runes.length < 15);
 }
 
 String _takeRunes(String value, int limit) {
