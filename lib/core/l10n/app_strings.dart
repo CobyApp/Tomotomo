@@ -133,6 +133,8 @@ class AppStrings {
     'notebookEmpty': '저장한 단어가 없습니다',
     'notebookEmptyHintKo': '한국어 단어장이 비어 있어요. 표현 시트에서 단어 오른쪽 ＋를 눌러 추가하세요.',
     'notebookEmptyHintJa': '일본어 단어장이 비어 있어요. 표현 시트에서 단어 오른쪽 ＋를 눌러 추가하세요.',
+    'notebookEmptyHintEn': '영어 단어장이 비어 있어요. 표현 시트에서 단어 오른쪽 ＋를 눌러 추가하세요.',
+    'notebookEmptyHintZh': '중국어 단어장이 비어 있어요. 표현 시트에서 단어 오른쪽 ＋를 눌러 추가하세요.',
     'notebookDeleteTitle': '단어 삭제',
     'notebookWordDeleted': '단어를 삭제했습니다.',
     'notebookLegacyNoteLabel': '(이전 버전에서 저장된 긴 메모)',
@@ -366,6 +368,8 @@ class AppStrings {
     'notebookEmpty': '保存した単語はありません',
     'notebookEmptyHintKo': '韓国語の単語帳が空です。表現シートで語の右の＋を押して追加してください。',
     'notebookEmptyHintJa': '日本語の単語帳が空です。表現シートで語彙の右の＋から追加できます。',
+    'notebookEmptyHintEn': '英語の単語帳が空です。表現シートで語の右の＋を押して追加してください。',
+    'notebookEmptyHintZh': '中国語の単語帳が空です。表現シートで語の右の＋を押して追加してください。',
     'notebookDeleteTitle': '単語を削除',
     'notebookWordDeleted': '単語を削除しました。',
     'notebookLegacyNoteLabel': '（以前のバージョンで保存された長いメモ）',
@@ -616,6 +620,10 @@ class AppStrings {
         'Your Korean vocabulary is empty. Tap the ＋ next to a word in the expression sheet to add it.',
     'notebookEmptyHintJa':
         'Your Japanese vocabulary is empty. Tap the ＋ next to a word in the expression sheet to add it.',
+    'notebookEmptyHintEn':
+        'Your English vocabulary is empty. Tap the ＋ next to a word in the expression sheet to add it.',
+    'notebookEmptyHintZh':
+        'Your Chinese vocabulary is empty. Tap the ＋ next to a word in the expression sheet to add it.',
     'notebookDeleteTitle': 'Delete Word',
     'notebookWordDeleted': 'Word deleted.',
     'notebookLegacyNoteLabel': '(Long note saved from a previous version)',
@@ -858,6 +866,8 @@ class AppStrings {
     'notebookEmpty': '没有保存的单词',
     'notebookEmptyHintKo': '韩语生词本是空的。请在表达卡片中点击单词右侧的＋号来添加。',
     'notebookEmptyHintJa': '日语生词本是空的。请在表达卡片中点击单词右侧的＋号来添加。',
+    'notebookEmptyHintEn': '英语生词本是空的。请在表达卡片中点击单词右侧的＋号来添加。',
+    'notebookEmptyHintZh': '中文生词本是空的。请在表达卡片中点击单词右侧的＋号来添加。',
     'notebookDeleteTitle': '删除单词',
     'notebookWordDeleted': '单词已删除。',
     'notebookLegacyNoteLabel': '（旧版本保存的长备注）',

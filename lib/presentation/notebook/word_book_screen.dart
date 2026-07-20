@@ -37,6 +37,9 @@ class WordBookScreenState extends State<WordBookScreen>
   bool _langInitialized = false;
   WordBookRefreshNotifier? _refreshNotifier;
 
+  /// Segments (`ko|ja|en|zh`) that currently have at least one saved word.
+  List<String> _availableSegments = const [];
+
   /// Bottom nav re-selects this tab (IndexedStack does not dispose children).
   void reloadWhenTabSelected() {
     if (!mounted) return;
@@ -99,6 +102,7 @@ class WordBookScreenState extends State<WordBookScreen>
         _loading = false;
       });
       _syncHomeWidgetFromLocalData();
+      unawaited(_refreshAvailableSegments());
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -108,6 +112,27 @@ class WordBookScreenState extends State<WordBookScreen>
         _error = e.toString();
       });
     }
+  }
+
+  /// Refreshes which of the four vocabulary segments have saved words, for
+  /// the segment-selector chip row.
+  Future<void> _refreshAvailableSegments() async {
+    try {
+      final repo = context.read<SavedExpressionRepository>();
+      final found = <String>[];
+      for (final seg in const ['ko', 'ja', 'en', 'zh']) {
+        final items = await repo.listForCurrentUser(notebookLang: seg);
+        if (items.isNotEmpty) found.add(seg);
+      }
+      if (!mounted) return;
+      setState(() => _availableSegments = found);
+    } catch (_) {}
+  }
+
+  void _selectSegment(String seg) {
+    if (seg == _notebookLang) return;
+    setState(() => _notebookLang = seg);
+    unawaited(_load());
   }
 
   Future<void> _load({bool showSpinner = true}) async {
@@ -129,6 +154,7 @@ class WordBookScreenState extends State<WordBookScreen>
         _loading = false;
       });
       _syncHomeWidgetFromLocalData();
+      unawaited(_refreshAvailableSegments());
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -305,6 +331,35 @@ class WordBookScreenState extends State<WordBookScreen>
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (_langInitialized && _availableSegments.length > 1)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.pageH,
+                8,
+                AppSpacing.pageH,
+                0,
+              ),
+              child: Wrap(
+                spacing: 8,
+                children: [
+                  for (final seg in _availableSegments)
+                    ChoiceChip(
+                      label: Text(
+                        context.tr(
+                          const {
+                            'ko': 'friendLangKo',
+                            'ja': 'friendLangJa',
+                            'en': 'friendLangEn',
+                            'zh': 'friendLangZh',
+                          }[seg]!,
+                        ),
+                      ),
+                      selected: _notebookLang == seg,
+                      onSelected: (_) => _selectSegment(seg),
+                    ),
+                ],
+              ),
+            ),
           Expanded(
             child: !_langInitialized || _loading
                 ? const PaperLoadingBody()
@@ -318,9 +373,15 @@ class WordBookScreenState extends State<WordBookScreen>
                 ? PaperEmptyState(
                     icon: Icons.menu_book_outlined,
                     title: context.tr('notebookEmpty'),
-                    subtitle: _notebookLang == 'ko'
-                        ? context.tr('notebookEmptyHintKo')
-                        : context.tr('notebookEmptyHintJa'),
+                    subtitle: context.tr(
+                      const {
+                            'ko': 'notebookEmptyHintKo',
+                            'ja': 'notebookEmptyHintJa',
+                            'en': 'notebookEmptyHintEn',
+                            'zh': 'notebookEmptyHintZh',
+                          }[_notebookLang] ??
+                          'notebookEmptyHintKo',
+                    ),
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(
