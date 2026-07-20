@@ -11,6 +11,7 @@ class CelebrityPersonaSuggestion {
     this.tagline,
     this.speechStyle,
     required this.language,
+    this.level = 'intermediate',
     this.avatarUrl,
   });
 
@@ -23,11 +24,37 @@ class CelebrityPersonaSuggestion {
   /// Bio + tone instructions for the AI (stored in DB `speech_style`).
   final String? speechStyle;
 
-  /// `ja` or `ko`
+  /// `ko` | `ja` | `en` | `zh` — auto-detected from the profile text.
   final String language;
+
+  /// Suggested speaking level: 'beginner'|'intermediate'|'advanced'|'business'.
+  final String level;
 
   /// HTTPS avatar URL when safely extracted (e.g. pbs.twimg.com).
   final String? avatarUrl;
+}
+
+/// Detects the dominant language of profile [text] by script. Returns [fallback]
+/// (normalized) when there isn't a clear signal.
+String detectPersonaLanguage(String text, {required String fallback}) {
+  var hangul = 0, kana = 0, han = 0, latin = 0;
+  for (final r in text.runes) {
+    if (r >= 0xAC00 && r <= 0xD7A3) {
+      hangul++;
+    } else if (r >= 0x3040 && r <= 0x30FF) {
+      kana++;
+    } else if (r >= 0x4E00 && r <= 0x9FFF) {
+      han++;
+    } else if ((r >= 0x41 && r <= 0x5A) || (r >= 0x61 && r <= 0x7A)) {
+      latin++;
+    }
+  }
+  if (hangul >= 3 && hangul >= kana) return 'ko';
+  if (kana >= 3) return 'ja';
+  if (han >= 3 && kana == 0 && hangul == 0) return 'zh';
+  if (latin >= 10 && hangul == 0 && kana == 0 && han < 3) return 'en';
+  final f = fallback.toLowerCase();
+  return (f == 'ko' || f == 'ja' || f == 'en' || f == 'zh') ? f : 'ja';
 }
 
 /// Uses the on-device model to turn profile text into a fictional tutor template.
@@ -155,8 +182,18 @@ class CelebrityPersonaSuggester {
     if (trimmed.length < 20) {
       throw Exception('Text too short. Paste more profile content.');
     }
-    final normalizedLanguage = targetLanguage == 'ko' ? 'ko' : 'ja';
-    final outputLanguage = normalizedLanguage == 'ko' ? 'Korean' : 'Japanese';
+    // Auto-detect the persona's language from the profile text; fall back to
+    // the requested language only when the text has no clear script signal.
+    final normalizedLanguage = detectPersonaLanguage(
+      trimmed,
+      fallback: targetLanguage,
+    );
+    final outputLanguage = switch (normalizedLanguage) {
+      'ko' => 'Korean',
+      'en' => 'English',
+      'zh' => 'Simplified Chinese',
+      _ => 'Japanese',
+    };
     final systemInstruction =
         '''
 You create a fictional language-tutor persona from public profile material.

@@ -195,6 +195,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       _nameController.text = s.name;
       _taglineController.text = s.tagline?.trim() ?? '';
       _memoController.text = s.speechStyle ?? '';
+      // Pre-select the auto-detected language + level; the summary shows both
+      // so the user can still adjust.
+      _language = s.language;
+      _level = s.level;
       if (remoteAvatar != null && remoteAvatar.isNotEmpty) {
         _avatarUrl = remoteAvatar;
       }
