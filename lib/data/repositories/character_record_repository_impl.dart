@@ -38,6 +38,7 @@ class CharacterRecordRepositoryImpl implements CharacterRecordRepository {
       tagline: character.tagline,
       speechStyle: character.speechStyle,
       language: character.language,
+      level: character.level,
       createdAt: now,
       updatedAt: now,
     );
@@ -55,6 +56,7 @@ class CharacterRecordRepositoryImpl implements CharacterRecordRepository {
       tagline: character.tagline,
       speechStyle: character.speechStyle,
       language: character.language,
+      level: character.level,
       createdAt: character.createdAt,
       updatedAt: DateTime.now(),
     );

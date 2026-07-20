@@ -37,6 +37,33 @@ void main() {
     expect((await repo.getMyCharacters()).isEmpty, isTrue);
   });
 
+  test('create persists the speaking level', () async {
+    final created = await repo.createCharacter(
+      CharacterRecord.draft(name: 'Riku', language: 'ja', level: 'business'),
+    );
+    expect(created.level, 'business');
+    final fetched = await repo.getCharacter(created.id);
+    expect(fetched!.level, 'business');
+  });
+
+  test('update preserves the speaking level', () async {
+    final created = await repo.createCharacter(
+      CharacterRecord.draft(name: 'Riku', level: 'beginner'),
+    );
+    final updated = await repo.updateCharacter(
+      CharacterRecord(
+        id: created.id,
+        name: 'Riku',
+        level: 'advanced',
+        createdAt: created.createdAt,
+        updatedAt: created.updatedAt,
+      ),
+    );
+    expect(updated.level, 'advanced');
+    final fetched = await repo.getCharacter(created.id);
+    expect(fetched!.level, 'advanced');
+  });
+
   test('update preserves createdAt and rewrites fields', () async {
     final created = await repo.createCharacter(
       CharacterRecord.draft(name: 'first'),
