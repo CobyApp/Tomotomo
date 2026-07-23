@@ -39,42 +39,27 @@ class PaperNavBar extends StatelessWidget {
       height: dockHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           color: p.card,
           border: Border.all(color: p.ink, width: 2.5),
           boxShadow: [
             BoxShadow(color: p.hardShadow, offset: const Offset(0, 4)),
           ],
         ),
-        child: Column(
-          children: [
-            // Neon magenta→cyan top rule.
-            Container(
-              height: 3,
-              margin: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(3),
-                gradient: LinearGradient(colors: [p.coral, p.stampBlue]),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: List.generate(items.length, (i) {
-                    return Expanded(
-                      child: _PaperNavCell(
-                        data: items[i],
-                        selected: i == currentIndex,
-                        onTap: () => onSelect(i),
-                      ),
-                    );
-                  }),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: List.generate(items.length, (i) {
+              return Expanded(
+                child: _PaperNavCell(
+                  data: items[i],
+                  selected: i == currentIndex,
+                  onTap: () => onSelect(i),
                 ),
-              ),
-            ),
-          ],
+              );
+            }),
+          ),
         ),
       ),
     );
@@ -125,18 +110,23 @@ class _PaperNavCell extends StatelessWidget {
             highlightColor: Colors.transparent,
             splashFactory: InkRipple.splashFactory,
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
               decoration: BoxDecoration(
-                // Selected cell: hotpink sticker pill (ink border + hard shadow).
-                color: selected ? p.coral : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-                border: selected
-                    ? Border.all(color: p.ink, width: 2)
+                // Selected cell: gradient sticker pill matching the buttons —
+                // ink border + hard shadow. Unselected stays clean/transparent.
+                gradient: selected
+                    ? LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [p.coral, p.coralDeep],
+                      )
                     : null,
+                borderRadius: BorderRadius.circular(16),
+                border: selected ? Border.all(color: p.ink, width: 2) : null,
                 boxShadow: selected
-                    ? [BoxShadow(color: p.hardShadow, offset: const Offset(2, 2))]
+                    ? [BoxShadow(color: p.hardShadow, offset: const Offset(0, 3))]
                     : null,
               ),
               child: Column(

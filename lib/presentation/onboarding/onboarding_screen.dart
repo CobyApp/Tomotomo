@@ -208,6 +208,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: PageView(
                 controller: _pageController,
+                // Swipe respects the same gate as the Next button: you can't
+                // slide past the language page until a language is chosen.
+                physics: _PageGatePhysics(
+                  maxPage: _studyLanguage == null
+                      ? _langPageIndex
+                      : _pageCount - 1,
+                  parent: const BouncingScrollPhysics(),
+                ),
                 onPageChanged: (i) {
                   setState(() => _page = i);
                   if (i == _pageCount - 1) _prefillFirstFriend();
@@ -833,6 +841,33 @@ class _FirstFriendPage extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Clamps forward paging at [maxPage] so a swipe can't skip a page whose gate
+/// (e.g. "pick a language") isn't satisfied yet — keeping the swipe gesture and
+/// the Next button under the exact same rule. Backward paging is unaffected.
+class _PageGatePhysics extends ScrollPhysics {
+  const _PageGatePhysics({required this.maxPage, super.parent});
+
+  final int maxPage;
+
+  @override
+  _PageGatePhysics applyTo(ScrollPhysics? ancestor) =>
+      _PageGatePhysics(maxPage: maxPage, parent: buildParent(ancestor));
+
+  @override
+  double applyBoundaryConditions(ScrollMetrics position, double value) {
+    final maxPixels = maxPage * position.viewportDimension;
+    // Already at/after the gate and trying to go further forward: block.
+    if (position.pixels >= maxPixels && value > position.pixels) {
+      return value - position.pixels;
+    }
+    // Would overshoot the gate: allow up to it, reject the remainder.
+    if (value > maxPixels && position.pixels < maxPixels) {
+      return value - maxPixels;
+    }
+    return super.applyBoundaryConditions(position, value);
   }
 }
 
