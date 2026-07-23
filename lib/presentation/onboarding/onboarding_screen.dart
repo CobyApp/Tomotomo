@@ -15,7 +15,6 @@ import '../../core/ui/paper/paper_theme.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_widgets.dart';
 import '../../data/character/characters_data.dart';
-import '../../data/on_device/on_device_model_config.dart';
 import '../../data/on_device/on_device_model_manager.dart';
 import '../../domain/entities/character_record.dart';
 import '../../domain/on_device/on_device_model_snapshot.dart';
@@ -58,12 +57,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   static const _introCount = 3;
   // intro slides + language pick + first-friend page.
   int get _pageCount => _introCount + 2;
-  int get _langPageIndex => _introCount;
   bool get _onLastPage => _page == _pageCount - 1;
 
-  /// Language page needs a pick; friend page needs a name.
+  /// Only the final friend page gates the button (it needs a name). A study
+  /// language is always pre-selected, so paging is never blocked mid-flow.
   bool get _nextBlocked {
-    if (_page == _langPageIndex) return _studyLanguage == null;
     if (_onLastPage) return _nameController.text.trim().isEmpty;
     return false;
   }
@@ -71,6 +69,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
+    // Pre-select the study language from the device locale so the language
+    // page opens with a choice already highlighted and paging never dead-ends.
+    _studyLanguage = normalizeLang(
+      WidgetsBinding.instance.platformDispatcher.locale.languageCode,
+    );
     // Re-evaluate the Next/Start button as the friend name is edited.
     _nameController.addListener(() {
       if (mounted) setState(() {});
@@ -208,14 +211,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: PageView(
                 controller: _pageController,
-                // Swipe respects the same gate as the Next button: you can't
-                // slide past the language page until a language is chosen.
-                physics: _PageGatePhysics(
-                  maxPage: _studyLanguage == null
-                      ? _langPageIndex
-                      : _pageCount - 1,
-                  parent: const BouncingScrollPhysics(),
-                ),
+                physics: const BouncingScrollPhysics(),
                 onPageChanged: (i) {
                   setState(() => _page = i);
                   if (i == _pageCount - 1) _prefillFirstFriend();
@@ -280,15 +276,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-/// Clear, always-visible model-download status card. Shows a friendly message
-/// and a real percentage across every phase so the user knows the friend is on
-/// the way — and offers retry on failure.
+/// Thin floating model-download pill — the same compact style as the
+/// main-screen [ModelDownloadBanner], shown above the onboarding button so the
+/// download stays unobtrusive while the user sets up their friend.
 class _DownloadStatus extends StatelessWidget {
   const _DownloadStatus();
-
-  static String _gb(double fraction) =>
-      (OnDeviceModelConfig.byteCount * fraction.clamp(0.0, 1.0) / 1e9)
-          .toStringAsFixed(1);
 
   @override
   Widget build(BuildContext context) {
@@ -297,136 +289,81 @@ class _DownloadStatus extends StatelessWidget {
       builder: (context, manager, _) {
         final snap = manager.snapshot;
         final phase = snap.phase;
-        if (phase == OnDeviceModelPhase.ready) {
-          return _row(
-            context,
-            icon: Icons.check_circle_rounded,
-            color: p.coral,
-            text: context.tr('modelDlReady'),
-          );
-        }
-        if (phase == OnDeviceModelPhase.error) {
-          return _row(
-            context,
-            icon: Icons.error_outline_rounded,
-            color: p.coralDeep,
-            text: context.tr('modelDlError'),
-            trailing: TextButton(
-              onPressed: () => manager.install(),
-              child: Text(context.tr('retry')),
-            ),
-          );
-        }
-        final downloading = phase == OnDeviceModelPhase.downloading;
         final pct = (snap.progress.clamp(0.0, 1.0) * 100).round();
-        final title = downloading
-            ? context.tr('modelDlProgress')
-            : phase == OnDeviceModelPhase.finalizing
-            ? context.tr('onDeviceModelFinalizing')
-            : context.tr('modelDlStarting');
+
+        final Widget lead;
+        final String title;
+        Widget? trailing;
+        if (phase == OnDeviceModelPhase.ready) {
+          lead = Icon(Icons.check_circle_rounded, size: 16, color: p.coral);
+          title = context.tr('modelDlReady');
+        } else if (phase == OnDeviceModelPhase.error) {
+          lead = Icon(Icons.error_outline_rounded, size: 16, color: p.coralDeep);
+          title = context.tr('modelDlError');
+          trailing = TextButton(
+            onPressed: () => manager.install(),
+            style: TextButton.styleFrom(
+              foregroundColor: p.coralDeep,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              minimumSize: const Size(0, 30),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              textStyle: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            child: Text(context.tr('retry')),
+          );
+        } else {
+          lead = PaperLoading(size: 5);
+          if (phase == OnDeviceModelPhase.downloading) {
+            title = context.tr('modelDlProgress');
+            trailing = Text(
+              '$pct%',
+              style: TextStyle(
+                color: p.coral,
+                fontWeight: FontWeight.w900,
+                fontSize: 13,
+              ),
+            );
+          } else if (phase == OnDeviceModelPhase.finalizing) {
+            title = context.tr('onDeviceModelFinalizing');
+          } else {
+            title = context.tr('modelDlStarting');
+          }
+        }
+
         return Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 4, AppSpacing.pageH, 8),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 2, AppSpacing.pageH, 8),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: p.card,
-              borderRadius: BorderRadius.circular(PaperRadii.card),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: p.ink, width: 2.5),
               boxShadow: [
-                BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
+                BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    PaperLoading(size: 6),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: p.ink,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                        ),
-                      ),
+                lead,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: p.ink,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12.5,
                     ),
-                    if (downloading) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        '$pct%',
-                        style: TextStyle(
-                          color: p.coral,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 12),
-                PaperProgressBar(
-                  value: downloading ? snap.progress.clamp(0.0, 1.0) : null,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  downloading
-                      ? '${_gb(snap.progress)} / ${_gb(1)} GB · ${context.tr('modelDlHint')}'
-                      : context.tr('modelDlHint'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: p.inkSoft,
                   ),
                 ),
+                if (trailing != null) ...[const SizedBox(width: 8), trailing],
               ],
             ),
           ),
         );
       },
-    );
-  }
-
-  Widget _row(
-    BuildContext context, {
-    required IconData icon,
-    required Color color,
-    required String text,
-    Widget? trailing,
-  }) {
-    final p = context.paper;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 4, AppSpacing.pageH, 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: p.card,
-          borderRadius: BorderRadius.circular(PaperRadii.card),
-          border: Border.all(color: p.ink, width: 2.5),
-          boxShadow: [
-            BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                text,
-                style: TextStyle(color: p.ink, fontWeight: FontWeight.w700),
-              ),
-            ),
-            ?trailing,
-          ],
-        ),
-      ),
     );
   }
 }
@@ -576,16 +513,24 @@ class _LangCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    return InkWell(
-      borderRadius: BorderRadius.circular(PaperRadii.card),
+    // Opaque light-pink tint when selected (pre-blended so it never composites
+    // dark over the Material below), plus a coral border for a clear state.
+    final selectedFill = Color.alphaBlend(
+      p.coral.withValues(alpha: 0.16),
+      p.card,
+    );
+    return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
         decoration: BoxDecoration(
-          color: selected ? p.coral.withValues(alpha: 0.12) : p.card,
+          color: selected ? selectedFill : p.card,
           borderRadius: BorderRadius.circular(PaperRadii.card),
-          border: Border.all(color: p.ink, width: 2.5),
+          border: Border.all(
+            color: selected ? p.coral : p.ink,
+            width: selected ? 3 : 2.5,
+          ),
           boxShadow: [
             BoxShadow(color: p.hardShadow, offset: const Offset(4, 4)),
           ],
@@ -841,33 +786,6 @@ class _FirstFriendPage extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-/// Clamps forward paging at [maxPage] so a swipe can't skip a page whose gate
-/// (e.g. "pick a language") isn't satisfied yet — keeping the swipe gesture and
-/// the Next button under the exact same rule. Backward paging is unaffected.
-class _PageGatePhysics extends ScrollPhysics {
-  const _PageGatePhysics({required this.maxPage, super.parent});
-
-  final int maxPage;
-
-  @override
-  _PageGatePhysics applyTo(ScrollPhysics? ancestor) =>
-      _PageGatePhysics(maxPage: maxPage, parent: buildParent(ancestor));
-
-  @override
-  double applyBoundaryConditions(ScrollMetrics position, double value) {
-    final maxPixels = maxPage * position.viewportDimension;
-    // Already at/after the gate and trying to go further forward: block.
-    if (position.pixels >= maxPixels && value > position.pixels) {
-      return value - position.pixels;
-    }
-    // Would overshoot the gate: allow up to it, reject the remainder.
-    if (value > maxPixels && position.pixels < maxPixels) {
-      return value - maxPixels;
-    }
-    return super.applyBoundaryConditions(position, value);
   }
 }
 
