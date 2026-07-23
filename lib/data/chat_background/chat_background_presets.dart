@@ -78,10 +78,11 @@ ChatBackgroundPreset chatBackgroundPresetById(String id) {
   return chatBackgroundPresets.first;
 }
 
-/// Peak wash alpha at intensity == 1.0. Kept modest so message bubbles (which
-/// sit on their own opaque coral/card surfaces) always stay legible (AA).
-const double _maxWashAlphaLight = 0.42;
-const double _maxWashAlphaDark = 0.28;
+/// Peak wash alpha at intensity == 1.0. High enough that a color can read as a
+/// near-solid background at full opacity; message bubbles sit on their own
+/// opaque coral/card surfaces with ink borders, so they stay legible regardless.
+const double _maxWashAlphaLight = 0.92;
+const double _maxWashAlphaDark = 0.85;
 
 /// Resolves the two gradient stop colors for [bg] against the active theme's
 /// paper background. Exposed so the picker swatches and the live preview share
@@ -102,8 +103,10 @@ const double _maxWashAlphaDark = 0.28;
   final a = bg.intensity.clamp(0.0, 1.0) * maxAlpha;
 
   final top = Color.alphaBlend(preset.tint.withValues(alpha: a), base);
+  // Keep the two stops close so a high-intensity color reads as a solid fill
+  // (with just a gentle top→bottom vignette), not a washed-out gradient.
   final bottom = Color.alphaBlend(
-    preset.tint.withValues(alpha: a * 0.35),
+    preset.tint.withValues(alpha: a * 0.78),
     base,
   );
   return (top: top, bottom: bottom);

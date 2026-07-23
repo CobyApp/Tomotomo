@@ -152,10 +152,12 @@ class _ChatBackgroundPickerBodyState extends State<_ChatBackgroundPickerBody> {
                   label: Text(context.tr('chatBgFromGallery')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: p.ink,
-                    side: BorderSide(color: p.cardEdge),
-                    minimumSize: const Size.fromHeight(48),
+                    backgroundColor: p.card,
+                    side: BorderSide(color: p.ink, width: 2),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w800),
+                    minimumSize: const Size.fromHeight(50),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(PaperRadii.button),
+                      borderRadius: BorderRadius.circular(999),
                     ),
                   ),
                 ),
@@ -198,8 +200,11 @@ class _PreviewCard extends StatelessWidget {
     final p = context.paper;
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: p.cardEdge),
+        border: Border.all(color: p.ink, width: 2.5),
         borderRadius: BorderRadius.circular(PaperRadii.card),
+        boxShadow: [
+          BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: buildChatBackground(
@@ -310,14 +315,15 @@ class _PresetSwatchRow extends StatelessWidget {
         for (final preset in chatBackgroundPresets)
           _Swatch(
             label: context.tr(preset.labelKey),
-            // Preview each swatch at the currently selected intensity.
+            // Preview each swatch at a fixed, representative opacity so the
+            // colors are always distinguishable regardless of the slider.
             fill: chatBackgroundStops(
               context,
-              ChatBackground(presetId: preset.id, intensity: intensity),
+              ChatBackground(presetId: preset.id, intensity: 0.8),
             ).top,
             selected: preset.id == selectedId,
             ring: p.coral,
-            edge: p.cardEdge,
+            edge: p.ink,
             labelColor: p.inkSoft,
             onTap: () => onSelected(preset.id),
           ),
@@ -356,16 +362,35 @@ class _Swatch extends StatelessWidget {
             duration: const Duration(milliseconds: 120),
             width: 56,
             height: 56,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: fill,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: selected ? ring : edge,
-                width: selected ? 3 : 1,
+                width: selected ? 3 : 2,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: edge,
+                  offset: Offset(selected ? 1 : 2, selected ? 1 : 2),
+                ),
+              ],
             ),
             child: selected
-                ? Icon(Icons.check_rounded, size: 20, color: ring)
+                ? Container(
+                    decoration: BoxDecoration(
+                      color: ring,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    padding: const EdgeInsets.all(2),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      size: 15,
+                      color: Colors.white,
+                    ),
+                  )
                 : null,
           ),
           const SizedBox(height: 6),
