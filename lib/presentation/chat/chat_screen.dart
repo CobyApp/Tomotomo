@@ -240,18 +240,7 @@ class _ChatScreenContent extends StatelessWidget {
                 size: 44,
                 child: character.hasAvatar
                     ? Image(image: character.imageProvider, fit: BoxFit.cover)
-                    : Center(
-                        child: Text(
-                          character.displayNamePrimary.isNotEmpty
-                              ? character.displayNamePrimary.substring(0, 1)
-                              : '?',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: p.coral,
-                          ),
-                        ),
-                      ),
+                    : const PersonAvatarGlyph(size: 44),
               ),
               const SizedBox(width: 10),
               Expanded(

@@ -302,6 +302,28 @@ class PolaroidAvatar extends StatelessWidget {
   }
 }
 
+/// Plain "no photo yet" placeholder: a single clean person glyph on a soft
+/// neutral fill. Deliberately simple (not a cartoon face) — used as the default
+/// profile image for any friend without a picked photo. Drop it in as the child
+/// of a [PolaroidAvatar] or any clipped circle.
+class PersonAvatarGlyph extends StatelessWidget {
+  const PersonAvatarGlyph({super.key, this.size = 52});
+  final double size;
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    return Container(
+      color: p.paperBg,
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.person_rounded,
+        size: size * 0.62,
+        color: p.inkSoft.withValues(alpha: 0.75),
+      ),
+    );
+  }
+}
+
 /// Decorative washi-tape strip; place with Positioned on featured cards.
 class WashiTape extends StatelessWidget {
   const WashiTape({

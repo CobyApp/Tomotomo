@@ -114,8 +114,6 @@ class ChatsTabState extends State<ChatsTab>
   }
 
   Widget _roomLeading(ChatRoomSummary r, {double size = 52}) {
-    final p = context.paper;
-    final initial = r.title.isNotEmpty ? r.title.substring(0, 1) : '?';
     final net = r.avatarNetworkUrl?.trim();
     Widget inner;
     if (net != null && net.isNotEmpty) {
@@ -128,16 +126,7 @@ class ChatsTabState extends State<ChatsTab>
             : AssetImage(asset) as ImageProvider;
         inner = Image(image: provider, fit: BoxFit.cover);
       } else {
-        inner = Center(
-          child: Text(
-            initial,
-            style: TextStyle(
-              fontSize: size * 0.42,
-              fontWeight: FontWeight.w800,
-              color: p.coral,
-            ),
-          ),
-        );
+        inner = PersonAvatarGlyph(size: size);
       }
     }
     return PolaroidAvatar(size: size, child: inner);

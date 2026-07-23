@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/image/image_crop.dart';
 import '../../core/locale/languages.dart';
 import '../../core/ui/app_tokens.dart';
 import '../../core/ui/paper/paper_loading.dart';
@@ -41,13 +45,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String? _studyLanguage;
   bool _saving = false;
 
+  // First-friend form (pre-filled from the built-in example for the chosen
+  // study language; fully editable before the user finishes onboarding).
+  final _nameController = TextEditingController();
+  final _taglineController = TextEditingController();
+  final _personaController = TextEditingController();
+  String _level = 'beginner';
+  String? _avatarPath;
+  String? _prefillLang;
+  bool _pickingAvatar = false;
+
   static const _introCount = 3;
-  int get _pageCount => _introCount + 1; // intro slides + language pick
+  // intro slides + language pick + first-friend page.
+  int get _pageCount => _introCount + 2;
+  int get _langPageIndex => _introCount;
   bool get _onLastPage => _page == _pageCount - 1;
+
+  /// Language page needs a pick; friend page needs a name.
+  bool get _nextBlocked {
+    if (_page == _langPageIndex) return _studyLanguage == null;
+    if (_onLastPage) return _nameController.text.trim().isEmpty;
+    return false;
+  }
 
   @override
   void initState() {
     super.initState();
+    // Re-evaluate the Next/Start button as the friend name is edited.
+    _nameController.addListener(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_bootstrap());
     });
@@ -56,6 +83,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _nameController.dispose();
+    _taglineController.dispose();
+    _personaController.dispose();
     super.dispose();
   }
 
@@ -87,34 +117,77 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  /// Pre-fills the first-friend form with the packaged example that matches the
+  /// chosen study language. Runs when the user lands on the friend page (and
+  /// again if they go back and switch languages).
+  void _prefillFirstFriend() {
+    final lang = _studyLanguage;
+    if (lang == null || _prefillLang == lang) return;
+    final match = characters.where((c) => c.friendLanguage == lang);
+    if (match.isEmpty) return;
+    final c = match.first;
+    _nameController.text = c.displayNamePrimary;
+    _taglineController.text = c.tagline;
+    _personaController.text = [c.description.trim(), c.speechStyle.trim()]
+        .where((s) => s.isNotEmpty)
+        .join('\n');
+    setState(() {
+      _level = c.level;
+      _prefillLang = lang;
+    });
+  }
+
+  Future<void> _pickFirstFriendAvatar() async {
+    final x = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      imageQuality: 85,
+    );
+    if (x == null || !mounted) return;
+    final cropped = await cropImagePath(x.path, square: true);
+    if (cropped == null || !mounted) return;
+    setState(() => _pickingAvatar = true);
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final avatarsDir = Directory('${dir.path}/avatars');
+      if (!await avatarsDir.exists()) {
+        await avatarsDir.create(recursive: true);
+      }
+      final ext = cropped.contains('.') ? cropped.split('.').last : 'jpg';
+      final dest =
+          '${avatarsDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      await File(cropped).copy(dest);
+      if (!mounted) return;
+      setState(() {
+        _avatarPath = dest;
+        _pickingAvatar = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _pickingAvatar = false);
+    }
+  }
+
   Future<void> _finish() async {
     final lang = _studyLanguage;
-    if (lang == null || _saving) return;
+    final name = _nameController.text.trim();
+    if (lang == null || name.isEmpty || _saving) return;
     setState(() => _saving = true);
     try {
-      // Create exactly one friend, in the chosen study language.
+      // Create the user's own first friend from the (pre-filled, editable)
+      // form — no built-in seeding, no points cost on first run.
       final repo = context.read<CharacterRecordRepository>();
-      final match = characters.where((c) => c.friendLanguage == lang);
-      if (match.isNotEmpty) {
-        final c = match.first;
-        final persona = [c.description.trim(), c.speechStyle.trim()]
-            .where((s) => s.isNotEmpty)
-            .join('\n');
-        final now = DateTime.now();
-        await repo.createCharacter(
-          CharacterRecord(
-            id: c.id,
-            name: c.displayNamePrimary,
-            avatarUrl: c.imagePath.isEmpty ? null : c.imagePath,
-            tagline: c.tagline.isEmpty ? null : c.tagline,
-            speechStyle: persona.isEmpty ? null : persona,
-            language: c.friendLanguage,
-            level: c.level,
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
-      }
+      final tagline = _taglineController.text.trim();
+      final persona = _personaController.text.trim();
+      await repo.createCharacter(
+        CharacterRecord.draft(
+          name: name,
+          avatarUrl: _avatarPath,
+          tagline: tagline.isEmpty ? null : tagline,
+          speechStyle: persona.isEmpty ? null : persona,
+          language: lang,
+          level: _level,
+        ),
+      );
       if (!mounted) return;
       await context.read<OnboardingNotifier>().complete();
     } catch (_) {
@@ -135,7 +208,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: PageView(
                 controller: _pageController,
-                onPageChanged: (i) => setState(() => _page = i),
+                onPageChanged: (i) {
+                  setState(() => _page = i);
+                  if (i == _pageCount - 1) _prefillFirstFriend();
+                },
                 children: [
                   _IntroSlide(
                     assetImage: 'assets/images/app_icon.png',
@@ -156,6 +232,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     selected: _studyLanguage,
                     onSelected: (code) => setState(() => _studyLanguage = code),
                   ),
+                  _FirstFriendPage(
+                    nameController: _nameController,
+                    taglineController: _taglineController,
+                    personaController: _personaController,
+                    level: _level,
+                    onLevel: (v) => setState(() => _level = v),
+                    avatarPath: _avatarPath,
+                    pickingAvatar: _pickingAvatar,
+                    onPickAvatar: _pickFirstFriendAvatar,
+                    onClearAvatar: () => setState(() => _avatarPath = null),
+                  ),
                 ],
               ),
             ),
@@ -175,9 +262,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ? context.tr('onboardingStart')
                           : context.tr('onboardingNext'),
                       icon: _onLastPage ? Icons.favorite_rounded : null,
-                      onPressed: (_onLastPage && _studyLanguage == null)
-                          ? null
-                          : _next,
+                      onPressed: _nextBlocked ? null : _next,
                     ),
             ),
           ],
@@ -529,6 +614,220 @@ class _LangCard extends StatelessWidget {
             if (selected)
               Icon(Icons.check_circle_rounded, color: p.coral, size: 24),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The final onboarding step: the user's own first friend, pre-filled with a
+/// packaged example for the chosen study language and fully editable.
+class _FirstFriendPage extends StatelessWidget {
+  const _FirstFriendPage({
+    required this.nameController,
+    required this.taglineController,
+    required this.personaController,
+    required this.level,
+    required this.onLevel,
+    required this.avatarPath,
+    required this.pickingAvatar,
+    required this.onPickAvatar,
+    required this.onClearAvatar,
+  });
+
+  final TextEditingController nameController;
+  final TextEditingController taglineController;
+  final TextEditingController personaController;
+  final String level;
+  final ValueChanged<String> onLevel;
+  final String? avatarPath;
+  final bool pickingAvatar;
+  final VoidCallback onPickAvatar;
+  final VoidCallback onClearAvatar;
+
+  static const _levels = [
+    ('beginner', 'levelBeginner'),
+    ('intermediate', 'levelIntermediate'),
+    ('advanced', 'levelAdvanced'),
+    ('business', 'levelBusiness'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    final hasAvatar = avatarPath != null && avatarPath!.isNotEmpty;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.pageH,
+        AppSpacing.pageTop,
+        AppSpacing.pageH,
+        AppSpacing.pageBottom,
+      ),
+      children: [
+        Text(
+          context.tr('onboardingFriendTitle'),
+          style: cuteDisplay(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: p.ink,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          context.tr('onboardingFriendSubtitle'),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.4),
+        ),
+        const SizedBox(height: 20),
+        // Avatar: plain-person default; tap to add a photo.
+        Center(
+          child: GestureDetector(
+            onTap: pickingAvatar ? null : onPickAvatar,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 104,
+                  height: 104,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: hasAvatar ? null : p.paperBg,
+                    border: Border.all(color: p.ink, width: 2.5),
+                    image: hasAvatar
+                        ? DecorationImage(
+                            image: FileImage(File(avatarPath!)),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    boxShadow: [
+                      BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
+                    ],
+                  ),
+                  child: pickingAvatar
+                      ? const Center(child: PaperLoading(size: 8))
+                      : hasAvatar
+                      ? null
+                      : Center(
+                          child: Icon(
+                            Icons.person_rounded,
+                            size: 52,
+                            color: p.inkSoft.withValues(alpha: 0.75),
+                          ),
+                        ),
+                ),
+                Positioned(
+                  bottom: -2,
+                  right: -2,
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: p.coral,
+                      border: Border.all(color: p.card, width: 2.5),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (hasAvatar)
+          Center(
+            child: TextButton(
+              onPressed: onClearAvatar,
+              child: Text(context.tr('characterRemoveAvatar')),
+            ),
+          )
+        else
+          const SizedBox(height: 18),
+        _label(context, context.tr('name')),
+        _field(context, controller: nameController),
+        const SizedBox(height: 16),
+        _label(context, context.tr('characterTaglineLabel')),
+        _field(
+          context,
+          controller: taglineController,
+          hint: context.tr('characterTaglineHint'),
+        ),
+        const SizedBox(height: 16),
+        _label(context, context.tr('characterMemo')),
+        _field(
+          context,
+          controller: personaController,
+          hint: context.tr('characterMemoHint'),
+          maxLines: 4,
+          minLines: 3,
+        ),
+        const SizedBox(height: 20),
+        _label(context, context.tr('levelSectionTitle')),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final (value, key) in _levels)
+              PaperChip(
+                label: context.tr(key),
+                selected: level == value,
+                onTap: () => onLevel(value),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _label(BuildContext context, String text) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 0, 2, 8),
+      child: Text(
+        text,
+        style: cuteDisplay(
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
+          color: context.paper.coral,
+        ),
+      ),
+    );
+  }
+
+  Widget _field(
+    BuildContext context, {
+    required TextEditingController controller,
+    String? hint,
+    int? maxLines = 1,
+    int? minLines,
+  }) {
+    final p = context.paper;
+    final radius = BorderRadius.circular(PaperRadii.button);
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      minLines: minLines,
+      style: TextStyle(color: p.ink, fontSize: 15),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: p.inkSoft.withValues(alpha: 0.7)),
+        filled: true,
+        fillColor: p.card,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: p.ink, width: 2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: p.ink, width: 2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: p.coral, width: 2.5),
         ),
       ),
     );

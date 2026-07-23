@@ -84,14 +84,7 @@ class _ChatListState extends State<ChatList> {
             rotate: -0.06,
             child: widget.character.hasAvatar
                 ? Image(image: widget.character.imageProvider, fit: BoxFit.cover)
-                : Center(
-                    child: Text(
-                      widget.character.displayNamePrimary.isNotEmpty
-                          ? widget.character.displayNamePrimary.substring(0, 1)
-                          : '?',
-                      style: TextStyle(color: p.coral),
-                    ),
-                  ),
+                : const PersonAvatarGlyph(size: 32),
           ),
           const SizedBox(width: 12),
           Container(

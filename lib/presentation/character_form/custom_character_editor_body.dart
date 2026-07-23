@@ -841,7 +841,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: (_avatarUrl == null || _avatarUrl!.isEmpty)
-                        ? p.coral
+                        ? p.paperBg
+                        : null,
+                    border: (_avatarUrl == null || _avatarUrl!.isEmpty)
+                        ? Border.all(color: p.ink, width: 2.5)
                         : null,
                     image: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
                         ? DecorationImage(
@@ -852,12 +855,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                     boxShadow: [
                       BoxShadow(
                         color: p.hardShadow,
-                        offset: const Offset(0, 3),
-                      ),
-                      BoxShadow(
-                        color: p.softShadow,
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
+                        offset: const Offset(3, 3),
                       ),
                     ],
                   ),
@@ -866,11 +864,11 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                           child: PaperLoading(size: 9, color: Colors.white),
                         )
                       : (_avatarUrl == null || _avatarUrl!.isEmpty)
-                      ? const Center(
+                      ? Center(
                           child: Icon(
-                            Icons.face_rounded,
-                            size: 44,
-                            color: Colors.white,
+                            Icons.person_rounded,
+                            size: 52,
+                            color: p.inkSoft.withValues(alpha: 0.75),
                           ),
                         )
                       : null,

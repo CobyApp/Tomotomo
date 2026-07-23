@@ -100,7 +100,6 @@ class CharactersTabState extends State<CharactersTab>
 
   // ── avatar helper ─────────────────────────────────────────
   Widget _recordAvatar(String? url, String name, {double size = 60}) {
-    final p = context.paper;
     Widget inner;
     if (url != null && url.isNotEmpty) {
       final ImageProvider provider = url.startsWith('http')
@@ -110,17 +109,7 @@ class CharactersTabState extends State<CharactersTab>
           : FileImage(File(url));
       inner = Image(image: provider, fit: BoxFit.cover);
     } else {
-      final initial = name.isNotEmpty ? name.substring(0, 1) : '?';
-      inner = Center(
-        child: Text(
-          initial,
-          style: TextStyle(
-            fontSize: size * 0.42,
-            fontWeight: FontWeight.w800,
-            color: p.coral,
-          ),
-        ),
-      );
+      inner = PersonAvatarGlyph(size: size);
     }
     return PolaroidAvatar(size: size, child: inner);
   }

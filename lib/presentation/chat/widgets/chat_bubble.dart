@@ -51,14 +51,7 @@ class ChatBubble extends StatelessWidget {
               rotate: -0.06,
               child: character.hasAvatar
                   ? Image(image: character.imageProvider, fit: BoxFit.cover)
-                  : Center(
-                      child: Text(
-                        character.displayNamePrimary.isNotEmpty
-                            ? character.displayNamePrimary.substring(0, 1)
-                            : '?',
-                        style: TextStyle(fontSize: 13, color: p.coral),
-                      ),
-                    ),
+                  : const PersonAvatarGlyph(size: 36),
             ),
             const SizedBox(width: 10),
           ],
