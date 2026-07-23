@@ -43,6 +43,14 @@ abstract final class PaperTheme {
       extensions: [colors],
       colorScheme: scheme,
       dividerColor: colors.cardEdge,
+      // Cohesive, soft route motion everywhere: fade + gentle zoom.
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.iOS: _PaperPageTransitions(),
+          TargetPlatform.android: _PaperPageTransitions(),
+          TargetPlatform.macOS: _PaperPageTransitions(),
+        },
+      ),
       appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,
@@ -201,6 +209,35 @@ abstract final class PaperTheme {
         labelMedium: TextStyle(fontFamily: 'Pretendard', color: colors.ink),
         // Secondary/caption use — matches Material's onSurfaceVariant pattern.
         labelSmall: TextStyle(fontFamily: 'Pretendard', color: colors.inkSoft),
+      ),
+    );
+  }
+}
+
+/// Soft app-wide route transition: the incoming page fades in while gently
+/// zooming from 97% — calmer than a hard platform slide and on-brand for the
+/// cute paper look. Applied via [ThemeData.pageTransitionsTheme].
+class _PaperPageTransitions extends PageTransitionsBuilder {
+  const _PaperPageTransitions();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    return FadeTransition(
+      opacity: curved,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.97, end: 1.0).animate(curved),
+        child: child,
       ),
     );
   }

@@ -268,6 +268,70 @@ class _PaperButtonState extends State<PaperButton> {
   }
 }
 
+/// Compact gradient sticker icon-button for app-bar actions (add friend, etc.)
+/// — a hotpink→purple circle with an ink border, gloss, hard shadow, press-in
+/// and a light haptic. Cleaner and more on-brand than a bare Material icon.
+class PaperRoundButton extends StatefulWidget {
+  const PaperRoundButton({
+    super.key,
+    required this.icon,
+    required this.onPressed,
+    this.size = 40,
+    this.tooltip,
+  });
+
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final double size;
+  final String? tooltip;
+
+  @override
+  State<PaperRoundButton> createState() => _PaperRoundButtonState();
+}
+
+class _PaperRoundButtonState extends State<PaperRoundButton> {
+  bool _down = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    final btn = GestureDetector(
+      onTapDown: (_) => setState(() => _down = true),
+      onTapUp: (_) => setState(() => _down = false),
+      onTapCancel: () => setState(() => _down = false),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        widget.onPressed?.call();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 90),
+        width: widget.size,
+        height: widget.size,
+        transform: Matrix4.translationValues(_down ? 2 : 0, _down ? 2 : 0, 0),
+        foregroundDecoration: stickerGloss(shape: BoxShape.circle, strength: 0.3),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [p.coral, p.coralDeep],
+          ),
+          border: Border.all(color: p.ink, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: p.hardShadow,
+              offset: Offset(_down ? 0 : 2, _down ? 0 : 2),
+            ),
+          ],
+        ),
+        child: Icon(widget.icon, color: Colors.white, size: widget.size * 0.5),
+      ),
+    );
+    if (widget.tooltip == null) return btn;
+    return Tooltip(message: widget.tooltip!, child: btn);
+  }
+}
+
 /// Dashed-border stamp/ticket (points balance, dates, badges).
 class StampTicket extends StatelessWidget {
   const StampTicket({super.key, required this.child, this.rotate = 0});

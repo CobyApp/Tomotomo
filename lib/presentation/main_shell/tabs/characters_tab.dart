@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/locale/languages.dart';
 import '../../../core/widgets/on_app_resumed_mixin.dart';
 import '../../../domain/entities/character.dart';
 import '../../../domain/entities/character_record.dart';
@@ -116,7 +117,6 @@ class CharactersTabState extends State<CharactersTab>
 
   @override
   Widget build(BuildContext context) {
-    final p = context.paper;
     // Show every friend regardless of language (no language filter).
     final visibleRecords = _myCharacters;
 
@@ -126,11 +126,13 @@ class CharactersTabState extends State<CharactersTab>
       actions: (_loading || _error != null)
           ? null
           : [
-              IconButton(
-                onPressed: _openCreateCharacter,
-                icon: const Icon(Icons.person_add_alt_1_rounded),
-                color: p.coral,
-                tooltip: context.tr('charactersEmptyMyCta'),
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: PaperRoundButton(
+                  icon: Icons.add_rounded,
+                  onPressed: _openCreateCharacter,
+                  tooltip: context.tr('charactersEmptyMyCta'),
+                ),
               ),
             ],
       body: _loading
@@ -179,57 +181,61 @@ class CharactersTabState extends State<CharactersTab>
     return lines.isEmpty ? _recordSubtitle(context, r) : lines.first;
   }
 
+  String _levelLabel(String level) => switch (level) {
+    'beginner' => context.tr('levelBeginner'),
+    'advanced' => context.tr('levelAdvanced'),
+    'business' => context.tr('levelBusiness'),
+    _ => context.tr('levelIntermediate'),
+  };
+
   Widget _recordTile(CharacterRecord r, {bool isMine = false}) {
     final p = context.paper;
+    final tagline = r.tagline?.trim() ?? '';
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.listGap),
       child: PaperCard(
         onTap: () => _pushChatWithRecord(r),
         padding: const EdgeInsets.all(16),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _recordAvatar(r.avatarUrl, r.name),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    r.name,
-                    style: AppTextStyles.listTitle(context).copyWith(
-                      color: p.ink,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  if ((r.tagline?.trim().isNotEmpty ?? false))
-                    Text(
-                      r.tagline!.trim(),
-                      style: AppTextStyles.listSubtitle(
-                        context,
-                      ).copyWith(color: p.coral, fontWeight: FontWeight.w700),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _recordBio(r),
-                    style: AppTextStyles.listSubtitle(
-                      context,
-                    ).copyWith(color: p.inkSoft, height: 1.4),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
             Row(
-              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _recordAvatar(r.avatarUrl, r.name, size: 62),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        r.name,
+                        style: AppTextStyles.listTitle(context).copyWith(
+                          color: p.ink,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          _MiniBadge(
+                            label: languageEndonym(r.language),
+                            fill: p.stampBlue,
+                          ),
+                          _MiniBadge(
+                            label: _levelLabel(r.level),
+                            fill: p.coral,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
                 if (isMine)
                   _RecordMenu(
                     onEdit: () async {
@@ -278,10 +284,66 @@ class CharactersTabState extends State<CharactersTab>
                     editLabel: context.tr('charactersEdit'),
                     deleteLabel: context.tr('charactersDelete'),
                   ),
-                Icon(Icons.chevron_right_rounded, color: p.inkSoft),
               ],
             ),
+            if (tagline.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                tagline,
+                style: AppTextStyles.listSubtitle(context).copyWith(
+                  color: p.coral,
+                  fontWeight: FontWeight.w700,
+                  height: 1.35,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            if (r.speechStyle?.trim().isNotEmpty ?? false) ...[
+              const SizedBox(height: 6),
+              Text(
+                _recordBio(r),
+                style: AppTextStyles.listSubtitle(
+                  context,
+                ).copyWith(color: p.inkSoft, height: 1.4),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Small filled sticker "badge" (reference style): colored fill, ink border,
+/// hard shadow, white text — used for the friend's language and level.
+class _MiniBadge extends StatelessWidget {
+  const _MiniBadge({required this.label, required this.fill});
+
+  final String label;
+  final Color fill;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: p.ink, width: 1.5),
+        boxShadow: [
+          BoxShadow(color: p.hardShadow, offset: const Offset(1, 1)),
+        ],
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+          fontSize: 11.5,
         ),
       ),
     );

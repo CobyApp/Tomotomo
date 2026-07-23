@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/ui/app_tokens.dart';
 import '../../../core/ui/paper/paper_tokens.dart';
 import '../../../core/ui/paper/paper_widgets.dart';
 import '../../../domain/entities/character.dart';
@@ -29,29 +28,26 @@ class ChatInput extends StatelessWidget {
     final canTapSend = !isGenerating && canSendMessage;
     final p = context.paper;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.composerPadH,
-        AppSpacing.composerPadTop,
-        AppSpacing.composerPadH,
-        AppSpacing.composerPadBottom,
-      ),
-      decoration: BoxDecoration(
-        color: p.card,
-        border: Border(top: BorderSide(color: p.cardEdge)),
-      ),
+    // One unified "sticker bar": the text field and the send button live
+    // inside a single rounded card that floats over the chat background.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
       child: SafeArea(
         top: false,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: p.paperBg,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: p.ink, width: 2),
-                ),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(6, 5, 5, 5),
+          decoration: BoxDecoration(
+            color: p.card,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: p.ink, width: 2.5),
+            boxShadow: [
+              BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
                 child: TextField(
                   controller: controller,
                   readOnly: !canSendMessage,
@@ -61,62 +57,66 @@ class ChatInput extends StatelessWidget {
                       color: p.inkSoft.withValues(alpha: 0.7),
                       fontSize: 15,
                     ),
+                    filled: false,
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 13,
-                    ),
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    isCollapsed: true,
+                    contentPadding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
                   ),
                   style: TextStyle(fontSize: 15.5, color: p.ink),
-                  maxLines: null,
+                  maxLines: 5,
+                  minLines: 1,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) {
                     if (canSendMessage) onSend();
                   },
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              foregroundDecoration: canTapSend
-                  ? stickerGloss(shape: BoxShape.circle, strength: 0.3)
-                  : null,
-              decoration: BoxDecoration(
-                gradient: canTapSend
-                    ? LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [p.coral, p.coralDeep],
-                      )
+              const SizedBox(width: 6),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 140),
+                width: 44,
+                height: 44,
+                foregroundDecoration: canTapSend
+                    ? stickerGloss(shape: BoxShape.circle, strength: 0.3)
                     : null,
-                color: canTapSend ? null : p.inkSoft.withValues(alpha: 0.3),
-                shape: BoxShape.circle,
-                border: Border.all(color: p.ink, width: 2),
-                boxShadow: canTapSend
-                    ? [BoxShadow(color: p.hardShadow, offset: const Offset(2, 2))]
-                    : null,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                shape: const CircleBorder(),
-                child: InkWell(
-                  onTap: canTapSend ? onSend : null,
-                  customBorder: const CircleBorder(),
-                  child: SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Icon(
-                      isGenerating
-                          ? Icons.hourglass_empty_rounded
-                          : Icons.send_rounded,
-                      color: Colors.white,
-                      size: 22,
+                decoration: BoxDecoration(
+                  gradient: canTapSend
+                      ? LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [p.coral, p.coralDeep],
+                        )
+                      : null,
+                  color: canTapSend ? null : p.inkSoft.withValues(alpha: 0.25),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: p.ink, width: 2),
+                  boxShadow: canTapSend
+                      ? [BoxShadow(color: p.hardShadow, offset: const Offset(1, 2))]
+                      : null,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    onTap: canTapSend ? onSend : null,
+                    customBorder: const CircleBorder(),
+                    child: Center(
+                      child: Icon(
+                        isGenerating
+                            ? Icons.more_horiz_rounded
+                            : Icons.arrow_upward_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
