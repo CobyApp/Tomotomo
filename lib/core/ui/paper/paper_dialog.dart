@@ -70,16 +70,9 @@ class PaperDialog extends StatelessWidget {
         decoration: BoxDecoration(
           color: p.card,
           borderRadius: BorderRadius.circular(PaperRadii.card + 4),
-          border: Border.all(color: p.stampBlue.withValues(alpha: 0.35)),
+          border: Border.all(color: p.ink, width: 2.5),
           boxShadow: [
-            BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
-            BoxShadow(
-              color: p.softShadow,
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-            // Neon halo.
-            BoxShadow(color: p.coral.withValues(alpha: 0.18), blurRadius: 28),
+            BoxShadow(color: p.hardShadow, offset: const Offset(5, 5)),
           ],
         ),
         child: Column(
@@ -170,6 +163,7 @@ class _PaperDialogConfirmButtonState extends State<_PaperDialogConfirmButton> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.paper;
     return GestureDetector(
       onTapDown: (_) => setState(() => _down = true),
       onTapUp: (_) => setState(() => _down = false),
@@ -177,19 +171,19 @@ class _PaperDialogConfirmButtonState extends State<_PaperDialogConfirmButton> {
       onTap: widget.onPressed,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 90),
-        transform: Matrix4.translationValues(0, _down ? 3 : 0, 0),
+        transform: Matrix4.translationValues(_down ? 3 : 0, _down ? 3 : 0, 0),
         padding: const EdgeInsets.symmetric(vertical: 13),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [widget.fill, widget.shadow],
           ),
-          borderRadius: BorderRadius.circular(PaperRadii.button),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: p.ink, width: 2),
           boxShadow: [
-            BoxShadow(color: widget.shadow, offset: Offset(0, _down ? 0 : 3)),
-            BoxShadow(color: widget.fill.withValues(alpha: 0.45), blurRadius: 16),
+            BoxShadow(color: p.hardShadow, offset: Offset(_down ? 0 : 3, _down ? 0 : 3)),
           ],
         ),
         child: Text(

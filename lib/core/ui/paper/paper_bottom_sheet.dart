@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'paper_tokens.dart';
 
-/// Shows a rounded cyber modal bottom sheet with a neon grab handle and an
-/// explicit close button. Capped to 90% height, dismissible by drag, close
-/// button, or tapping the scrim — so it's always easy to get out of.
+/// Shows a rounded sticker-style modal bottom sheet with a gradient grab
+/// handle and an explicit close button. Capped to 90% height, dismissible by
+/// drag, close button, or tapping the scrim — so it's always easy to get out.
 Future<T?> showPaperSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
@@ -28,12 +28,9 @@ Future<T?> showPaperSheet<T>(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(26),
               ),
-              border: Border.all(color: p.stampBlue.withValues(alpha: 0.35)),
+              border: Border.all(color: p.ink, width: 2.5),
               boxShadow: [
-                BoxShadow(
-                  color: p.coral.withValues(alpha: 0.18),
-                  blurRadius: 26,
-                ),
+                BoxShadow(color: p.hardShadow, offset: const Offset(0, -3)),
               ],
             ),
             child: Column(

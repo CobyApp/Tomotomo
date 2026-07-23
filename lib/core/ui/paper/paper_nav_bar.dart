@@ -41,16 +41,9 @@ class PaperNavBar extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
           color: p.card,
-          border: Border.all(color: p.cardEdge, width: 1.5),
+          border: Border.all(color: p.ink, width: 2.5),
           boxShadow: [
-            BoxShadow(color: p.hardShadow, offset: const Offset(0, 2)),
-            BoxShadow(color: p.softShadow, blurRadius: 16, offset: const Offset(0, 6)),
-            // Neon glow lifting the dock off the background.
-            BoxShadow(
-              color: p.coral.withValues(alpha: 0.18),
-              blurRadius: 22,
-              offset: const Offset(0, 6),
-            ),
+            BoxShadow(color: p.hardShadow, offset: const Offset(0, 4)),
           ],
         ),
         child: Column(
@@ -136,18 +129,14 @@ class _PaperNavCell extends StatelessWidget {
               curve: Curves.easeOutCubic,
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               decoration: BoxDecoration(
-                color: selected ? p.coral.withValues(alpha: 0.14) : Colors.transparent,
+                // Selected cell: hotpink sticker pill (ink border + hard shadow).
+                color: selected ? p.coral : Colors.transparent,
                 borderRadius: BorderRadius.circular(14),
                 border: selected
-                    ? Border.all(color: p.coral.withValues(alpha: 0.55), width: 1.2)
+                    ? Border.all(color: p.ink, width: 2)
                     : null,
                 boxShadow: selected
-                    ? [
-                        BoxShadow(
-                          color: p.coral.withValues(alpha: 0.35),
-                          blurRadius: 14,
-                        ),
-                      ]
+                    ? [BoxShadow(color: p.hardShadow, offset: const Offset(2, 2))]
                     : null,
               ),
               child: Column(
@@ -157,7 +146,7 @@ class _PaperNavCell extends StatelessWidget {
                   Icon(
                     selected ? data.selectedIcon : data.icon,
                     size: 22,
-                    color: selected ? p.coral : p.inkSoft,
+                    color: selected ? Colors.white : p.inkSoft,
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -168,7 +157,7 @@ class _PaperNavCell extends StatelessWidget {
                       fontSize: 11,
                       height: 1.1,
                       fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                      color: selected ? p.coral : p.inkSoft,
+                      color: selected ? Colors.white : p.inkSoft,
                     ),
                   ),
                 ],

@@ -14,19 +14,22 @@ class PaperWordmark extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.paper;
     final base = cuteDisplay(fontSize: fontSize, fontWeight: FontWeight.w800);
-    Widget ghost(Color c, Offset d) => Transform.translate(
-      offset: d,
-      child: Text(
-        text,
-        style: base.copyWith(color: c.withValues(alpha: 0.55)),
-      ),
-    );
-    // Y2K chromatic-aberration glitch: cyan + pink offset copies behind.
+    final grad = LinearGradient(colors: [p.coral, p.coralDeep]);
     return Stack(
       children: [
-        ghost(p.stampBlue, const Offset(-1.6, 1.2)),
-        ghost(p.coral, const Offset(1.6, -1.2)),
-        Text(text, style: base.copyWith(color: p.ink)),
+        // A cute hint of glitch: faint cyan offset ghost behind.
+        Transform.translate(
+          offset: const Offset(1.6, -1.2),
+          child: Text(
+            text,
+            style: base.copyWith(color: p.stampBlue.withValues(alpha: 0.6)),
+          ),
+        ),
+        // Bubbly hotpink→purple gradient wordmark.
+        ShaderMask(
+          shaderCallback: (r) => grad.createShader(r),
+          child: Text(text, style: base.copyWith(color: Colors.white)),
+        ),
       ],
     );
   }

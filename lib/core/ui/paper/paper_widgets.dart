@@ -53,12 +53,13 @@ class PaperChip extends StatelessWidget {
           duration: const Duration(milliseconds: 120),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
           decoration: BoxDecoration(
-            color: selected ? p.coralDeep : p.card,
+            // Sticker chip: hotpink fill when selected, ink border + hard shadow.
+            color: selected ? p.coral : p.card,
             borderRadius: BorderRadius.circular(PaperRadii.pill),
-            border: Border.all(
-              color: selected ? p.coralDeep : p.cardEdge,
-              width: 1.5,
-            ),
+            border: Border.all(color: p.ink, width: 2),
+            boxShadow: [
+              BoxShadow(color: p.hardShadow, offset: const Offset(2, 2)),
+            ],
           ),
           child: Text(
             label,
@@ -89,19 +90,10 @@ class PaperCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: p.card,
         borderRadius: BorderRadius.circular(PaperRadii.card),
-        border: Border.all(color: p.cardEdge),
+        // Sticker: thick ink border + hard offset shadow (no blur).
+        border: Border.all(color: p.cardEdge, width: 2.5),
         boxShadow: [
-          BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
-          BoxShadow(
-            color: p.softShadow,
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-          // Faint cyan neon halo.
-          BoxShadow(
-            color: p.stampBlue.withValues(alpha: 0.10),
-            blurRadius: 16,
-          ),
+          BoxShadow(color: p.hardShadow, offset: const Offset(4, 4)),
         ],
       ),
       child: child,
@@ -154,9 +146,6 @@ class _PaperButtonState extends State<PaperButton> {
     // The shadow is a further-darkened derivative so the pressable "paper
     // bottom edge" stays visible against the coralDeep fill.
     final fill = enabled ? p.coralDeep : p.inkSoft;
-    final shadow = enabled
-        ? Color.lerp(p.coralDeep, Colors.black, 0.28)!
-        : p.inkSoft;
     return GestureDetector(
       onTapDown: enabled ? (_) => setState(() => _down = true) : null,
       onTapUp: enabled ? (_) => setState(() => _down = false) : null,
@@ -165,27 +154,26 @@ class _PaperButtonState extends State<PaperButton> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 90),
         width: widget.expand ? double.infinity : null,
-        transform: Matrix4.translationValues(0, _down ? 3 : 0, 0),
+        transform: Matrix4.translationValues(_down ? 4 : 0, _down ? 4 : 0, 0),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         decoration: BoxDecoration(
-          // Neon magenta→cyan gradient fill with a soft glow.
+          // Sticker style: hotpink→purple gradient, thick ink border, and a
+          // HARD offset shadow that collapses on press (button "presses in").
           gradient: enabled
               ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [p.coral, p.coralDeep],
                 )
               : null,
           color: enabled ? null : fill,
-          borderRadius: BorderRadius.circular(PaperRadii.button),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: p.ink, width: 2.5),
           boxShadow: [
-            BoxShadow(color: shadow, offset: Offset(0, _down ? 0 : 3)),
-            if (enabled)
-              BoxShadow(
-                color: p.coral.withValues(alpha: 0.42),
-                blurRadius: 18,
-                offset: const Offset(0, 4),
-              ),
+            BoxShadow(
+              color: p.hardShadow,
+              offset: Offset(_down ? 0 : 4, _down ? 0 : 4),
+            ),
           ],
         ),
         child: widget.busy
@@ -291,26 +279,22 @@ class PolaroidAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    return Container(
-      width: size,
-      height: size,
-      padding: const EdgeInsets.all(2.5),
-      decoration: BoxDecoration(
-        // Neon gradient ring + glow.
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [p.coral, p.stampBlue],
-        ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(color: p.coral.withValues(alpha: 0.35), blurRadius: 12),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(11.5),
-        child: Container(
+    return Transform.rotate(
+      angle: rotate,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          // Sticker: ink border + hard offset shadow, slight playful tilt.
           color: p.card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: p.ink, width: 2.5),
+          boxShadow: [
+            BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(11),
           child: Center(child: child),
         ),
       ),
