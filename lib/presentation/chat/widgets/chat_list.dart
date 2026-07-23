@@ -2,10 +2,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/ui/paper/paper_theme.dart';
 import '../../../../core/ui/paper/paper_tokens.dart';
 import '../../../../core/ui/paper/paper_widgets.dart';
 import '../../../../domain/entities/character.dart';
 import '../../../../domain/entities/chat_message.dart' show ChatMessage;
+import '../../locale/l10n_context.dart';
 import '../chat_expression_sheet.dart';
 import '../chat_message_report.dart';
 import 'chat_bubble.dart';
@@ -38,6 +40,9 @@ class _ChatListState extends State<ChatList> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.messages.isEmpty && !widget.isGenerating) {
+      return _EmptyChat(character: widget.character);
+    }
     return ListView.builder(
       controller: widget.scrollController,
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -88,15 +93,63 @@ class _ChatListState extends State<ChatList> {
           ),
           const SizedBox(width: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: p.card,
               borderRadius: BorderRadius.circular(PaperRadii.card),
-              border: Border.all(color: p.cardEdge),
+              border: Border.all(color: p.ink, width: 2),
+              boxShadow: [
+                BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
+              ],
             ),
-            child: _TypingDots(color: p.ink),
+            child: _TypingDots(color: p.coral),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Friendly placeholder shown before the first message so the chat room never
+/// opens to a blank void — the friend's avatar plus a short prompt.
+class _EmptyChat extends StatelessWidget {
+  const _EmptyChat({required this.character});
+
+  final Character character;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PolaroidAvatar(
+              size: 96,
+              child: character.hasAvatar
+                  ? Image(image: character.imageProvider, fit: BoxFit.cover)
+                  : const PersonAvatarGlyph(size: 96),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              context.tr('chatEmptyTitle'),
+              textAlign: TextAlign.center,
+              style: cuteDisplay(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: p.ink,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              context.tr('chatEmptyBody'),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13.5, height: 1.45, color: p.inkSoft),
+            ),
+          ],
+        ),
       ),
     );
   }

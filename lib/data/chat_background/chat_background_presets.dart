@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../core/ui/paper/paper_scaffold.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import 'chat_background.dart';
 
@@ -147,6 +148,12 @@ Widget buildChatBackground(
         ?child,
       ],
     );
+  }
+  // Default ('paper') background: reuse the app's signature gradient + floating
+  // deco so the chat room matches every other screen. Explicit color presets
+  // still render their gentle wash.
+  if (chatBackgroundPresetById(bg.presetId).id == 'paper') {
+    return PaperBackground(child: child);
   }
   return DecoratedBox(
     decoration: chatBackgroundDecoration(context, bg),

@@ -82,6 +82,40 @@ class PaperScaffold extends StatelessWidget {
           )
         : titleWidget;
 
+    return PaperBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          toolbarHeight: hasSubtitle ? 68 : 56,
+          titleSpacing: AppSpacing.pageH,
+          surfaceTintColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          backgroundColor: Colors.transparent,
+          foregroundColor: p.ink,
+          title: titleColumn,
+          centerTitle: false,
+          actions: mergedActions.isEmpty ? null : [...mergedActions, const SizedBox(width: 8)],
+          bottom: bottom,
+        ),
+        floatingActionButton: floatingActionButton,
+        body: transparentBackground ? body : ColoredBox(color: p.paperBg, child: body),
+      ),
+    );
+  }
+}
+
+/// The app's signature backdrop — pastel diagonal gradient + faint floating
+/// star/heart deco. Shared by [PaperScaffold] and the default chat room so
+/// every screen sits on exactly the same surface.
+class PaperBackground extends StatelessWidget {
+  const PaperBackground({super.key, this.child, this.showDeco = true});
+
+  final Widget? child;
+  final bool showDeco;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -99,24 +133,8 @@ class PaperScaffold extends StatelessWidget {
             ),
           ),
         ),
-        const IgnorePointer(child: _DecoLayer()),
-        Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(
-            toolbarHeight: hasSubtitle ? 68 : 56,
-            titleSpacing: AppSpacing.pageH,
-            surfaceTintColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            backgroundColor: Colors.transparent,
-            foregroundColor: p.ink,
-            title: titleColumn,
-            centerTitle: false,
-            actions: mergedActions.isEmpty ? null : [...mergedActions, const SizedBox(width: 8)],
-            bottom: bottom,
-          ),
-          floatingActionButton: floatingActionButton,
-          body: transparentBackground ? body : ColoredBox(color: p.paperBg, child: body),
-        ),
+        if (showDeco) const IgnorePointer(child: _DecoLayer()),
+        ?child,
       ],
     );
   }
@@ -151,6 +169,10 @@ class _DecoLayer extends StatelessWidget {
                 style: TextStyle(
                   fontSize: size,
                   color: p.coral.withValues(alpha: 0.16),
+                  // Explicit so the glyphs never inherit the fallback
+                  // yellow "missing DefaultTextStyle" underline on standalone
+                  // routes (e.g. the chat screen).
+                  decoration: TextDecoration.none,
                 ),
               ),
             ),

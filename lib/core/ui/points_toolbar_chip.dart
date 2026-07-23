@@ -85,43 +85,38 @@ class _PointsChipAnimatedState extends State<_PointsChipAnimated>
                 final t = _flash.value;
                 final pulse = t < 0.5 ? t * 2 : (1 - t) * 2;
                 final scale = 1.0 + 0.16 * pulse;
-                final borderColor =
-                    Color.lerp(p.coral, p.stampBlue, pulse) ?? p.coral;
+                // Filled "badge" (reference style): colored fill, ink border,
+                // hard shadow, white content — flashes toward cyan on a gain.
+                final fill = Color.lerp(p.coral, p.stampBlue, pulse) ?? p.coral;
                 return Transform.scale(
                   scale: scale,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 11,
-                      vertical: 7,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
+                      color: fill,
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: borderColor, width: 1.5),
-                      boxShadow: pulse > 0
-                          ? [
-                              BoxShadow(
-                                color: p.stampBlue.withValues(
-                                  alpha: 0.45 * pulse,
-                                ),
-                                blurRadius: 14,
-                              ),
-                            ]
-                          : const [],
+                      border: Border.all(color: p.ink, width: 2),
+                      boxShadow: [
+                        BoxShadow(color: p.hardShadow, offset: const Offset(2, 2)),
+                      ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.auto_awesome_rounded,
                           size: 15,
-                          color: borderColor,
+                          color: Colors.white,
                         ),
                         const SizedBox(width: 5),
                         Text(
                           label,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontWeight: FontWeight.w800,
-                            color: borderColor,
+                            color: Colors.white,
                             fontSize: 13,
                           ),
                         ),

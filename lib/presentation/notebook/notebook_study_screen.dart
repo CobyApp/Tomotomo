@@ -114,15 +114,7 @@ class _NotebookStudyScreenState extends State<NotebookStudyScreen> {
           ],
         ),
         const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(PaperRadii.pill),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 8,
-            backgroundColor: p.cardEdge,
-            valueColor: AlwaysStoppedAnimation(p.coral),
-          ),
-        ),
+        PaperProgressBar(value: progress.clamp(0.0, 1.0), height: 14),
         const SizedBox(height: 20),
         Expanded(
           child: Center(
