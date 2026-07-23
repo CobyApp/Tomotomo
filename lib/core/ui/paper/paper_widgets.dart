@@ -287,28 +287,30 @@ class PolaroidAvatar extends StatelessWidget {
   });
   final Widget child;
   final double size;
-  final double rotate;
+  final double rotate; // retained for API compatibility; no longer rotated.
   @override
   Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: rotate,
-      child: Container(
-        width: size,
-        height: size,
-        padding: const EdgeInsets.fromLTRB(3, 3, 3, 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(PaperRadii.polaroid),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x26000000),
-              blurRadius: 4,
-              offset: Offset(0, 1),
-            ),
-          ],
+    final p = context.paper;
+    return Container(
+      width: size,
+      height: size,
+      padding: const EdgeInsets.all(2.5),
+      decoration: BoxDecoration(
+        // Neon gradient ring + glow.
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [p.coral, p.stampBlue],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(1),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(color: p.coral.withValues(alpha: 0.35), blurRadius: 12),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(11.5),
+        child: Container(
+          color: p.card,
           child: Center(child: child),
         ),
       ),

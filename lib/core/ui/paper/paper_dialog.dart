@@ -70,7 +70,7 @@ class PaperDialog extends StatelessWidget {
         decoration: BoxDecoration(
           color: p.card,
           borderRadius: BorderRadius.circular(PaperRadii.card + 4),
-          border: Border.all(color: p.cardEdge),
+          border: Border.all(color: p.stampBlue.withValues(alpha: 0.35)),
           boxShadow: [
             BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
             BoxShadow(
@@ -78,6 +78,8 @@ class PaperDialog extends StatelessWidget {
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
+            // Neon halo.
+            BoxShadow(color: p.coral.withValues(alpha: 0.18), blurRadius: 28),
           ],
         ),
         child: Column(
@@ -179,10 +181,15 @@ class _PaperDialogConfirmButtonState extends State<_PaperDialogConfirmButton> {
         padding: const EdgeInsets.symmetric(vertical: 13),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: widget.fill,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [widget.fill, widget.shadow],
+          ),
           borderRadius: BorderRadius.circular(PaperRadii.button),
           boxShadow: [
             BoxShadow(color: widget.shadow, offset: Offset(0, _down ? 0 : 3)),
+            BoxShadow(color: widget.fill.withValues(alpha: 0.45), blurRadius: 16),
           ],
         ),
         child: Text(
