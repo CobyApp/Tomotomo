@@ -106,23 +106,19 @@ class _MainShellState extends State<MainShell> {
           onSelect: _onNavSelect,
           items: [
             NavItemData(
-              icon: Icons.people_outline_rounded,
-              selectedIcon: Icons.people_rounded,
+              glyph: NavGlyph.friends,
               label: context.tr('tabCharacters'),
             ),
             NavItemData(
-              icon: Icons.chat_bubble_outline_rounded,
-              selectedIcon: Icons.chat_bubble_rounded,
+              glyph: NavGlyph.chats,
               label: context.tr('tabChats'),
             ),
             NavItemData(
-              icon: Icons.menu_book_outlined,
-              selectedIcon: Icons.menu_book_rounded,
+              glyph: NavGlyph.vocab,
               label: context.tr('tabNotebook'),
             ),
             NavItemData(
-              icon: Icons.settings_outlined,
-              selectedIcon: Icons.settings_rounded,
+              glyph: NavGlyph.settings,
               label: context.tr('tabSettings'),
             ),
           ],

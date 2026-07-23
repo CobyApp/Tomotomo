@@ -79,6 +79,9 @@ class ChatBubble extends StatelessWidget {
               onLongPress: onLongPressReport,
               behavior: HitTestBehavior.opaque,
               child: Container(
+                foregroundDecoration: isUser
+                    ? stickerGloss(borderRadius: bubbleRadius, strength: 0.22)
+                    : null,
                 decoration: BoxDecoration(
                   // Sticker bubbles: my bubble is a hotpink→purple gradient,
                   // the friend's is white — both with an ink border + hard shadow.

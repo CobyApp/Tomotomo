@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/ui/app_tokens.dart';
 import '../../../core/ui/paper/paper_tokens.dart';
+import '../../../core/ui/paper/paper_widgets.dart';
 import '../../../domain/entities/character.dart';
 import '../../locale/l10n_context.dart';
 
@@ -77,6 +78,9 @@ class ChatInput extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Container(
+              foregroundDecoration: canTapSend
+                  ? stickerGloss(shape: BoxShape.circle, strength: 0.3)
+                  : null,
               decoration: BoxDecoration(
                 gradient: canTapSend
                     ? LinearGradient(

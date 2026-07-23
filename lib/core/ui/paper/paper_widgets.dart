@@ -52,6 +52,12 @@ class PaperChip extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          foregroundDecoration: selected
+              ? stickerGloss(
+                  borderRadius: BorderRadius.circular(PaperRadii.pill),
+                  strength: 0.22,
+                )
+              : null,
           decoration: BoxDecoration(
             // Sticker chip: hotpink fill when selected, ink border + hard shadow.
             color: selected ? p.coral : p.card,
@@ -156,6 +162,9 @@ class _PaperButtonState extends State<PaperButton> {
         width: widget.expand ? double.infinity : null,
         transform: Matrix4.translationValues(_down ? 4 : 0, _down ? 4 : 0, 0),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+        foregroundDecoration: enabled
+            ? stickerGloss(borderRadius: BorderRadius.circular(999))
+            : null,
         decoration: BoxDecoration(
           // Sticker style: hotpink→purple gradient, thick ink border, and a
           // HARD offset shadow that collapses on press (button "presses in").
@@ -300,6 +309,30 @@ class PolaroidAvatar extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A glossy top sheen for filled "jelly/sticker" elements (buttons, the
+/// selected nav pill, chips, the send button). Apply as a `foregroundDecoration`
+/// so a soft white highlight sits over the top half of the fill and fades out by
+/// the middle — the light-catching look that reads as a 3D sticker, not a flat
+/// rectangle. Pass the element's own [borderRadius] (or `shape: circle`).
+BoxDecoration stickerGloss({
+  BorderRadius? borderRadius,
+  BoxShape shape = BoxShape.rectangle,
+  double strength = 0.28,
+}) {
+  return BoxDecoration(
+    shape: shape,
+    borderRadius: shape == BoxShape.rectangle ? borderRadius : null,
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.center,
+      colors: [
+        Colors.white.withValues(alpha: strength),
+        Colors.white.withValues(alpha: 0),
+      ],
+    ),
+  );
 }
 
 /// Sticker-style progress bar: a paper track with a thick ink border and a

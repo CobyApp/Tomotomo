@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'paper_theme.dart';
 import 'paper_tokens.dart';
+import 'paper_widgets.dart';
 import '../../../presentation/locale/l10n_context.dart';
 
 /// PAPER-CARTOON styled confirm dialog: cream card surface, cute display
@@ -174,6 +175,9 @@ class _PaperDialogConfirmButtonState extends State<_PaperDialogConfirmButton> {
         transform: Matrix4.translationValues(_down ? 3 : 0, _down ? 3 : 0, 0),
         padding: const EdgeInsets.symmetric(vertical: 13),
         alignment: Alignment.center,
+        foregroundDecoration: stickerGloss(
+          borderRadius: BorderRadius.circular(999),
+        ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
