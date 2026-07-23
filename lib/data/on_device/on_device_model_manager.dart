@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/on_device/on_device_model_snapshot.dart';
 import 'on_device_ai_runtime.dart';
@@ -8,6 +11,29 @@ class OnDeviceModelManager extends ChangeNotifier {
 
   final OnDeviceAiRuntime _runtime;
   bool _installInFlight = false;
+
+  /// Persisted intent: true once a download has been requested, false once the
+  /// user deletes the model. Lets an interrupted download auto-resume on the
+  /// next launch without re-downloading a model the user deliberately removed.
+  static const _installDesiredKey = 'model_install_desired';
+
+  Future<void> _setInstallDesired(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_installDesiredKey, value);
+    } catch (_) {}
+  }
+
+  /// If a download was previously started but never finished, continue it.
+  Future<void> resumeIfInterrupted() async {
+    if (isReady || _installInFlight) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_installDesiredKey) ?? false) {
+        await install();
+      }
+    } catch (_) {}
+  }
   OnDeviceModelSnapshot _snapshot = const OnDeviceModelSnapshot(
     phase: OnDeviceModelPhase.checking,
   );
@@ -36,6 +62,7 @@ class OnDeviceModelManager extends ChangeNotifier {
   Future<void> install() async {
     if (_installInFlight) return;
     _installInFlight = true;
+    unawaited(_setInstallDesired(true));
     _setSnapshot(
       const OnDeviceModelSnapshot(phase: OnDeviceModelPhase.downloading),
     );
@@ -85,6 +112,7 @@ class OnDeviceModelManager extends ChangeNotifier {
 
   Future<void> deleteModel() async {
     try {
+      await _setInstallDesired(false);
       await _runtime.deleteModel();
       _setSnapshot(
         const OnDeviceModelSnapshot(phase: OnDeviceModelPhase.notInstalled),

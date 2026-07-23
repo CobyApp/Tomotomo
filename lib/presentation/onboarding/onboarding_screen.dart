@@ -11,6 +11,7 @@ import '../../core/ui/paper/paper_theme.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_widgets.dart';
 import '../../data/character/characters_data.dart';
+import '../../data/on_device/on_device_model_config.dart';
 import '../../data/on_device/on_device_model_manager.dart';
 import '../../domain/entities/character_record.dart';
 import '../../domain/on_device/on_device_model_snapshot.dart';
@@ -192,6 +193,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 class _DownloadStatus extends StatelessWidget {
   const _DownloadStatus();
 
+  static String _gb(double fraction) =>
+      (OnDeviceModelConfig.byteCount * fraction.clamp(0.0, 1.0) / 1e9)
+          .toStringAsFixed(1);
+
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
@@ -275,7 +280,9 @@ class _DownloadStatus extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  context.tr('modelDlHint'),
+                  downloading
+                      ? '${_gb(snap.progress)} / ${_gb(1)} GB · ${context.tr('modelDlHint')}'
+                      : context.tr('modelDlHint'),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,

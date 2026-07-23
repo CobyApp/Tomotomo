@@ -18,6 +18,8 @@ void main() async {
   setupInjection();
   await LocalNotifications.init();
   await onDeviceModelManager.initialize();
+  // Continue an interrupted download automatically on relaunch.
+  unawaited(onDeviceModelManager.resumeIfInterrupted());
 
   unawaited(_initAds());
 
