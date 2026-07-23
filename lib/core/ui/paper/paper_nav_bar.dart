@@ -41,26 +41,47 @@ class PaperNavBar extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
           color: p.card,
-          border: Border(top: BorderSide(color: p.cardEdge, width: 1.5)),
+          border: Border.all(color: p.cardEdge, width: 1.5),
           boxShadow: [
             BoxShadow(color: p.hardShadow, offset: const Offset(0, 2)),
             BoxShadow(color: p.softShadow, blurRadius: 16, offset: const Offset(0, 6)),
+            // Neon glow lifting the dock off the background.
+            BoxShadow(
+              color: p.coral.withValues(alpha: 0.18),
+              blurRadius: 22,
+              offset: const Offset(0, 6),
+            ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: List.generate(items.length, (i) {
-              return Expanded(
-                child: _PaperNavCell(
-                  data: items[i],
-                  selected: i == currentIndex,
-                  onTap: () => onSelect(i),
+        child: Column(
+          children: [
+            // Neon magenta→cyan top rule.
+            Container(
+              height: 3,
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(3),
+                gradient: LinearGradient(colors: [p.coral, p.stampBlue]),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: List.generate(items.length, (i) {
+                    return Expanded(
+                      child: _PaperNavCell(
+                        data: items[i],
+                        selected: i == currentIndex,
+                        onTap: () => onSelect(i),
+                      ),
+                    );
+                  }),
                 ),
-              );
-            }),
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -115,8 +136,19 @@ class _PaperNavCell extends StatelessWidget {
               curve: Curves.easeOutCubic,
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               decoration: BoxDecoration(
-                color: selected ? p.coral.withValues(alpha: 0.10) : Colors.transparent,
+                color: selected ? p.coral.withValues(alpha: 0.14) : Colors.transparent,
                 borderRadius: BorderRadius.circular(14),
+                border: selected
+                    ? Border.all(color: p.coral.withValues(alpha: 0.55), width: 1.2)
+                    : null,
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: p.coral.withValues(alpha: 0.35),
+                          blurRadius: 14,
+                        ),
+                      ]
+                    : null,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

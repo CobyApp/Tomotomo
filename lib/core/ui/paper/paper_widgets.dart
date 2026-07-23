@@ -97,6 +97,11 @@ class PaperCard extends StatelessWidget {
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
+          // Faint cyan neon halo.
+          BoxShadow(
+            color: p.stampBlue.withValues(alpha: 0.10),
+            blurRadius: 16,
+          ),
         ],
       ),
       child: child,
@@ -163,10 +168,24 @@ class _PaperButtonState extends State<PaperButton> {
         transform: Matrix4.translationValues(0, _down ? 3 : 0, 0),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         decoration: BoxDecoration(
-          color: fill,
+          // Neon magenta→cyan gradient fill with a soft glow.
+          gradient: enabled
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [p.coral, p.coralDeep],
+                )
+              : null,
+          color: enabled ? null : fill,
           borderRadius: BorderRadius.circular(PaperRadii.button),
           boxShadow: [
             BoxShadow(color: shadow, offset: Offset(0, _down ? 0 : 3)),
+            if (enabled)
+              BoxShadow(
+                color: p.coral.withValues(alpha: 0.42),
+                blurRadius: 18,
+                offset: const Offset(0, 4),
+              ),
           ],
         ),
         child: widget.busy

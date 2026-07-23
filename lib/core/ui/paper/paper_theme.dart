@@ -10,6 +10,8 @@ TextStyle cuteDisplay({double? fontSize, FontWeight? fontWeight, Color? color}) 
     fontSize: fontSize,
     fontWeight: fontWeight,
     color: color,
+    // Slight tracking for a cleaner, techy display feel.
+    letterSpacing: 0.4,
   );
 }
 

@@ -122,24 +122,24 @@ class PaperScaffold extends StatelessWidget {
   }
 }
 
-/// Faint dotted "paper grain" texture, cheap enough to draw every frame.
+/// Faint CRT scanlines — a subtle cyber texture, cheap to draw every frame.
 class _PaperGrainPainter extends CustomPainter {
   const _PaperGrainPainter({required this.color});
 
   final Color color;
-  static const double _spacing = 14;
-  static const double _dotRadius = 0.6;
+  static const double _spacing = 4;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
     for (var y = 0.0; y < size.height; y += _spacing) {
-      for (var x = 0.0; x < size.width; x += _spacing) {
-        canvas.drawCircle(Offset(x, y), _dotRadius, paint);
-      }
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _PaperGrainPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _PaperGrainPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
