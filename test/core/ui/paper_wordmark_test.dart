@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('PaperWordmark renders the text once (no ghost copies)', (tester) async {
+  testWidgets('PaperWordmark renders the text (with glitch ghost copies)', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: PaperTheme.light,
         home: const Scaffold(body: Center(child: PaperWordmark('トモトモ'))),
       ),
     );
-    expect(find.text('トモトモ'), findsOneWidget);
+    expect(find.text('トモトモ'), findsWidgets);
   });
 }

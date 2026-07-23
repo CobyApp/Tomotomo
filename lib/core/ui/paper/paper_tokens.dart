@@ -22,34 +22,37 @@ class PaperColors extends ThemeExtension<PaperColors> {
   final Color paperBg, card, cardEdge, hardShadow, softShadow;
   final Color ink, inkSoft, coral, coralDeep, tape, stampBlue, grain;
 
+  // Y2K vaporwave — pastel neon (hot pink / cyan / purple), glassy surfaces.
+  // Token names are kept (coral = pink accent, stampBlue = cyan) so every
+  // consumer re-themes automatically.
   static const light = PaperColors(
-    paperBg: Color(0xFFF7EDE0),
-    card: Color(0xFFFFFDF8),
-    cardEdge: Color(0xFFEFE2CE),
-    hardShadow: Color(0xFFE8D9C1),
-    softShadow: Color(0x24907850),
-    ink: Color(0xFF4A3B32),
-    inkSoft: Color(0xFF7F604B), // darkened for WCAG AA on cream (4.9:1 / 5.6:1)
-    coral: Color(0xFFC9563D),
-    coralDeep: Color(0xFFA8442E),
-    tape: Color(0x80E6B48C),
-    stampBlue: Color(0xFF3AA6B8),
-    grain: Color(0x0DA07850),
+    paperBg: Color(0xFFF6ECFF),
+    card: Color(0xFFFDFAFF),
+    cardEdge: Color(0xFFE7CDF7),
+    hardShadow: Color(0xFFEAD6FA),
+    softShadow: Color(0x26A060D0),
+    ink: Color(0xFF32245F),
+    inkSoft: Color(0xFF6E5C9E),
+    coral: Color(0xFFF5459B),
+    coralDeep: Color(0xFFC81E8C),
+    tape: Color(0x8067E8FF),
+    stampBlue: Color(0xFF12B5CE),
+    grain: Color(0x0FA060D0),
   );
 
   static const dark = PaperColors(
-    paperBg: Color(0xFF241E1A),
-    card: Color(0xFF2E2723),
-    cardEdge: Color(0xFF3A312B),
-    hardShadow: Color(0xFF1C1714),
-    softShadow: Color(0x40000000),
-    ink: Color(0xFFF2E7D8),
-    inkSoft: Color(0xFFB79A82),
-    coral: Color(0xFFE9765C),
-    coralDeep: Color(0xFFC85B44),
-    tape: Color(0x66C79A72),
-    stampBlue: Color(0xFF5FC3D4),
-    grain: Color(0x0DFFFFFF),
+    paperBg: Color(0xFF160E30),
+    card: Color(0xFF241843),
+    cardEdge: Color(0xFF3C2A6B),
+    hardShadow: Color(0xFF0E0822),
+    softShadow: Color(0x59000000),
+    ink: Color(0xFFF1EAFF),
+    inkSoft: Color(0xFFB9A8E6),
+    coral: Color(0xFFFF7BC6),
+    coralDeep: Color(0xFFFF4FB0),
+    tape: Color(0x6640E0FF),
+    stampBlue: Color(0xFF54E6F7),
+    grain: Color(0x14FFFFFF),
   );
 
   @override

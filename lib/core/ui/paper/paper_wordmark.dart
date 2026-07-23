@@ -13,13 +13,21 @@ class PaperWordmark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    return Text(
-      text,
-      style: cuteDisplay(
-        fontSize: fontSize,
-        fontWeight: FontWeight.w800,
-        color: p.coral,
+    final base = cuteDisplay(fontSize: fontSize, fontWeight: FontWeight.w800);
+    Widget ghost(Color c, Offset d) => Transform.translate(
+      offset: d,
+      child: Text(
+        text,
+        style: base.copyWith(color: c.withValues(alpha: 0.55)),
       ),
+    );
+    // Y2K chromatic-aberration glitch: cyan + pink offset copies behind.
+    return Stack(
+      children: [
+        ghost(p.stampBlue, const Offset(-1.6, 1.2)),
+        ghost(p.coral, const Offset(1.6, -1.2)),
+        Text(text, style: base.copyWith(color: p.ink)),
+      ],
     );
   }
 }

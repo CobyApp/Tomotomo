@@ -85,7 +85,20 @@ class PaperScaffold extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        ColoredBox(color: p.paperBg),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color.alphaBlend(p.coral.withValues(alpha: 0.16), p.paperBg),
+                p.paperBg,
+                Color.alphaBlend(p.stampBlue.withValues(alpha: 0.14), p.paperBg),
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ),
+          ),
+        ),
         CustomPaint(painter: _PaperGrainPainter(color: p.grain), size: Size.infinite),
         Scaffold(
           backgroundColor: Colors.transparent,
