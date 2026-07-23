@@ -21,10 +21,9 @@ class AppSettingsPanel extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(PaperRadii.card),
         color: p.card,
-        border: Border.all(color: p.cardEdge),
+        border: Border.all(color: p.cardEdge, width: 2.5),
         boxShadow: [
-          BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
-          BoxShadow(color: p.softShadow, blurRadius: 18, offset: const Offset(0, 8)),
+          BoxShadow(color: p.hardShadow, offset: const Offset(4, 4)),
         ],
       ),
       child: Column(children: _divided(context, children)),

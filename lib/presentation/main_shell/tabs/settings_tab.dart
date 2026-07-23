@@ -28,13 +28,13 @@ class SettingsTab extends StatelessWidget {
         children: [
           PaperSectionLabel(context.tr('settingsProfileSection')),
           AppSettingsPanel(
+            dividerIndent: 16,
             children: [
               Consumer<PointsBalanceNotifier>(
                 builder: (context, pn, _) {
                   final bal = pn.balance;
                   final suffix = bal != null ? ' · $bal' : '';
                   return AppSettingsNavTile(
-                    icon: Icons.stars_outlined,
                     title: context.tr('settingsPointsBalance'),
                     subtitle:
                         '${context.tr('settingsPointsBalanceSubtitle')}$suffix',
@@ -51,7 +51,6 @@ class SettingsTab extends StatelessWidget {
                 },
               ),
               AppSettingsNavTile(
-                icon: Icons.person_outlined,
                 title: context.tr('settingsEditProfile'),
                 subtitle: context.tr('settingsEditProfileSubtitle'),
                 onTap: () {
@@ -68,9 +67,9 @@ class SettingsTab extends StatelessWidget {
           const SizedBox(height: 4),
           PaperSectionLabel(context.tr('settingsAppSection')),
           AppSettingsPanel(
+            dividerIndent: 16,
             children: [
               AppSettingsNavTile(
-                icon: Icons.language_rounded,
                 title: context.tr('languageMenuTitle'),
                 subtitle: context.tr('settingsAppLanguageSubtitle'),
                 onTap: () {
@@ -83,7 +82,6 @@ class SettingsTab extends StatelessWidget {
                 },
               ),
               AppSettingsNavTile(
-                icon: Icons.memory_rounded,
                 title: context.tr('onDeviceModelTitle'),
                 subtitle: context.tr('onDeviceModelSettingsSubtitle'),
                 onTap: () {
