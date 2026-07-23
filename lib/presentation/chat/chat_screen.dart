@@ -7,6 +7,7 @@ import '../../core/ui/points_toolbar_chip.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_theme.dart';
 import '../../core/ui/paper/paper_widgets.dart';
+import '../../core/ui/paper/paper_loading.dart';
 import '../../core/ui/paper/paper_dialog.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/repositories/chat_repository.dart';
@@ -14,6 +15,9 @@ import '../../domain/repositories/ai_chat_repository.dart';
 import '../../data/chat_background/chat_background.dart';
 import '../../data/chat_background/chat_background_presets.dart';
 import '../../data/chat_background/chat_background_store.dart';
+import '../../data/on_device/on_device_model_manager.dart';
+import '../../domain/on_device/on_device_model_snapshot.dart';
+import '../on_device/on_device_model_setup_screen.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../points/points_topup_prompt.dart';
@@ -382,21 +386,100 @@ class _ChatScreenContent extends StatelessWidget {
                   },
                 ),
               ),
-              Consumer<ChatViewModel>(
-                builder: (context, viewModel, child) {
-                  return ChatInput(
-                    controller: viewModel.messageController,
-                    onSend: () {
-                      if (viewModel.messageController.text.trim().isNotEmpty) {
-                        viewModel.sendMessage();
-                      }
+              Consumer<OnDeviceModelManager>(
+                builder: (context, manager, _) {
+                  // Until the on-device model is ready, replace the input with
+                  // a friendly "preparing" bar so chat never silently fails.
+                  if (!manager.isReady) {
+                    return _ModelGateBar(snapshot: manager.snapshot);
+                  }
+                  return Consumer<ChatViewModel>(
+                    builder: (context, viewModel, child) {
+                      return ChatInput(
+                        controller: viewModel.messageController,
+                        onSend: () {
+                          if (viewModel.messageController.text
+                              .trim()
+                              .isNotEmpty) {
+                            viewModel.sendMessage();
+                          }
+                        },
+                        isGenerating: viewModel.isGenerating,
+                        character: character,
+                        canSendMessage: !viewModel.isGenerating,
+                      );
                     },
-                    isGenerating: viewModel.isGenerating,
-                    character: character,
-                    canSendMessage: !viewModel.isGenerating,
                   );
                 },
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown in place of the chat input while the on-device model is downloading
+/// or missing, so the user knows chat will unlock shortly.
+class _ModelGateBar extends StatelessWidget {
+  const _ModelGateBar({required this.snapshot});
+
+  final OnDeviceModelSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    final downloading =
+        snapshot.phase == OnDeviceModelPhase.downloading ||
+        snapshot.phase == OnDeviceModelPhase.finalizing;
+    final pct = (snapshot.progress.clamp(0.0, 1.0) * 100).round();
+    final label = downloading
+        ? context.tr(
+            'chatModelPreparing',
+            params: {'progress': '$pct'},
+          )
+        : context.tr('chatModelNotReady');
+
+    return SafeArea(
+      top: false,
+      child: InkWell(
+        onTap: downloading
+            ? null
+            : () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => const OnDeviceModelSetupScreen(),
+                ),
+              ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: p.card,
+            border: Border(top: BorderSide(color: p.cardEdge)),
+          ),
+          child: Row(
+            children: [
+              if (downloading)
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: PaperLoading(size: 6),
+                )
+              else
+                Icon(Icons.download_rounded, size: 18, color: p.coral),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: p.inkSoft,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+              if (!downloading)
+                Icon(Icons.chevron_right_rounded, color: p.inkSoft),
             ],
           ),
         ),

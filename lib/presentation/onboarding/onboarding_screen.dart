@@ -1,15 +1,20 @@
 import 'dart:async';
-import '../../core/ui/paper/paper_loading.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/locale/languages.dart';
 import '../../core/ui/app_tokens.dart';
+import '../../core/ui/paper/paper_loading.dart';
 import '../../core/ui/paper/paper_scaffold.dart';
 import '../../core/ui/paper/paper_theme.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_widgets.dart';
-import '../../domain/entities/profile.dart';
+import '../../data/character/characters_data.dart';
+import '../../data/on_device/on_device_model_manager.dart';
+import '../../domain/entities/character_record.dart';
+import '../../domain/on_device/on_device_model_snapshot.dart';
+import '../../domain/repositories/character_record_repository.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
@@ -18,9 +23,10 @@ import 'onboarding_notifier.dart';
 /// Single local user id (no auth).
 const String _localUserId = 'local';
 
-/// First-run setup: app language, nickname + nationality, friend language.
-/// On finish it persists the profile and flips [OnboardingNotifier] so the
-/// [App] gate rebuilds into the main shell.
+/// First-run flow. The app language is taken automatically from the device
+/// locale; the only question is which language to learn. An intro carousel
+/// plays while the on-device model downloads in the background; the user
+/// enters the app immediately and chat unlocks once the model is ready.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -29,111 +35,95 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const _stepCount = 2;
-
-  final _nicknameController = TextEditingController();
-
-  Profile? _profile;
-  int _step = 0;
-  String? _nationality; // 'ko' | 'ja' | 'en' | 'zh' | 'other'
+  final _pageController = PageController();
+  int _page = 0;
+  String? _studyLanguage;
   bool _saving = false;
-  String? _error;
+
+  static const _introCount = 3;
+  int get _pageCount => _introCount + 1; // intro slides + language pick
+  bool get _onLastPage => _page == _pageCount - 1;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_loadProfile());
+      if (mounted) unawaited(_bootstrap());
     });
   }
 
   @override
   void dispose() {
-    _nicknameController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadProfile() async {
+  Future<void> _bootstrap() async {
+    // 1) App language follows the device locale (no question asked).
     try {
-      final repo = context.read<ProfileRepository>();
-      final p = await repo.getProfile(_localUserId);
-      if (!mounted || p == null) return;
-      setState(() => _profile = p);
+      final p = await context.read<ProfileRepository>().getProfile(_localUserId);
+      if (p != null && mounted) {
+        final devLang = normalizeLang(
+          WidgetsBinding.instance.platformDispatcher.locale.languageCode,
+        );
+        await context.read<LocaleNotifier>().setAppLanguage(devLang, p);
+      }
     } catch (_) {}
-  }
-
-  Future<void> _selectAppLanguage(String code) async {
-    final profile = _profile;
-    if (profile == null) return;
-    // Persist + apply live so the rest of onboarding renders in this language.
-    await context.read<LocaleNotifier>().setAppLanguage(code, profile);
+    // 2) Start the model download in the background while the user onboards.
     if (!mounted) return;
-    setState(() => _profile = profile.copyWith(appLanguage: code));
-  }
-
-  bool get _canAdvance {
-    switch (_step) {
-      case 0:
-        return _profile != null;
-      case 1:
-        return _nicknameController.text.trim().isNotEmpty &&
-            _nationality != null;
-      default:
-        return false;
-    }
+    final manager = context.read<OnDeviceModelManager>();
+    if (!manager.isReady) unawaited(manager.install());
   }
 
   void _next() {
-    if (_step < _stepCount - 1) {
-      setState(() {
-        _error = null;
-        _step++;
-      });
+    if (_onLastPage) {
+      unawaited(_finish());
+      return;
     }
-  }
-
-  void _back() {
-    if (_step > 0) {
-      setState(() {
-        _error = null;
-        _step--;
-      });
-    }
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOut,
+    );
   }
 
   Future<void> _finish() async {
-    final profile = _profile;
-    if (profile == null) return;
-    final nickname = _nicknameController.text.trim();
-    if (nickname.isEmpty) {
-      setState(() => _error = context.trRead('onboardingNicknameRequired'));
-      return;
-    }
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
+    final lang = _studyLanguage;
+    if (lang == null || _saving) return;
+    setState(() => _saving = true);
     try {
-      final repo = context.read<ProfileRepository>();
-      await repo.updateProfile(profile.copyWith(displayName: nickname));
-      await repo.setNationality(_nationality);
+      // Create exactly one friend, in the chosen study language.
+      final repo = context.read<CharacterRecordRepository>();
+      final match = characters.where((c) => c.friendLanguage == lang);
+      if (match.isNotEmpty) {
+        final c = match.first;
+        final persona = [c.description.trim(), c.speechStyle.trim()]
+            .where((s) => s.isNotEmpty)
+            .join('\n');
+        final now = DateTime.now();
+        await repo.createCharacter(
+          CharacterRecord(
+            id: c.id,
+            name: c.displayNamePrimary,
+            avatarUrl: c.imagePath.isEmpty ? null : c.imagePath,
+            tagline: c.tagline.isEmpty ? null : c.tagline,
+            speechStyle: persona.isEmpty ? null : persona,
+            language: c.friendLanguage,
+            level: c.level,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+      }
       if (!mounted) return;
-      // Flips the gate in [App]; the main shell mounts on the next rebuild.
       await context.read<OnboardingNotifier>().complete();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _error = e.toString();
-      });
+    } catch (_) {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    final isLast = _step == _stepCount - 1;
-
     return PaperScaffold(
       title: 'トモトモ',
       useWordmark: true,
@@ -141,322 +131,230 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _StepProgress(step: _step, count: _stepCount),
+            const _DownloadBar(),
             Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                child: SingleChildScrollView(
-                  key: ValueKey(_step),
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.pageH,
-                    AppSpacing.pageTop,
-                    AppSpacing.pageH,
-                    AppSpacing.pageBottom,
-                  ),
-                  child: _buildStep(context),
-                ),
-              ),
-            ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.pageH,
-                  0,
-                  AppSpacing.pageH,
-                  8,
-                ),
-                child: Text(
-                  _error!,
-                  style: TextStyle(
-                    color: p.coralDeep,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.pageH,
-                4,
-                AppSpacing.pageH,
-                16,
-              ),
-              child: Row(
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (i) => setState(() => _page = i),
                 children: [
-                  if (_step > 0) ...[
-                    TextButton(
-                      onPressed: _saving ? null : _back,
-                      style: TextButton.styleFrom(foregroundColor: p.inkSoft),
-                      child: Text(
-                        context.tr('onboardingBack'),
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Expanded(
-                    child: _saving
-                        ? Center(
-                            child: PaperLoading(size: 9),
-                          )
-                        : PaperButton(
-                            label: isLast
-                                ? context.tr('onboardingStart')
-                                : context.tr('onboardingNext'),
-                            icon: isLast ? Icons.favorite_rounded : null,
-                            onPressed: _canAdvance
-                                ? (isLast ? _finish : _next)
-                                : null,
-                          ),
+                  _IntroSlide(
+                    icon: Icons.chat_bubble_rounded,
+                    title: context.tr('onboardingIntro1Title'),
+                    body: context.tr('onboardingIntro1Body'),
+                  ),
+                  _IntroSlide(
+                    icon: Icons.menu_book_rounded,
+                    title: context.tr('onboardingIntro2Title'),
+                    body: context.tr('onboardingIntro2Body'),
+                  ),
+                  _IntroSlide(
+                    icon: Icons.offline_bolt_rounded,
+                    title: context.tr('onboardingIntro3Title'),
+                    body: context.tr('onboardingIntro3Body'),
+                  ),
+                  _StudyLanguagePage(
+                    selected: _studyLanguage,
+                    onSelected: (code) => setState(() => _studyLanguage = code),
                   ),
                 ],
               ),
+            ),
+            _Dots(count: _pageCount, index: _page, color: p.coral, edge: p.cardEdge),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.pageH,
+                12,
+                AppSpacing.pageH,
+                16,
+              ),
+              child: _saving
+                  ? Center(child: PaperLoading(size: 9))
+                  : PaperButton(
+                      label: _onLastPage
+                          ? context.tr('onboardingStart')
+                          : context.tr('onboardingNext'),
+                      icon: _onLastPage ? Icons.favorite_rounded : null,
+                      onPressed: (_onLastPage && _studyLanguage == null)
+                          ? null
+                          : _next,
+                    ),
             ),
           ],
         ),
       ),
     );
   }
-
-  Widget _buildStep(BuildContext context) {
-    switch (_step) {
-      case 0:
-        return _stepAppLanguage(context);
-      default:
-        return _stepProfile(context);
-    }
-  }
-
-  // ── Step 1: app language ──────────────────────────────────────
-  Widget _stepAppLanguage(BuildContext context) {
-    final appLang = _profile?.appLanguage;
-    final p = context.paper;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Center(
-          child: Container(
-            width: 84,
-            height: 84,
-            margin: const EdgeInsets.only(top: 4, bottom: 18),
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: p.softShadow,
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Image.asset('assets/images/app_icon.png', fit: BoxFit.cover),
-          ),
-        ),
-        _StepHeading(
-          title: context.tr('onboardingStep1Title'),
-          subtitle: context.tr('onboardingStep1Subtitle'),
-        ),
-        const SizedBox(height: 20),
-        _ChoiceCard(
-          leading: _LangStamp('한'),
-          label: '한국어',
-          selected: appLang == 'ko',
-          onTap: () => _selectAppLanguage('ko'),
-        ),
-        const SizedBox(height: 14),
-        _ChoiceCard(
-          leading: _LangStamp('あ'),
-          label: '日本語',
-          selected: appLang == 'ja',
-          onTap: () => _selectAppLanguage('ja'),
-        ),
-        const SizedBox(height: 14),
-        _ChoiceCard(
-          leading: _LangStamp('A'),
-          label: 'English',
-          selected: appLang == 'en',
-          onTap: () => _selectAppLanguage('en'),
-        ),
-        const SizedBox(height: 14),
-        _ChoiceCard(
-          leading: _LangStamp('中'),
-          label: '中文',
-          selected: appLang == 'zh',
-          onTap: () => _selectAppLanguage('zh'),
-        ),
-      ],
-    );
-  }
-
-  // ── Step 2: nickname + nationality ────────────────────────────
-  Widget _stepProfile(BuildContext context) {
-    final p = context.paper;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _StepHeading(
-          title: context.tr('onboardingStep2Title'),
-          subtitle: context.tr('onboardingStep2Subtitle'),
-        ),
-        const SizedBox(height: 20),
-        TextField(
-          controller: _nicknameController,
-          onChanged: (_) => setState(() {}),
-          textInputAction: TextInputAction.next,
-          decoration: InputDecoration(
-            hintText: context.tr('onboardingNicknameHint'),
-            filled: true,
-            fillColor: p.card,
-            hintStyle: TextStyle(color: p.inkSoft),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(PaperRadii.button),
-              borderSide: BorderSide(color: p.cardEdge),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(PaperRadii.button),
-              borderSide: BorderSide(color: p.cardEdge),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(PaperRadii.button),
-              borderSide: BorderSide(color: p.coral, width: 2),
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          context.tr('onboardingNationalityLabel'),
-          style: cuteDisplay(
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
-            color: p.ink,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _ChoiceCard(
-          leading: _LangStamp('한'),
-          label: context.tr('onboardingNationalityKo'),
-          selected: _nationality == 'ko',
-          compact: true,
-          onTap: () => setState(() => _nationality = 'ko'),
-        ),
-        const SizedBox(height: 10),
-        _ChoiceCard(
-          leading: _LangStamp('あ'),
-          label: context.tr('onboardingNationalityJa'),
-          selected: _nationality == 'ja',
-          compact: true,
-          onTap: () => setState(() => _nationality = 'ja'),
-        ),
-        const SizedBox(height: 10),
-        _ChoiceCard(
-          leading: _LangStamp('A'),
-          label: context.tr('onboardingNationalityEn'),
-          selected: _nationality == 'en',
-          compact: true,
-          onTap: () => setState(() => _nationality = 'en'),
-        ),
-        const SizedBox(height: 10),
-        _ChoiceCard(
-          leading: _LangStamp('中'),
-          label: context.tr('onboardingNationalityZh'),
-          selected: _nationality == 'zh',
-          compact: true,
-          onTap: () => setState(() => _nationality = 'zh'),
-        ),
-        const SizedBox(height: 10),
-        _ChoiceCard(
-          leading: _LangStamp('', icon: Icons.public_rounded),
-          label: context.tr('onboardingNationalityOther'),
-          selected: _nationality == 'other',
-          compact: true,
-          onTap: () => setState(() => _nationality = 'other'),
-        ),
-      ],
-    );
-  }
-
 }
 
-/// Slim three-segment progress bar across the top of the flow.
-class _StepProgress extends StatelessWidget {
-  const _StepProgress({required this.step, required this.count});
-  final int step;
-  final int count;
+/// Thin, minimized model-download progress shown at the top while onboarding.
+class _DownloadBar extends StatelessWidget {
+  const _DownloadBar();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    return Consumer<OnDeviceModelManager>(
+      builder: (context, manager, _) {
+        final phase = manager.snapshot.phase;
+        final active =
+            phase == OnDeviceModelPhase.downloading ||
+            phase == OnDeviceModelPhase.finalizing;
+        if (!active) return const SizedBox(height: 0);
+        final value = phase == OnDeviceModelPhase.downloading
+            ? manager.snapshot.progress.clamp(0.0, 1.0)
+            : null;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 4, AppSpacing.pageH, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.tr('onboardingModelPreparing'),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: p.inkSoft,
+                ),
+              ),
+              const SizedBox(height: 5),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(PaperRadii.pill),
+                child: LinearProgressIndicator(
+                  value: value,
+                  minHeight: 4,
+                  backgroundColor: p.cardEdge,
+                  valueColor: AlwaysStoppedAnimation(p.coral),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _IntroSlide extends StatelessWidget {
+  const _IntroSlide({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
 
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.pageH,
-        8,
-        AppSpacing.pageH,
-        4,
-      ),
-      child: Row(
-        children: List.generate(count, (i) {
-          final active = i <= step;
-          return Expanded(
-            child: Container(
-              margin: EdgeInsets.only(right: i == count - 1 ? 0 : 8),
-              height: 6,
-              decoration: BoxDecoration(
-                color: active ? p.coral : p.cardEdge,
-                borderRadius: BorderRadius.circular(PaperRadii.pill),
-              ),
+      padding: const EdgeInsets.fromLTRB(32, 8, 32, 8),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: p.coral.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: p.coral.withValues(alpha: 0.20)),
             ),
-          );
-        }),
+            child: Icon(icon, size: 44, color: p.coral),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: cuteDisplay(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: p.ink,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            body,
+            textAlign: TextAlign.center,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.55),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Big friendly step title + supporting line.
-class _StepHeading extends StatelessWidget {
-  const _StepHeading({required this.title, required this.subtitle});
-  final String title;
-  final String subtitle;
+class _StudyLanguagePage extends StatelessWidget {
+  const _StudyLanguagePage({required this.selected, required this.onSelected});
+
+  final String? selected;
+  final ValueChanged<String> onSelected;
+
+  static const _languages = ['ko', 'ja', 'en', 'zh'];
 
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.pageH,
+        AppSpacing.pageTop,
+        AppSpacing.pageH,
+        AppSpacing.pageBottom,
+      ),
       children: [
         Text(
-          title,
+          context.tr('onboardingStudyTitle'),
           style: cuteDisplay(
-            fontSize: 26,
-            fontWeight: FontWeight.w900,
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
             color: p.ink,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
-          subtitle,
-          style: TextStyle(fontSize: 15, height: 1.4, color: p.inkSoft),
+          context.tr('onboardingStudySubtitle'),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.4),
         ),
+        const SizedBox(height: 20),
+        for (final code in _languages) ...[
+          _LangCard(
+            symbol: _stampSymbol(code),
+            label: languageEndonym(code),
+            selected: selected == code,
+            onTap: () => onSelected(code),
+          ),
+          const SizedBox(height: 14),
+        ],
       ],
     );
   }
+
+  static String _stampSymbol(String code) => switch (code) {
+    'ja' => 'あ',
+    'en' => 'A',
+    'zh' => '中',
+    _ => '한',
+  };
 }
 
-/// Tappable paper choice card with a coral selected state.
-class _ChoiceCard extends StatelessWidget {
-  const _ChoiceCard({
-    required this.leading,
+class _LangCard extends StatelessWidget {
+  const _LangCard({
+    required this.symbol,
     required this.label,
     required this.selected,
     required this.onTap,
-    this.compact = false,
   });
 
-  final Widget leading;
+  final String symbol;
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -466,10 +364,7 @@ class _ChoiceCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
-        padding: EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: compact ? 16 : 22,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
         decoration: BoxDecoration(
           color: p.card,
           borderRadius: BorderRadius.circular(PaperRadii.card),
@@ -479,22 +374,35 @@ class _ChoiceCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
-            BoxShadow(
-              color: p.softShadow,
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
+            BoxShadow(color: p.softShadow, blurRadius: 18, offset: const Offset(0, 8)),
           ],
         ),
         child: Row(
           children: [
-            leading,
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: p.coral.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: p.coral.withValues(alpha: 0.5), width: 1.5),
+              ),
+              child: Text(
+                symbol,
+                style: cuteDisplay(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: p.coral,
+                ),
+              ),
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: compact ? 16 : 18,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: p.ink,
                 ),
@@ -509,37 +417,36 @@ class _ChoiceCard extends StatelessWidget {
   }
 }
 
-/// Paper "stamp" badge used on onboarding choice cards instead of glossy flag
-/// emojis — each language shows its own script character (한 / あ / A / 中),
-/// keeping the leading mark consistent with the paper-cartoon theme.
-class _LangStamp extends StatelessWidget {
-  const _LangStamp(this.symbol, {this.icon});
+class _Dots extends StatelessWidget {
+  const _Dots({
+    required this.count,
+    required this.index,
+    required this.color,
+    required this.edge,
+  });
 
-  final String symbol;
-  final IconData? icon;
+  final int count;
+  final int index;
+  final Color color;
+  final Color edge;
 
   @override
   Widget build(BuildContext context) {
-    final p = context.paper;
-    return Container(
-      width: 40,
-      height: 40,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: p.coral.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: p.coral.withValues(alpha: 0.5), width: 1.5),
-      ),
-      child: icon != null
-          ? Icon(icon, color: p.coral, size: 22)
-          : Text(
-              symbol,
-              style: cuteDisplay(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: p.coral,
-              ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (var i = 0; i < count; i++)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            width: i == index ? 20 : 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: i == index ? color : edge,
+              borderRadius: BorderRadius.circular(4),
             ),
+          ),
+      ],
     );
   }
 }

@@ -24,7 +24,6 @@ import 'presentation/points/points_balance_notifier.dart';
 import 'domain/repositories/points_repository.dart';
 import 'core/ui/app_scaffold_messenger.dart';
 import 'core/ui/paper/paper_tokens.dart';
-import 'presentation/on_device/on_device_model_setup_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -111,22 +110,18 @@ class App extends StatelessWidget {
                 child: child!,
               );
             },
-            home: Consumer<OnDeviceModelManager>(
-              builder: (context, manager, _) {
-                if (!manager.isReady) {
-                  return const OnDeviceModelSetupScreen(requiredSetup: true);
+            // The on-device model downloads in the background (started during
+            // onboarding). We no longer block the whole app on it — the user
+            // onboards and enters immediately; chat unlocks once it's ready.
+            home: Consumer<OnboardingNotifier>(
+              builder: (context, onboarding, _) {
+                if (onboarding.isLoading) {
+                  return const _OnboardingGateLoading();
                 }
-                return Consumer<OnboardingNotifier>(
-                  builder: (context, onboarding, _) {
-                    if (onboarding.isLoading) {
-                      return const _OnboardingGateLoading();
-                    }
-                    if (onboarding.onboarded == false) {
-                      return const OnboardingScreen();
-                    }
-                    return const MainShell();
-                  },
-                );
+                if (onboarding.onboarded == false) {
+                  return const OnboardingScreen();
+                }
+                return const MainShell();
               },
             ),
           );
