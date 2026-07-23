@@ -40,21 +40,18 @@ class ModelDownloadBanner extends StatelessWidget {
                 ),
               ),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: p.card,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: p.coral.withValues(alpha: 0.5)),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: p.ink, width: 2.5),
                   boxShadow: [
-                    BoxShadow(
-                      color: p.coral.withValues(alpha: 0.22),
-                      blurRadius: 14,
-                    ),
+                    BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
                   ],
                 ),
                 child: Row(
                   children: [
-                    SizedBox(width: 16, height: 16, child: PaperLoading(size: 5)),
+                    PaperLoading(size: 5),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(

@@ -302,6 +302,89 @@ class PolaroidAvatar extends StatelessWidget {
   }
 }
 
+/// Sticker-style progress bar: a paper track with a thick ink border and a
+/// hotpink→purple gradient fill. Pass `value` in 0..1 for determinate; pass
+/// null for an indeterminate sliding sweep. One shared bar so every progress
+/// surface (model download, onboarding) looks identical.
+class PaperProgressBar extends StatefulWidget {
+  const PaperProgressBar({super.key, required this.value, this.height = 16});
+  final double? value;
+  final double height;
+
+  @override
+  State<PaperProgressBar> createState() => _PaperProgressBarState();
+}
+
+class _PaperProgressBarState extends State<PaperProgressBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1300),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    final radius = BorderRadius.circular(999);
+    return Container(
+      height: widget.height,
+      decoration: BoxDecoration(
+        color: p.paperBg,
+        borderRadius: radius,
+        border: Border.all(color: p.ink, width: 2),
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final w = constraints.maxWidth;
+            final fill = DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [p.coral, p.coralDeep]),
+                borderRadius: radius,
+              ),
+            );
+            if (widget.value != null) {
+              return Align(
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: widget.value!.clamp(0.0, 1.0),
+                  child: fill,
+                ),
+              );
+            }
+            // Indeterminate: a block sweeps left→right.
+            final blockW = w * 0.4;
+            return AnimatedBuilder(
+              animation: _c,
+              builder: (context, _) {
+                final dx = (w + blockW) * _c.value - blockW;
+                return Stack(
+                  children: [
+                    Positioned(
+                      left: dx,
+                      top: 0,
+                      bottom: 0,
+                      width: blockW,
+                      child: fill,
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
 /// Plain "no photo yet" placeholder: a single clean person glyph on a soft
 /// neutral fill. Deliberately simple (not a cartoon face) — used as the default
 /// profile image for any friend without a picked photo. Drop it in as the child

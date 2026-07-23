@@ -229,15 +229,7 @@ class _ModelStatus extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(PaperRadii.pill),
-              child: LinearProgressIndicator(
-                value: snapshot.progress,
-                minHeight: 8,
-                backgroundColor: p.cardEdge,
-                valueColor: AlwaysStoppedAnimation(p.coral),
-              ),
-            ),
+            PaperProgressBar(value: snapshot.progress.clamp(0.0, 1.0)),
           ],
         ),
       );
@@ -329,8 +321,9 @@ class _StatusCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: iconBackground ?? p.coral.withValues(alpha: 0.10),
+              color: iconBackground ?? p.coral.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: p.ink, width: 2),
             ),
             child: Icon(icon, color: iconColor ?? p.coral, size: 24),
           ),

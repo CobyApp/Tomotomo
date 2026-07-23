@@ -319,22 +319,27 @@ class _DownloadStatus extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 4, AppSpacing.pageH, 8),
           child: Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: p.card,
               borderRadius: BorderRadius.circular(PaperRadii.card),
-              border: Border.all(color: p.cardEdge),
+              border: Border.all(color: p.ink, width: 2.5),
+              boxShadow: [
+                BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    SizedBox(width: 18, height: 18, child: PaperLoading(size: 6)),
+                    PaperLoading(size: 6),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: p.ink,
                           fontWeight: FontWeight.w800,
@@ -342,7 +347,8 @@ class _DownloadStatus extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (downloading)
+                    if (downloading) ...[
+                      const SizedBox(width: 8),
                       Text(
                         '$pct%',
                         style: TextStyle(
@@ -351,23 +357,20 @@ class _DownloadStatus extends StatelessWidget {
                           fontSize: 15,
                         ),
                       ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(PaperRadii.pill),
-                  child: LinearProgressIndicator(
-                    value: downloading ? snap.progress.clamp(0.0, 1.0) : null,
-                    minHeight: 6,
-                    backgroundColor: p.cardEdge,
-                    valueColor: AlwaysStoppedAnimation(p.coral),
-                  ),
+                const SizedBox(height: 12),
+                PaperProgressBar(
+                  value: downloading ? snap.progress.clamp(0.0, 1.0) : null,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   downloading
                       ? '${_gb(snap.progress)} / ${_gb(1)} GB · ${context.tr('modelDlHint')}'
                       : context.tr('modelDlHint'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -393,11 +396,14 @@ class _DownloadStatus extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 4, AppSpacing.pageH, 8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: p.card,
           borderRadius: BorderRadius.circular(PaperRadii.card),
-          border: Border.all(color: p.cardEdge),
+          border: Border.all(color: p.ink, width: 2.5),
+          boxShadow: [
+            BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
+          ],
         ),
         child: Row(
           children: [
@@ -444,13 +450,10 @@ class _IntroSlide extends StatelessWidget {
               height: 104,
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: p.ink, width: 2.5),
                 boxShadow: [
-                  BoxShadow(
-                    color: p.softShadow,
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
+                  BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
                 ],
               ),
               child: Image.asset(assetImage!, fit: BoxFit.cover),
@@ -461,8 +464,11 @@ class _IntroSlide extends StatelessWidget {
               height: 96,
               decoration: BoxDecoration(
                 color: p.coral.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: p.coral.withValues(alpha: 0.20)),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: p.ink, width: 2.5),
+                boxShadow: [
+                  BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
+                ],
               ),
               child: Icon(icon, size: 44, color: p.coral),
             ),
@@ -569,15 +575,11 @@ class _LangCard extends StatelessWidget {
         duration: const Duration(milliseconds: 120),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
         decoration: BoxDecoration(
-          color: p.card,
+          color: selected ? p.coral.withValues(alpha: 0.12) : p.card,
           borderRadius: BorderRadius.circular(PaperRadii.card),
-          border: Border.all(
-            color: selected ? p.coral : p.cardEdge,
-            width: selected ? 2.5 : 1,
-          ),
+          border: Border.all(color: p.ink, width: 2.5),
           boxShadow: [
-            BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
-            BoxShadow(color: p.softShadow, blurRadius: 18, offset: const Offset(0, 8)),
+            BoxShadow(color: p.hardShadow, offset: const Offset(4, 4)),
           ],
         ),
         child: Row(
@@ -587,9 +589,9 @@ class _LangCard extends StatelessWidget {
               height: 40,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: p.coral.withValues(alpha: 0.12),
+                color: p.coral.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: p.coral.withValues(alpha: 0.5), width: 1.5),
+                border: Border.all(color: p.ink, width: 2),
               ),
               child: Text(
                 symbol,
