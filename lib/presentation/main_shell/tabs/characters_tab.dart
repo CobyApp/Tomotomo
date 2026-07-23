@@ -149,8 +149,11 @@ class CharactersTabState extends State<CharactersTab>
                 100,
               ),
               children: [
-                ...visibleRecords.map(
-                  (record) => _recordTile(record, isMine: true),
+                ...visibleRecords.indexed.map(
+                  (e) => PaperEntrance(
+                    index: e.$1,
+                    child: _recordTile(e.$2, isMine: true),
+                  ),
                 ),
                 if (visibleRecords.isEmpty)
                   PaperEmptyHint(text: context.tr('charactersEmptyMyHint')),

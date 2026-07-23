@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'paper_loading.dart';
 import 'paper_theme.dart';
 import 'paper_tokens.dart';
@@ -81,33 +82,57 @@ class PaperChip extends StatelessWidget {
   }
 }
 
-/// Layered "cut-paper" card: hairline edge + hard offset + soft blur shadow.
-class PaperCard extends StatelessWidget {
+/// Layered "cut-paper" sticker card: thick ink edge + hard offset shadow. When
+/// [onTap] is set it presses in (shadow collapses + slight scale) like a real
+/// sticker being pushed, with a light haptic tick.
+class PaperCard extends StatefulWidget {
   const PaperCard({super.key, required this.child, this.padding, this.onTap});
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final VoidCallback? onTap;
 
   @override
+  State<PaperCard> createState() => _PaperCardState();
+}
+
+class _PaperCardState extends State<PaperCard> {
+  bool _down = false;
+
+  @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    final card = Container(
-      padding: padding ?? const EdgeInsets.all(14),
+    final tappable = widget.onTap != null;
+    final card = AnimatedContainer(
+      duration: const Duration(milliseconds: 90),
+      transform: Matrix4.translationValues(
+        _down ? 2 : 0,
+        _down ? 2 : 0,
+        0,
+      ),
+      padding: widget.padding ?? const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: p.card,
         borderRadius: BorderRadius.circular(PaperRadii.card),
         // Sticker: thick ink border + hard offset shadow (no blur).
         border: Border.all(color: p.cardEdge, width: 2.5),
         boxShadow: [
-          BoxShadow(color: p.hardShadow, offset: const Offset(4, 4)),
+          BoxShadow(
+            color: p.hardShadow,
+            offset: Offset(_down ? 2 : 4, _down ? 2 : 4),
+          ),
         ],
       ),
-      child: child,
+      child: widget.child,
     );
-    if (onTap == null) return card;
-    return InkWell(
-      borderRadius: BorderRadius.circular(PaperRadii.card),
-      onTap: onTap,
+    if (!tappable) return card;
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _down = true),
+      onTapUp: (_) => setState(() => _down = false),
+      onTapCancel: () => setState(() => _down = false),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        widget.onTap!();
+      },
       child: card,
     );
   }
@@ -156,7 +181,14 @@ class _PaperButtonState extends State<PaperButton> {
       onTapDown: enabled ? (_) => setState(() => _down = true) : null,
       onTapUp: enabled ? (_) => setState(() => _down = false) : null,
       onTapCancel: enabled ? () => setState(() => _down = false) : null,
-      onTap: widget.busy ? null : widget.onPressed,
+      onTap: widget.busy
+          ? null
+          : widget.onPressed == null
+          ? null
+          : () {
+              HapticFeedback.lightImpact();
+              widget.onPressed!();
+            },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 90),
         width: widget.expand ? double.infinity : null,
@@ -307,6 +339,30 @@ class PolaroidAvatar extends StatelessWidget {
           child: Center(child: child),
         ),
       ),
+    );
+  }
+}
+
+/// One-shot springy entrance (fade + rise) for list items — the reference's
+/// card "pop-in". Runs once when the item is first built; later items finish a
+/// touch later so a list cascades in. Keep [index] to the on-screen position.
+class PaperEntrance extends StatelessWidget {
+  const PaperEntrance({super.key, required this.child, this.index = 0});
+
+  final Widget child;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 300 + (index.clamp(0, 8) * 55)),
+      curve: Curves.easeOutCubic,
+      builder: (context, t, child) => Opacity(
+        opacity: t.clamp(0.0, 1.0),
+        child: Transform.translate(offset: Offset(0, (1 - t) * 18), child: child),
+      ),
+      child: child,
     );
   }
 }

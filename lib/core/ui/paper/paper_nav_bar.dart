@@ -257,17 +257,27 @@ class _PaperNavCell extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  data.glyph != null
-                      ? KawaiiNavIcon(
-                          glyph: data.glyph!,
-                          size: 24,
-                          color: selected ? Colors.white : p.inkSoft,
-                        )
-                      : Icon(
-                          selected ? data.selectedIcon : data.icon,
-                          size: 22,
-                          color: selected ? Colors.white : p.inkSoft,
-                        ),
+                  TweenAnimationBuilder<double>(
+                    // Re-keyed on selection so the icon springs in each time
+                    // this tab becomes active.
+                    key: ValueKey(selected),
+                    tween: Tween(begin: selected ? 0.62 : 1.0, end: 1.0),
+                    duration: const Duration(milliseconds: 360),
+                    curve: Curves.elasticOut,
+                    builder: (context, scale, child) =>
+                        Transform.scale(scale: scale, child: child),
+                    child: data.glyph != null
+                        ? KawaiiNavIcon(
+                            glyph: data.glyph!,
+                            size: 24,
+                            color: selected ? Colors.white : p.inkSoft,
+                          )
+                        : Icon(
+                            selected ? data.selectedIcon : data.icon,
+                            size: 22,
+                            color: selected ? Colors.white : p.inkSoft,
+                          ),
+                  ),
                   const SizedBox(height: 3),
                   Text(
                     data.label,

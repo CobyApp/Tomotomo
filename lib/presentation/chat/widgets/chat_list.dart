@@ -49,30 +49,56 @@ class _ChatListState extends State<ChatList> {
       itemCount: widget.messages.length + (widget.isGenerating ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == widget.messages.length) {
-          return _buildLoadingIndicator();
+          return _entrance(_buildLoadingIndicator());
         }
         final message = widget.messages[index];
         final isUser = _isFromCurrentUser(message);
         final showExpression = message.role != 'user';
-        return ChatBubble(
-          message: message,
-          character: widget.character,
-          isUser: isUser,
-          onExplanationTap: showExpression
-              ? () => showChatExpressionSheet(
-                  context,
-                  message: message,
-                  character: widget.character,
-                  chatRoomId: widget.chatRoomId,
-                )
-              : null,
-          onLongPressReport: () => confirmAndReportChatMessage(
-            context,
+        return _entrance(
+          ChatBubble(
             message: message,
             character: widget.character,
+            isUser: isUser,
+            onExplanationTap: showExpression
+                ? () => showChatExpressionSheet(
+                    context,
+                    message: message,
+                    character: widget.character,
+                    chatRoomId: widget.chatRoomId,
+                  )
+                : null,
+            onLongPressReport: () => confirmAndReportChatMessage(
+              context,
+              message: message,
+              character: widget.character,
+            ),
           ),
         );
       },
+    );
+  }
+
+  /// Springy pop-in for each row: newly inserted bubbles fade + rise + scale
+  /// with a gentle overshoot; reused rows (already on screen) stay put.
+  Widget _entrance(Widget child) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutBack,
+      builder: (context, t, child) {
+        return Opacity(
+          opacity: t.clamp(0.0, 1.0),
+          child: Transform.translate(
+            offset: Offset(0, (1 - t) * 14),
+            child: Transform.scale(
+              scale: 0.9 + 0.1 * t,
+              alignment: Alignment.bottomCenter,
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: child,
     );
   }
 

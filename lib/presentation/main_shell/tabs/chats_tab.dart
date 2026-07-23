@@ -343,7 +343,10 @@ class ChatsTabState extends State<ChatsTab>
                     ),
                   );
                 }
-                return _dismissibleChatRoomRow(context, _rooms[i - 1]);
+                return PaperEntrance(
+                  index: i - 1,
+                  child: _dismissibleChatRoomRow(context, _rooms[i - 1]),
+                );
               },
             ),
     );

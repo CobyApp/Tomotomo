@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../app_tokens.dart';
 import '../points_toolbar_chip.dart';
@@ -141,43 +143,73 @@ class PaperBackground extends StatelessWidget {
 }
 
 /// Floating star/heart stickers scattered behind content — the cute kitsch
-/// signature. Faint so they never fight the foreground.
-class _DecoLayer extends StatelessWidget {
+/// signature. Faint so they never fight the foreground, and each one gently
+/// bobs up/down (with its own phase) so the backdrop feels alive.
+class _DecoLayer extends StatefulWidget {
   const _DecoLayer();
 
+  @override
+  State<_DecoLayer> createState() => _DecoLayerState();
+}
+
+class _DecoLayerState extends State<_DecoLayer>
+    with SingleTickerProviderStateMixin {
+  // (alignment, glyph, size, base rotation, bob phase 0..1)
   static const _items = [
-    (Alignment(-0.85, -0.86), '★', 30.0, -0.2),
-    (Alignment(0.88, -0.78), '✦', 24.0, 0.25),
-    (Alignment(-0.94, -0.1), '♡', 34.0, 0.14),
-    (Alignment(0.9, 0.66), '✧', 30.0, -0.18),
-    (Alignment(-0.8, 0.82), '⋆', 26.0, 0.3),
-    (Alignment(0.5, 0.9), '♡', 20.0, -0.1),
+    (Alignment(-0.85, -0.86), '★', 30.0, -0.2, 0.0),
+    (Alignment(0.88, -0.78), '✦', 24.0, 0.25, 0.2),
+    (Alignment(-0.94, -0.1), '♡', 34.0, 0.14, 0.55),
+    (Alignment(0.9, 0.66), '✧', 30.0, -0.18, 0.35),
+    (Alignment(-0.8, 0.82), '⋆', 26.0, 0.3, 0.75),
+    (Alignment(0.5, 0.9), '♡', 20.0, -0.1, 0.9),
   ];
+
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 6),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    return Stack(
-      children: [
-        for (final (align, glyph, size, rot) in _items)
-          Align(
-            alignment: align,
-            child: Transform.rotate(
-              angle: rot,
-              child: Text(
-                glyph,
-                style: TextStyle(
-                  fontSize: size,
-                  color: p.coral.withValues(alpha: 0.16),
-                  // Explicit so the glyphs never inherit the fallback
-                  // yellow "missing DefaultTextStyle" underline on standalone
-                  // routes (e.g. the chat screen).
-                  decoration: TextDecoration.none,
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        return Stack(
+          children: [
+            for (final (align, glyph, size, rot, phase) in _items)
+              Align(
+                alignment: align,
+                child: Transform.translate(
+                  offset: Offset(
+                    0,
+                    -14 * math.sin((_c.value + phase) * 2 * math.pi),
+                  ),
+                  child: Transform.rotate(
+                    angle: rot,
+                    child: Text(
+                      glyph,
+                      style: TextStyle(
+                        fontSize: size,
+                        color: p.coral.withValues(alpha: 0.16),
+                        // Explicit so the glyphs never inherit the fallback
+                        // yellow "missing DefaultTextStyle" underline on
+                        // standalone routes (e.g. the chat screen).
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-      ],
+          ],
+        );
+      },
     );
   }
 }
