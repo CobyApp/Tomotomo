@@ -16,6 +16,7 @@ import 'tabs/characters_tab.dart';
 import 'tabs/chats_tab.dart';
 import 'tabs/settings_tab.dart';
 import '../notebook/word_book_screen.dart';
+import '../on_device/model_download_banner.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -96,7 +97,11 @@ class _MainShellState extends State<MainShell> {
           padding: const EdgeInsets.only(bottom: 78),
           child: IndexedStack(index: _index, children: _pages),
         ),
-        bottomNavigationBar: PaperNavBar(
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ModelDownloadBanner(),
+            PaperNavBar(
           currentIndex: _index,
           onSelect: _onNavSelect,
           items: [
@@ -119,6 +124,8 @@ class _MainShellState extends State<MainShell> {
               icon: Icons.settings_outlined,
               selectedIcon: Icons.settings_rounded,
               label: context.tr('tabSettings'),
+            ),
+          ],
             ),
           ],
         ),
