@@ -49,7 +49,7 @@ class ChatInput extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: p.paperBg,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: p.cardEdge),
+                  border: Border.all(color: p.stampBlue.withValues(alpha: 0.35)),
                 ),
                 child: TextField(
                   controller: controller,
@@ -78,10 +78,23 @@ class ChatInput extends StatelessWidget {
             const SizedBox(width: 10),
             Container(
               decoration: BoxDecoration(
-                color: canTapSend ? p.coral : p.inkSoft.withValues(alpha: 0.3),
+                gradient: canTapSend
+                    ? LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [p.coral, p.coralDeep],
+                      )
+                    : null,
+                color: canTapSend ? null : p.inkSoft.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
                 boxShadow: canTapSend
-                    ? [BoxShadow(color: p.coralDeep, offset: const Offset(0, 3))]
+                    ? [
+                        BoxShadow(
+                          color: p.coral.withValues(alpha: 0.5),
+                          blurRadius: 14,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
                     : null,
               ),
               child: Material(

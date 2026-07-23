@@ -87,14 +87,35 @@ class ChatBubble extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: Container(
                 decoration: BoxDecoration(
-                  color: isUser ? p.coral : p.card,
+                  // My bubble: neon magenta→cyan-ish gradient with a glow.
+                  // Friend bubble: glassy card with a faint cyan neon edge.
+                  gradient: isUser
+                      ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [p.coral, p.coralDeep],
+                        )
+                      : null,
+                  color: isUser ? null : p.card,
                   borderRadius: bubbleRadius,
-                  border: isUser ? null : Border.all(color: p.cardEdge),
+                  border: isUser
+                      ? null
+                      : Border.all(color: p.stampBlue.withValues(alpha: 0.35)),
                   boxShadow: isUser
-                      ? const []
+                      ? [
+                          BoxShadow(
+                            color: p.coral.withValues(alpha: 0.40),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
                       : [
                           BoxShadow(color: p.hardShadow, offset: const Offset(0, 2)),
                           BoxShadow(color: p.softShadow, blurRadius: 14, offset: const Offset(0, 6)),
+                          BoxShadow(
+                            color: p.stampBlue.withValues(alpha: 0.10),
+                            blurRadius: 12,
+                          ),
                         ],
                 ),
                 child: Padding(
