@@ -22,37 +22,38 @@ class PaperColors extends ThemeExtension<PaperColors> {
   final Color paperBg, card, cardEdge, hardShadow, softShadow;
   final Color ink, inkSoft, coral, coralDeep, tape, stampBlue, grain;
 
-  // Y2K vaporwave — pastel neon (hot pink / cyan / purple), glassy surfaces.
-  // Token names are kept (coral = pink accent, stampBlue = cyan) so every
-  // consumer re-themes automatically.
+  // Soft CYBERPUNK / otaku — a clean, light UI with restrained neon accents
+  // (magenta + cyan) and a hint of purple, not a dark neon-blast. Token names
+  // are kept (coral = magenta accent, stampBlue = cyan) so every consumer
+  // re-themes automatically.
   static const light = PaperColors(
-    paperBg: Color(0xFFF6ECFF),
-    card: Color(0xFFFDFAFF),
-    cardEdge: Color(0xFFE7CDF7),
-    hardShadow: Color(0xFFEAD6FA),
-    softShadow: Color(0x26A060D0),
-    ink: Color(0xFF32245F),
-    inkSoft: Color(0xFF6E5C9E),
-    coral: Color(0xFFF5459B),
-    coralDeep: Color(0xFFC81E8C),
-    tape: Color(0x8067E8FF),
-    stampBlue: Color(0xFF12B5CE),
-    grain: Color(0x0FA060D0),
+    paperBg: Color(0xFFF0F1FA),
+    card: Color(0xFFFDFDFF),
+    cardEdge: Color(0xFFD9DDF0),
+    hardShadow: Color(0xFFDBDFF2),
+    softShadow: Color(0x1A5B6BD0),
+    ink: Color(0xFF1E1B3A),
+    inkSoft: Color(0xFF6B6699),
+    coral: Color(0xFFF6339A),
+    coralDeep: Color(0xFFD01A7E),
+    tape: Color(0x5500C2D8),
+    stampBlue: Color(0xFF0098C4),
+    grain: Color(0x0E5B6BD0),
   );
 
   static const dark = PaperColors(
-    paperBg: Color(0xFF160E30),
-    card: Color(0xFF241843),
-    cardEdge: Color(0xFF3C2A6B),
-    hardShadow: Color(0xFF0E0822),
-    softShadow: Color(0x59000000),
-    ink: Color(0xFFF1EAFF),
-    inkSoft: Color(0xFFB9A8E6),
-    coral: Color(0xFFFF7BC6),
-    coralDeep: Color(0xFFFF4FB0),
-    tape: Color(0x6640E0FF),
-    stampBlue: Color(0xFF54E6F7),
-    grain: Color(0x14FFFFFF),
+    paperBg: Color(0xFF14122A),
+    card: Color(0xFF1F1B3D),
+    cardEdge: Color(0xFF322A5C),
+    hardShadow: Color(0xFF0C0A1C),
+    softShadow: Color(0x66000000),
+    ink: Color(0xFFEDE9FF),
+    inkSoft: Color(0xFFA99AD8),
+    coral: Color(0xFFFF5CA8),
+    coralDeep: Color(0xFFFF3D96),
+    tape: Color(0x5522E7FF),
+    stampBlue: Color(0xFF35D6F0),
+    grain: Color(0x12FFFFFF),
   );
 
   @override

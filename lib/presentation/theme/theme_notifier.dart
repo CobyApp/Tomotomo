@@ -5,5 +5,6 @@ import '../../core/ui/paper/paper_theme.dart';
 class ThemeNotifier extends ChangeNotifier {
   ThemeData get theme => PaperTheme.light;
   ThemeData get darkTheme => PaperTheme.dark;
-  ThemeMode get mode => ThemeMode.system;
+  // Soft-cyber look is a light UI — default to light (not a dark neon blast).
+  ThemeMode get mode => ThemeMode.light;
 }
