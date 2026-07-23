@@ -131,14 +131,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const _DownloadBar(),
             Expanded(
               child: PageView(
                 controller: _pageController,
                 onPageChanged: (i) => setState(() => _page = i),
                 children: [
                   _IntroSlide(
-                    icon: Icons.chat_bubble_rounded,
+                    assetImage: 'assets/images/app_icon.png',
                     title: context.tr('onboardingIntro1Title'),
                     body: context.tr('onboardingIntro1Body'),
                   ),
@@ -159,6 +158,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ],
               ),
             ),
+            const _DownloadStatus(),
             _Dots(count: _pageCount, index: _page, color: p.coral, edge: p.cardEdge),
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -186,62 +186,155 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-/// Thin, minimized model-download progress shown at the top while onboarding.
-class _DownloadBar extends StatelessWidget {
-  const _DownloadBar();
+/// Clear, always-visible model-download status card. Shows a friendly message
+/// and a real percentage across every phase so the user knows the friend is on
+/// the way — and offers retry on failure.
+class _DownloadStatus extends StatelessWidget {
+  const _DownloadStatus();
 
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
     return Consumer<OnDeviceModelManager>(
       builder: (context, manager, _) {
-        final phase = manager.snapshot.phase;
-        final active =
-            phase == OnDeviceModelPhase.downloading ||
-            phase == OnDeviceModelPhase.finalizing;
-        if (!active) return const SizedBox(height: 0);
-        final value = phase == OnDeviceModelPhase.downloading
-            ? manager.snapshot.progress.clamp(0.0, 1.0)
-            : null;
+        final snap = manager.snapshot;
+        final phase = snap.phase;
+        if (phase == OnDeviceModelPhase.ready) {
+          return _row(
+            context,
+            icon: Icons.check_circle_rounded,
+            color: p.coral,
+            text: context.tr('modelDlReady'),
+          );
+        }
+        if (phase == OnDeviceModelPhase.error) {
+          return _row(
+            context,
+            icon: Icons.error_outline_rounded,
+            color: p.coralDeep,
+            text: context.tr('modelDlError'),
+            trailing: TextButton(
+              onPressed: () => manager.install(),
+              child: Text(context.tr('retry')),
+            ),
+          );
+        }
+        final downloading = phase == OnDeviceModelPhase.downloading;
+        final pct = (snap.progress.clamp(0.0, 1.0) * 100).round();
+        final title = downloading
+            ? context.tr('modelDlProgress')
+            : phase == OnDeviceModelPhase.finalizing
+            ? context.tr('onDeviceModelFinalizing')
+            : context.tr('modelDlStarting');
         return Padding(
           padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 4, AppSpacing.pageH, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.tr('onboardingModelPreparing'),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: p.inkSoft,
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: p.card,
+              borderRadius: BorderRadius.circular(PaperRadii.card),
+              border: Border.all(color: p.cardEdge),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    SizedBox(width: 18, height: 18, child: PaperLoading(size: 6)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          color: p.ink,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    if (downloading)
+                      Text(
+                        '$pct%',
+                        style: TextStyle(
+                          color: p.coral,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 5),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(PaperRadii.pill),
-                child: LinearProgressIndicator(
-                  value: value,
-                  minHeight: 4,
-                  backgroundColor: p.cardEdge,
-                  valueColor: AlwaysStoppedAnimation(p.coral),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(PaperRadii.pill),
+                  child: LinearProgressIndicator(
+                    value: downloading ? snap.progress.clamp(0.0, 1.0) : null,
+                    minHeight: 6,
+                    backgroundColor: p.cardEdge,
+                    valueColor: AlwaysStoppedAnimation(p.coral),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  context.tr('modelDlHint'),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: p.inkSoft,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget _row(
+    BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required String text,
+    Widget? trailing,
+  }) {
+    final p = context.paper;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 4, AppSpacing.pageH, 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: p.card,
+          borderRadius: BorderRadius.circular(PaperRadii.card),
+          border: Border.all(color: p.cardEdge),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(color: p.ink, fontWeight: FontWeight.w700),
+              ),
+            ),
+            ?trailing,
+          ],
+        ),
+      ),
     );
   }
 }
 
 class _IntroSlide extends StatelessWidget {
   const _IntroSlide({
-    required this.icon,
+    this.icon,
+    this.assetImage,
     required this.title,
     required this.body,
   });
 
-  final IconData icon;
+  final IconData? icon;
+  final String? assetImage;
   final String title;
   final String body;
 
@@ -253,16 +346,34 @@ class _IntroSlide extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              color: p.coral.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: p.coral.withValues(alpha: 0.20)),
+          if (assetImage != null)
+            Container(
+              width: 104,
+              height: 104,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: [
+                  BoxShadow(
+                    color: p.softShadow,
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Image.asset(assetImage!, fit: BoxFit.cover),
+            )
+          else
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: p.coral.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: p.coral.withValues(alpha: 0.20)),
+              ),
+              child: Icon(icon, size: 44, color: p.coral),
             ),
-            child: Icon(icon, size: 44, color: p.coral),
-          ),
           const SizedBox(height: 28),
           Text(
             title,

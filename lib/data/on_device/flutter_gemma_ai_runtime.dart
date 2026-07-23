@@ -69,7 +69,7 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
       onVerifying?.call();
       if (!await _verifyInstalledArtifact(forceHash: true)) {
         await _deleteInstalledArtifact();
-        throw const FormatException('다운로드한 Gemma 모델의 무결성 검증에 실패했습니다.');
+        throw const FormatException('다운로드한 대화 엔진의 무결성 검증에 실패했습니다.');
       }
     } finally {
       _cancelToken = null;
@@ -172,7 +172,7 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
     _queue = _queue.catchError((_) {}).then((_) async {
       try {
         if (!await isModelInstalled()) {
-          throw StateError('온디바이스 Gemma 모델이 설치되지 않았습니다.');
+          throw StateError('대화 엔진이 아직 준비되지 않았습니다.');
         }
         final model = await _getModel(maxTokens);
         final chat = await model.createChat(
@@ -188,10 +188,10 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
         final text = switch (response) {
           TextResponse(:final token) => token,
           ThinkingResponse(:final content) => content,
-          _ => throw const FormatException('Gemma가 텍스트가 아닌 응답을 반환했습니다.'),
+          _ => throw const FormatException('대화 엔진이 텍스트가 아닌 응답을 반환했습니다.'),
         };
         if (text.trim().isEmpty) {
-          throw const FormatException('Gemma 응답이 비어 있습니다.');
+          throw const FormatException('대화 엔진 응답이 비어 있습니다.');
         }
         result.complete(text.trim());
       } catch (error, stackTrace) {
