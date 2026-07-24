@@ -58,13 +58,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _pickingAvatar = false;
 
   static const _introCount = 3;
-  // intro slides + language pick + first-friend page.
-  int get _pageCount => _introCount + 2;
+  // intro slides + profile (your name) + language pick + first-friend page.
+  int get _profilePageIndex => _introCount;
+  int get _pageCount => _introCount + 3;
   bool get _onLastPage => _page == _pageCount - 1;
 
-  /// Only the final friend page gates the button (it needs a name). A study
-  /// language is always pre-selected, so paging is never blocked mid-flow.
+  /// Gate the profile page (needs your name) and the final friend page (needs
+  /// the friend's name). A study language is always pre-selected.
   bool get _nextBlocked {
+    if (_page == _profilePageIndex) {
+      return _myNameController.text.trim().isEmpty;
+    }
     if (_onLastPage) return _nameController.text.trim().isEmpty;
     return false;
   }
@@ -77,10 +81,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _studyLanguage = normalizeLang(
       WidgetsBinding.instance.platformDispatcher.locale.languageCode,
     );
-    // Re-evaluate the Next/Start button as the friend name is edited.
-    _nameController.addListener(() {
+    // Re-evaluate the Next/Start button as the name fields are edited.
+    void rebuild() {
       if (mounted) setState(() {});
-    });
+    }
+
+    _nameController.addListener(rebuild);
+    _myNameController.addListener(rebuild);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_bootstrap());
     });
@@ -256,12 +263,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     title: context.tr('onboardingIntro3Title'),
                     body: context.tr('onboardingIntro3Body'),
                   ),
+                  _ProfilePage(myNameController: _myNameController),
                   _StudyLanguagePage(
                     selected: _studyLanguage,
                     onSelected: (code) => setState(() => _studyLanguage = code),
                   ),
                   _FirstFriendPage(
-                    myNameController: _myNameController,
                     nameController: _nameController,
                     taglineController: _taglineController,
                     personaController: _personaController,
@@ -418,15 +425,19 @@ class _IntroSlide extends StatelessWidget {
             Container(
               width: 104,
               height: 104,
-              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(color: p.ink, width: 2.5),
+                // DecorationImage clips the image cleanly inside the border —
+                // no corner bleed like a clipped child image has.
+                image: DecorationImage(
+                  image: AssetImage(assetImage!),
+                  fit: BoxFit.cover,
+                ),
                 boxShadow: [
                   BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
                 ],
               ),
-              child: Image.asset(assetImage!, fit: BoxFit.cover),
             )
           else
             Container(
@@ -600,11 +611,109 @@ class _LangCard extends StatelessWidget {
   }
 }
 
+/// Profile step: the learner's own name (saved to their profile so friends
+/// greet them by name). Kept separate from the friend-creation step.
+class _ProfilePage extends StatelessWidget {
+  const _ProfilePage({required this.myNameController});
+
+  final TextEditingController myNameController;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    final radius = BorderRadius.circular(PaperRadii.button);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.pageH,
+        AppSpacing.pageTop,
+        AppSpacing.pageH,
+        AppSpacing.pageBottom,
+      ),
+      children: [
+        Text(
+          context.tr('onboardingProfileTitle'),
+          style: cuteDisplay(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: p.ink,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          context.tr('onboardingProfileSubtitle'),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.4),
+        ),
+        const SizedBox(height: 28),
+        Center(
+          child: Container(
+            width: 96,
+            height: 96,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: p.paperBg,
+              shape: BoxShape.circle,
+              border: Border.all(color: p.ink, width: 2.5),
+              boxShadow: [
+                BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
+              ],
+            ),
+            child: Icon(
+              Icons.person_rounded,
+              size: 48,
+              color: p.inkSoft.withValues(alpha: 0.75),
+            ),
+          ),
+        ),
+        const SizedBox(height: 28),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(2, 0, 2, 8),
+          child: Text(
+            context.tr('onboardingYourName'),
+            style: cuteDisplay(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: p.coral,
+            ),
+          ),
+        ),
+        TextField(
+          controller: myNameController,
+          textCapitalization: TextCapitalization.words,
+          style: TextStyle(color: p.ink, fontSize: 15),
+          decoration: InputDecoration(
+            hintText: context.tr('onboardingYourNameHint'),
+            hintStyle: TextStyle(color: p.inkSoft.withValues(alpha: 0.7)),
+            filled: true,
+            fillColor: p.card,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: BorderSide(color: p.ink, width: 2),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: BorderSide(color: p.ink, width: 2),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: BorderSide(color: p.coral, width: 2.5),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// The final onboarding step: the user's own first friend, pre-filled with a
 /// packaged example for the chosen study language and fully editable.
 class _FirstFriendPage extends StatelessWidget {
   const _FirstFriendPage({
-    required this.myNameController,
     required this.nameController,
     required this.taglineController,
     required this.personaController,
@@ -616,7 +725,6 @@ class _FirstFriendPage extends StatelessWidget {
     required this.onClearAvatar,
   });
 
-  final TextEditingController myNameController;
   final TextEditingController nameController;
   final TextEditingController taglineController;
   final TextEditingController personaController;
@@ -661,14 +769,7 @@ class _FirstFriendPage extends StatelessWidget {
             context,
           ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.4),
         ),
-        const SizedBox(height: 18),
-        _label(context, context.tr('onboardingYourName')),
-        _field(
-          context,
-          controller: myNameController,
-          hint: context.tr('onboardingYourNameHint'),
-        ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 20),
         // Avatar: plain-person default; tap to add a photo.
         Center(
           child: GestureDetector(

@@ -199,60 +199,66 @@ class _PreviewCard extends StatelessWidget {
       // StackFit.expand, which needs a bounded height inside this scroll view.
       height: 320,
       decoration: BoxDecoration(
+        color: p.paperBg,
         border: Border.all(color: p.ink, width: 2.5),
         borderRadius: BorderRadius.circular(PaperRadii.card),
-        boxShadow: [
-          BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
-        ],
+        boxShadow: [BoxShadow(color: p.hardShadow, offset: const Offset(3, 3))],
       ),
-      clipBehavior: Clip.antiAlias,
-      child: buildChatBackground(
-        context,
-        background,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      // Inset by the border width + clip to the INNER radius so the background
+      // sits cleanly inside the border (no corner bleed past the rounding).
+      child: Padding(
+        padding: const EdgeInsets.all(2.5),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(PaperRadii.card - 2.5),
+          child: buildChatBackground(
+            context,
+            background,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: p.coral.withValues(alpha: 0.18),
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      context.tr('chatBgPreviewName').characters.first,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: p.coral,
+                  Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: p.coral.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          context.tr('chatBgPreviewName').characters.first,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: p.coral,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 7),
+                      Text(
+                        context.tr('chatBgPreviewName'),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: p.inkSoft,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 7),
-                  Text(
-                    context.tr('chatBgPreviewName'),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: p.inkSoft,
-                    ),
-                  ),
+                  const SizedBox(height: 14),
+                  _MiniBubble(isUser: false),
+                  const SizedBox(height: 10),
+                  _MiniBubble(isUser: true),
+                  const SizedBox(height: 10),
+                  _MiniBubble(isUser: false, short: true),
+                  const SizedBox(height: 10),
+                  _MiniBubble(isUser: true, short: true),
                 ],
               ),
-              const SizedBox(height: 14),
-              _MiniBubble(isUser: false),
-              const SizedBox(height: 10),
-              _MiniBubble(isUser: true),
-              const SizedBox(height: 10),
-              _MiniBubble(isUser: false, short: true),
-              const SizedBox(height: 10),
-              _MiniBubble(isUser: true, short: true),
-            ],
+            ),
           ),
         ),
       ),
@@ -277,8 +283,9 @@ class _MiniBubble extends StatelessWidget {
       bottomRight: Radius.circular(isUser ? 4 : 14),
     );
     return Row(
-      mainAxisAlignment:
-          isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment: isUser
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
       children: [
         Container(
           width: short ? 96 : 150,
@@ -458,10 +465,7 @@ class _IntensitySlider extends StatelessWidget {
             overlayColor: p.coral.withValues(alpha: 0.15),
             trackHeight: 5,
           ),
-          child: Slider(
-            value: value.clamp(0.0, 1.0),
-            onChanged: onChanged,
-          ),
+          child: Slider(value: value.clamp(0.0, 1.0), onChanged: onChanged),
         ),
       ],
     );
