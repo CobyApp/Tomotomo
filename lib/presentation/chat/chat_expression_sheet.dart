@@ -14,17 +14,6 @@ import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
 import '../notebook/word_book_refresh_notifier.dart';
 
-/// List physics: iOS/macOS bounce + overscroll hands off to [DraggableScrollableSheet]; Android clamps.
-ScrollPhysics _chatExpressionSheetListPhysics(BuildContext context) {
-  final p = Theme.of(context).platform;
-  final iosLike = p == TargetPlatform.iOS || p == TargetPlatform.macOS;
-  return AlwaysScrollableScrollPhysics(
-    parent: iosLike
-        ? const BouncingScrollPhysics()
-        : const ClampingScrollPhysics(),
-  );
-}
-
 /// Bottom sheet: message, per-word [+] saves **that word only** (headword + gloss) to the word book.
 Future<void> showChatExpressionSheet(
   BuildContext context, {
@@ -39,94 +28,68 @@ Future<void> showChatExpressionSheet(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     useSafeArea: false,
-    // The inner DraggableScrollableSheet owns vertical drag handling (it
-    // resizes between snapSizes); enableDrag stays false so the outer sheet
-    // route doesn't fight it for the gesture. Tapping the scrim above the
-    // sheet, and the explicit close button in the header, are the two ways
-    // out — see the grab handle + close (X) row below.
+    // Fixed-height sheet (no resize/snap): stable to read. Close via the X in
+    // the header or by tapping the scrim above the sheet.
     enableDrag: false,
     isDismissible: true,
     barrierColor: Colors.black.withValues(alpha: 0.42),
     builder: (sheetContext) {
       final mq = MediaQuery.of(sheetContext);
       final h = mq.size.height;
-      final w = mq.size.width;
-      // Keep sheet geometry below status bar / notch; list still pads bottom for home indicator.
       final topInset = mq.viewPadding.top;
+      // Fixed height: a comfortable, stable portion of the screen. The body
+      // scrolls internally only when its content is taller than this.
+      final sheetHeight = (h - topInset) * 0.72;
+      final p = sheetContext.paper;
 
       return Padding(
         padding: EdgeInsets.only(top: topInset),
-        child: SizedBox(
-          height: h - topInset,
-          width: w,
-          child: DraggableScrollableSheet(
-            initialChildSize: 0.9,
-            minChildSize: 0.32,
-            maxChildSize: 1.0,
-            expand: false,
-            snap: true,
-            snapSizes: const <double>[0.32, 0.58, 0.9, 1.0],
-            snapAnimationDuration: const Duration(milliseconds: 280),
-            builder: (ctx, scrollController) {
-              final p = ctx.paper;
-              return Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: p.card,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            height: sheetHeight,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: p.card,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+              border: Border.all(color: p.cardEdge),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header: close (X) only — no grab handle.
+                SizedBox(
+                  height: 44,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Tooltip(
+                        message: sheetContext.tr('expressionSheetCloseTooltip'),
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.close_rounded,
+                            color: p.inkSoft,
+                            size: 22,
+                          ),
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                        ),
+                      ),
+                    ),
                   ),
-                  border: Border.all(color: p.cardEdge),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Header: grab handle centered, explicit close (X) button
-                    // so there's always an obvious, discoverable way to leave
-                    // the sheet beyond drag/scrim gestures.
-                    SizedBox(
-                      height: 44,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 5,
-                            decoration: BoxDecoration(
-                              color: p.inkSoft.withValues(alpha: 0.55),
-                              borderRadius: BorderRadius.circular(2.5),
-                            ),
-                          ),
-                          Positioned(
-                            right: 4,
-                            child: Tooltip(
-                              message: ctx.tr('expressionSheetCloseTooltip'),
-                              child: IconButton(
-                                icon: Icon(
-                                  Icons.close_rounded,
-                                  color: p.inkSoft,
-                                  size: 22,
-                                ),
-                                onPressed: () => Navigator.of(ctx).pop(),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: _ExpressionSheetBody(
-                        scrollController: scrollController,
-                        message: message,
-                        character: character,
-                        chatRoomId: chatRoomId,
-                        messenger: messenger,
-                      ),
-                    ),
-                  ],
+                Expanded(
+                  child: _ExpressionSheetBody(
+                    message: message,
+                    character: character,
+                    chatRoomId: chatRoomId,
+                    messenger: messenger,
+                  ),
                 ),
-              );
-            },
+              ],
+            ),
           ),
         ),
       );
@@ -143,14 +106,12 @@ String _vocabTranslationLine(Vocabulary v) {
 }
 
 class _ExpressionSheetBody extends StatefulWidget {
-  final ScrollController scrollController;
   final ChatMessage message;
   final Character character;
   final String? chatRoomId;
   final ScaffoldMessengerState messenger;
 
   const _ExpressionSheetBody({
-    required this.scrollController,
     required this.message,
     required this.character,
     required this.chatRoomId,
@@ -296,9 +257,11 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     }
 
     final bottomPad = MediaQuery.paddingOf(sheetContext).bottom;
+    // Fixed-height sheet: scroll only when the content overflows (no bounce
+    // when it fits), so a short sheet stays perfectly still.
     return ListView(
-      controller: widget.scrollController,
-      physics: _chatExpressionSheetListPhysics(sheetContext),
+      shrinkWrap: true,
+      physics: const ClampingScrollPhysics(),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.pageH,
         4,
