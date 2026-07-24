@@ -14,7 +14,8 @@ import '../locale/locale_notifier.dart';
 enum LegalDoc { privacy, terms, marketing }
 
 /// Base URL of the published legal site (GitHub Pages for CobyApp/Tomotomo).
-const String _legalBaseUrl = 'https://cobyapp.github.io/Tomotomo';
+/// Pages serves from the repo root, so the docs live under `/docs`.
+const String _legalBaseUrl = 'https://cobyapp.github.io/Tomotomo/docs';
 
 String _legalDocFile(LegalDoc doc) {
   switch (doc) {
