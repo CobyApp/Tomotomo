@@ -123,6 +123,7 @@ class CharactersTabState extends State<CharactersTab>
     return PaperScaffold(
       title: 'トモトモ',
       useWordmark: true,
+      showBackground: false,
       actions: (_loading || _error != null)
           ? null
           : [
@@ -164,22 +165,6 @@ class CharactersTabState extends State<CharactersTab>
     );
   }
 
-
-  String _recordSubtitle(BuildContext context, CharacterRecord r) {
-    final line = r.listDetailLine;
-    if (line.isNotEmpty) return line;
-    return r.language == 'ja' ? context.tr('langJa') : context.tr('langKo');
-  }
-
-  String _recordBio(CharacterRecord r) {
-    final memo = r.speechStyle?.trim() ?? '';
-    if (memo.isEmpty) return _recordSubtitle(context, r);
-    final lines = memo
-        .split(RegExp(r'\r?\n'))
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty && !line.startsWith('【'));
-    return lines.isEmpty ? _recordSubtitle(context, r) : lines.first;
-  }
 
   String _levelLabel(String level) => switch (level) {
     'beginner' => context.tr('levelBeginner'),
@@ -295,17 +280,6 @@ class CharactersTabState extends State<CharactersTab>
                   fontWeight: FontWeight.w700,
                   height: 1.35,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            if (r.speechStyle?.trim().isNotEmpty ?? false) ...[
-              const SizedBox(height: 6),
-              Text(
-                _recordBio(r),
-                style: AppTextStyles.listSubtitle(
-                  context,
-                ).copyWith(color: p.inkSoft, height: 1.4),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),

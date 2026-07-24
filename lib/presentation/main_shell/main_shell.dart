@@ -6,7 +6,7 @@ import '../../core/home_widget/notebook_home_widget_sync.dart';
 import '../../core/platform/ios_post_layout_frames.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
 import '../../core/ui/paper/paper_nav_bar.dart';
-import '../../core/ui/paper/paper_tokens.dart';
+import '../../core/ui/paper/paper_scaffold.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../points/points_balance_notifier.dart';
 import '../locale/friend_language_notifier.dart';
@@ -88,8 +88,9 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: context.paper.paperBg,
+    // One continuous gradient behind every tab (tabs render transparent via
+    // showBackground:false) so there's no seam where the nav floats.
+    return PaperBackground(
       child: Scaffold(
         extendBody: true,
         backgroundColor: Colors.transparent,

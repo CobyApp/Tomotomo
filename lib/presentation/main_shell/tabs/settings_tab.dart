@@ -18,6 +18,7 @@ class SettingsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return PaperScaffold(
       title: context.tr('settingsTitle'),
+      showBackground: false,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.pageH,

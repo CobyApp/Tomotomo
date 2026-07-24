@@ -23,6 +23,7 @@ class PaperScaffold extends StatelessWidget {
     this.transparentBackground = true,
     this.showPointsChip = false,
     this.useWordmark = false,
+    this.showBackground = true,
   });
 
   final String title;
@@ -39,6 +40,11 @@ class PaperScaffold extends StatelessWidget {
   /// When true, renders [title] via [PaperWordmark] (app root). Sub-screens
   /// use a plain cute display title.
   final bool useWordmark;
+
+  /// When false, skips the [PaperBackground] wrapper so a shared ancestor (e.g.
+  /// the main shell) can own one continuous gradient behind several tabs —
+  /// avoiding a seam where an inset per-tab gradient meets the shell strip.
+  final bool showBackground;
 
   @override
   Widget build(BuildContext context) {
@@ -84,25 +90,25 @@ class PaperScaffold extends StatelessWidget {
           )
         : titleWidget;
 
-    return PaperBackground(
-      child: Scaffold(
+    final scaffold = Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        toolbarHeight: hasSubtitle ? 68 : 56,
+        titleSpacing: AppSpacing.pageH,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          toolbarHeight: hasSubtitle ? 68 : 56,
-          titleSpacing: AppSpacing.pageH,
-          surfaceTintColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          backgroundColor: Colors.transparent,
-          foregroundColor: p.ink,
-          title: titleColumn,
-          centerTitle: false,
-          actions: mergedActions.isEmpty ? null : [...mergedActions, const SizedBox(width: 8)],
-          bottom: bottom,
-        ),
-        floatingActionButton: floatingActionButton,
-        body: transparentBackground ? body : ColoredBox(color: p.paperBg, child: body),
+        foregroundColor: p.ink,
+        title: titleColumn,
+        centerTitle: false,
+        actions: mergedActions.isEmpty ? null : [...mergedActions, const SizedBox(width: 8)],
+        bottom: bottom,
       ),
+      floatingActionButton: floatingActionButton,
+      body: transparentBackground ? body : ColoredBox(color: p.paperBg, child: body),
     );
+    if (!showBackground) return scaffold;
+    return PaperBackground(child: scaffold);
   }
 }
 

@@ -308,6 +308,7 @@ class ChatsTabState extends State<ChatsTab>
     final p = context.paper;
     return PaperScaffold(
       title: context.tr('chatsTitle'),
+      showBackground: false,
       body: _loading
           ? const PaperLoadingBody()
           : _error != null

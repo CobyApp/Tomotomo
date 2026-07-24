@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/locale/languages.dart';
@@ -330,6 +331,7 @@ class WordBookScreenState extends State<WordBookScreen>
     final p = context.paper;
     return PaperScaffold(
       title: context.tr('notebookTitle'),
+      showBackground: false,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -431,70 +433,70 @@ class _StudyLauncherCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
+    final radius = BorderRadius.circular(PaperRadii.card);
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(PaperRadii.card),
-          child: Ink(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: p.coral,
-              borderRadius: BorderRadius.circular(PaperRadii.card),
-              boxShadow: [
-                BoxShadow(color: p.coralDeep, offset: const Offset(0, 3)),
-              ],
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          foregroundDecoration: stickerGloss(borderRadius: radius),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [p.coral, p.coralDeep],
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.20),
-                    borderRadius: BorderRadius.circular(17),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.36),
+            borderRadius: radius,
+            border: Border.all(color: p.ink, width: 2.5),
+            boxShadow: [
+              BoxShadow(color: p.hardShadow, offset: const Offset(4, 4)),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: p.ink, width: 2),
+                ),
+                child: Icon(Icons.style_rounded, color: p.coral, size: 26),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.tr('notebookStudyStart'),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                  ),
-                  child: const Icon(
-                    Icons.style_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.tr('notebookStudyStart'),
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                            ),
+                    const SizedBox(height: 3),
+                    Text(
+                      context.tr(
+                        'notebookStudyStartSubtitle',
+                        params: {'count': '$count'},
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        context.tr(
-                          'notebookStudyStartSubtitle',
-                          params: {'count': '$count'},
-                        ),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.88),
-                        ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward_rounded, color: Colors.white),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_forward_rounded, color: Colors.white),
+            ],
           ),
         ),
       ),

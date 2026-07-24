@@ -153,6 +153,7 @@ class PaperNavBar extends StatelessWidget {
     final p = context.paper;
     const dockHeight = 68.0;
 
+    final n = items.length;
     final panel = SizedBox(
       height: dockHeight,
       child: DecoratedBox(
@@ -166,17 +167,60 @@ class PaperNavBar extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: List.generate(items.length, (i) {
-              return Expanded(
-                child: _PaperNavCell(
-                  data: items[i],
-                  selected: i == currentIndex,
-                  onTap: () => onSelect(i),
+          child: Stack(
+            children: [
+              // A single gradient pill that SLIDES to the selected cell — much
+              // smoother than toggling each cell's gradient (which snapped).
+              if (n > 0)
+                AnimatedAlign(
+                  alignment: Alignment(
+                    n == 1 ? 0 : (currentIndex * 2 / (n - 1)) - 1,
+                    0,
+                  ),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  child: FractionallySizedBox(
+                    widthFactor: 1 / n,
+                    heightFactor: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Container(
+                        foregroundDecoration: stickerGloss(
+                          borderRadius: BorderRadius.circular(16),
+                          strength: 0.24,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [p.coral, p.coralDeep],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: p.ink, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: p.hardShadow,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              );
-            }),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: List.generate(n, (i) {
+                  return Expanded(
+                    child: _PaperNavCell(
+                      data: items[i],
+                      selected: i == currentIndex,
+                      onTap: () => onSelect(i),
+                    ),
+                  );
+                }),
+              ),
+            ],
           ),
         ),
       ),
@@ -209,73 +253,43 @@ class _PaperNavCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    return Material(
-      color: Colors.transparent,
-      child: Semantics(
-        label: data.label,
-        button: true,
-        selected: selected,
-        child: Tooltip(
-          message: data.label,
-          waitDuration: const Duration(milliseconds: 450),
-          child: InkWell(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onTap();
-            },
-            borderRadius: BorderRadius.circular(14),
-            splashColor: p.coral.withValues(alpha: 0.08),
-            highlightColor: Colors.transparent,
-            splashFactory: InkRipple.splashFactory,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-              foregroundDecoration: selected
-                  ? stickerGloss(
-                      borderRadius: BorderRadius.circular(16),
-                      strength: 0.24,
-                    )
-                  : null,
-              decoration: BoxDecoration(
-                // Selected cell: gradient sticker pill matching the buttons —
-                // ink border + hard shadow. Unselected stays clean/transparent.
-                gradient: selected
-                    ? LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [p.coral, p.coralDeep],
-                      )
-                    : null,
-                borderRadius: BorderRadius.circular(16),
-                border: selected ? Border.all(color: p.ink, width: 2) : null,
-                boxShadow: selected
-                    ? [BoxShadow(color: p.hardShadow, offset: const Offset(0, 3))]
-                    : null,
-              ),
-              child: Column(
+    return Semantics(
+      label: data.label,
+      button: true,
+      selected: selected,
+      child: Tooltip(
+        message: data.label,
+        waitDuration: const Duration(milliseconds: 450),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onTap();
+          },
+          // Smoothly cross-fade icon + label between the muted and white state
+          // as the pill slides underneath — no snapping.
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(end: selected ? 1.0 : 0.0),
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOut,
+            builder: (context, t, _) {
+              final color = Color.lerp(p.inkSoft, Colors.white, t)!;
+              return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TweenAnimationBuilder<double>(
-                    // Re-keyed on selection so the icon springs in each time
-                    // this tab becomes active.
-                    key: ValueKey(selected),
-                    tween: Tween(begin: selected ? 0.62 : 1.0, end: 1.0),
-                    duration: const Duration(milliseconds: 360),
-                    curve: Curves.elasticOut,
-                    builder: (context, scale, child) =>
-                        Transform.scale(scale: scale, child: child),
+                  Transform.scale(
+                    scale: 1 + 0.06 * t,
                     child: data.glyph != null
                         ? KawaiiNavIcon(
                             glyph: data.glyph!,
                             size: 24,
-                            color: selected ? Colors.white : p.inkSoft,
+                            color: color,
                           )
                         : Icon(
-                            selected ? data.selectedIcon : data.icon,
+                            t > 0.5 ? data.selectedIcon : data.icon,
                             size: 22,
-                            color: selected ? Colors.white : p.inkSoft,
+                            color: color,
                           ),
                   ),
                   const SizedBox(height: 3),
@@ -286,13 +300,17 @@ class _PaperNavCell extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       height: 1.1,
-                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                      color: selected ? Colors.white : p.inkSoft,
+                      fontWeight: FontWeight.lerp(
+                        FontWeight.w600,
+                        FontWeight.w800,
+                        t,
+                      ),
+                      color: color,
                     ),
                   ),
                 ],
-              ),
-            ),
+              );
+            },
           ),
         ),
       ),
