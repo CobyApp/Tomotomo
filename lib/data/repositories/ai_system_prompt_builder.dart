@@ -167,12 +167,13 @@ REPLY RULES
 
 STUDY SHEET (annotate the "content" you just wrote, for a $explanationLanguage-speaking learner)
 6. "full_translation": a complete, natural $explanationLanguage translation of "content"; preserve tone, politeness, and nuance.
-7. "learning_note": 1–3 concise $explanationLanguage sentences on the most useful grammar, nuance, or natural usage in "content".
-8. "vocabulary": 2–4 useful words or short expressions that actually appear in "content". Keep "word" exactly as written. $readingClause Every "$meaningKey" is in $explanationLanguage and gives the core meaning plus one nuance/usage in 1–2 compact sentences.
+7. "vocabulary": 2–4 useful words or short expressions that actually appear in "content". Keep "word" exactly as written. $readingClause Every "$meaningKey" is in $explanationLanguage and gives the core meaning plus one nuance/usage in 1–2 compact sentences.
+
+Always include "full_translation" and a non-empty "vocabulary" — never omit them.
 
 OUTPUT
 Return exactly one valid JSON object and no markdown:
-{"content":"the friend reply in $replyLanguage","full_translation":"$explanationLanguage translation","learning_note":"$explanationLanguage note","vocabulary":[{"word":"expression from content","reading":"pronunciation","$meaningKey":"meaning plus nuance"}]}
+{"content":"the friend reply in $replyLanguage","full_translation":"$explanationLanguage translation","vocabulary":[{"word":"expression from content","reading":"pronunciation","$meaningKey":"meaning plus nuance"}]}
 '''
       .trim();
 }

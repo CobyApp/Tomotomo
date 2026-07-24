@@ -9,8 +9,6 @@ import '../../core/ui/paper/paper_widgets.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/saved_expression.dart';
-import '../../domain/repositories/ai_chat_repository.dart';
-import '../../domain/repositories/points_repository.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
@@ -166,146 +164,13 @@ class _ExpressionSheetBody extends StatefulWidget {
 class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
   final Set<int> _savedWordIndices = {};
   final Set<int> _savingIndices = {};
-  ChatMessage? _fetchedAnalysis;
-  bool _analysisLoading = false;
-  String? _analysisError;
 
-  /// The reply now bundles its study sheet in the same generation. If the
-  /// message already carries a usable sheet (translation + explanation + at
-  /// least one word), show it instantly instead of firing a second model call —
-  /// this is what removes the long loading spinner the user saw.
-  bool get _hasBundledAnalysis {
-    final m = widget.message;
-    final hasTranslation = m.lineTranslation?.trim().isNotEmpty ?? false;
-    final hasExplanation = m.explanation?.trim().isNotEmpty ?? false;
-    final hasVocab = m.vocabulary?.isNotEmpty ?? false;
-    return hasTranslation && hasExplanation && hasVocab;
-  }
+  // The study sheet (translation + vocabulary) is produced in the SAME
+  // generation as the reply and stored on the message — so we just read it
+  // here. No on-demand fetch, no loading spinner.
+  List<Vocabulary>? get _effectiveVocabulary => widget.message.vocabulary;
 
-  bool _isCompleteAnalysis({
-    required String? translation,
-    required String? explanation,
-    required List<Vocabulary>? vocabulary,
-  }) {
-    if ((translation?.trim().isEmpty ?? true) ||
-        (explanation?.trim().isEmpty ?? true) ||
-        vocabulary == null ||
-        vocabulary.length < 2) {
-      return false;
-    }
-    return vocabulary.every(
-      (item) =>
-          (item.reading?.trim().isNotEmpty ?? false) &&
-          item.meaning.runes.length >= 15,
-    );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    if (!_hasBundledAnalysis && widget.message.content.trim().isNotEmpty) {
-      _analysisLoading = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _loadAnalysis());
-    }
-  }
-
-  List<Vocabulary>? _vocabularyFromCache(
-    List<Map<String, dynamic>> values,
-    String appLanguage,
-  ) {
-    final vocabulary = <Vocabulary>[];
-    final meaningMode = meaningPickModeForApp(appLanguage);
-    for (final value in values) {
-      final parsed = Vocabulary.tryParseLoose(value, meaningMode: meaningMode);
-      if (parsed != null) vocabulary.add(parsed);
-    }
-    return vocabulary.isEmpty ? null : vocabulary;
-  }
-
-  Future<void> _loadAnalysis() async {
-    if (!mounted || _hasBundledAnalysis) return;
-    setState(() {
-      _analysisLoading = true;
-      _analysisError = null;
-    });
-
-    final appLanguage = context.read<LocaleNotifier>().languageCode;
-    final points = context.read<PointsRepository>();
-    final messageId = widget.message.serverId;
-    try {
-      if (messageId != null) {
-        final cached = await points.getLineAnalysisCache(
-          messageId,
-          appLanguage,
-        );
-        if (!mounted) return;
-        if (cached != null) {
-          final vocabulary = _vocabularyFromCache(
-            cached.vocabularyJson,
-            appLanguage,
-          );
-          if (_isCompleteAnalysis(
-            translation: cached.lineTranslation,
-            explanation: cached.explanation,
-            vocabulary: vocabulary,
-          )) {
-            setState(() {
-              _fetchedAnalysis = ChatMessage(
-                serverId: widget.message.serverId,
-                content: widget.message.content,
-                role: widget.message.role,
-                timestamp: widget.message.timestamp,
-                explanation: cached.explanation,
-                lineTranslation: cached.lineTranslation,
-                vocabulary: vocabulary,
-              );
-              _analysisLoading = false;
-            });
-            return;
-          }
-        }
-      }
-
-      final analysis = await context
-          .read<AiChatRepository>()
-          .generateExpressionAnalysis(
-            widget.message.content,
-            widget.character,
-            appUiLanguageCode: appLanguage,
-          );
-      if (messageId != null) {
-        await points.saveLineAnalysisCache(
-          messageId,
-          appLanguage,
-          explanation: analysis.explanation,
-          lineTranslation: analysis.lineTranslation,
-          vocabularyJson: analysis.vocabulary
-              ?.map((value) => value.toJson())
-              .toList(),
-        );
-      }
-      if (!mounted) return;
-      setState(() {
-        _fetchedAnalysis = analysis;
-        _analysisLoading = false;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _analysisLoading = false;
-        _analysisError = error.toString();
-      });
-    }
-  }
-
-  List<Vocabulary>? get _effectiveVocabulary =>
-      _fetchedAnalysis?.vocabulary ?? widget.message.vocabulary;
-
-  String? get _effectiveLineTranslation =>
-      _fetchedAnalysis?.lineTranslation ?? widget.message.lineTranslation;
-
-  String? get _effectiveExplanation =>
-      _fetchedAnalysis?.explanation ?? widget.message.explanation;
+  String? get _effectiveLineTranslation => widget.message.lineTranslation;
 
   bool get _vocabMeaningUsesHangul =>
       context.read<LocaleNotifier>().languageCode == 'ko';
@@ -357,7 +222,6 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final message = widget.message;
     final character = widget.character;
     final tr = sheetContext.tr;
-    final scheme = Theme.of(sheetContext).colorScheme;
     final p = context.paper;
 
     final messageStyle = TextStyle(
@@ -399,9 +263,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     );
 
     final translation = _effectiveLineTranslation?.trim();
-    final note = _effectiveExplanation?.trim();
     final showTranslation = translation != null && translation.isNotEmpty;
-    final showNote = note != null && note.isNotEmpty;
 
     final translationUsesHangul =
         context.read<LocaleNotifier>().languageCode == 'ko';
@@ -452,52 +314,11 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            if (_analysisLoading)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Row(
-                  children: [
-                    PaperLoading(size: 9),
-                    const SizedBox(width: 10),
-                    Text(
-                      tr('expressionAnalysisLoading'),
-                      style: TextStyle(color: p.inkSoft),
-                    ),
-                  ],
-                ),
-              ),
-            if (_analysisError != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tr('expressionAnalysisFailed'),
-                      style: TextStyle(color: scheme.error),
-                    ),
-                    const SizedBox(height: 8),
-                    PaperButton(
-                      label: tr('retry'),
-                      icon: Icons.refresh_rounded,
-                      onPressed: _loadAnalysis,
-                      expand: false,
-                    ),
-                  ],
-                ),
-              ),
             if (showTranslation)
               sectionBlock(
                 tr('expressionFullTranslationLabel'),
                 translation,
                 useHangulBody: translationUsesHangul,
-              ),
-            if (showNote)
-              sectionBlock(
-                tr('expressionLearningNoteLabel'),
-                note,
-                useHangulBody:
-                    context.read<LocaleNotifier>().languageCode == 'ko',
               ),
             if (_effectiveVocabulary != null &&
                 _effectiveVocabulary!.isNotEmpty) ...[
@@ -581,9 +402,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                   ),
                 );
               }),
-            ] else if (_analysisLoading || _analysisError != null)
-              const SizedBox.shrink()
-            else if (_vocabMeaningUsesHangul)
+            ] else if (_vocabMeaningUsesHangul)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: Text(
