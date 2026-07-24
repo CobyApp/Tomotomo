@@ -106,6 +106,28 @@ abstract final class PaperTheme {
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
       ),
+      // Floating paper toast (replaces Flutter's default brown inverse-surface
+      // snackbar). `showCloseIcon` puts a dismiss "X" on every snackbar so the
+      // user can close them the moment they're in the way.
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: colors.coralDeep,
+        elevation: 6,
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        contentTextStyle: const TextStyle(
+          fontFamily: 'Pretendard',
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          fontSize: 14,
+        ),
+        actionTextColor: Colors.white,
+        showCloseIcon: true,
+        closeIconColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: colors.ink, width: 2),
+        ),
+      ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           elevation: 0,

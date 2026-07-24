@@ -12,15 +12,8 @@ import 'on_device_model_setup_screen.dart';
 /// Compact, tappable model-download progress pill shown app-wide (e.g. above the
 /// bottom nav) so download progress is visible from the main screen, not only
 /// inside chat/settings. Collapses to nothing once the model is ready.
-class ModelDownloadBanner extends StatefulWidget {
+class ModelDownloadBanner extends StatelessWidget {
   const ModelDownloadBanner({super.key});
-
-  @override
-  State<ModelDownloadBanner> createState() => _ModelDownloadBannerState();
-}
-
-class _ModelDownloadBannerState extends State<ModelDownloadBanner> {
-  bool _dismissed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +24,7 @@ class _ModelDownloadBannerState extends State<ModelDownloadBanner> {
         final active =
             phase == OnDeviceModelPhase.downloading ||
             phase == OnDeviceModelPhase.finalizing;
-        if (!active || _dismissed) return const SizedBox.shrink();
+        if (!active) return const SizedBox.shrink();
 
         final downloading = phase == OnDeviceModelPhase.downloading;
         final pct = (manager.snapshot.progress.clamp(0.0, 1.0) * 100).round();
@@ -79,19 +72,6 @@ class _ModelDownloadBannerState extends State<ModelDownloadBanner> {
                         color: p.coral,
                         fontWeight: FontWeight.w900,
                         fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    GestureDetector(
-                      onTap: () => setState(() => _dismissed = true),
-                      behavior: HitTestBehavior.opaque,
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.close_rounded,
-                          size: 16,
-                          color: p.inkSoft,
-                        ),
                       ),
                     ),
                   ],
