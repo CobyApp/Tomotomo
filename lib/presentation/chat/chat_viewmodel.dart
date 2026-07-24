@@ -33,6 +33,7 @@ class ChatViewModel extends ChangeNotifier {
   List<ChatMessage> _messages = [];
   bool _isGenerating = false;
   bool _disposed = false;
+  late final String _appUiLanguageCode;
 
   ChatViewModel({
     required this.character,
@@ -42,6 +43,7 @@ class ChatViewModel extends ChangeNotifier {
     this.onInsufficientPoints,
     required String appUiLanguageCode,
   }) {
+    _appUiLanguageCode = appUiLanguageCode;
     _loadMessages();
     aiChatRepository.initializeForCharacter(
       character,
@@ -171,6 +173,11 @@ class ChatViewModel extends ChangeNotifier {
     }
     _safeNotify();
 
+    // Small beat before the "typing…" indicator appears — as if the friend
+    // read the message first, then started typing (not shown instantly).
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+    if (_disposed) return;
+
     _isGenerating = true;
     _safeNotify();
 
@@ -192,17 +199,13 @@ class ChatViewModel extends ChangeNotifier {
   /// answer finishes even after leaving the chat.
   Future<void> _generateAndSave(String userMessage) async {
     try {
-      final startedAt = DateTime.now();
       final aiMessage = await aiChatRepository.generateResponse(userMessage);
-      // Always keep the "typing…" indicator up for at least ~1.3s so the reply
-      // never pops in the instant the user sends — it reads like the friend is
-      // typing back. (If generation already took longer, no extra wait.)
-      const minThinking = Duration(milliseconds: 1300);
-      final elapsed = DateTime.now().difference(startedAt);
-      if (elapsed < minThinking) {
-        await Future<void>.delayed(minThinking - elapsed);
-      }
-      await chatRepository.saveMessage(character, aiMessage);
+      final replyId = await chatRepository.saveMessage(character, aiMessage);
+      // Warm the study sheet so tapping it is instant — the small model doesn't
+      // always bundle the analysis into the reply, so prefetch it in the
+      // background (runs on the on-device queue right after this reply) and
+      // stash it in the per-message cache the sheet reads first.
+      unawaited(_prefetchStudySheet(aiMessage, replyId));
       // If the user left the app while the reply was generating, notify them.
       if (WidgetsBinding.instance.lifecycleState !=
           AppLifecycleState.resumed) {
@@ -234,6 +237,42 @@ class ChatViewModel extends ChangeNotifier {
       } catch (saveErr) {
         debugPrint('Failed to persist AI error message: $saveErr');
       }
+    }
+  }
+
+  /// Prepares the study sheet for [reply] and caches it by message id so the
+  /// expression sheet opens without a loading spinner. Reuses the reply's own
+  /// bundled analysis when the model included it; otherwise generates it with
+  /// the dedicated (reliable) analysis prompt in the background.
+  Future<void> _prefetchStudySheet(ChatMessage reply, String? messageId) async {
+    if (messageId == null || reply.content.trim().isEmpty) return;
+    try {
+      String? explanation = reply.explanation;
+      String? lineTranslation = reply.lineTranslation;
+      var vocabulary = reply.vocabulary;
+      final alreadyBundled =
+          (lineTranslation?.trim().isNotEmpty ?? false) &&
+          (explanation?.trim().isNotEmpty ?? false) &&
+          (vocabulary?.isNotEmpty ?? false);
+      if (!alreadyBundled) {
+        final analysis = await aiChatRepository.generateExpressionAnalysis(
+          reply.content,
+          character,
+          appUiLanguageCode: _appUiLanguageCode,
+        );
+        explanation = analysis.explanation;
+        lineTranslation = analysis.lineTranslation;
+        vocabulary = analysis.vocabulary;
+      }
+      await pointsRepository.saveLineAnalysisCache(
+        messageId,
+        _appUiLanguageCode,
+        explanation: explanation,
+        lineTranslation: lineTranslation,
+        vocabularyJson: vocabulary?.map((v) => v.toJson()).toList(),
+      );
+    } catch (_) {
+      // Best-effort: the sheet still loads on demand if prefetch fails.
     }
   }
 
