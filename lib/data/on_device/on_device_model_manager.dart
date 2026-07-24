@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/l10n/app_strings.dart';
+import '../../core/locale/languages.dart';
+import '../../core/notifications/local_notifications.dart';
 import '../../domain/on_device/on_device_model_snapshot.dart';
 import 'on_device_ai_runtime.dart';
 
@@ -94,6 +97,9 @@ class OnDeviceModelManager extends ChangeNotifier {
           backend: _runtime.activeBackend,
         ),
       );
+      // Only now — download + integrity verify both done — tell the user the
+      // engine is truly ready (useful when they left the app during the wait).
+      unawaited(_notifyReady());
     } catch (error) {
       if (_snapshot.phase == OnDeviceModelPhase.notInstalled) return;
       _setError(error);
@@ -120,6 +126,18 @@ class OnDeviceModelManager extends ChangeNotifier {
     } catch (error) {
       _setError(error);
     }
+  }
+
+  Future<void> _notifyReady() async {
+    try {
+      final lang = normalizeLang(
+        PlatformDispatcher.instance.locale.languageCode,
+      );
+      await LocalNotifications.showModelReady(
+        title: AppStrings.of(lang, 'modelNotifCompleteTitle'),
+        body: AppStrings.of(lang, 'modelNotifCompleteBody'),
+      );
+    } catch (_) {}
   }
 
   void _setError(Object error) {

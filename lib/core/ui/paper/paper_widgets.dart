@@ -470,10 +470,32 @@ class PaperProgressBar extends StatefulWidget {
 
 class _PaperProgressBarState extends State<PaperProgressBar>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1300),
-  )..repeat();
+  // Assigned in initState (not a lazy `late final = …`) so it always exists
+  // while the widget is active — a lazy field would first initialize inside
+  // dispose() for a determinate bar that never touches it, crashing on a
+  // deactivated widget.
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1300),
+    );
+    if (widget.value == null) _c.repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant PaperProgressBar old) {
+    super.didUpdateWidget(old);
+    // Only spin for the indeterminate state.
+    if (widget.value == null && !_c.isAnimating) {
+      _c.repeat();
+    } else if (widget.value != null && _c.isAnimating) {
+      _c.stop();
+    }
+  }
 
   @override
   void dispose() {
@@ -504,12 +526,14 @@ class _PaperProgressBarState extends State<PaperProgressBar>
               ),
             );
             if (widget.value != null) {
-              return Align(
+              // heightFactor: 1 is essential — without it the fill gets loose
+              // height constraints and collapses to 0px, so the bar looks empty
+              // even while the percentage climbs.
+              return FractionallySizedBox(
                 alignment: Alignment.centerLeft,
-                child: FractionallySizedBox(
-                  widthFactor: widget.value!.clamp(0.0, 1.0),
-                  child: fill,
-                ),
+                widthFactor: widget.value!.clamp(0.0, 1.0),
+                heightFactor: 1.0,
+                child: fill,
               );
             }
             // Indeterminate: a block sweeps left→right.

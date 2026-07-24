@@ -46,9 +46,12 @@ Future<void> _configureDownloadNotifications() async {
         t('modelNotifRunningTitle'),
         t('modelNotifRunningBody'),
       ),
+      // The task "complete" fires when the DOWNLOAD finishes, but the engine
+      // still needs a ~tens-of-seconds integrity verify. Say "finalizing" here;
+      // the real "ready" alert is sent from OnDeviceModelManager after verify.
       complete: TaskNotification(
-        t('modelNotifCompleteTitle'),
-        t('modelNotifCompleteBody'),
+        t('modelNotifFinalizingTitle'),
+        t('modelNotifFinalizingBody'),
       ),
       error: TaskNotification(
         t('modelNotifErrorTitle'),

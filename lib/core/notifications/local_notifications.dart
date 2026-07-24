@@ -44,6 +44,32 @@ abstract final class LocalNotifications {
     } catch (_) {}
   }
 
+  /// Shows a "chat engine is ready" notification, sent once the download AND
+  /// the post-download integrity verify have both finished.
+  static Future<void> showModelReady({
+    required String title,
+    required String body,
+  }) async {
+    try {
+      await ensurePermission();
+      const details = NotificationDetails(
+        iOS: DarwinNotificationDetails(),
+        android: AndroidNotificationDetails(
+          'model_ready',
+          'Chat engine ready',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      );
+      await _plugin.show(
+        id: 1002,
+        title: title,
+        body: body,
+        notificationDetails: details,
+      );
+    } catch (_) {}
+  }
+
   /// Shows a "your friend replied" notification.
   static Future<void> showChatReply({
     required String title,
