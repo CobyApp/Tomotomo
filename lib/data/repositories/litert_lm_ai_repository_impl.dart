@@ -104,7 +104,7 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
             : lang.startsWith('zh')
                 ? VocabularyMeaningPickMode.preferChineseGloss
                 : VocabularyMeaningPickMode.preferKoreanGloss;
-    final parsed = chatMessageFromAiJsonMap(
+    var parsed = chatMessageFromAiJsonMap(
       extractJsonObject(raw),
       character,
       vocabularyMeaningPickModeOverride: meaningMode,
@@ -117,6 +117,31 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
       role: 'assistant',
       text: _takeRunes(parsed.content, _maxHistoryRunes),
     ));
+    // Safety net: small on-device models sometimes write the bundled study
+    // sheet in the friend's language instead of the learner's. If the
+    // translation/glosses are not in the learner's script, re-annotate the
+    // reply once in the correct language (the reply "content" is kept as-is).
+    if (_studySheetLanguageWrong(parsed)) {
+      try {
+        final fixed = await generateExpressionAnalysis(
+          parsed.content,
+          character,
+          appUiLanguageCode: _appUiLanguageCode,
+        );
+        parsed = ChatMessage(
+          content: parsed.content,
+          role: parsed.role,
+          timestamp: parsed.timestamp,
+          explanation: parsed.explanation,
+          lineTranslation: fixed.lineTranslation ?? parsed.lineTranslation,
+          vocabulary: (fixed.vocabulary != null && fixed.vocabulary!.isNotEmpty)
+              ? fixed.vocabulary
+              : parsed.vocabulary,
+        );
+      } catch (_) {
+        // Keep the original bundled sheet if the repair pass fails.
+      }
+    }
     // Keep the bundled study-sheet fields so the expression sheet opens
     // instantly without a second model call.
     return ChatMessage(
@@ -127,6 +152,19 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
       lineTranslation: parsed.lineTranslation,
       vocabulary: parsed.vocabulary,
     );
+  }
+
+  /// True when the bundled study sheet is present but clearly NOT written in
+  /// the learner's language (e.g. a Japanese gloss shown to a Korean learner).
+  bool _studySheetLanguageWrong(ChatMessage message) {
+    final translation = message.lineTranslation?.trim() ?? '';
+    final gloss = message.vocabulary?.isNotEmpty == true
+        ? message.vocabulary!.first.meaning.trim()
+        : '';
+    // Nothing to check — the analysis-repair path handles empties elsewhere.
+    if (translation.isEmpty && gloss.isEmpty) return false;
+    final sample = '$translation $gloss';
+    return !_containsScriptFor(sample, _appUiLanguageCode);
   }
 
   @override
@@ -206,4 +244,41 @@ String _takeRunes(String value, int limit) {
   final runes = value.runes;
   if (runes.length <= limit) return value;
   return String.fromCharCodes(runes.take(limit));
+}
+
+// Script ranges used to sanity-check that a study sheet is in the learner's
+// language. Deliberately loose — we only need to catch a whole gloss written
+// in the wrong language, not classify every character.
+final RegExp _hangul = RegExp(r'[가-힣ᄀ-ᇿ㄰-㆏]');
+final RegExp _kana = RegExp(r'[぀-ゟ゠-ヿ]');
+final RegExp _cjk = RegExp(r'[一-鿿]');
+final RegExp _latin = RegExp(r'[A-Za-z]');
+
+/// Whether [text] contains at least one character of the script expected for
+/// [appLang]. For Chinese we also require the absence of Kana/Hangul so a
+/// Japanese or Korean gloss is not mistaken for Chinese (they share Kanji).
+bool _containsScriptFor(String text, String appLang) {
+  switch (appLang.trim().toLowerCase().startsWith('zh')
+      ? 'zh'
+      : appLang.trim().toLowerCase().startsWith('ja')
+          ? 'ja'
+          : appLang.trim().toLowerCase().startsWith('en')
+              ? 'en'
+              : 'ko') {
+    case 'ja':
+      return _kana.hasMatch(text);
+    case 'en':
+      // English glosses are Latin; treat any CJK/Kana/Hangul-free Latin text as
+      // valid. If it has none of the others but has Latin, it's fine.
+      return _latin.hasMatch(text) &&
+          !_kana.hasMatch(text) &&
+          !_hangul.hasMatch(text);
+    case 'zh':
+      return _cjk.hasMatch(text) &&
+          !_kana.hasMatch(text) &&
+          !_hangul.hasMatch(text);
+    case 'ko':
+    default:
+      return _hangul.hasMatch(text);
+  }
 }

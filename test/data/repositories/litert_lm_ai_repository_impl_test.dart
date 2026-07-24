@@ -53,6 +53,52 @@ final class _FakeRuntime implements OnDeviceAiRuntime {
   }
 }
 
+/// Returns a study sheet in the WRONG language (Japanese) on the first call,
+/// then a correct Korean study sheet on the repair pass.
+final class _WrongStudySheetLangRuntime implements OnDeviceAiRuntime {
+  int generationCount = 0;
+
+  @override
+  String? get activeBackend => 'cpu';
+  @override
+  void cancelInstall() {}
+  @override
+  Future<void> deleteModel() async {}
+  @override
+  Future<void> dispose() async {}
+  @override
+  Future<void> initialize() async {}
+  @override
+  Future<void> installModel({
+    required void Function(double progress) onProgress,
+    void Function()? onVerifying,
+  }) async {}
+  @override
+  Future<bool> isModelInstalled() async => true;
+
+  @override
+  Future<String> generateText({
+    required String systemInstruction,
+    required String prompt,
+    double temperature = 0.2,
+    int maxTokens = 4096,
+  }) async {
+    generationCount++;
+    if (generationCount == 1) {
+      // Reply bundles a Japanese study sheet — wrong for a Korean learner.
+      return '{"content":"こんにちは！","full_translation":"日本語のあいさつの言葉です。",'
+          '"vocabulary":[{"word":"こんにちは","reading":"こんにちは",'
+          '"meaning_ja":"人に会ったときに使うあいさつの言葉。"}]}';
+    }
+    // Repair (expression-analysis) pass returns a proper Korean study sheet.
+    return '{"content":"こんにちは！","full_translation":"안녕하세요!",'
+        '"learning_note":"낮에 사람을 만났을 때 쓰는 대표적인 인사 표현이다.",'
+        '"vocabulary":['
+        '{"word":"こんにちは","reading":"こんにちは","meaning_ko":"낮 시간대에 사람을 만났을 때 하는 대표적인 인사말이다."},'
+        '{"word":"！","reading":"！","meaning_ko":"밝고 친근한 어조를 나타내는 느낌표로 자주 함께 쓴다."}]}';
+  }
+}
+
 const _character = Character(
   id: 'yuna',
   name: '유나',
@@ -100,7 +146,34 @@ void main() {
     expect(runtime.lastSystemInstruction, contains('vocabulary'));
     expect(runtime.lastSystemInstruction, isNot(contains('learning_note')));
     expect(runtime.lastSystemInstruction, contains('next reply'));
+    // The study sheet must be pinned to the learner's language (Korean), not
+    // the friend's language (Japanese): explicit rule + matching meaning key.
+    expect(runtime.lastSystemInstruction, contains('Korean'));
+    expect(runtime.lastSystemInstruction, contains('NEVER in Japanese'));
+    expect(runtime.lastSystemInstruction, contains('meaning_ko'));
+    // A single generation — a Korean study sheet needs no repair pass.
+    expect(runtime.generationCount, 1);
   });
+
+  test(
+    'repairs a study sheet returned in the friend language, not the learner\'s',
+    () async {
+      final runtime = _WrongStudySheetLangRuntime();
+      final repository = LiteRtLmAiRepositoryImpl(runtime)
+        ..initializeForCharacter(_character, appUiLanguageCode: 'ko');
+
+      final message = await repository.generateResponse('안녕');
+
+      // The reply content is untouched (still Japanese)...
+      expect(message.content, 'こんにちは！');
+      // ...but the study sheet is repaired into Korean for the learner.
+      expect(message.lineTranslation, '안녕하세요!');
+      expect(message.vocabulary, isNotNull);
+      expect(message.vocabulary!.first.meaning, contains('인사'));
+      // First reply generation + one repair annotation pass.
+      expect(runtime.generationCount, 2);
+    },
+  );
 
   test('expression analysis is isolated from chat continuation', () async {
     final runtime = _FakeRuntime();
