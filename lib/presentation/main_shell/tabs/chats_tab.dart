@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/platform/ios_post_layout_frames.dart';
-import '../../locale/friend_language_notifier.dart';
 import '../../../core/ui/app_tokens.dart';
 import '../../../core/ui/paper/paper_dialog.dart';
 import '../../../core/ui/paper/paper_scaffold.dart';
@@ -56,6 +55,9 @@ class ChatsTabState extends State<ChatsTab>
   }
 
   List<ChatRoomSummary> _rooms = [];
+  // Current character per room id, resolved fresh on each load so Friends-tab
+  // edits (name / photo) reflect here immediately.
+  Map<String, Character> _resolved = {};
   bool _loading = true;
   String? _error;
 
@@ -83,24 +85,25 @@ class ChatsTabState extends State<ChatsTab>
     }
     try {
       final repo = context.read<ChatRepository>();
-      final targetLanguage = context.read<FriendLanguageNotifier>().resolve(
-        Localizations.localeOf(context).languageCode,
-      );
       final characterRepo = context.read<CharacterRecordRepository>();
       final list = await repo.getRecentRooms();
+      // Resolve each room's CURRENT character so edits (name/photo/etc.) made in
+      // the Friends tab show here immediately. Show every room (no language
+      // filter) — consistent with the unfiltered friends list.
       final resolved = await Future.wait(
         list.map((room) => _resolveCharacterForRoom(room, characterRepo)),
       );
-      final filtered = <ChatRoomSummary>[];
+      final rooms = <ChatRoomSummary>[];
+      final byRoom = <String, Character>{};
       for (var i = 0; i < list.length; i++) {
+        rooms.add(list[i]);
         final character = resolved[i];
-        if (character == null) continue;
-        final language = character.koreanNationalPersona ? 'ko' : 'ja';
-        if (language == targetLanguage) filtered.add(list[i]);
+        if (character != null) byRoom[list[i].roomId] = character;
       }
       if (!mounted) return;
       setState(() {
-        _rooms = filtered;
+        _rooms = rooms;
+        _resolved = byRoom;
         _loading = false;
         _error = null;
       });
@@ -114,13 +117,17 @@ class ChatsTabState extends State<ChatsTab>
   }
 
   Widget _roomLeading(ChatRoomSummary r, {double size = 52}) {
-    final net = r.avatarNetworkUrl?.trim();
+    // Prefer the freshly-resolved character's avatar so edits show immediately.
+    final character = _resolved[r.roomId];
     Widget inner;
-    if (net != null && net.isNotEmpty) {
-      inner = Image(image: NetworkImage(net), fit: BoxFit.cover);
+    if (character != null && character.hasAvatar) {
+      inner = Image(image: character.imageProvider, fit: BoxFit.cover);
     } else {
+      final net = r.avatarNetworkUrl?.trim();
       final asset = r.avatarAssetPath?.trim();
-      if (asset != null && asset.isNotEmpty) {
+      if (character == null && net != null && net.isNotEmpty) {
+        inner = Image(image: NetworkImage(net), fit: BoxFit.cover);
+      } else if (character == null && asset != null && asset.isNotEmpty) {
         final provider = asset.startsWith('/')
             ? FileImage(File(asset)) as ImageProvider
             : AssetImage(asset) as ImageProvider;
@@ -152,7 +159,7 @@ class ChatsTabState extends State<ChatsTab>
                   children: [
                     Expanded(
                       child: Text(
-                        r.title,
+                        _resolved[r.roomId]?.displayNamePrimary ?? r.title,
                         style: AppTextStyles.listTitle(
                           context,
                         ).copyWith(color: p.ink, fontWeight: FontWeight.w800),

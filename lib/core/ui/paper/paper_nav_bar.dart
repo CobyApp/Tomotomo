@@ -153,7 +153,6 @@ class PaperNavBar extends StatelessWidget {
     final p = context.paper;
     const dockHeight = 68.0;
 
-    final n = items.length;
     final panel = SizedBox(
       height: dockHeight,
       child: DecoratedBox(
@@ -166,61 +165,18 @@ class PaperNavBar extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Stack(
-            children: [
-              // A single gradient pill that SLIDES to the selected cell — much
-              // smoother than toggling each cell's gradient (which snapped).
-              if (n > 0)
-                AnimatedAlign(
-                  alignment: Alignment(
-                    n == 1 ? 0 : (currentIndex * 2 / (n - 1)) - 1,
-                    0,
-                  ),
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  child: FractionallySizedBox(
-                    widthFactor: 1 / n,
-                    heightFactor: 1,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: Container(
-                        foregroundDecoration: stickerGloss(
-                          borderRadius: BorderRadius.circular(16),
-                          strength: 0.24,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [p.coral, p.coralDeep],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: p.ink, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: p.hardShadow,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: List.generate(items.length, (i) {
+              return Expanded(
+                child: _PaperNavCell(
+                  data: items[i],
+                  selected: i == currentIndex,
+                  onTap: () => onSelect(i),
                 ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: List.generate(n, (i) {
-                  return Expanded(
-                    child: _PaperNavCell(
-                      data: items[i],
-                      selected: i == currentIndex,
-                      onTap: () => onSelect(i),
-                    ),
-                  );
-                }),
-              ),
-            ],
+              );
+            }),
           ),
         ),
       ),
@@ -266,51 +222,91 @@ class _PaperNavCell extends StatelessWidget {
             HapticFeedback.selectionClick();
             onTap();
           },
-          // Smoothly cross-fade icon + label between the muted and white state
-          // as the pill slides underneath — no snapping.
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(end: selected ? 1.0 : 0.0),
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeOut,
-            builder: (context, t, _) {
-              final color = Color.lerp(p.inkSoft, Colors.white, t)!;
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Transform.scale(
-                    scale: 1 + 0.06 * t,
-                    child: data.glyph != null
-                        ? KawaiiNavIcon(
-                            glyph: data.glyph!,
-                            size: 24,
-                            color: color,
-                          )
-                        : Icon(
-                            t > 0.5 ? data.selectedIcon : data.icon,
-                            size: 22,
-                            color: color,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Selected pill: fades + pops in (opacity animates the gradient
+                // smoothly — no snap — with a gentle scale). No sliding.
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: AnimatedScale(
+                      scale: selected ? 1.0 : 0.82,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                      child: AnimatedOpacity(
+                        opacity: selected ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 180),
+                        child: Container(
+                          foregroundDecoration: stickerGloss(
+                            borderRadius: BorderRadius.circular(16),
+                            strength: 0.24,
                           ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    data.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      height: 1.1,
-                      fontWeight: FontWeight.lerp(
-                        FontWeight.w600,
-                        FontWeight.w800,
-                        t,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [p.coral, p.coralDeep],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: p.ink, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: p.hardShadow,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      color: color,
                     ),
                   ),
-                ],
-              );
-            },
+                ),
+                // Icon + label, cross-fading colour muted↔white.
+                TweenAnimationBuilder<double>(
+                  tween: Tween(end: selected ? 1.0 : 0.0),
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeOut,
+                  builder: (context, t, _) {
+                    final color = Color.lerp(p.inkSoft, Colors.white, t)!;
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        data.glyph != null
+                            ? KawaiiNavIcon(
+                                glyph: data.glyph!,
+                                size: 24,
+                                color: color,
+                              )
+                            : Icon(
+                                t > 0.5 ? data.selectedIcon : data.icon,
+                                size: 22,
+                                color: color,
+                              ),
+                        const SizedBox(height: 3),
+                        Text(
+                          data.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            height: 1.1,
+                            fontWeight: FontWeight.lerp(
+                              FontWeight.w600,
+                              FontWeight.w800,
+                              t,
+                            ),
+                            color: color,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
