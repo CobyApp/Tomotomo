@@ -89,12 +89,15 @@ void main() {
     final message = await repository.generateResponse('안녕');
 
     expect(message.content, 'こんにちは！');
-    expect(message.lineTranslation, isNull);
-    expect(message.explanation, isNull);
-    expect(message.vocabulary, isNull);
+    // The reply now bundles the study-sheet analysis in one generation so the
+    // expression sheet opens instantly.
+    expect(message.lineTranslation, '안녕하세요!');
+    expect(message.explanation, '인사 표현');
+    expect(message.vocabulary, isNotNull);
+    expect(message.vocabulary!, isNotEmpty);
     expect(runtime.lastPrompt, contains('안녕'));
     expect(runtime.lastSystemInstruction, isNotEmpty);
-    expect(runtime.lastSystemInstruction, isNot(contains('learning_note')));
+    expect(runtime.lastSystemInstruction, contains('learning_note'));
     expect(runtime.lastSystemInstruction, contains('next reply'));
   });
 
