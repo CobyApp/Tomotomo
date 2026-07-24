@@ -194,9 +194,10 @@ class _PreviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.paper;
     return Container(
-      // Fixed height: the default background renders via PaperBackground's
+      // Taller so the preview reads like a real chat window. Fixed height is
+      // required because the default background renders via PaperBackground's
       // StackFit.expand, which needs a bounded height inside this scroll view.
-      height: 200,
+      height: 320,
       decoration: BoxDecoration(
         border: Border.all(color: p.ink, width: 2.5),
         borderRadius: BorderRadius.circular(PaperRadii.card),
@@ -209,15 +210,15 @@ class _PreviewCard extends StatelessWidget {
         context,
         background,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Container(
-                    width: 20,
-                    height: 20,
+                    width: 24,
+                    height: 24,
                     decoration: BoxDecoration(
                       color: p.coral.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
@@ -226,29 +227,31 @@ class _PreviewCard extends StatelessWidget {
                     child: Text(
                       context.tr('chatBgPreviewName').characters.first,
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: p.coral,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 7),
                   Text(
                     context.tr('chatBgPreviewName'),
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: p.inkSoft,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 14),
               _MiniBubble(isUser: false),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               _MiniBubble(isUser: true),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               _MiniBubble(isUser: false, short: true),
+              const SizedBox(height: 10),
+              _MiniBubble(isUser: true, short: true),
             ],
           ),
         ),
@@ -306,12 +309,18 @@ class _PresetSwatchRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: [
-        for (final preset in chatBackgroundPresets)
-          _Swatch(
+    // One horizontally-scrolling row of color swatches.
+    return SizedBox(
+      height: 88,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        itemCount: chatBackgroundPresets.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        itemBuilder: (context, i) {
+          final preset = chatBackgroundPresets[i];
+          return _Swatch(
             label: context.tr(preset.labelKey),
             // Preview each swatch at a fixed, representative opacity so the
             // colors are always distinguishable regardless of the slider.
@@ -324,8 +333,9 @@ class _PresetSwatchRow extends StatelessWidget {
             edge: p.ink,
             labelColor: p.inkSoft,
             onTap: () => onSelected(preset.id),
-          ),
-      ],
+          );
+        },
+      ),
     );
   }
 }

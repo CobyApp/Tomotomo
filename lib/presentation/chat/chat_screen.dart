@@ -208,6 +208,92 @@ class _ChatScreenContent extends StatelessWidget {
     }
   }
 
+  /// Chat options as a reliable bottom sheet (background / report / leave).
+  Future<void> _showChatOptions(BuildContext context) async {
+    final p = context.paper;
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (sheetCtx) {
+        Widget option(IconData icon, String label, String value, {Color? tint}) {
+          final c = tint ?? p.ink;
+          return InkWell(
+            onTap: () => Navigator.of(sheetCtx).pop(value),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                children: [
+                  Icon(icon, size: 22, color: c),
+                  const SizedBox(width: 14),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: c,
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return SafeArea(
+          top: false,
+          child: Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            decoration: BoxDecoration(
+              color: p.card,
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(color: p.ink, width: 2.5),
+              boxShadow: [
+                BoxShadow(color: p.hardShadow, offset: const Offset(0, 4)),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                option(
+                  Icons.wallpaper_rounded,
+                  sheetCtx.tr('chatMenuBackground'),
+                  'background',
+                ),
+                Divider(height: 1, color: p.cardEdge),
+                option(
+                  Icons.flag_outlined,
+                  sheetCtx.tr('chatMenuReport'),
+                  'report',
+                ),
+                Divider(height: 1, color: p.cardEdge),
+                option(
+                  Icons.logout_rounded,
+                  sheetCtx.tr('chatMenuLeave'),
+                  'leave',
+                  tint: p.coralDeep,
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (action == null || !context.mounted) return;
+    switch (action) {
+      case 'background':
+        await onOpenBackground(context);
+      case 'report':
+        await onReportRoom(context);
+      case 'leave':
+        await onLeaveRoom(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
@@ -274,91 +360,12 @@ class _ChatScreenContent extends StatelessWidget {
           ),
           actions: [
             const PointsToolbarChip(),
-            // Dedicated, always-reliable background button (the popup menu can be
-            // fiddly to hit in the corner). Report / leave stay in the ⋮ menu.
+            // Plain IconButton + bottom-sheet menu — a corner PopupMenuButton is
+            // unreliable to hit; this always opens.
             IconButton(
-              tooltip: context.tr('chatMenuBackground'),
-              icon: Icon(Icons.wallpaper_rounded, color: p.ink),
-              onPressed: () => onOpenBackground(context),
-            ),
-            PopupMenuButton<String>(
               tooltip: context.tr('chatMoreMenuTooltip'),
               icon: Icon(Icons.more_horiz_rounded, color: p.ink),
-              offset: const Offset(0, 40),
-              color: p.card,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(PaperRadii.button),
-                side: BorderSide(color: p.cardEdge),
-              ),
-              onSelected: (value) async {
-                switch (value) {
-                  case 'background':
-                    await onOpenBackground(context);
-                    break;
-                  case 'report':
-                    await onReportRoom(context);
-                    break;
-                  case 'leave':
-                    await onLeaveRoom(context);
-                    break;
-                }
-              },
-              itemBuilder: (ctx) {
-                final tr = ctx.tr;
-                return <PopupMenuEntry<String>>[
-                  PopupMenuItem<String>(
-                    value: 'background',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.wallpaper_rounded,
-                          size: 22,
-                          color: p.ink,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            tr('chatMenuBackground'),
-                            style: TextStyle(color: p.ink),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuDivider(),
-                  PopupMenuItem<String>(
-                    value: 'report',
-                    child: Row(
-                      children: [
-                        Icon(Icons.flag_outlined, size: 22, color: p.ink),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            tr('chatMenuReport'),
-                            style: TextStyle(color: p.ink),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuDivider(),
-                  PopupMenuItem<String>(
-                    value: 'leave',
-                    child: Row(
-                      children: [
-                        Icon(Icons.logout_rounded, size: 22, color: p.ink),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            tr('chatMenuLeave'),
-                            style: TextStyle(color: p.ink),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ];
-              },
+              onPressed: () => _showChatOptions(context),
             ),
           ],
         ),

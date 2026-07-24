@@ -170,13 +170,16 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
   bool _analysisLoading = false;
   String? _analysisError;
 
+  /// The reply now bundles its study sheet in the same generation. If the
+  /// message already carries a usable sheet (translation + explanation + at
+  /// least one word), show it instantly instead of firing a second model call —
+  /// this is what removes the long loading spinner the user saw.
   bool get _hasBundledAnalysis {
-    final message = widget.message;
-    return _isCompleteAnalysis(
-      translation: message.lineTranslation,
-      explanation: message.explanation,
-      vocabulary: message.vocabulary,
-    );
+    final m = widget.message;
+    final hasTranslation = m.lineTranslation?.trim().isNotEmpty ?? false;
+    final hasExplanation = m.explanation?.trim().isNotEmpty ?? false;
+    final hasVocab = m.vocabulary?.isNotEmpty ?? false;
+    return hasTranslation && hasExplanation && hasVocab;
   }
 
   bool _isCompleteAnalysis({

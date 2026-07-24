@@ -194,9 +194,10 @@ class ChatViewModel extends ChangeNotifier {
     try {
       final startedAt = DateTime.now();
       final aiMessage = await aiChatRepository.generateResponse(userMessage);
-      // Keep the "typing…" indicator up for a natural beat so the reply doesn't
-      // pop in the instant the user sends — feels more like a real chat.
-      const minThinking = Duration(milliseconds: 850);
+      // Always keep the "typing…" indicator up for at least ~1.3s so the reply
+      // never pops in the instant the user sends — it reads like the friend is
+      // typing back. (If generation already took longer, no extra wait.)
+      const minThinking = Duration(milliseconds: 1300);
       final elapsed = DateTime.now().difference(startedAt);
       if (elapsed < minThinking) {
         await Future<void>.delayed(minThinking - elapsed);
