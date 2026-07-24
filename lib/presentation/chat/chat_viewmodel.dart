@@ -192,7 +192,15 @@ class ChatViewModel extends ChangeNotifier {
   /// answer finishes even after leaving the chat.
   Future<void> _generateAndSave(String userMessage) async {
     try {
+      final startedAt = DateTime.now();
       final aiMessage = await aiChatRepository.generateResponse(userMessage);
+      // Keep the "typing…" indicator up for a natural beat so the reply doesn't
+      // pop in the instant the user sends — feels more like a real chat.
+      const minThinking = Duration(milliseconds: 850);
+      final elapsed = DateTime.now().difference(startedAt);
+      if (elapsed < minThinking) {
+        await Future<void>.delayed(minThinking - elapsed);
+      }
       await chatRepository.saveMessage(character, aiMessage);
       // If the user left the app while the reply was generating, notify them.
       if (WidgetsBinding.instance.lifecycleState !=

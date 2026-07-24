@@ -274,6 +274,13 @@ class _ChatScreenContent extends StatelessWidget {
           ),
           actions: [
             const PointsToolbarChip(),
+            // Dedicated, always-reliable background button (the popup menu can be
+            // fiddly to hit in the corner). Report / leave stay in the ⋮ menu.
+            IconButton(
+              tooltip: context.tr('chatMenuBackground'),
+              icon: Icon(Icons.wallpaper_rounded, color: p.ink),
+              onPressed: () => onOpenBackground(context),
+            ),
             PopupMenuButton<String>(
               tooltip: context.tr('chatMoreMenuTooltip'),
               icon: Icon(Icons.more_horiz_rounded, color: p.ink),

@@ -20,9 +20,13 @@ Future<T?> showPaperSheet<T>(
       final maxH = MediaQuery.of(sheetContext).size.height * 0.9;
       return SafeArea(
         top: false,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: maxH),
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
           child: Container(
+            width: double.infinity,
+            constraints: BoxConstraints(maxHeight: maxH),
             decoration: BoxDecoration(
               color: p.card,
               borderRadius: const BorderRadius.vertical(
@@ -35,6 +39,7 @@ Future<T?> showPaperSheet<T>(
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Handle + close row.
                 Padding(

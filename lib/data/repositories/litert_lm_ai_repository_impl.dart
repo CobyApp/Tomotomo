@@ -88,11 +88,27 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
       ..writeln(jsonEncode(_takeRunes(userMessage, _maxCurrentMessageRunes)));
 
     final raw = await _runtime.generateText(
-      systemInstruction: buildChatReplySystemPrompt(character, userName: _userName),
+      systemInstruction: buildChatReplySystemPrompt(
+        character,
+        userName: _userName,
+        appUiLanguageCode: _appUiLanguageCode,
+      ),
       prompt: prompt.toString(),
       maxTokens: 2048,
     );
-    final parsed = chatMessageFromAiJsonMap(extractJsonObject(raw), character);
+    final lang = _appUiLanguageCode.toLowerCase();
+    final meaningMode = lang.startsWith('ja')
+        ? VocabularyMeaningPickMode.preferJapaneseGloss
+        : lang.startsWith('en')
+            ? VocabularyMeaningPickMode.preferEnglishGloss
+            : lang.startsWith('zh')
+                ? VocabularyMeaningPickMode.preferChineseGloss
+                : VocabularyMeaningPickMode.preferKoreanGloss;
+    final parsed = chatMessageFromAiJsonMap(
+      extractJsonObject(raw),
+      character,
+      vocabularyMeaningPickModeOverride: meaningMode,
+    );
     _history.add((
       role: 'user',
       text: _takeRunes(userMessage, _maxHistoryRunes),
@@ -101,10 +117,15 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
       role: 'assistant',
       text: _takeRunes(parsed.content, _maxHistoryRunes),
     ));
+    // Keep the bundled study-sheet fields so the expression sheet opens
+    // instantly without a second model call.
     return ChatMessage(
       content: parsed.content,
       role: parsed.role,
       timestamp: parsed.timestamp,
+      explanation: parsed.explanation,
+      lineTranslation: parsed.lineTranslation,
+      vocabulary: parsed.vocabulary,
     );
   }
 

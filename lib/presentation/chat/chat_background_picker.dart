@@ -5,9 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/image/image_crop.dart';
-import '../../core/ui/paper/paper_bottom_sheet.dart';
 import '../../core/ui/paper/paper_loading.dart';
-import '../../core/ui/paper/paper_theme.dart';
+import '../../core/ui/paper/paper_scaffold.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_widgets.dart';
 import '../../data/chat_background/chat_background.dart';
@@ -15,7 +14,7 @@ import '../../data/chat_background/chat_background_presets.dart';
 import '../../data/chat_background/chat_background_store.dart';
 import '../locale/l10n_context.dart';
 
-/// Opens the paper-styled per-room background picker as a bottom sheet.
+/// Opens the paper-styled per-room background picker as a full-screen page.
 ///
 /// Shows a live preview (mini chat mock) that updates in real time as the user
 /// changes the selected preset or intensity. On "Apply" it persists the choice
@@ -27,12 +26,17 @@ Future<ChatBackground?> openChatBackgroundPicker(
   required ChatBackground current,
   required ChatBackgroundStore store,
 }) {
-  return showPaperSheet<ChatBackground>(
-    context,
-    builder: (_) => _ChatBackgroundPickerBody(
-      characterId: characterId,
-      initial: current,
-      store: store,
+  return Navigator.of(context).push<ChatBackground>(
+    MaterialPageRoute<ChatBackground>(
+      builder: (_) => PaperScaffold(
+        title: context.tr('chatBgTitle'),
+        transparentBackground: false,
+        body: _ChatBackgroundPickerBody(
+          characterId: characterId,
+          initial: current,
+          store: store,
+        ),
+      ),
     ),
   );
 }
@@ -111,20 +115,11 @@ class _ChatBackgroundPickerBodyState extends State<_ChatBackgroundPickerBody> {
   Widget build(BuildContext context) {
     final p = context.paper;
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            context.tr('chatBgTitle'),
-            style: cuteDisplay(
-              fontSize: 19,
-              fontWeight: FontWeight.w800,
-              color: p.ink,
-            ),
-          ),
-          const SizedBox(height: 14),
           _PreviewCard(background: _draft),
           const SizedBox(height: 18),
           _PresetSwatchRow(
@@ -199,6 +194,9 @@ class _PreviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.paper;
     return Container(
+      // Fixed height: the default background renders via PaperBackground's
+      // StackFit.expand, which needs a bounded height inside this scroll view.
+      height: 200,
       decoration: BoxDecoration(
         border: Border.all(color: p.ink, width: 2.5),
         borderRadius: BorderRadius.circular(PaperRadii.card),
