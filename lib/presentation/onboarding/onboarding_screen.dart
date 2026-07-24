@@ -49,6 +49,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _nameController = TextEditingController();
   final _taglineController = TextEditingController();
   final _personaController = TextEditingController();
+  // The learner's own name — saved to their profile so friends address them by
+  // name from the very first message.
+  final _myNameController = TextEditingController();
   String _level = 'beginner';
   String? _avatarPath;
   String? _prefillLang;
@@ -89,6 +92,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _nameController.dispose();
     _taglineController.dispose();
     _personaController.dispose();
+    _myNameController.dispose();
     super.dispose();
   }
 
@@ -101,6 +105,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           WidgetsBinding.instance.platformDispatcher.locale.languageCode,
         );
         await context.read<LocaleNotifier>().setAppLanguage(devLang, p);
+        // Pre-fill the learner's name if a profile already has one.
+        final existingName = p.displayName?.trim() ?? '';
+        if (existingName.isNotEmpty && _myNameController.text.isEmpty) {
+          _myNameController.text = existingName;
+        }
       }
     } catch (_) {}
     // 2) Start the model download in the background while the user onboards.
@@ -179,6 +188,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       // Create the user's own first friend from the (pre-filled, editable)
       // form — no built-in seeding, no points cost on first run.
       final repo = context.read<CharacterRecordRepository>();
+      final profileRepo = context.read<ProfileRepository>();
       final tagline = _taglineController.text.trim();
       final persona = _personaController.text.trim();
       await repo.createCharacter(
@@ -191,6 +201,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           level: _level,
         ),
       );
+      // Save the learner's own name to their profile so friends greet them by
+      // name from the first message.
+      final myName = _myNameController.text.trim();
+      if (myName.isNotEmpty) {
+        try {
+          // getProfile creates+persists a default profile when absent.
+          final existing = await profileRepo.getProfile(_localUserId);
+          if (existing != null) {
+            await profileRepo.updateProfile(
+              existing.copyWith(displayName: myName),
+            );
+          }
+        } catch (_) {}
+      }
       if (!mounted) return;
       await context.read<OnboardingNotifier>().complete();
     } catch (_) {
@@ -237,6 +261,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onSelected: (code) => setState(() => _studyLanguage = code),
                   ),
                   _FirstFriendPage(
+                    myNameController: _myNameController,
                     nameController: _nameController,
                     taglineController: _taglineController,
                     personaController: _personaController,
@@ -579,6 +604,7 @@ class _LangCard extends StatelessWidget {
 /// packaged example for the chosen study language and fully editable.
 class _FirstFriendPage extends StatelessWidget {
   const _FirstFriendPage({
+    required this.myNameController,
     required this.nameController,
     required this.taglineController,
     required this.personaController,
@@ -590,6 +616,7 @@ class _FirstFriendPage extends StatelessWidget {
     required this.onClearAvatar,
   });
 
+  final TextEditingController myNameController;
   final TextEditingController nameController;
   final TextEditingController taglineController;
   final TextEditingController personaController;
@@ -634,7 +661,14 @@ class _FirstFriendPage extends StatelessWidget {
             context,
           ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.4),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 18),
+        _label(context, context.tr('onboardingYourName')),
+        _field(
+          context,
+          controller: myNameController,
+          hint: context.tr('onboardingYourNameHint'),
+        ),
+        const SizedBox(height: 22),
         // Avatar: plain-person default; tap to add a photo.
         Center(
           child: GestureDetector(
