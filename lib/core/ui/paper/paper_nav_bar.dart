@@ -227,21 +227,21 @@ class _PaperNavCell extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Selected pill: fades + pops in (opacity animates the gradient
-                // smoothly — no snap — with a gentle scale). No sliding.
+                // Selected pill: springs in with a gentle overshoot (easeOutBack)
+                // and fades so the gradient never snaps. No horizontal sliding.
                 Positioned.fill(
                   child: IgnorePointer(
                     child: AnimatedScale(
-                      scale: selected ? 1.0 : 0.82,
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOut,
+                      scale: selected ? 1.0 : 0.55,
+                      duration: const Duration(milliseconds: 320),
+                      curve: selected ? Curves.easeOutBack : Curves.easeIn,
                       child: AnimatedOpacity(
                         opacity: selected ? 1.0 : 0.0,
-                        duration: const Duration(milliseconds: 180),
+                        duration: const Duration(milliseconds: 200),
                         child: Container(
                           foregroundDecoration: stickerGloss(
-                            borderRadius: BorderRadius.circular(16),
-                            strength: 0.24,
+                            borderRadius: BorderRadius.circular(18),
+                            strength: 0.28,
                           ),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -249,7 +249,7 @@ class _PaperNavCell extends StatelessWidget {
                               end: Alignment.bottomCenter,
                               colors: [p.coral, p.coralDeep],
                             ),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(18),
                             border: Border.all(color: p.ink, width: 2),
                             boxShadow: [
                               BoxShadow(
@@ -263,47 +263,60 @@ class _PaperNavCell extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Icon + label, cross-fading colour muted↔white.
-                TweenAnimationBuilder<double>(
-                  tween: Tween(end: selected ? 1.0 : 0.0),
-                  duration: const Duration(milliseconds: 240),
+                // Icon + label. Colour cross-fades muted↔white while the whole
+                // group lifts a hair; the icon adds a springy pop on selection.
+                AnimatedSlide(
+                  offset: Offset(0, selected ? -0.045 : 0),
+                  duration: const Duration(milliseconds: 260),
                   curve: Curves.easeOut,
-                  builder: (context, t, _) {
-                    final color = Color.lerp(p.inkSoft, Colors.white, t)!;
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        data.glyph != null
-                            ? KawaiiNavIcon(
-                                glyph: data.glyph!,
-                                size: 24,
-                                color: color,
-                              )
-                            : Icon(
-                                t > 0.5 ? data.selectedIcon : data.icon,
-                                size: 22,
-                                color: color,
-                              ),
-                        const SizedBox(height: 3),
-                        Text(
-                          data.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11,
-                            height: 1.1,
-                            fontWeight: FontWeight.lerp(
-                              FontWeight.w600,
-                              FontWeight.w800,
-                              t,
-                            ),
-                            color: color,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(end: selected ? 1.0 : 0.0),
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeOut,
+                    builder: (context, t, _) {
+                      final color = Color.lerp(p.inkSoft, Colors.white, t)!;
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedScale(
+                            scale: selected ? 1.12 : 1.0,
+                            duration: const Duration(milliseconds: 320),
+                            curve: selected
+                                ? Curves.easeOutBack
+                                : Curves.easeOut,
+                            child: data.glyph != null
+                                ? KawaiiNavIcon(
+                                    glyph: data.glyph!,
+                                    size: 24,
+                                    color: color,
+                                  )
+                                : Icon(
+                                    t > 0.5 ? data.selectedIcon : data.icon,
+                                    size: 22,
+                                    color: color,
+                                  ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
+                          const SizedBox(height: 3),
+                          Text(
+                            data.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              height: 1.1,
+                              fontWeight: FontWeight.lerp(
+                                FontWeight.w600,
+                                FontWeight.w800,
+                                t,
+                              ),
+                              color: color,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
