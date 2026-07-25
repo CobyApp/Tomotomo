@@ -47,11 +47,17 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
     void Function()? onVerifying,
   }) async {
     _cancelToken = CancelToken();
-    // A previous download interrupted by an app kill/background leaves an
-    // orphaned background task. flutter_gemma's SmartDownloader reuses a
-    // deterministic task id and attaches to that dead task instead of starting
-    // fresh, so progress never advances (stuck at 0%). Clear it first.
-    await _clearStaleDownloadState();
+    // Resume, don't restart. iOS runs the download in a background URLSession
+    // that keeps going while the app is backgrounded or even after it's killed,
+    // and flutter_gemma's SmartDownloader reattaches to that still-running task
+    // by its deterministic id. So if a live task exists (app backgrounded /
+    // relaunched mid-download), we must NOT wipe it — otherwise the 2.59GB
+    // download starts over from 0%. Only clear when there's nothing live to
+    // attach to (a genuinely dead/absent task), which also avoids the
+    // stuck-at-0% orphan-task case the clear originally guarded against.
+    if (!await _hasLiveDownloadTask()) {
+      await _clearStaleDownloadState();
+    }
     try {
       await FlutterGemma.installModel(
             modelType: ModelType.gemma4,
@@ -81,6 +87,18 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
     _cancelToken?.cancel('사용자가 다운로드를 취소했습니다.');
     // Remove the task so the next attempt starts a fresh download.
     unawaited(_clearStaleDownloadState());
+  }
+
+  /// True when a download task is still enqueued/running in the background
+  /// downloader (e.g. the app was backgrounded or relaunched mid-download).
+  /// In that case we reattach and continue instead of restarting.
+  Future<bool> _hasLiveDownloadTask() async {
+    try {
+      final tasks = await FileDownloader().allTasks(group: _downloadGroup);
+      return tasks.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Removes any orphaned/stale download task left by a previous interrupted
