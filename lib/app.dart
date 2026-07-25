@@ -24,6 +24,7 @@ import 'presentation/points/points_balance_notifier.dart';
 import 'domain/repositories/points_repository.dart';
 import 'core/ui/app_scaffold_messenger.dart';
 import 'core/ui/paper/paper_tokens.dart';
+import 'core/version/update_gate.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -107,7 +108,9 @@ class App extends StatelessWidget {
                     maxScaleFactor: 1.3,
                   ),
                 ),
-                child: child!,
+                // Best-effort update gate over the whole app (forced/recommended
+                // when online; passes through offline).
+                child: UpdateGate(child: child!),
               );
             },
             // The on-device model downloads in the background (started during

@@ -1,0 +1,6 @@
+{
+  "_comment": "App update gate. min_build: below this = forced update (hard block). latest_build: below this (but >= min_build) = recommended update (dismissible). store_url: App Store link (fill when published). Bump these when you release a new build.",
+  "min_build": 1,
+  "latest_build": 4,
+  "store_url": ""
+}
