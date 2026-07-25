@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/ui/app_tokens.dart';
+import '../../core/ui/paper/paper_theme.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_widgets.dart';
 import '../../domain/entities/character.dart';
@@ -28,8 +29,8 @@ Future<void> showChatExpressionSheet(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     useSafeArea: false,
-    // Fixed-height sheet (no resize/snap): stable to read. Close via the X in
-    // the header or by tapping the scrim above the sheet.
+    // Full-height sheet (fills up to just below the notch): maximum reading
+    // room, stable (no resize/snap). Close via the prominent X in the header.
     enableDrag: false,
     isDismissible: true,
     barrierColor: Colors.black.withValues(alpha: 0.42),
@@ -37,59 +38,65 @@ Future<void> showChatExpressionSheet(
       final mq = MediaQuery.of(sheetContext);
       final h = mq.size.height;
       final topInset = mq.viewPadding.top;
-      // Fixed height: a comfortable, stable portion of the screen. The body
-      // scrolls internally only when its content is taller than this.
-      final sheetHeight = (h - topInset) * 0.72;
       final p = sheetContext.paper;
 
       return Padding(
         padding: EdgeInsets.only(top: topInset),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Container(
-            height: sheetHeight,
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: p.card,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-              border: Border.all(color: p.cardEdge),
+        child: Container(
+          height: h - topInset,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: p.card,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(28),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header: close (X) only — no grab handle.
-                SizedBox(
-                  height: 44,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 4),
-                      child: Tooltip(
-                        message: sheetContext.tr('expressionSheetCloseTooltip'),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.close_rounded,
-                            color: p.inkSoft,
-                            size: 22,
-                          ),
-                          onPressed: () => Navigator.of(sheetContext).pop(),
+            border: Border.all(color: p.cardEdge),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header: title on the left, a prominent on-brand sticker close
+              // (X) on the right, over a hairline divider that matches the tone.
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 12, 12, 12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: p.cardEdge),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        sheetContext.tr('expressionSheetTitle'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: cuteDisplay(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w800,
+                          color: p.ink,
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    PaperRoundButton(
+                      icon: Icons.close_rounded,
+                      size: 40,
+                      tooltip: sheetContext.tr('expressionSheetCloseTooltip'),
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: _ExpressionSheetBody(
-                    message: message,
-                    character: character,
-                    chatRoomId: chatRoomId,
-                    messenger: messenger,
-                  ),
+              ),
+              Expanded(
+                child: _ExpressionSheetBody(
+                  message: message,
+                  character: character,
+                  chatRoomId: chatRoomId,
+                  messenger: messenger,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
