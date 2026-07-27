@@ -367,9 +367,13 @@ class _StudyCard extends StatelessWidget {
                       ? context.tr('notebookStudyNoMeaning')
                       : meaning,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  // Body font, not the display font: meanings are full
+                  // sentences and the chunky display face is hard to read.
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: p.ink,
-                    height: 1.4,
+                    height: 1.5,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (note != null && note.isNotEmpty) ...[

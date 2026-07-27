@@ -601,3 +601,36 @@ class WashiTape extends StatelessWidget {
     );
   }
 }
+
+/// Subtle centered "swipe left to delete" hint shown above dismissible lists —
+/// small glyph + soft small text so it reads as a gentle affordance, not
+/// debug output.
+class SwipeDeleteHint extends StatelessWidget {
+  const SwipeDeleteHint({super.key, required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.paper.inkSoft.withValues(alpha: 0.75);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.swipe_left_rounded, size: 14, color: c),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: c,
+              fontWeight: FontWeight.w600,
+              height: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:background_downloader/background_downloader.dart'
+    show FileDownloader, PermissionType;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -66,6 +68,10 @@ class OnDeviceModelManager extends ChangeNotifier {
     if (_installInFlight) return;
     _installInFlight = true;
     unawaited(_setInstallDesired(true));
+    // First meaningful moment for the notification permission: the user just
+    // started a multi-minute download, so "may we notify you about progress /
+    // completion?" now has context (never asked at cold start).
+    unawaited(_requestNotificationPermission());
     _setSnapshot(
       const OnDeviceModelSnapshot(phase: OnDeviceModelPhase.downloading),
     );
@@ -126,6 +132,13 @@ class OnDeviceModelManager extends ChangeNotifier {
     } catch (error) {
       _setError(error);
     }
+  }
+
+  /// Best-effort OS notification permission (download progress + "ready").
+  Future<void> _requestNotificationPermission() async {
+    try {
+      await FileDownloader().permissions.request(PermissionType.notifications);
+    } catch (_) {}
   }
 
   Future<void> _notifyReady() async {

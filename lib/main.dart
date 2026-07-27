@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:background_downloader/background_downloader.dart'
-    show FileDownloader, TaskNotification, PermissionType;
+    show FileDownloader, TaskNotification;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
@@ -39,7 +39,9 @@ Future<void> _configureDownloadNotifications() async {
   try {
     final lang = normalizeLang(PlatformDispatcher.instance.locale.languageCode);
     String t(String k) => AppStrings.of(lang, k);
-    unawaited(FileDownloader().permissions.request(PermissionType.notifications));
+    // NOTE: the notification PERMISSION is requested when a download actually
+    // starts (OnDeviceModelManager.install) — never at cold start with no
+    // context. This only configures what the notification will say.
     FileDownloader().configureNotificationForGroup(
       'smart_downloads',
       running: TaskNotification(

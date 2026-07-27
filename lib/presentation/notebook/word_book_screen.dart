@@ -328,7 +328,6 @@ class WordBookScreenState extends State<WordBookScreen>
 
   @override
   Widget build(BuildContext context) {
-    final p = context.paper;
     return PaperScaffold(
       title: context.tr('notebookTitle'),
       showBackground: false,
@@ -405,13 +404,8 @@ class WordBookScreenState extends State<WordBookScreen>
                         );
                       }
                       if (i == 1) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Text(
-                            context.tr('chatsDeleteSwipeHint'),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: p.inkSoft, height: 1.35),
-                          ),
+                        return SwipeDeleteHint(
+                          label: context.tr('chatsDeleteSwipeHint'),
                         );
                       }
                       return _dismissibleWordRow(context, _items[i - 2]);

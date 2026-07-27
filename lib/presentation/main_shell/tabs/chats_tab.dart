@@ -312,7 +312,6 @@ class ChatsTabState extends State<ChatsTab>
 
   @override
   Widget build(BuildContext context) {
-    final p = context.paper;
     return PaperScaffold(
       title: context.tr('chatsTitle'),
       showBackground: false,
@@ -340,15 +339,8 @@ class ChatsTabState extends State<ChatsTab>
               itemCount: _rooms.length + 1,
               itemBuilder: (context, i) {
                 if (i == 0) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Text(
-                      context.tr('chatsDeleteSwipeHint'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: p.inkSoft,
-                        height: 1.35,
-                      ),
-                    ),
+                  return SwipeDeleteHint(
+                    label: context.tr('chatsDeleteSwipeHint'),
                   );
                 }
                 return PaperEntrance(

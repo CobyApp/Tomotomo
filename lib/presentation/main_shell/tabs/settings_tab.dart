@@ -6,6 +6,7 @@ import '../../../core/ui/app_tokens.dart';
 import '../../../core/ui/paper/paper_scaffold.dart';
 import '../../../core/ui/paper/paper_widgets.dart';
 import '../../locale/l10n_context.dart';
+import '../../settings/appearance_settings_screen.dart';
 import '../../settings/language_settings_screen.dart';
 import '../../settings/legal_web_view_screen.dart';
 import '../../settings/profile_edit_screen.dart';
@@ -79,6 +80,18 @@ class SettingsTab extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) => const LanguageSettingsScreen(),
+                    ),
+                  );
+                },
+              ),
+              AppSettingsNavTile(
+                title: context.tr('appearanceTitle'),
+                subtitle: context.tr('appearanceSubtitle'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AppearanceSettingsScreen(),
                     ),
                   );
                 },
