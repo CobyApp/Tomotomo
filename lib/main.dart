@@ -12,6 +12,7 @@ import 'core/l10n/app_strings.dart';
 import 'core/local/hive_boxes.dart';
 import 'core/locale/languages.dart';
 import 'core/notifications/local_notifications.dart';
+import 'data/on_device/resumable_model_download.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,11 +40,14 @@ Future<void> _configureDownloadNotifications() async {
   try {
     final lang = normalizeLang(PlatformDispatcher.instance.locale.languageCode);
     String t(String k) => AppStrings.of(lang, k);
+    // Persist task + resume data so an interrupted model download can continue
+    // after the app is killed (see ResumableModelDownload).
+    await FileDownloader().trackTasksInGroup(ResumableModelDownload.group);
     // NOTE: the notification PERMISSION is requested when a download actually
     // starts (OnDeviceModelManager.install) — never at cold start with no
     // context. This only configures what the notification will say.
     FileDownloader().configureNotificationForGroup(
-      'smart_downloads',
+      ResumableModelDownload.group,
       running: TaskNotification(
         t('modelNotifRunningTitle'),
         t('modelNotifRunningBody'),
