@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:background_downloader/background_downloader.dart'
+    show FileDownloader;
 import 'package:crypto/crypto.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
@@ -9,14 +11,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'on_device_ai_runtime.dart';
 import 'on_device_model_config.dart';
-import 'resumable_model_download.dart';
 
 final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
+  CancelToken? _cancelToken;
   InferenceModel? _model;
   Future<void> _queue = Future<void>.value();
   String? _activeBackend;
-  final _download = ResumableModelDownload();
   static const _verifiedPreference = 'gemma4_e2b_artifact_verified';
+  // Download group used by flutter_gemma's SmartDownloader.
+  static const _downloadGroup = 'smart_downloads';
 
   @override
   String? get activeBackend => _activeBackend;
@@ -43,54 +46,85 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
     required void Function(double progress) onProgress,
     void Function()? onVerifying,
   }) async {
-    // Download ourselves so the transfer can RESUME (see
-    // ResumableModelDownload) instead of restarting from 0% whenever iOS drops
-    // it, then hand the finished file to flutter_gemma for registration.
-    final path = await _download.download(onProgress: onProgress);
-
-    // Download done; hashing the ~2.59GB artifact takes tens of seconds.
-    // Signal the UI so 100% isn't perceived as a frozen download.
-    onVerifying?.call();
-    if (!await _fileMatchesExpectedHash(path)) {
-      await _download.clear();
-      throw const FormatException('다운로드한 대화 엔진의 무결성 검증에 실패했습니다.');
+    _cancelToken = CancelToken();
+    // Resume, don't restart. iOS runs the download in a background URLSession
+    // that keeps going while the app is backgrounded or even after it's killed,
+    // and flutter_gemma's SmartDownloader reattaches to that still-running task
+    // by its deterministic id. So if a live task exists (app backgrounded /
+    // relaunched mid-download), we must NOT wipe it — otherwise the 2.59GB
+    // download starts over from 0%. Only clear when there's nothing live to
+    // attach to (a genuinely dead/absent task), which also avoids the
+    // stuck-at-0% orphan-task case the clear originally guarded against.
+    // Always drop the abandoned self-managed task first (see below) so it can
+    // never keep re-pulling 2.59GB alongside the real download.
+    await _clearAbandonedSelfManagedTask();
+    if (!await _hasLiveDownloadTask()) {
+      await _clearStaleDownloadState();
     }
-
-    // Registration only — `fromFile` records the path, it does not copy.
-    await FlutterGemma.installModel(
-      modelType: ModelType.gemma4,
-      fileType: ModelFileType.litertlm,
-    ).fromFile(path).install();
-
-    if (!await _verifyInstalledArtifact(forceHash: false)) {
-      await _deleteInstalledArtifact();
-      throw const FormatException('대화 엔진 등록에 실패했습니다.');
+    try {
+      await FlutterGemma.installModel(
+            modelType: ModelType.gemma4,
+            fileType: ModelFileType.litertlm,
+          )
+          .fromNetwork(
+            OnDeviceModelConfig.downloadUri.toString(),
+            foreground: true,
+          )
+          .withCancelToken(_cancelToken!)
+          .withProgress((value) => onProgress(value / 100))
+          .install();
+      // The download is complete; hashing the ~2.59GB artifact takes tens of
+      // seconds. Signal the UI so 100% isn't perceived as a frozen download.
+      onVerifying?.call();
+      if (!await _verifyInstalledArtifact(forceHash: true)) {
+        await _deleteInstalledArtifact();
+        throw const FormatException('다운로드한 대화 엔진의 무결성 검증에 실패했습니다.');
+      }
+    } finally {
+      _cancelToken = null;
     }
   }
 
   @override
   void cancelInstall() {
-    unawaited(_download.cancel());
+    _cancelToken?.cancel('사용자가 다운로드를 취소했습니다.');
+    // Remove the task so the next attempt starts a fresh download.
+    unawaited(_clearStaleDownloadState());
   }
 
-  /// Streams the file through sha256 on a background isolate.
-  Future<bool> _fileMatchesExpectedHash(String path) async {
-    final file = File(path);
-    if (!await file.exists() ||
-        await file.length() != OnDeviceModelConfig.byteCount) {
+  /// True when a download task is still enqueued/running in the background
+  /// downloader (e.g. the app was backgrounded or relaunched mid-download).
+  /// In that case we reattach and continue instead of restarting.
+  Future<bool> _hasLiveDownloadTask() async {
+    try {
+      final tasks = await FileDownloader().allTasks(group: _downloadGroup);
+      return tasks.isNotEmpty;
+    } catch (_) {
       return false;
     }
-    final digest = await Isolate.run(() async {
-      final value = await sha256.bind(File(path).openRead()).first;
-      return value.toString();
-    });
-    if (digest != OnDeviceModelConfig.sha256) return false;
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(
-      _verifiedPreference,
-      OnDeviceModelConfig.sha256,
-    );
-    return true;
+  }
+
+  /// Removes any orphaned/stale download task left by a previous interrupted
+  /// download so a re-download starts cleanly (prevents the stuck-at-0% bug).
+  Future<void> _clearStaleDownloadState() async {
+    try {
+      await FileDownloader().reset(group: _downloadGroup);
+      await FileDownloader().database.deleteAllRecords(group: _downloadGroup);
+    } catch (_) {
+      // Best-effort: an empty/absent group is fine.
+    }
+    await _clearAbandonedSelfManagedTask();
+  }
+
+  /// One-time cleanup for builds that briefly downloaded the model through our
+  /// own `tomotomo_model` group: an abandoned task there can sit in
+  /// waitingToRetry and keep pulling 2.59GB in the background forever.
+  Future<void> _clearAbandonedSelfManagedTask() async {
+    const abandonedGroup = 'tomotomo_model';
+    try {
+      await FileDownloader().cancelAll(group: abandonedGroup);
+      await FileDownloader().database.deleteAllRecords(group: abandonedGroup);
+    } catch (_) {}
   }
 
   @override
@@ -108,9 +142,6 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
       await FlutterGemma.uninstallModel(OnDeviceModelConfig.fileName);
       await FlutterGemmaPlugin.instance.modelManager.clearModelCache();
     }
-    // `fromFile` only registers the path, so uninstalling does not remove the
-    // file we downloaded — drop it (and its task record) ourselves.
-    await _download.clear();
   }
 
   Future<bool> _verifyInstalledArtifact({bool forceHash = false}) async {
