@@ -28,22 +28,23 @@ Future<void> showChatExpressionSheet(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    useSafeArea: false,
+    // Keeps the sheet below the status bar / notch from the ROOT view's safe
+    // area. (Manually reading MediaQuery here doesn't work: inside a Scaffold
+    // body with an AppBar, removePadding has already zeroed viewPadding.top,
+    // which once put this sheet behind the notch with an unreachable X.)
+    useSafeArea: true,
     // Full-height sheet (fills up to just below the notch): maximum reading
     // room, stable (no resize/snap). Close via the prominent X in the header.
     enableDrag: false,
     isDismissible: true,
     barrierColor: Colors.black.withValues(alpha: 0.42),
     builder: (sheetContext) {
-      final mq = MediaQuery.of(sheetContext);
-      final h = mq.size.height;
-      final topInset = mq.viewPadding.top;
       final p = sheetContext.paper;
 
-      return Padding(
-        padding: EdgeInsets.only(top: topInset),
+      // Fill the full height allowed by useSafeArea (screen minus notch).
+      return FractionallySizedBox(
+        heightFactor: 1,
         child: Container(
-          height: h - topInset,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: p.card,
@@ -150,9 +151,6 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final sheetContext = context;
     final repo = sheetContext.read<SavedExpressionRepository>();
     final lang = widget.character.defaultNotebookLangForVocabSave;
-    final snackText = lang == 'ko'
-        ? sheetContext.trRead('wordAddedToNotebookKo')
-        : sheetContext.trRead('wordAddedToNotebookJa');
     final saveFailedPrefix = sheetContext.trRead('wordSaveNotebookFailed');
     setState(() => _savingIndices.add(index));
     try {
@@ -171,7 +169,8 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
         _savedWordIndices.add(index);
         _savingIndices.remove(index);
       });
-      widget.messenger.showSnackBar(SnackBar(content: Text(snackText)));
+      // No snackbar on success: it would render behind this full-height sheet
+      // and pop up stale after closing. The ✓ icon + haptic is the feedback.
       if (sheetContext.mounted) {
         sheetContext.read<WordBookRefreshNotifier>().requestRefresh();
       }

@@ -138,10 +138,12 @@ class _ChatBackgroundPickerBodyState extends State<_ChatBackgroundPickerBody> {
                 child: OutlinedButton.icon(
                   onPressed: _picking ? null : _pickBgImage,
                   icon: _picking
+                      // PaperLoading(size: s) is 4.2*s wide (3 dots + gaps);
+                      // size 4 → ~17px, fits an icon slot without overflowing.
                       ? const SizedBox(
-                          width: 16,
+                          width: 18,
                           height: 16,
-                          child: PaperLoading(size: 6),
+                          child: Center(child: PaperLoading(size: 4)),
                         )
                       : const Icon(Icons.photo_library_rounded, size: 18),
                   label: Text(context.tr('chatBgFromGallery')),

@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../presentation/locale/l10n_context.dart';
+import '../../presentation/onboarding/onboarding_notifier.dart';
 import '../ui/paper/paper_scaffold.dart';
 import '../ui/paper/paper_theme.dart';
 import '../ui/paper/paper_tokens.dart';
@@ -34,11 +36,18 @@ class _UpdateGateState extends State<UpdateGate> {
   UpdateStatus _status = UpdateStatus.ok;
   RemoteVersionConfig? _config;
   bool _recommendedDismissed = false;
+  Timer? _autoHide;
 
   @override
   void initState() {
     super.initState();
     unawaited(_check());
+  }
+
+  @override
+  void dispose() {
+    _autoHide?.cancel();
+    super.dispose();
   }
 
   Future<void> _check() async {
@@ -53,6 +62,13 @@ class _UpdateGateState extends State<UpdateGate> {
         _config = config;
         _status = status;
       });
+      // A recommended update is a nudge, not a blocker: auto-hide the banner
+      // so it never permanently covers app bars / back buttons on sub-screens.
+      if (status == UpdateStatus.recommended) {
+        _autoHide = Timer(const Duration(seconds: 8), () {
+          if (mounted) setState(() => _recommendedDismissed = true);
+        });
+      }
     } catch (_) {
       // Offline or any failure — do not block.
     }
@@ -63,10 +79,23 @@ class _UpdateGateState extends State<UpdateGate> {
     if (_status == UpdateStatus.forced) {
       return _ForceUpdateScreen(storeUrl: _config?.storeUrl);
     }
+    // Never overlay the banner on top of onboarding — it covers the wordmark
+    // and makes a terrible first impression. Nudge again on a later launch.
+    OnboardingNotifier? onboarding;
+    try {
+      onboarding = context.watch<OnboardingNotifier>();
+    } catch (_) {
+      // Not provided (e.g. widget tests) — treat as unknown.
+    }
+    final inOnboarding = onboarding == null ||
+        onboarding.isLoading ||
+        onboarding.onboarded == false;
     return Stack(
       children: [
         widget.child,
-        if (_status == UpdateStatus.recommended && !_recommendedDismissed)
+        if (_status == UpdateStatus.recommended &&
+            !_recommendedDismissed &&
+            !inOnboarding)
           _RecommendUpdateBanner(
             storeUrl: _config?.storeUrl,
             onDismiss: () => setState(() => _recommendedDismissed = true),

@@ -463,10 +463,12 @@ class _ModelGateBar extends StatelessWidget {
           child: Row(
             children: [
               if (downloading)
+                // Intrinsic width of PaperLoading(size: s) is 4.2*s (3 dots +
+                // 2 gaps): size 5 → 21px, fits. size 6 in an 18px box overflowed.
                 SizedBox(
-                  width: 18,
+                  width: 22,
                   height: 18,
-                  child: PaperLoading(size: 6),
+                  child: Center(child: PaperLoading(size: 5)),
                 )
               else
                 Icon(Icons.download_rounded, size: 18, color: p.coral),
