@@ -1,5 +1,4 @@
 import 'dart:async';
-import '../../core/ui/paper/paper_loading.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -169,19 +168,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       );
       actions = null;
     } else {
-      actions = [
-        Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: _saving
-              ? PaperLoading(size: 9)
-              : PaperButton(
-                  expand: false,
-                  icon: Icons.check_rounded,
-                  label: context.tr('save'),
-                  onPressed: _save,
-                ),
-        ),
-      ];
+      // Save lives under the field as a full-width button, not squeezed into
+      // the header next to the back arrow.
+      actions = null;
       body = ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.pageH,
@@ -214,6 +203,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               hintText: context.tr('displayNameHint'),
             ),
             textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _save(),
+          ),
+          const SizedBox(height: 24),
+          PaperButton(
+            icon: Icons.check_rounded,
+            label: context.tr('save'),
+            busy: _saving,
+            onPressed: _save,
           ),
         ],
       );
