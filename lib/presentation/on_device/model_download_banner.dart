@@ -7,6 +7,7 @@ import '../../core/ui/paper/paper_tokens.dart';
 import '../../data/on_device/on_device_model_manager.dart';
 import '../../domain/on_device/on_device_model_snapshot.dart';
 import '../locale/l10n_context.dart';
+import 'model_download_labels.dart';
 import 'on_device_model_setup_screen.dart';
 
 /// Compact, tappable model-download progress pill shown app-wide (e.g. above the
@@ -64,17 +65,38 @@ class ModelDownloadBanner extends StatelessWidget {
                       PaperLoading(size: 5),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        failed
-                            ? context.tr('modelDlFailedShort')
-                            : context.tr('modelDlProgress'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: p.ink,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12.5,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            failed
+                                ? context.tr('modelDlFailedShort')
+                                : downloading
+                                ? context.tr('modelDlProgress')
+                                : context.tr('onDeviceModelFinalizing'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: p.ink,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                          // Concrete megabytes, so a long download never looks
+                          // frozen behind a stationary percentage.
+                          if (downloading)
+                            Text(
+                              modelDownloadSizeLabel(manager.snapshot.progress),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: p.inkSoft,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                     const SizedBox(width: 8),

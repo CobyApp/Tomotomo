@@ -21,6 +21,7 @@ import '../../domain/on_device/on_device_model_snapshot.dart';
 import '../../domain/repositories/character_record_repository.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../locale/l10n_context.dart';
+import '../on_device/model_download_labels.dart';
 import '../locale/locale_notifier.dart';
 import 'onboarding_notifier.dart';
 
@@ -412,15 +413,34 @@ class _DownloadStatus extends StatelessWidget {
                 lead,
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: p.ink,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12.5,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: p.ink,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                      // Real megabytes moving — a bare % looks frozen for
+                      // minutes on a ~2.6GB download.
+                      if (phase == OnDeviceModelPhase.downloading)
+                        Text(
+                          modelDownloadSizeLabel(snap.progress),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: p.inkSoft,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 if (trailing != null) ...[const SizedBox(width: 8), trailing],
