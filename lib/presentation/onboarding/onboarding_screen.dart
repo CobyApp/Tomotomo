@@ -57,9 +57,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String? _avatarPath;
   String? _prefillLang;
   bool _pickingAvatar = false;
-  // The learner's own profile photo picked on the profile page.
-  String? _myAvatarPath;
-  bool _pickingMyAvatar = false;
 
   static const _introCount = 3;
   // intro slides + profile (your name) + language pick + first-friend page.
@@ -202,16 +199,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-  Future<void> _pickMyAvatar() async {
-    setState(() => _pickingMyAvatar = true);
-    final dest = await _pickAndStoreAvatar();
-    if (!mounted) return;
-    setState(() {
-      if (dest != null) _myAvatarPath = dest;
-      _pickingMyAvatar = false;
-    });
-  }
-
   Future<void> _finish() async {
     final lang = _studyLanguage;
     final name = _nameController.text.trim();
@@ -237,16 +224,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       // Save the learner's own name to their profile so friends greet them by
       // name from the first message.
       final myName = _myNameController.text.trim();
-      if (myName.isNotEmpty || _myAvatarPath != null) {
+      if (myName.isNotEmpty) {
         try {
           // getProfile creates+persists a default profile when absent.
           final existing = await profileRepo.getProfile(_localUserId);
           if (existing != null) {
             await profileRepo.updateProfile(
-              existing.copyWith(
-                displayName: myName.isEmpty ? null : myName,
-                avatarUrl: _myAvatarPath,
-              ),
+              existing.copyWith(displayName: myName),
             );
           }
         } catch (_) {}
@@ -292,12 +276,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     title: context.tr('onboardingIntro3Title'),
                     body: context.tr('onboardingIntro3Body'),
                   ),
-                  _ProfilePage(
-                    myNameController: _myNameController,
-                    avatarPath: _myAvatarPath,
-                    picking: _pickingMyAvatar,
-                    onPickAvatar: _pickMyAvatar,
-                  ),
+                  _ProfilePage(myNameController: _myNameController),
                   _StudyLanguagePage(
                     selected: _studyLanguage,
                     onSelected: (code) => setState(() => _studyLanguage = code),
@@ -685,23 +664,14 @@ class _LangCard extends StatelessWidget {
 /// Profile step: the learner's own name (saved to their profile so friends
 /// greet them by name). Kept separate from the friend-creation step.
 class _ProfilePage extends StatelessWidget {
-  const _ProfilePage({
-    required this.myNameController,
-    required this.avatarPath,
-    required this.picking,
-    required this.onPickAvatar,
-  });
+  const _ProfilePage({required this.myNameController});
 
   final TextEditingController myNameController;
-  final String? avatarPath;
-  final bool picking;
-  final VoidCallback onPickAvatar;
 
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
     final radius = BorderRadius.circular(PaperRadii.button);
-    final hasAvatar = avatarPath != null && avatarPath!.isNotEmpty;
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.pageH,
@@ -726,64 +696,25 @@ class _ProfilePage extends StatelessWidget {
           ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.4),
         ),
         const SizedBox(height: 28),
-        // Same tappable photo circle + camera badge as the friend page, so
-        // the learner can set their own picture right away (optional).
+        // Decorative only — the app never shows a user avatar, so onboarding
+        // asks for the name and nothing else.
         Center(
-          child: GestureDetector(
-            onTap: picking ? null : onPickAvatar,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  width: 96,
-                  height: 96,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: hasAvatar ? null : p.paperBg,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: p.ink, width: 2.5),
-                    image: hasAvatar
-                        ? DecorationImage(
-                            image: FileImage(File(avatarPath!)),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                    boxShadow: [
-                      BoxShadow(
-                        color: p.hardShadow,
-                        offset: const Offset(3, 3),
-                      ),
-                    ],
-                  ),
-                  child: picking
-                      ? const Center(child: PaperLoading(size: 8))
-                      : hasAvatar
-                      ? null
-                      : Icon(
-                          Icons.person_rounded,
-                          size: 48,
-                          color: p.inkSoft.withValues(alpha: 0.75),
-                        ),
-                ),
-                Positioned(
-                  bottom: -2,
-                  right: -2,
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: p.coral,
-                      border: Border.all(color: p.card, width: 2.5),
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt_rounded,
-                      size: 15,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+          child: Container(
+            width: 96,
+            height: 96,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: p.paperBg,
+              shape: BoxShape.circle,
+              border: Border.all(color: p.ink, width: 2.5),
+              boxShadow: [
+                BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
               ],
+            ),
+            child: Icon(
+              Icons.person_rounded,
+              size: 48,
+              color: p.inkSoft.withValues(alpha: 0.75),
             ),
           ),
         ),

@@ -1,10 +1,7 @@
 import 'dart:async';
 import '../../core/ui/paper/paper_loading.dart';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/ui/paper/paper_status_views.dart';
@@ -50,27 +47,7 @@ InputDecoration _paperFieldDecoration(
   );
 }
 
-/// True if [value] looks like a remote http(s) URL rather than a local file path.
-bool _isNetworkImagePath(String value) {
-  final v = value.trim();
-  return v.startsWith('http://') || v.startsWith('https://');
-}
-
-/// Copies a picked image [src] into the app documents dir, returns the stored path.
-Future<String> _copyAvatarToAppDir(File src) async {
-  final dir = await getApplicationDocumentsDirectory();
-  final avatarsDir = Directory('${dir.path}/avatars');
-  if (!await avatarsDir.exists()) {
-    await avatarsDir.create(recursive: true);
-  }
-  final ext = src.path.contains('.') ? src.path.split('.').last : 'jpg';
-  final dest =
-      '${avatarsDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
-  await src.copy(dest);
-  return dest;
-}
-
-/// Edit the local profile display name and gallery avatar.
+/// Edit the local profile display name.
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
 
@@ -82,10 +59,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _displayNameController = TextEditingController();
 
   Profile? _profile;
-  String? _avatarUrl;
   bool _loading = true;
   bool _saving = false;
-  bool _uploadingAvatar = false;
   String? _error;
 
   @override
@@ -120,7 +95,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         return;
       }
       _displayNameController.text = p.displayName ?? '';
-      _avatarUrl = p.avatarUrl;
       setState(() {
         _profile = p;
         _loading = false;
@@ -131,37 +105,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       setState(() {
         _profile = null;
         _loading = false;
-        _error = e.toString();
-      });
-    }
-  }
-
-  Future<void> _pickAndUploadAvatar() async {
-    final x = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 512,
-      imageQuality: 85,
-    );
-    if (x == null || !mounted) return;
-    setState(() {
-      _error = null;
-      _uploadingAvatar = true;
-    });
-    try {
-      // No server upload: copy the picked file into the app documents dir.
-      final path = await _copyAvatarToAppDir(File(x.path));
-      if (!mounted) return;
-      setState(() {
-        _avatarUrl = path;
-        _uploadingAvatar = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.trRead('avatarUploadDone'))),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _uploadingAvatar = false;
         _error = e.toString();
       });
     }
@@ -181,11 +124,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     });
     try {
       final repo = context.read<ProfileRepository>();
-      final avatar = _avatarUrl?.trim();
       final updated = Profile(
         id: profile.id,
         displayName: name,
-        avatarUrl: avatar == null || avatar.isEmpty ? null : avatar,
+        // The app never displays a user avatar, so the profile is name-only.
+        avatarUrl: null,
         appLanguage: profile.appLanguage,
         learningLanguage: profile.learningLanguage,
         createdAt: profile.createdAt,
@@ -226,7 +169,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       );
       actions = null;
     } else {
-      final hasPhoto = _avatarUrl != null && _avatarUrl!.trim().isNotEmpty;
       actions = [
         Padding(
           padding: const EdgeInsets.only(right: 12),
@@ -263,93 +205,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ),
             const SizedBox(height: 16),
           ],
-          Center(
-            child: Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.bottomRight,
-              children: [
-                GestureDetector(
-                  onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
-                  child: PolaroidAvatar(
-                    size: 120,
-                    rotate: -0.03,
-                    child: _uploadingAvatar
-                        ? PaperLoading(size: 9)
-                        : hasPhoto
-                        ? (_isNetworkImagePath(_avatarUrl!.trim())
-                              ? Image.network(
-                                  _avatarUrl!.trim(),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => Icon(
-                                    Icons.broken_image_outlined,
-                                    size: 40,
-                                    color: p.inkSoft,
-                                  ),
-                                )
-                              : Image.file(
-                                  File(_avatarUrl!.trim()),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => Icon(
-                                    Icons.broken_image_outlined,
-                                    size: 40,
-                                    color: p.inkSoft,
-                                  ),
-                                ))
-                        : Icon(Icons.person_outline, size: 48, color: p.coral),
-                  ),
-                ),
-                Positioned(
-                  right: 2,
-                  bottom: 6,
-                  child: GestureDetector(
-                    onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: p.coral,
-                        border: Border.all(color: p.card, width: 2.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: p.hardShadow,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt_rounded,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: TextButton(
-              onPressed: _uploadingAvatar
-                  ? null
-                  : () {
-                      setState(() => _avatarUrl = null);
-                    },
-              child: Text(
-                context.tr('profileEditClearPhoto'),
-                style: TextStyle(color: p.inkSoft, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            context.tr('profilePhotoGalleryHint'),
-            textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: p.inkSoft),
-          ),
           const SizedBox(height: 28),
           TextFormField(
             controller: _displayNameController,

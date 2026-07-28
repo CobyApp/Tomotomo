@@ -108,9 +108,17 @@ class App extends StatelessWidget {
                     maxScaleFactor: 1.3,
                   ),
                 ),
-                // Best-effort update gate over the whole app (forced/recommended
-                // when online; passes through offline).
-                child: UpdateGate(child: child!),
+                // Tap anywhere outside a field to dismiss the keyboard, on
+                // every screen. `translucent` so the tap still reaches the
+                // widget underneath — buttons and list rows keep working.
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () =>
+                      FocusManager.instance.primaryFocus?.unfocus(),
+                  // Best-effort update gate over the whole app
+                  // (forced/recommended when online; passes through offline).
+                  child: UpdateGate(child: child!),
+                ),
               );
             },
             // The on-device model downloads in the background (started during

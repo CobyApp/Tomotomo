@@ -8,7 +8,7 @@ import '../../settings/appearance_settings_screen.dart';
 import '../../settings/language_settings_screen.dart';
 import '../../settings/legal_web_view_screen.dart';
 import '../../settings/profile_edit_screen.dart';
-import '../../points/points_usage_screen.dart';
+import '../../points/points_summary_card.dart';
 import '../../on_device/on_device_model_setup_screen.dart';
 
 class SettingsTab extends StatelessWidget {
@@ -28,24 +28,12 @@ class SettingsTab extends StatelessWidget {
         ),
         children: [
           PaperSectionLabel(context.tr('settingsProfileSection')),
+          // Balance + earn action inline, so points don't need a sub-screen.
+          const PointsSummaryCard(),
+          const SizedBox(height: 12),
           AppSettingsPanel(
             dividerIndent: 16,
             children: [
-              // Description only — the balance itself lives on the points
-              // screen and the toolbar chip, not tacked onto this subtitle.
-              AppSettingsNavTile(
-                title: context.tr('settingsPointsBalance'),
-                subtitle: context.tr('settingsPointsBalanceSubtitle'),
-                showChevron: true,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const PointsUsageScreen(),
-                    ),
-                  );
-                },
-              ),
               AppSettingsNavTile(
                 title: context.tr('settingsEditProfile'),
                 subtitle: context.tr('settingsEditProfileSubtitle'),

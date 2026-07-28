@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/ads/ad_config.dart';
-import '../../core/ads/rewarded_ad_service.dart';
-import '../../core/ui/app_scaffold_messenger.dart';
 import '../../core/ui/paper/paper_bottom_sheet.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_widgets.dart';
@@ -12,6 +9,7 @@ import '../../data/repositories/local_points_repository_impl.dart';
 import '../locale/l10n_context.dart';
 import 'points_balance_notifier.dart';
 import 'points_usage_screen.dart';
+import 'watch_rewarded_ad.dart';
 
 /// Shown wherever an action is blocked by an empty wallet. The user can top up
 /// by watching a rewarded ad WITHOUT leaving the screen they were on — the
@@ -31,44 +29,15 @@ class _TopUpSheet extends StatefulWidget {
 class _TopUpSheetState extends State<_TopUpSheet> {
   bool _watching = false;
 
-  String _today() => DateFormat('yyyy-MM-dd').format(DateTime.now());
-
   Future<void> _watchAd() async {
     if (_watching) return;
     setState(() => _watching = true);
-    final ad = context.read<RewardedAdService>();
-    final points = context.read<LocalPointsRepositoryImpl>();
-    final notifier = context.read<PointsBalanceNotifier>();
     final navigator = Navigator.of(context);
-    final notReadyText = context.trRead('adEarnNotReady');
-
-    var credited = false;
-    final shown = await ad.show(
-      onEarned: () async {
-        final r = await points.recordAdReward(today: _today());
-        if (!r.credited) return;
-        credited = true;
-        notifier.setBalance(r.balance);
-      },
-    );
-
+    final shown = await watchRewardedAdForPoints(context);
     if (!mounted) return;
     setState(() => _watching = false);
-    // The sheet may outlive the screen underneath, so the app-level messenger
-    // (not this context's) is what can safely show the confirmation.
-    if (shown) {
-      if (credited) {
-        appScaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(content: Text('+${AdConfig.pointsPerAd}pt')),
-        );
-      }
-      // Close so the user lands right back on the action they were doing.
-      navigator.pop();
-    } else {
-      appScaffoldMessengerKey.currentState?.showSnackBar(
-        SnackBar(content: Text(notReadyText)),
-      );
-    }
+    // Close so the user lands right back on the action they were doing.
+    if (shown) navigator.pop();
   }
 
   @override
@@ -77,7 +46,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
     final balance = context.watch<PointsBalanceNotifier>().balance;
     final remaining = context
         .read<LocalPointsRepositoryImpl>()
-        .adsRemainingToday(today: _today());
+        .adsRemainingToday(today: todayKey());
     final capReached = remaining <= 0;
 
     return Padding(
