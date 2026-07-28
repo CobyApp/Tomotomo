@@ -11,9 +11,25 @@ void main() {
     expect(AppStrings.of('fr', 'tabChats'), AppStrings.of('ko', 'tabChats'));
   });
 
-  test('new language-name keys resolve', () {
-    expect(AppStrings.of('en', 'langEnglish'), 'English');
-    expect(AppStrings.of('en', 'langChinese'), 'Chinese');
-    expect(AppStrings.of('en', 'friendLangZh'), 'Chinese');
+  test('all four languages define the same non-empty keys', () {
+    // The real regression to guard: a key added to one block but not the others
+    // silently falls back and ships text in the wrong language.
+    final korean = AppStrings.all('ko');
+    expect(korean, isNotEmpty);
+    for (final language in const ['ja', 'en', 'zh']) {
+      final map = AppStrings.all(language);
+      expect(
+        map.keys.toSet(),
+        korean.keys.toSet(),
+        reason: '$language does not define the same keys as ko',
+      );
+      for (final entry in map.entries) {
+        expect(
+          entry.value.trim(),
+          isNotEmpty,
+          reason: '$language.${entry.key} is empty',
+        );
+      }
+    }
   });
 }

@@ -82,7 +82,6 @@ Future<void> confirmAndReportChatRoom(
   final subject = tr('chatRoomReportSubject');
   final typeLine = tr('chatRoomReportTypeAi');
   final body =
-      '${tr('chatRoomReportBodyPrefix')}'
       '${tr('chatRoomReportFieldRoom')}: ${chatRoomId ?? '-'}\n'
       '${tr('chatRoomReportFieldType')}: $typeLine\n'
       '${tr('chatRoomReportFieldName')}: ${character.displayNamePrimary}\n\n'
