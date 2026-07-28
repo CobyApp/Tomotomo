@@ -457,6 +457,24 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     );
   }
 
+  /// Step back to the X-import step. Lives BELOW the primary action: a
+  /// step-back control in the header competes with the screen's own nav bar.
+  Widget _stepBackButton(BuildContext context) {
+    return Align(
+      child: TextButton.icon(
+        onPressed: _saving
+            ? null
+            : () => setState(() {
+                _error = null;
+                _phase = _CreatePhase.xImport;
+              }),
+        icon: const Icon(Icons.arrow_back_rounded, size: 18),
+        label: Text(context.tr('characterStepBack')),
+        style: TextButton.styleFrom(foregroundColor: context.paper.inkSoft),
+      ),
+    );
+  }
+
   // ── PHASE 1: X import (default entry for a new friend) ────────
   Widget _buildXImport(BuildContext context) {
     final p = context.paper;
@@ -546,22 +564,6 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     return ListView(
       padding: _pagePadding,
       children: [
-        // Back to try a different profile URL.
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: _saving
-                ? null
-                : () => setState(() {
-                    _error = null;
-                    _phase = _CreatePhase.xImport;
-                  }),
-            icon: const Icon(Icons.arrow_back_rounded, size: 18),
-            label: Text(context.tr('characterStepBack')),
-            style: TextButton.styleFrom(foregroundColor: p.inkSoft),
-          ),
-        ),
-        const SizedBox(height: 4),
         if (_error != null) _errorBanner(context),
         Text(
           context.tr('createSummaryTitle'),
@@ -627,9 +629,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           context,
           icon: Icons.check_rounded,
           label: context.tr('createSummarySave'),
-          costPoints: 10,
+          costPoints: 20,
           onPressed: _save,
         ),
+        _stepBackButton(context),
         const SizedBox(height: 12),
       ],
     );
@@ -716,22 +719,6 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       child: ListView(
         padding: _pagePadding,
         children: [
-          if (!isEdit)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: _saving
-                    ? null
-                    : () => setState(() {
-                        _error = null;
-                        _phase = _CreatePhase.xImport;
-                      }),
-                icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                label: Text(context.tr('characterStepBack')),
-                style: TextButton.styleFrom(foregroundColor: p.inkSoft),
-              ),
-            ),
-          if (!isEdit) const SizedBox(height: 4),
           if (_error != null) _errorBanner(context),
           _buildAvatarPicker(context),
           _SectionCard(
@@ -810,13 +797,14 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             context,
             icon: Icons.check_rounded,
             label: context.tr(isEdit ? 'save' : 'create'),
-            costPoints: isEdit ? null : 10,
+            costPoints: isEdit ? null : 20,
             onPressed: () async {
               if (_formKey.currentState?.validate() ?? false) {
                 await _save();
               }
             },
           ),
+          if (!isEdit) _stepBackButton(context),
           const SizedBox(height: 12),
         ],
       ),

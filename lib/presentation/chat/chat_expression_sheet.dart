@@ -33,9 +33,11 @@ Future<void> showChatExpressionSheet(
     // body with an AppBar, removePadding has already zeroed viewPadding.top,
     // which once put this sheet behind the notch with an unreachable X.)
     useSafeArea: true,
-    // Full-height sheet (fills up to just below the notch): maximum reading
-    // room, stable (no resize/snap). Close via the prominent X in the header.
-    enableDrag: false,
+    // Drag-to-dismiss from the header. The body is a ListView, so a drag that
+    // starts there scrolls the content and only the header (and other
+    // non-scrolling chrome) pulls the sheet — no resizing/snapping, which is
+    // what made the old draggable sheet feel unstable.
+    enableDrag: true,
     isDismissible: true,
     barrierColor: Colors.black.withValues(alpha: 0.42),
     builder: (sheetContext) {
