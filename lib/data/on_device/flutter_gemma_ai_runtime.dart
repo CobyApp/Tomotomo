@@ -92,12 +92,34 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
     unawaited(_clearStaleDownloadState());
   }
 
+  @override
+  Future<void> resetDownloadState() async {
+    _cancelToken?.cancel('다운로드를 초기화합니다.');
+    _cancelToken = null;
+    await _clearStaleDownloadState();
+    // Drop a half-written artifact too, so the retry can't trip over it.
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.remove(_verifiedPreference);
+      await FlutterGemmaPlugin.instance.modelManager.clearModelCache();
+    } catch (_) {}
+  }
+
   /// True when a download task is still enqueued/running in the background
   /// downloader (e.g. the app was backgrounded or relaunched mid-download).
   /// In that case we reattach and continue instead of restarting.
+  ///
+  /// `includeTasksWaitingToRetry` is deliberately FALSE: a task stuck in
+  /// waitingToRetry counts as "active" by default, which made us attach to a
+  /// dead task forever instead of clearing it — the download then sits frozen
+  /// and never recovers. A retry-waiting task is treated as not live so the
+  /// next attempt starts clean.
   Future<bool> _hasLiveDownloadTask() async {
     try {
-      final tasks = await FileDownloader().allTasks(group: _downloadGroup);
+      final tasks = await FileDownloader().allTasks(
+        group: _downloadGroup,
+        includeTasksWaitingToRetry: false,
+      );
       return tasks.isNotEmpty;
     } catch (_) {
       return false;

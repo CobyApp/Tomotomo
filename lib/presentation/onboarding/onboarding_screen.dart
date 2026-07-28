@@ -366,7 +366,7 @@ class _DownloadStatus extends StatelessWidget {
           lead = Icon(Icons.error_outline_rounded, size: 16, color: p.coralDeep);
           title = context.tr('modelDlError');
           trailing = TextButton(
-            onPressed: () => manager.install(),
+            onPressed: () => manager.retryInstall(),
             style: TextButton.styleFrom(
               foregroundColor: p.coralDeep,
               padding: const EdgeInsets.symmetric(horizontal: 6),

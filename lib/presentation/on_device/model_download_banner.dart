@@ -21,10 +21,13 @@ class ModelDownloadBanner extends StatelessWidget {
     return Consumer<OnDeviceModelManager>(
       builder: (context, manager, _) {
         final phase = manager.snapshot.phase;
+        final failed = phase == OnDeviceModelPhase.error;
         final active =
             phase == OnDeviceModelPhase.downloading ||
             phase == OnDeviceModelPhase.finalizing;
-        if (!active) return const SizedBox.shrink();
+        // Stay visible on failure — silently disappearing left the user with
+        // no idea what happened and no way to start the download again.
+        if (!active && !failed) return const SizedBox.shrink();
 
         final downloading = phase == OnDeviceModelPhase.downloading;
         final pct = (manager.snapshot.progress.clamp(0.0, 1.0) * 100).round();
@@ -51,11 +54,20 @@ class ModelDownloadBanner extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    PaperLoading(size: 5),
+                    if (failed)
+                      Icon(
+                        Icons.error_outline_rounded,
+                        size: 18,
+                        color: p.coralDeep,
+                      )
+                    else
+                      PaperLoading(size: 5),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        context.tr('modelDlProgress'),
+                        failed
+                            ? context.tr('modelDlFailedShort')
+                            : context.tr('modelDlProgress'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -66,14 +78,35 @@ class ModelDownloadBanner extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      downloading ? '$pct%' : '…',
-                      style: TextStyle(
-                        color: p.coral,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
+                    if (failed)
+                      // Full reset + fresh download, so a stuck/failed attempt
+                      // can always be recovered from right here.
+                      TextButton(
+                        onPressed: () => manager.retryInstall(),
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          context.tr('retry'),
+                          style: TextStyle(
+                            color: p.coralDeep,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13,
+                          ),
+                        ),
+                      )
+                    else
+                      Text(
+                        downloading ? '$pct%' : '…',
+                        style: TextStyle(
+                          color: p.coral,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

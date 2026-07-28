@@ -12,6 +12,8 @@ final class _TokenLimitedRuntime implements OnDeviceAiRuntime {
   @override
   Future<void> deleteModel() async {}
   @override
+  Future<void> resetDownloadState() async {}
+  @override
   Future<void> dispose() async {}
   @override
   Future<void> initialize() async {}

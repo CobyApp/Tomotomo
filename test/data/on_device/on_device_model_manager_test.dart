@@ -9,6 +9,8 @@ final class _FakeRuntime implements OnDeviceAiRuntime {
   bool installed = false;
   bool initialized = false;
   bool cancelled = false;
+  int resetCount = 0;
+  bool failInstall = false;
   Completer<void>? installBlock;
   void Function(double progress)? progressCallback;
 
@@ -20,6 +22,9 @@ final class _FakeRuntime implements OnDeviceAiRuntime {
 
   @override
   Future<void> deleteModel() async => installed = false;
+
+  @override
+  Future<void> resetDownloadState() async => resetCount++;
 
   @override
   Future<void> dispose() async {}
@@ -43,6 +48,7 @@ final class _FakeRuntime implements OnDeviceAiRuntime {
     progressCallback = onProgress;
     onProgress(0.5);
     await installBlock?.future;
+    if (failInstall) throw StateError('download failed');
     onVerifying?.call();
     installed = true;
   }
@@ -86,6 +92,35 @@ void main() {
 
     expect(runtime.installed, isFalse);
     expect(manager.snapshot.phase, OnDeviceModelPhase.notInstalled);
+  });
+
+  test('a failed install clears download state and reports the error', () async {
+    final runtime = _FakeRuntime()..failInstall = true;
+    final manager = OnDeviceModelManager(runtime);
+    await manager.initialize();
+
+    await manager.install();
+
+    // The broken task must not survive: left behind it looks "live" next time
+    // and the download stays stuck forever.
+    expect(runtime.resetCount, 1);
+    expect(manager.snapshot.phase, OnDeviceModelPhase.error);
+  });
+
+  test('retryInstall resets state and downloads again', () async {
+    final runtime = _FakeRuntime()..failInstall = true;
+    final manager = OnDeviceModelManager(runtime);
+    await manager.initialize();
+    await manager.install();
+    expect(manager.snapshot.phase, OnDeviceModelPhase.error);
+
+    runtime.failInstall = false;
+    await manager.retryInstall();
+
+    // reset on failure + reset before the retry.
+    expect(runtime.resetCount, 2);
+    expect(manager.snapshot.phase, OnDeviceModelPhase.ready);
+    expect(runtime.installed, isTrue);
   });
 
   test('late progress cannot revive a cancelled download', () async {

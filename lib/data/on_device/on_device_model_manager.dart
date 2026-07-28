@@ -108,10 +108,28 @@ class OnDeviceModelManager extends ChangeNotifier {
       unawaited(_notifyReady());
     } catch (error) {
       if (_snapshot.phase == OnDeviceModelPhase.notInstalled) return;
+      // Leave no broken task behind: a failed/half-finished download would
+      // otherwise be picked up as "live" next time and stay stuck forever.
+      try {
+        await _runtime.resetDownloadState();
+      } catch (_) {}
       _setError(error);
     } finally {
       _installInFlight = false;
     }
+  }
+
+  /// User-initiated recovery: wipe every trace of the previous attempt and
+  /// download again from scratch.
+  Future<void> retryInstall() async {
+    if (_installInFlight) return;
+    try {
+      await _runtime.resetDownloadState();
+    } catch (_) {}
+    _setSnapshot(
+      const OnDeviceModelSnapshot(phase: OnDeviceModelPhase.notInstalled),
+    );
+    await install();
   }
 
   void cancelInstall() {

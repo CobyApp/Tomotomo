@@ -172,7 +172,12 @@ class OnDeviceModelSetupScreen extends StatelessWidget {
     } catch (_) {
       // Notifications are best-effort; the download still proceeds without them.
     }
-    await manager.install();
+    // After a failure, wipe the previous attempt so the retry starts clean.
+    if (manager.snapshot.phase == OnDeviceModelPhase.error) {
+      await manager.retryInstall();
+    } else {
+      await manager.install();
+    }
   }
 
   Future<void> _confirmDelete(

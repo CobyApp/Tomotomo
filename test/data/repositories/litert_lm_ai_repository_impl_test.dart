@@ -20,6 +20,8 @@ final class _FakeRuntime implements OnDeviceAiRuntime {
   @override
   Future<void> deleteModel() async {}
   @override
+  Future<void> resetDownloadState() async {}
+  @override
   Future<void> dispose() async {}
   @override
   Future<void> initialize() async {}
@@ -64,6 +66,8 @@ final class _WrongStudySheetLangRuntime implements OnDeviceAiRuntime {
   void cancelInstall() {}
   @override
   Future<void> deleteModel() async {}
+  @override
+  Future<void> resetDownloadState() async {}
   @override
   Future<void> dispose() async {}
   @override
