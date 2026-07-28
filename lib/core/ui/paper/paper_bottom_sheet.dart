@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../presentation/locale/l10n_context.dart';
 import 'paper_tokens.dart';
 
 /// Shows a rounded sticker-style modal bottom sheet with a gradient grab
@@ -63,7 +64,7 @@ Future<T?> showPaperSheet<T>(
                           visualDensity: VisualDensity.compact,
                           onPressed: () => Navigator.of(sheetContext).pop(),
                           icon: Icon(Icons.close_rounded, color: p.inkSoft),
-                          tooltip: 'Close',
+                          tooltip: sheetContext.tr('close'),
                         ),
                       ),
                     ],

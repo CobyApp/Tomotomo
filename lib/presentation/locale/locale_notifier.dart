@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/di/injection.dart';
 import '../../core/locale/languages.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
@@ -18,6 +19,7 @@ class LocaleNotifier extends ChangeNotifier {
       final p = await _profileRepo.getProfile(userId);
       if (p != null && kSupportedLanguages.contains(p.appLanguage)) {
         _languageCode = p.appLanguage;
+        appLanguageCode = _languageCode;
         notifyListeners();
       }
     } catch (_) {}
@@ -29,6 +31,7 @@ class LocaleNotifier extends ChangeNotifier {
     final updated = profile.copyWith(appLanguage: code);
     await _profileRepo.updateProfile(updated);
     _languageCode = code;
+    appLanguageCode = _languageCode;
     notifyListeners();
   }
 }

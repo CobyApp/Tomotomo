@@ -85,7 +85,7 @@ Future<void> showChatExpressionSheet(
                     PaperRoundButton(
                       icon: Icons.close_rounded,
                       size: 40,
-                      tooltip: sheetContext.tr('expressionSheetCloseTooltip'),
+                      tooltip: sheetContext.tr('close'),
                       onPressed: () => Navigator.of(sheetContext).pop(),
                     ),
                   ],
@@ -373,7 +373,10 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                   ),
                 );
               }),
-            ] else if (_vocabMeaningUsesHangul)
+            ] else
+              // One key: tr() already resolves to the UI language, so the old
+              // ko/ja split just meant a Japanese string could reach other
+              // locales. Only the font still depends on the script.
               Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: Text(
@@ -382,16 +385,8 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                     fontSize: 14,
                     height: 1.4,
                     color: p.inkSoft,
-                    fontFamily: 'Pretendard',
+                    fontFamily: _vocabMeaningUsesHangul ? 'Pretendard' : null,
                   ),
-                ),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Text(
-                  tr('expressionMissingVocabularyJa'),
-                  style: TextStyle(fontSize: 14, height: 1.4, color: p.inkSoft),
                 ),
               ),
           ],

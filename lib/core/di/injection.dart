@@ -63,6 +63,11 @@ late ProfileRepository profileRepository;
 
 /// Assigned when [PointsBalanceNotifier] is created in [App].
 PointsBalanceNotifier? pointsBalanceNotifier;
+
+/// Mirror of the user's chosen UI language, kept up to date by LocaleNotifier.
+/// Layers without a BuildContext (notifications) must localize with THIS, not
+/// the device locale — the two differ whenever the user picks a language.
+String appLanguageCode = 'ko';
 late CharacterRecordRepository characterRecordRepository;
 late ThemeRepository themeRepository;
 late SavedExpressionRepository savedExpressionRepository;

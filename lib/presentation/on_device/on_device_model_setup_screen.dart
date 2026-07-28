@@ -271,7 +271,10 @@ class _ModelStatus extends StatelessWidget {
             if (snapshot.backend != null) ...[
               const SizedBox(height: 3),
               Text(
-                'Backend · ${snapshot.backend}',
+                context.tr(
+                  'onDeviceModelBackend',
+                  params: {'backend': '${snapshot.backend}'},
+                ),
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: p.inkSoft),
@@ -286,8 +289,10 @@ class _ModelStatus extends StatelessWidget {
         icon: Icons.error_outline_rounded,
         iconColor: scheme.error,
         iconBackground: scheme.errorContainer,
+        // Always the localized line. Raw exception text is hardcoded in one
+        // language (and reads like a stack trace), so it must not be shown.
         child: Text(
-          snapshot.errorMessage ?? context.tr('onDeviceModelError'),
+          context.tr('onDeviceModelError'),
           style: TextStyle(color: scheme.error, height: 1.4),
         ),
       );

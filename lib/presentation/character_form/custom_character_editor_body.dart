@@ -263,8 +263,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       );
     } catch (e) {
       if (!mounted) return;
-      final message = '${context.trRead('characterImportFromXError')} $e';
-      setState(() => _error = message);
+      // Localized message only: the underlying exceptions carry hardcoded
+      // Korean/English text that would otherwise leak into every language.
+      debugPrint('X profile import failed: $e');
+      setState(() => _error = context.trRead('characterImportFromXError'));
     } finally {
       if (mounted) setState(() => _importUrlBusy = false);
     }

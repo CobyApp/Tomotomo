@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../core/x_profile/x_profile_reader.dart';
 import '../on_device/on_device_ai_runtime.dart';
 import 'profile_text_compactor.dart';
+import '../../core/locale/languages.dart';
 
 /// Suggested fields for a custom tutor from X / pasted profile text.
 class CelebrityPersonaSuggestion {
@@ -121,23 +122,40 @@ class CelebrityPersonaSuggester {
     final b = bio.trim();
     final s = speechStyle.trim();
     final buf = StringBuffer();
-    if (language == 'ko') {
-      if (b.isNotEmpty) {
-        buf.writeln('【프로필·소개】');
-        buf.writeln(b);
-        buf.writeln();
-      }
-      buf.writeln('【말투·말하는 방식 (AI가 따를 것)】');
-      buf.writeln(s.isNotEmpty ? s : '친근하고 자연스럽게 대화합니다.');
-    } else {
-      if (b.isNotEmpty) {
-        buf.writeln('【プロフィール・紹介】');
-        buf.writeln(b);
-        buf.writeln();
-      }
-      buf.writeln('【口調・話し方（AIが従うこと）】');
-      buf.writeln(s.isNotEmpty ? s : '親しみやすく自然に話します。');
+    // Headers are read by the USER in the persona field, so they follow the
+    // friend's language. Previously only ko/ja existed, so an English or
+    // Chinese import produced Japanese headers.
+    final (profileHeader, styleHeader, styleFallback) = switch (
+      normalizeLang(language)
+    ) {
+      'ko' => (
+        '【프로필·소개】',
+        '【말투·말하는 방식 (AI가 따를 것)】',
+        '친근하고 자연스럽게 대화합니다.',
+      ),
+      'en' => (
+        '[Profile]',
+        '[Voice & speaking style (the AI should follow this)]',
+        'Speaks in a friendly, natural way.',
+      ),
+      'zh' => (
+        '【简介】',
+        '【语气·说话方式（AI 需遵循）】',
+        '以亲切自然的方式聊天。',
+      ),
+      _ => (
+        '【プロフィール・紹介】',
+        '【口調・話し方（AIが従うこと）】',
+        '親しみやすく自然に話します。',
+      ),
+    };
+    if (b.isNotEmpty) {
+      buf.writeln(profileHeader);
+      buf.writeln(b);
+      buf.writeln();
     }
+    buf.writeln(styleHeader);
+    buf.writeln(s.isNotEmpty ? s : styleFallback);
     return buf.toString().trim();
   }
 
@@ -256,7 +274,8 @@ Return exactly one valid JSON object with no markdown or extra keys:
     final lang = normalizedLanguage;
 
     final handle = _handleFromCanonicalUrl(sourceHint);
-    final fallback = handle != null && handle.isNotEmpty ? handle : 'ユーザー';
+    // Language-neutral placeholder; 'ユーザー' was used even for en/zh imports.
+    final fallback = handle != null && handle.isNotEmpty ? handle : 'Friend';
     final primary = _nonEmpty(map['name']?.toString()) ?? fallback;
 
     final bio = (map['bio'] as String?)?.trim() ?? '';

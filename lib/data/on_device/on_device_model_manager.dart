@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:background_downloader/background_downloader.dart'
     show FileDownloader, PermissionType;
 import 'package:flutter/foundation.dart';
+
+import '../../core/di/injection.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/l10n/app_strings.dart';
@@ -161,9 +163,9 @@ class OnDeviceModelManager extends ChangeNotifier {
 
   Future<void> _notifyReady() async {
     try {
-      final lang = normalizeLang(
-        PlatformDispatcher.instance.locale.languageCode,
-      );
+      // The user's chosen app language — NOT the device locale, which can be
+      // a language they never selected.
+      final lang = normalizeLang(appLanguageCode);
       await LocalNotifications.showModelReady(
         title: AppStrings.of(lang, 'modelNotifCompleteTitle'),
         body: AppStrings.of(lang, 'modelNotifCompleteBody'),

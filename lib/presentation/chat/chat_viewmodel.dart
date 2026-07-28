@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/di/injection.dart';
+import '../../core/locale/languages.dart';
 import '../../core/notifications/local_notifications.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
@@ -17,12 +18,22 @@ const String _localUserId = 'local';
 /// actual charge must always use this same number.
 const int kChatReplyPointCost = 5;
 
-/// Short assistant line matching the character’s main chat language (no stack traces or API text).
+/// Short assistant line in the FRIEND's own language (no stack traces or API
+/// text). This is the friend speaking, so it follows [Character.friendLanguage]
+/// — branching on the Korean-persona flag alone made English and Chinese
+/// friends apologise in Japanese.
 String _aiChatErrorBubbleText(Character character) {
-  if (character.koreanNationalPersona) {
-    return '앗, 오류가 났어… 미안.';
+  switch (normalizeLang(character.friendLanguage)) {
+    case 'ko':
+      return '앗, 오류가 났어… 미안.';
+    case 'en':
+      return 'Oh no, something went wrong… sorry!';
+    case 'zh':
+      return '啊，出错了…抱歉。';
+    case 'ja':
+    default:
+      return 'あ、エラーが出ちゃった…ごめん。';
   }
-  return 'あ、エラーが出ちゃった…ごめん。';
 }
 
 class ChatViewModel extends ChangeNotifier {
