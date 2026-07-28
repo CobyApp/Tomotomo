@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/ui/ui.dart';
-import '../../core/ui/points_toolbar_chip.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_theme.dart';
 import '../../core/ui/paper/paper_widgets.dart';
@@ -60,7 +59,6 @@ class _ChatScreenState extends State<ChatScreen>
       character: widget.character,
       chatRepository: widget.chatRepository,
       aiChatRepository: widget.aiChatRepository,
-      insufficientPointsMessage: context.trRead('pointsInsufficient'),
       onInsufficientPoints: _onInsufficientPoints,
       appUiLanguageCode: context.read<LocaleNotifier>().languageCode,
     );
@@ -359,7 +357,6 @@ class _ChatScreenContent extends StatelessWidget {
             ],
           ),
           actions: [
-            const PointsToolbarChip(),
             // Plain IconButton + bottom-sheet menu — a corner PopupMenuButton is
             // unreliable to hit; this always opens.
             IconButton(

@@ -215,7 +215,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
 
   Future<bool> _spendPointsForXProfileImport() async {
     final spend = await context.read<PointsRepository>().spendPoints(
-      5,
+      10,
       'x_profile_import',
     );
     if (!spend.ok) {
@@ -288,7 +288,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       final repo = context.read<CharacterRecordRepository>();
       if (existing == null) {
         final spend = await context.read<PointsRepository>().spendPoints(
-          20,
+          10,
           'custom_character_create',
         );
         if (!spend.ok) {
@@ -521,7 +521,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                 label: context.tr('characterImportFromXButton'),
                 onPressed: _importPersonaFromXUrl,
                 busy: _importUrlBusy,
-                costPoints: 5,
+                costPoints: 10,
               ),
             ],
           ),
@@ -629,7 +629,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           context,
           icon: Icons.check_rounded,
           label: context.tr('createSummarySave'),
-          costPoints: 20,
+          costPoints: 10,
           onPressed: _save,
         ),
         _stepBackButton(context),
@@ -797,7 +797,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             context,
             icon: Icons.check_rounded,
             label: context.tr(isEdit ? 'save' : 'create'),
-            costPoints: isEdit ? null : 20,
+            costPoints: isEdit ? null : 10,
             onPressed: () async {
               if (_formKey.currentState?.validate() ?? false) {
                 await _save();

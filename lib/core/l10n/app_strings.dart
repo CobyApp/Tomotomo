@@ -56,7 +56,7 @@ class AppStrings {
     'chatInputHint': '메시지를 입력하세요…',
     'chatEmptyTitle': '첫 인사를 건네보세요',
     'chatEmptyBody': '아래에 메시지를 입력하면 대화가 시작돼요.',
-    'pointsChipTooltip': 'X 프로필 가져오기 5P · 친구와 대화 1번에 5P · 새 친구 만들기 20P',
+    'pointsChipTooltip': 'X 프로필 가져오기 10P · 친구와 대화 1번에 5P · 새 친구 만들기 10P',
     'pointsInsufficient': '포인트가 부족합니다.',
     'pointsInsufficientTitle': '포인트가 부족합니다',
     'pointsInsufficientBody': '광고를 보고 포인트를 받으면 계속 사용할 수 있어요.',
@@ -77,11 +77,11 @@ class AppStrings {
     'pointsBalanceLabel': '보유 포인트',
     'pointsHelpLead': '친구와 이야기하거나 표현을 볼 때 포인트를 써요.',
     'pointsHelpSectionWhen': '언제 쓰이나요?',
-    'pointsHelpItemXImport': '새 친구 만들기에서 X 프로필을 가져올 때마다 5포인트예요.',
+    'pointsHelpItemXImport': '새 친구 만들기에서 X 프로필을 가져올 때마다 10포인트예요.',
     'pointsHelpItemCharacterChat':
         '친구와 채팅에서 답장이 성공할 때마다 5포인트예요. (보낸 직후 답장이 올 때 차감)',
     'pointsHelpItemCustomCreate':
-        '새 친구를 만들어 저장할 때 20포인트예요. (이미 있는 친구를 수정만 할 때는 없어요)',
+        '새 친구를 만들어 저장할 때 10포인트예요. (이미 있는 친구를 수정만 할 때는 없어요)',
     'pointsHelpFooter':
         '잔액은 이 기기에 저장돼요. 포인트가 부족하면 해당 기능을 쓸 수 없어요. 앱 상단의 별 칩에서 이 안내를 다시 열 수 있어요.',
     'cancel': '취소',
@@ -359,7 +359,7 @@ class AppStrings {
     'chatInputHint': 'メッセージを入力…',
     'chatEmptyTitle': '最初のあいさつをしてみよう',
     'chatEmptyBody': '下にメッセージを入力すると会話が始まるよ。',
-    'pointsChipTooltip': 'Xプロフィール取り込み5pt · 友だちと会話1回5pt · 新しい友だち作成20pt',
+    'pointsChipTooltip': 'Xプロフィール取り込み10pt · 友だちと会話1回5pt · 新しい友だち作成10pt',
     'pointsInsufficient': 'ポイントが足りません。',
     'pointsInsufficientTitle': 'ポイントが不足しています',
     'pointsInsufficientBody': '広告を見てポイントを獲得すると、続けて利用できます。',
@@ -380,11 +380,11 @@ class AppStrings {
     'pointsBalanceLabel': '保有ポイント',
     'pointsHelpLead': '友だちと話したり表現を見るときにポイントを使います。',
     'pointsHelpSectionWhen': 'いつ消費されますか？',
-    'pointsHelpItemXImport': '新しい友だち作成でXプロフィールを取り込むたびに5ptです。',
+    'pointsHelpItemXImport': '新しい友だち作成でXプロフィールを取り込むたびに10ptです。',
     'pointsHelpItemCharacterChat':
         '友だちとのチャットで、返信が成功するたびに5ptです。（送信後に返信が届いたときに減ります）',
     'pointsHelpItemCustomCreate':
-        '新しい友だちを作成して保存するとき20ptです。（既存の友だちを編集するだけのときはかかりません）',
+        '新しい友だちを作成して保存するとき10ptです。（既存の友だちを編集するだけのときはかかりません）',
     'pointsHelpFooter':
         '残高はこの端末に保存されます。ポイントが足りないとその機能は使えません。画面上部の星チップからこの説明を開けます。',
     'cancel': 'キャンセル',
@@ -661,7 +661,7 @@ class AppStrings {
     'chatEmptyTitle': 'Say hi to get started',
     'chatEmptyBody': 'Type a message below and your chat begins.',
     'pointsChipTooltip':
-        'Import X profile: 5P · 1 chat reply: 5P · Create new friend: 20P',
+        'Import X profile: 10P · 1 chat reply: 5P · Create new friend: 10P',
     'pointsInsufficient': 'Not enough points.',
     'pointsInsufficientTitle': 'Not enough points',
     'pointsInsufficientBody':
@@ -686,11 +686,11 @@ class AppStrings {
         'Points are used when chatting with friends or viewing expressions.',
     'pointsHelpSectionWhen': 'When are they used?',
     'pointsHelpItemXImport':
-        '5 points each time you import an X profile in Create New Friend.',
+        '10 points each time you import an X profile in Create New Friend.',
     'pointsHelpItemCharacterChat':
         '5 points each time you get a successful reply in a chat with a friend. (Deducted when the reply arrives right after you send)',
     'pointsHelpItemCustomCreate':
-        '20 points when you create and save a new friend. (Not charged when only editing an existing friend)',
+        '10 points when you create and save a new friend. (Not charged when only editing an existing friend)',
     'pointsHelpFooter':
         "Your balance is stored on this device. If you don't have enough points, that feature can't be used. You can reopen this guide from the star chip at the top of the app.",
     'cancel': 'Cancel',
@@ -991,7 +991,7 @@ class AppStrings {
     'chatInputHint': '输入消息…',
     'chatEmptyTitle': '打个招呼开始吧',
     'chatEmptyBody': '在下方输入消息即可开始对话。',
-    'pointsChipTooltip': '导入X资料5积分 · 与朋友聊天1次5积分 · 创建新朋友20积分',
+    'pointsChipTooltip': '导入X资料10积分 · 与朋友聊天1次5积分 · 创建新朋友10积分',
     'pointsInsufficient': '积分不足。',
     'pointsInsufficientTitle': '积分不足',
     'pointsInsufficientBody': '观看广告获取积分即可继续使用。',
@@ -1012,10 +1012,10 @@ class AppStrings {
     'pointsBalanceLabel': '我的积分',
     'pointsHelpLead': '与朋友聊天或查看表达时会使用积分。',
     'pointsHelpSectionWhen': '什么时候使用？',
-    'pointsHelpItemXImport': '在创建新朋友时每导入一次X资料需要5积分。',
+    'pointsHelpItemXImport': '在创建新朋友时每导入一次X资料需要10积分。',
     'pointsHelpItemCharacterChat':
         '与朋友聊天时每次成功获得回复需要5积分。（发送后收到回复时扣除）',
-    'pointsHelpItemCustomCreate': '创建并保存新朋友时需要20积分。（仅编辑已有朋友时不收取）',
+    'pointsHelpItemCustomCreate': '创建并保存新朋友时需要10积分。（仅编辑已有朋友时不收取）',
     'pointsHelpFooter':
         '余额保存在本设备上。积分不足时无法使用该功能。可以在应用顶部的星星图标中再次打开此说明。',
     'cancel': '取消',

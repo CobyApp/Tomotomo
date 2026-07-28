@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/di/injection.dart';
 import '../../core/notifications/local_notifications.dart';
-import '../../core/ui/app_scaffold_messenger.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/chat_repository.dart';
@@ -30,7 +29,6 @@ class ChatViewModel extends ChangeNotifier {
   final Character character;
   final ChatRepository chatRepository;
   final AiChatRepository aiChatRepository;
-  final String insufficientPointsMessage;
   final VoidCallback? onInsufficientPoints;
   final TextEditingController messageController = TextEditingController();
 
@@ -42,7 +40,6 @@ class ChatViewModel extends ChangeNotifier {
     required this.character,
     required this.chatRepository,
     required this.aiChatRepository,
-    required this.insufficientPointsMessage,
     this.onInsufficientPoints,
     required String appUiLanguageCode,
   }) {
@@ -129,11 +126,26 @@ class ChatViewModel extends ChangeNotifier {
   Future<void> sendMessage() async {
     final userMessage = messageController.text.trim();
     if (userMessage.isEmpty || _isGenerating) return;
+    // Only clear once the send is actually going through: clearing up front
+    // threw the text away whenever the balance check blocked the send.
+    if (!await _hasPointsForReply()) {
+      onInsufficientPoints?.call();
+      return;
+    }
     messageController.clear();
     // Ask for notification permission the first time — so we can tell the user
     // when a reply finishes while they're away.
     unawaited(LocalNotifications.ensurePermission());
     await _sendUserMessage(userMessage);
+  }
+
+  /// Whether the wallet can cover one reply. Loads the balance if unknown.
+  Future<bool> _hasPointsForReply() async {
+    final notifier = pointsBalanceNotifier;
+    if (notifier == null) return true;
+    if (notifier.balance == null) await notifier.loadInitial();
+    final balance = notifier.balance;
+    return balance == null || balance >= kChatReplyPointCost;
   }
 
   /// Compact one-line preview of the reply for a notification body.
@@ -143,19 +155,10 @@ class ChatViewModel extends ChangeNotifier {
   }
 
   Future<void> _sendUserMessage(String userMessage) async {
-    final notifier = pointsBalanceNotifier;
-    if (notifier != null) {
-      if (notifier.balance == null) {
-        await notifier.loadInitial();
-      }
-      final bal = notifier.balance;
-      if (bal != null && bal < kChatReplyPointCost) {
-        appScaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(content: Text(insufficientPointsMessage)),
-        );
-        onInsufficientPoints?.call();
-        return;
-      }
+    if (!await _hasPointsForReply()) {
+      // The top-up sheet states the problem and offers the ad, so no snackbar.
+      onInsufficientPoints?.call();
+      return;
     }
 
     final userChatMessage = ChatMessage(
