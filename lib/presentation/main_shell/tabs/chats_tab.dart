@@ -336,16 +336,11 @@ class ChatsTabState extends State<ChatsTab>
                 AppSpacing.pageH,
                 AppSpacing.pageBottom,
               ),
-              itemCount: _rooms.length + 1,
+              itemCount: _rooms.length,
               itemBuilder: (context, i) {
-                if (i == 0) {
-                  return SwipeDeleteHint(
-                    label: context.tr('chatsDeleteSwipeHint'),
-                  );
-                }
                 return PaperEntrance(
-                  index: i - 1,
-                  child: _dismissibleChatRoomRow(context, _rooms[i - 1]),
+                  index: i,
+                  child: _dismissibleChatRoomRow(context, _rooms[i]),
                 );
               },
             ),

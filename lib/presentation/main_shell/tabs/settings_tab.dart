@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../points/points_balance_notifier.dart';
 import '../../../core/ui/app_settings_tile.dart';
 import '../../../core/ui/app_tokens.dart';
 import '../../../core/ui/paper/paper_scaffold.dart';
@@ -33,23 +31,18 @@ class SettingsTab extends StatelessWidget {
           AppSettingsPanel(
             dividerIndent: 16,
             children: [
-              Consumer<PointsBalanceNotifier>(
-                builder: (context, pn, _) {
-                  final bal = pn.balance;
-                  final suffix = bal != null ? ' · $bal' : '';
-                  return AppSettingsNavTile(
-                    title: context.tr('settingsPointsBalance'),
-                    subtitle:
-                        '${context.tr('settingsPointsBalanceSubtitle')}$suffix',
-                    showChevron: true,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (_) => const PointsUsageScreen(),
-                        ),
-                      );
-                    },
+              // Description only — the balance itself lives on the points
+              // screen and the toolbar chip, not tacked onto this subtitle.
+              AppSettingsNavTile(
+                title: context.tr('settingsPointsBalance'),
+                subtitle: context.tr('settingsPointsBalanceSubtitle'),
+                showChevron: true,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const PointsUsageScreen(),
+                    ),
                   );
                 },
               ),

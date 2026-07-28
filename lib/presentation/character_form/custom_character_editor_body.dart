@@ -288,7 +288,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       final repo = context.read<CharacterRecordRepository>();
       if (existing == null) {
         final spend = await context.read<PointsRepository>().spendPoints(
-          10,
+          20,
           'custom_character_create',
         );
         if (!spend.ok) {

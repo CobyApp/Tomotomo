@@ -109,7 +109,11 @@ class _LegalWebViewScreenState extends State<LegalWebViewScreen> {
   Widget build(BuildContext context) {
     return PaperScaffold(
       title: widget.title,
-      showBackground: false,
+      // This screen is pushed on its own (not inside the shell's
+      // PaperBackground): without the background the transparent app bar had
+      // nothing painted behind it and rendered black. Paint both the header
+      // background and an opaque body so the WebView never flashes black.
+      transparentBackground: false,
       body: Stack(
         children: [
           if (!_error && _controller != null)

@@ -14,6 +14,10 @@ import 'chat_generation_registry.dart';
 /// Local single-user id (no auth).
 const String _localUserId = 'local';
 
+/// Points a single successful reply costs. The pre-send balance check and the
+/// actual charge must always use this same number.
+const int kChatReplyPointCost = 5;
+
 /// Short assistant line matching the character’s main chat language (no stack traces or API text).
 String _aiChatErrorBubbleText(Character character) {
   if (character.koreanNationalPersona) {
@@ -145,7 +149,7 @@ class ChatViewModel extends ChangeNotifier {
         await notifier.loadInitial();
       }
       final bal = notifier.balance;
-      if (bal != null && bal < 1) {
+      if (bal != null && bal < kChatReplyPointCost) {
         appScaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(content: Text(insufficientPointsMessage)),
         );
@@ -211,7 +215,7 @@ class ChatViewModel extends ChangeNotifier {
           ),
         );
       }
-      final spend = await pointsRepository.spendPoints(1, 'character_chat');
+      final spend = await pointsRepository.spendPoints(kChatReplyPointCost, 'character_chat');
       if (spend.ok) {
         pointsBalanceNotifier?.setBalance(spend.balance);
       } else {

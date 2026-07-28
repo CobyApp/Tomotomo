@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// Rewarded-ad economy + unit ids. Uses Google public TEST ids in debug so
 /// development needs no AdMob account; real ids come from env in release.
 class AdConfig {
-  static const int pointsPerAd = 30;
+  static const int pointsPerAd = 50;
   static const int maxAdsPerDay = 5;
 
   // Google-provided public rewarded test unit ids.
