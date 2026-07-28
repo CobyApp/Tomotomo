@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../core/locale/languages.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
@@ -117,27 +118,18 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
       role: 'assistant',
       text: _takeRunes(parsed.content, _maxHistoryRunes),
     ));
-    // Safety net: small on-device models sometimes write the bundled study
-    // sheet in the friend's language instead of the learner's. If the
-    // translation/glosses are not in the learner's script, re-annotate the
-    // reply once in the correct language (the reply "content" is kept as-is).
-    if (_studySheetLanguageWrong(parsed)) {
+    // Safety net: a small on-device model does not always obey the prompt. If
+    // the bundled sheet is wrong (explained in the friend's language, missing
+    // the translation, too few words, or readings in the wrong script),
+    // re-annotate the reply once. The reply "content" is always kept as-is.
+    if (_studySheetNeedsRepair(parsed, character)) {
       try {
         final fixed = await generateExpressionAnalysis(
           parsed.content,
           character,
           appUiLanguageCode: _appUiLanguageCode,
         );
-        parsed = ChatMessage(
-          content: parsed.content,
-          role: parsed.role,
-          timestamp: parsed.timestamp,
-          explanation: parsed.explanation,
-          lineTranslation: fixed.lineTranslation ?? parsed.lineTranslation,
-          vocabulary: (fixed.vocabulary != null && fixed.vocabulary!.isNotEmpty)
-              ? fixed.vocabulary
-              : parsed.vocabulary,
-        );
+        parsed = _mergeBetterSheet(parsed, fixed);
       } catch (_) {
         // Keep the original bundled sheet if the repair pass fails.
       }
@@ -154,17 +146,73 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
     );
   }
 
-  /// True when the bundled study sheet is present but clearly NOT written in
-  /// the learner's language (e.g. a Japanese gloss shown to a Korean learner).
-  bool _studySheetLanguageWrong(ChatMessage message) {
+  /// Minimum vocabulary rows we accept before asking for a richer sheet.
+  static const _minVocabulary = 3;
+
+  /// True when the bundled study sheet fails any quality bar the prompt asks
+  /// for, so it is worth spending one repair generation.
+  bool _studySheetNeedsRepair(ChatMessage message, Character character) {
+    // 1. The sentence translation is mandatory.
     final translation = message.lineTranslation?.trim() ?? '';
+    if (translation.isEmpty) return true;
+
+    // 2. Explained in the wrong language (e.g. Japanese gloss, Korean learner).
     final gloss = message.vocabulary?.isNotEmpty == true
         ? message.vocabulary!.first.meaning.trim()
         : '';
-    // Nothing to check — the analysis-repair path handles empties elsewhere.
-    if (translation.isEmpty && gloss.isEmpty) return false;
-    final sample = '$translation $gloss';
-    return !_containsScriptFor(sample, _appUiLanguageCode);
+    if (!_containsScriptFor('$translation $gloss', _appUiLanguageCode)) {
+      return true;
+    }
+
+    // 3. Too few words — the sheet is the main study value of a reply.
+    final vocabulary = message.vocabulary ?? const [];
+    if (vocabulary.length < _minVocabulary) return true;
+
+    // 4. Readings missing or written in the wrong script.
+    return vocabulary.any((v) => _readingWrong(v, character.friendLanguage));
+  }
+
+  /// A reading must exist (except English) and use the friend language's
+  /// pronunciation script — Hiragana for ja, Latin for ko/zh romanization.
+  bool _readingWrong(Vocabulary v, String friendLanguage) {
+    final reading = v.reading?.trim() ?? '';
+    switch (readingSystemFor(friendLanguage)) {
+      case ReadingSystem.hiragana:
+        // Kana only: Kanji or Latin in a "Hiragana" reading is wrong.
+        return reading.isEmpty ||
+            _cjk.hasMatch(reading) ||
+            _latin.hasMatch(reading);
+      case ReadingSystem.romaja:
+      case ReadingSystem.pinyin:
+        // Romanization: must be Latin, never the source script.
+        return reading.isEmpty ||
+            !_latin.hasMatch(reading) ||
+            _cjk.hasMatch(reading) ||
+            _hangul.hasMatch(reading);
+      case ReadingSystem.ipa:
+        // Optional for English.
+        return false;
+    }
+  }
+
+  /// Keeps the reply text, and for each study field takes whichever version is
+  /// actually usable — the repair pass is not automatically better.
+  ChatMessage _mergeBetterSheet(ChatMessage original, ChatMessage fixed) {
+    final fixedVocab = fixed.vocabulary ?? const [];
+    final originalVocab = original.vocabulary ?? const [];
+    final fixedVocabUsable =
+        fixedVocab.length >= originalVocab.length && fixedVocab.isNotEmpty;
+    final fixedTranslation = fixed.lineTranslation?.trim() ?? '';
+    return ChatMessage(
+      content: original.content,
+      role: original.role,
+      timestamp: original.timestamp,
+      explanation: original.explanation,
+      lineTranslation: fixedTranslation.isNotEmpty
+          ? fixed.lineTranslation
+          : original.lineTranslation,
+      vocabulary: fixedVocabUsable ? fixedVocab : original.vocabulary,
+    );
   }
 
   @override

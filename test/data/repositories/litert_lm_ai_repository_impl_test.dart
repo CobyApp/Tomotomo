@@ -5,10 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 final class _FakeRuntime implements OnDeviceAiRuntime {
+  /// A fully compliant sheet: Korean explanations, 4 entries, Hiragana
+  /// readings — so the happy path needs no repair generation.
   String response =
       '{"content":"こんにちは！","full_translation":"안녕하세요!",'
-      '"learning_note":"인사 표현",'
-      '"vocabulary":[{"word":"こんにちは","meaning_ko":"안녕하세요"}]}';
+      '"vocabulary":['
+      '{"word":"こんにちは","reading":"こんにちは","meaning_ko":"낮에 만났을 때 건네는 대표적인 인사말이다."},'
+      '{"word":"今日","reading":"きょう","meaning_ko":"말하는 당일을 뜻하며 일정 이야기에 자주 쓴다."},'
+      '{"word":"元気","reading":"げんき","meaning_ko":"건강하고 활기찬 상태를 뜻한다."},'
+      '{"word":"ね","reading":"ね","meaning_ko":"동의를 구하는 부드러운 종조사이다."}]}';
   String? lastSystemInstruction;
   String? lastPrompt;
   int generationCount = 0;
@@ -103,6 +108,55 @@ final class _WrongStudySheetLangRuntime implements OnDeviceAiRuntime {
   }
 }
 
+/// First reply carries a deficient study sheet ([badSheet]); the repair pass
+/// then returns a proper Korean sheet.
+final class _DeficientSheetRuntime implements OnDeviceAiRuntime {
+  _DeficientSheetRuntime(this.badSheet);
+
+  final String badSheet;
+  int generationCount = 0;
+
+  @override
+  String? get activeBackend => 'cpu';
+  @override
+  void cancelInstall() {}
+  @override
+  Future<void> deleteModel() async {}
+  @override
+  Future<void> resetDownloadState() async {}
+  @override
+  Future<void> dispose() async {}
+  @override
+  Future<void> initialize() async {}
+  @override
+  Future<void> installModel({
+    required void Function(double progress) onProgress,
+    void Function()? onVerifying,
+  }) async {}
+  @override
+  Future<bool> isModelInstalled() async => true;
+
+  @override
+  Future<String> generateText({
+    required String systemInstruction,
+    required String prompt,
+    double temperature = 0.2,
+    int maxTokens = 4096,
+  }) async {
+    generationCount++;
+    if (generationCount == 1) return badSheet;
+    // Every gloss is comfortably long so the analysis pass has no reason to
+    // repair itself — the test then measures exactly one repair generation.
+    return '{"content":"こんにちは！","full_translation":"안녕하세요!",'
+        '"learning_note":"낮에 만났을 때 쓰는 대표적인 인사 표현이다.",'
+        '"vocabulary":['
+        '{"word":"こんにちは","reading":"こんにちは","meaning_ko":"낮 시간대에 사람을 만났을 때 건네는 대표적인 인사말이다."},'
+        '{"word":"今日","reading":"きょう","meaning_ko":"말하는 당일을 뜻하며 일정 이야기를 꺼낼 때 자주 쓴다."},'
+        '{"word":"元気","reading":"げんき","meaning_ko":"건강하고 활기찬 상태를 뜻하며 안부를 물을 때 자주 쓴다."},'
+        '{"word":"ね","reading":"ね","meaning_ko":"문장 끝에서 동의나 공감을 구하는 부드러운 종조사이다."}]}';
+  }
+}
+
 const _character = Character(
   id: 'yuna',
   name: '유나',
@@ -178,6 +232,53 @@ void main() {
       expect(runtime.generationCount, 2);
     },
   );
+
+  group('the bundled sheet is repaired when it falls short', () {
+    Future<int> runWith(String badSheet) async {
+      final runtime = _DeficientSheetRuntime(badSheet);
+      final repository = LiteRtLmAiRepositoryImpl(runtime)
+        ..initializeForCharacter(_character, appUiLanguageCode: 'ko');
+      await repository.generateResponse('안녕');
+      return runtime.generationCount;
+    }
+
+    test('missing sentence translation', () async {
+      expect(
+        await runWith(
+          '{"content":"こんにちは！",'
+          '"vocabulary":['
+          '{"word":"こんにちは","reading":"こんにちは","meaning_ko":"인사말이다."},'
+          '{"word":"今日","reading":"きょう","meaning_ko":"오늘을 뜻한다."},'
+          '{"word":"ね","reading":"ね","meaning_ko":"종조사이다."}]}',
+        ),
+        2,
+      );
+    });
+
+    test('too few vocabulary entries', () async {
+      expect(
+        await runWith(
+          '{"content":"こんにちは！","full_translation":"안녕하세요!",'
+          '"vocabulary":[{"word":"こんにちは","reading":"こんにちは",'
+          '"meaning_ko":"낮에 건네는 인사말이다."}]}',
+        ),
+        2,
+      );
+    });
+
+    test('reading in the wrong script (Kanji / Latin, not Hiragana)', () async {
+      expect(
+        await runWith(
+          '{"content":"こんにちは！","full_translation":"안녕하세요!",'
+          '"vocabulary":['
+          '{"word":"こんにちは","reading":"konnichiwa","meaning_ko":"인사말이다."},'
+          '{"word":"今日","reading":"今日","meaning_ko":"오늘을 뜻한다."},'
+          '{"word":"ね","reading":"ね","meaning_ko":"종조사이다."}]}',
+        ),
+        2,
+      );
+    });
+  });
 
   test('expression analysis is isolated from chat continuation', () async {
     final runtime = _FakeRuntime();
