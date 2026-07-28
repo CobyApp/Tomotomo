@@ -385,7 +385,7 @@ class WordBookScreenState extends State<WordBookScreen>
                       AppSpacing.pageH,
                       AppSpacing.pageBottom,
                     ),
-                    itemCount: _items.length + 2,
+                    itemCount: _items.length + 1,
                     itemBuilder: (context, i) {
                       if (i == 0) {
                         return _StudyLauncherCard(
@@ -403,12 +403,7 @@ class WordBookScreenState extends State<WordBookScreen>
                           },
                         );
                       }
-                      if (i == 1) {
-                        return SwipeDeleteHint(
-                          label: context.tr('chatsDeleteSwipeHint'),
-                        );
-                      }
-                      return _dismissibleWordRow(context, _items[i - 2]);
+                      return _dismissibleWordRow(context, _items[i - 1]);
                     },
                   ),
           ),
