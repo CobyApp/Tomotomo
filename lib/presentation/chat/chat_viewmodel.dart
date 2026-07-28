@@ -173,7 +173,7 @@ class ChatViewModel extends ChangeNotifier {
 
     // Beat before the "typing…" indicator appears — as if the friend read the
     // message first, then started typing (not shown instantly).
-    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    await Future<void>.delayed(const Duration(milliseconds: 1000));
     if (_disposed) return;
 
     _isGenerating = true;
