@@ -40,6 +40,9 @@ void setupInjection({OnDeviceAiRuntime? aiRuntime}) {
   aiChatRepository = LiteRtLmAiRepositoryImpl(
     onDeviceAiRuntime,
     ragRetriever: localRagRetriever,
+    // So a friend can recover the last few turns of your conversation after you
+    // visit another room or restart the app.
+    chatRepository: chatRepository,
   );
   profileRepository = ProfileRepositoryImpl(Hive.box(HiveBoxes.settings));
   characterRecordRepository = CharacterRecordRepositoryImpl(Hive.box(HiveBoxes.characters));

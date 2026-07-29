@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import '../../core/text/display_width.dart';
@@ -5,23 +6,46 @@ import '../../core/text/script_checks.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
+import '../../domain/repositories/chat_repository.dart';
 import '../on_device/on_device_ai_runtime.dart';
 import '../rag/local_rag_retriever.dart';
 import 'ai_response_parser.dart';
 import 'ai_system_prompt_builder.dart';
 
 final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
-  LiteRtLmAiRepositoryImpl(this._runtime, {LocalRagRetriever? ragRetriever})
-    : _rag = ragRetriever;
+  LiteRtLmAiRepositoryImpl(
+    this._runtime, {
+    LocalRagRetriever? ragRetriever,
+    ChatRepository? chatRepository,
+  })  : _rag = ragRetriever,
+        _chat = chatRepository;
 
   final OnDeviceAiRuntime _runtime;
 
   /// Offline local RAG (saved vocabulary + relevant past turns). Optional.
   final LocalRagRetriever? _rag;
+
+  /// Used to restore recent dialogue for a room this process has not seen yet.
+  final ChatRepository? _chat;
   Character? _character;
   String _appUiLanguageCode = 'ko';
   String? _userName;
-  final List<({String role, String text})> _history = [];
+  /// Recent dialogue PER friend.
+  ///
+  /// This used to be a single list on a process-wide singleton, cleared whenever
+  /// the friend changed and never rebuilt, which caused two separate defects:
+  /// a friend forgot the exchange you had just had with them as soon as you
+  /// visited another room or restarted the app, and — because the turns are
+  /// appended AFTER the multi-second inference — a reply that finished while you
+  /// were in another room appended its transcript to THAT friend's history, so
+  /// friend B could be prompted with your conversation with friend A.
+  final Map<String, List<({String role, String text})>> _historyByCharacter = {};
+
+  /// Rooms whose history has already been restored from storage this run.
+  final Set<String> _restored = {};
+
+  List<({String role, String text})> _historyFor(String characterId) =>
+      _historyByCharacter.putIfAbsent(characterId, () => []);
 
   static const int _maxHistoryEntries = 6;
   static const int _maxHistoryRunes = 480;
@@ -36,13 +60,43 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
     final language = appUiLanguageCode.trim().isEmpty
         ? 'ko'
         : appUiLanguageCode.trim();
-    if (_character?.id != character.id || _appUiLanguageCode != language) {
-      _history.clear();
+    // A language change invalidates the transcript (it is fed to the model as
+    // context); a character change no longer does, because each friend keeps
+    // their own.
+    if (_appUiLanguageCode != language) {
+      _historyByCharacter.clear();
+      _restored.clear();
     }
     _character = character;
     _appUiLanguageCode = language;
     final trimmed = userName?.trim();
     if (trimmed != null && trimmed.isNotEmpty) _userName = trimmed;
+    unawaited(_restoreHistory(character));
+  }
+
+  /// Fills a friend's recent dialogue from stored messages the first time this
+  /// run touches them, so returning to a room — or relaunching — does not start
+  /// the friend off with an empty transcript. The RAG retriever deliberately
+  /// skips the newest turns on the assumption they are here.
+  Future<void> _restoreHistory(Character character) async {
+    final chat = _chat;
+    if (chat == null || !_restored.add(character.id)) return;
+    try {
+      final stored = await chat.getMessages(character);
+      final turns = _historyFor(character.id);
+      if (turns.isNotEmpty) return;
+      final recent = stored.length <= _maxHistoryEntries
+          ? stored
+          : stored.sublist(stored.length - _maxHistoryEntries);
+      for (final m in recent) {
+        final text = m.content.trim();
+        if (text.isEmpty) continue;
+        turns.add((role: m.role, text: _takeRunes(text, _maxHistoryRunes)));
+      }
+    } catch (_) {
+      // Best-effort: a friend with no restored context still replies.
+      _restored.remove(character.id);
+    }
   }
 
   @override
@@ -52,9 +106,10 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
       throw StateError('AI 캐릭터가 초기화되지 않았습니다.');
     }
 
-    final history = _history.length <= _maxHistoryEntries
-        ? _history
-        : _history.sublist(_history.length - _maxHistoryEntries);
+    final turns = _historyFor(character.id);
+    final history = turns.length <= _maxHistoryEntries
+        ? turns
+        : turns.sublist(turns.length - _maxHistoryEntries);
     final transcript = history
         .map(
           (turn) =>
@@ -104,11 +159,15 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
       character,
       meaningMode: meaningMode,
     );
-    _history.add((
+    // Appended to the friend this generation was FOR, captured above — not to
+    // whoever happens to be on screen now, which is what leaked one room's
+    // transcript into another.
+    final ownTurns = _historyFor(character.id);
+    ownTurns.add((
       role: 'user',
       text: _takeRunes(userMessage, _maxHistoryRunes),
     ));
-    _history.add((
+    ownTurns.add((
       role: 'assistant',
       text: _takeRunes(parsed.content, _maxHistoryRunes),
     ));
@@ -237,7 +296,12 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
   }
 
   @override
-  void resetChat() => _history.clear();
+  void resetChat() {
+    final id = _character?.id;
+    if (id == null) return;
+    _historyByCharacter.remove(id);
+    _restored.remove(id);
+  }
 }
 
 bool _analysisNeedsRepair(ChatMessage message, Character character) {
