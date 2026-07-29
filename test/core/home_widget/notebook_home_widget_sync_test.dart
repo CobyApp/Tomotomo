@@ -101,14 +101,17 @@ void main() {
     // worse than a language the user did not ask for.
     await syncNotebookToHomeWidget(_FakeRepo({'zh'}), defaultLangIfUnset: 'ko');
     expect(saved['notebook_widget_lang'], 'zh');
-    expect(saved['notebook_widget_lang_label'], '中文');
+    expect(saved['notebook_widget_labels'], '中文');
   });
 
   test('respects a language the user already chose', () async {
     saved['notebook_widget_lang'] = 'ja';
     await syncNotebookToHomeWidget(_FakeRepo({'zh'}));
     expect(saved['notebook_widget_lang'], 'ja');
-    expect(saved['notebook_widget_lang_label'], '日本語');
+    // The shown language is in the cycle even with no words of its own, and the
+    // labels line up with it index for index.
+    expect(saved['notebook_widget_langs'], 'ja,zh');
+    expect(saved['notebook_widget_labels'], '日本語,中文');
   });
 
   test('widget chrome follows the app UI language, not a hardcoded one', () async {
@@ -127,5 +130,29 @@ void main() {
     final decoded =
         jsonDecode(saved['notebook_widget_payload_ko'] as String) as List;
     expect(decoded.single, {'c': 'word-ko', 't': 'meaning-ko'});
+  });
+
+  test('the shown language stays reachable when its own words are gone', () async {
+    // On 'ja', every Japanese word deleted, words exist only in Korean. Listing
+    // just the languages WITH words left a one-entry cycle: the chip hid itself
+    // and the widget was stuck showing an empty Japanese list for good.
+    saved['notebook_widget_lang'] = 'ja';
+    await syncNotebookToHomeWidget(_FakeRepo({'ko'}));
+
+    final cycle = (saved['notebook_widget_langs'] as String).split(',');
+    expect(cycle, containsAll(<String>['ja', 'ko']));
+    expect(cycle.length, greaterThan(1), reason: 'a hidden chip strands the widget');
+    expect(saved['notebook_widget_lang'], 'ja', reason: 'the choice is not overridden');
+  });
+
+  test('labels always pair up with the cycle, one for one', () async {
+    for (final withWords in [<String>{}, {'ko'}, {'ko', 'zh'}, {'ko', 'ja', 'en', 'zh'}]) {
+      saved.clear();
+      await syncNotebookToHomeWidget(_FakeRepo(withWords));
+      final langs = (saved['notebook_widget_langs'] as String).split(',');
+      final labels = (saved['notebook_widget_labels'] as String).split(',');
+      expect(labels.length, langs.length, reason: 'mismatched for $withWords');
+      expect(langs, isNot(contains('')), reason: 'empty entry for $withWords');
+    }
   });
 }

@@ -42,11 +42,14 @@ class NotebookWidgetProvider : HomeWidgetProvider() {
     val emptyText =
         widgetData.getString("notebook_widget_empty", null)
             ?: context.getString(R.string.widget_notebook_empty_hint)
-    val langLabel = widgetData.getString("notebook_widget_lang_label", null) ?: lang
-    val cycleCount =
-        (widgetData.getString("notebook_widget_langs", null) ?: "")
-            .split(',')
-            .count { it.isNotBlank() }
+    // Label looked up by index in the cycle list, NOT from a separate "current
+    // label" key: the chip switches language inside this widget, so a standalone
+    // key would still name the previous language until the app next synced.
+    fun csv(key: String) =
+        (widgetData.getString(key, null) ?: "").split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    val cycle = csv("notebook_widget_langs")
+    val labels = csv("notebook_widget_labels")
+    val langLabel = labels.getOrNull(cycle.indexOf(lang)) ?: lang
 
     appWidgetIds.forEach { widgetId ->
       val views =
@@ -58,7 +61,7 @@ class NotebookWidgetProvider : HomeWidgetProvider() {
             setTextViewText(R.id.widget_btn_lang, langLabel)
             setViewVisibility(
                 R.id.widget_btn_lang,
-                if (cycleCount > 1) View.VISIBLE else View.GONE,
+                if (cycle.size > 1) View.VISIBLE else View.GONE,
             )
             setOnClickPendingIntent(
                 R.id.widget_btn_lang,

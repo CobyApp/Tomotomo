@@ -24,8 +24,11 @@ class NotebookWidgetActionReceiver : BroadcastReceiver() {
             .filter { it.isNotEmpty() }
     if (order.size < 2) return
 
+    // indexOf returns -1 when the stored language is not in the cycle; advancing
+    // from a coerced 0 landed on the SECOND entry and skipped the first.
     val current = store.getString("notebook_widget_lang", null)
-    val next = order[(order.indexOf(current).coerceAtLeast(0) + 1) % order.size]
+    val at = order.indexOf(current)
+    val next = if (at < 0) order.first() else order[(at + 1) % order.size]
     store.edit().putString("notebook_widget_lang", next).commit()
 
     val mgr = AppWidgetManager.getInstance(context)

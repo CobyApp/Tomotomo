@@ -36,6 +36,8 @@ dependencies:
   http: ^1.6.0
   provider: ^6.1.5+1
   intl: ^0.20.2
+  # Grapheme-cluster iteration, so clamping text can't split an emoji.
+  characters: ^1.4.0
   url_launcher: ^6.3.2
   webview_flutter: ^4.14.1
   package_info_plus: ^8.0.0

@@ -1,5 +1,10 @@
 import '../../core/text/display_width.dart';
 
+/// Character cap on a friend's tagline, enforced both by the editor's text
+/// field and by the clamp applied to an imported one — a width-only budget let
+/// an imported ASCII tagline open the field already over its own limit.
+const int kTaglineMaxChars = 40;
+
 /// Custom character stored locally in Hive.
 ///
 /// Friend language ([language]): 'ko' | 'ja' | 'en' | 'zh' (Simplified).

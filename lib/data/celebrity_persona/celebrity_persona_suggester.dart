@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../../core/di/injection.dart';
 import '../../core/text/display_width.dart';
+import '../../domain/entities/character_record.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/x_profile/x_profile_reader.dart';
 import '../on_device/on_device_ai_runtime.dart';
@@ -114,7 +115,7 @@ class CelebrityPersonaSuggester {
     var t = raw?.trim().replaceAll(RegExp(r'[\r\n#]'), ' ') ?? '';
     t = t.replaceAll(RegExp(r'\s+'), ' ').trim();
     if (t.isEmpty) return '';
-    return clampToDisplayWidth(t, maxHalfWidths);
+    return clampToDisplayWidth(t, maxHalfWidths, maxRunes: kTaglineMaxChars);
   }
 
   static String _composeSpeechStyle({

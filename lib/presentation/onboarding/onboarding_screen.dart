@@ -227,7 +227,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       // lived only in this widget's state, so afterwards the word book opened
       // the wrong segment and new friends defaulted to a language the user
       // never picked (studyLanguageForApp guesses Japanese for en/zh UIs).
-      await friendLanguage.setLanguage(lang);
+      //
+      // Guarded like the profile write below: the friend is already saved at this
+      // point, so letting this throw would abort before `complete()` and a second
+      // tap on Finish would create a duplicate friend. A missed write here only
+      // costs the fallback guess.
+      try {
+        await friendLanguage.setLanguage(lang);
+      } catch (_) {}
       // Save the learner's own name to their profile so friends greet them by
       // name from the first message.
       final myName = _myNameController.text.trim();

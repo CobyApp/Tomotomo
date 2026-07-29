@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Fallbacks only: the app pushes localized widget text through the App Group
+<!-- Default for any device locale without its own values-* folder, so an
+     unknown locale gets English rather than one of the four app languages.
+     Fallbacks only: the app pushes localized widget text through the App Group
      (see notebook_home_widget_sync.dart). These show before the first sync. -->
 <resources>
-    <string name="widget_notebook_title">단어장</string>
-    <string name="widget_notebook_description">저장한 단어를 홈 화면에 보여줍니다.</string>
-    <string name="widget_notebook_empty_hint">저장한 단어가 없습니다. 채팅의 학습 노트에서 추가할 수 있어요.</string>
+    <string name="widget_notebook_title">Vocabulary</string>
+    <string name="widget_notebook_description">Shows your saved words on the home screen.</string>
+    <string name="widget_notebook_empty_hint">No saved words yet. Add them from the study notes in a chat.</string>
 </resources>

@@ -5,6 +5,23 @@ import WidgetKit
 
 private let widgetGroupId = "group.com.dime.tomotomo"
 
+/// Endonym for `lang`, looked up by its index in the pushed cycle list — the same
+/// mechanism Android uses, so there is only one way this is derived.
+private func languageLabel(_ d: UserDefaults?, _ lang: String) -> String {
+  func csv(_ key: String) -> [String] {
+    (d?.string(forKey: key) ?? "")
+      .split(separator: ",")
+      .map { $0.trimmingCharacters(in: .whitespaces) }
+      .filter { !$0.isEmpty }
+  }
+  let cycle = csv("notebook_widget_langs")
+  let labels = csv("notebook_widget_labels")
+  guard let i = cycle.firstIndex(of: lang), labels.indices.contains(i) else {
+    return lang
+  }
+  return labels[i]
+}
+
 struct NotebookEntry: TimelineEntry {
   let date: Date
   /// Language name in its own script (한국어 / 日本語 / English / 中文).
@@ -41,7 +58,7 @@ struct NotebookProvider: TimelineProvider {
     let raw = d?.string(forKey: "notebook_widget_payload_\(lang)") ?? "[]"
     return NotebookEntry(
       date: Date(),
-      langLabel: d?.string(forKey: "notebook_widget_lang_label") ?? lang,
+      langLabel: languageLabel(d, lang),
       title: d?.string(forKey: "notebook_widget_title") ?? "단어장",
       emptyText: d?.string(forKey: "notebook_widget_empty") ?? "저장한 단어가 없습니다",
       lines: parseLines(raw))

@@ -754,7 +754,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                       color: p.coral,
                     ),
                   ),
-                  maxLength: 40,
+                  maxLength: kTaglineMaxChars,
                 ),
               ],
             ),

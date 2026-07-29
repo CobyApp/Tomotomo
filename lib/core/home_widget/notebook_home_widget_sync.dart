@@ -25,17 +25,23 @@ String _payloadKey(String lang) => 'notebook_widget_payload_$lang';
 /// so it used to be hardcoded Japanese for every user.
 const String _keyTitle = 'notebook_widget_title';
 const String _keyEmpty = 'notebook_widget_empty';
-const String _keyLangLabel = 'notebook_widget_lang_label';
 
 /// Name + blurb shown in the OS widget gallery. Localizing these natively would
 /// mean adding a strings catalog to the extension target; reading them from the
 /// App Group keeps it in one place with the rest of the widget's text.
 const String _keyGalleryDesc = 'notebook_widget_gallery_desc';
 
-/// Languages the widget's language chip can cycle through, in order, as CSV —
-/// the ones that actually have saved words. Pushed from here so the native side
-/// never has to know the language list or hardcode a ko/ja pair.
+/// Languages the widget's chip cycles through, in order, as CSV — pushed from
+/// here so neither native side has to know the language list or hardcode a
+/// ko/ja pair.
 const String _keyLangs = 'notebook_widget_langs';
+
+/// Endonyms for [_keyLangs], same order, same length. The native side looks the
+/// label up by the shown language's index instead of reading a separate
+/// "current label" key: tapping the chip changes the language natively, so a
+/// standalone label key would keep showing the PREVIOUS language until the app
+/// next synced.
+const String _keyLabels = 'notebook_widget_labels';
 
 const int _maxItems = 8;
 
@@ -108,9 +114,17 @@ Future<void> syncNotebookToHomeWidget(
       await HomeWidget.saveWidgetData<String>(_keyLang, lang);
     }
 
+    // Cycle order: the languages that have words, plus the one currently shown
+    // even when it is empty. Without that last part, emptying the shown language
+    // left a single-entry cycle, the chip hid itself, and the widget was stranded
+    // on an empty list with no way back.
+    final cycle = kSupportedLanguages
+        .where((l) => l == lang || lists[l]!.isNotEmpty)
+        .toList();
+    await HomeWidget.saveWidgetData<String>(_keyLangs, cycle.join(','));
     await HomeWidget.saveWidgetData<String>(
-      _keyLangs,
-      (withWords.isEmpty ? kSupportedLanguages.toList() : withWords).join(','),
+      _keyLabels,
+      cycle.map(languageEndonym).join(','),
     );
 
     // The native widget can't reach AppStrings, so its chrome was hardcoded
@@ -128,12 +142,6 @@ Future<void> syncNotebookToHomeWidget(
       _keyGalleryDesc,
       AppStrings.of(ui, 'widgetGalleryDescription'),
     );
-    // Endonym: reads correctly whatever the UI language is.
-    await HomeWidget.saveWidgetData<String>(
-      _keyLangLabel,
-      languageEndonym(lang),
-    );
-
     await _reloadWidget();
   } catch (_) {
     // e.g. iOS without App Group / widget target
