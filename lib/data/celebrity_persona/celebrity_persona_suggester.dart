@@ -56,10 +56,16 @@ String detectPersonaLanguage(String text, {required String fallback}) {
   }
   if (hangul >= 3 && hangul >= kana) return 'ko';
   if (kana >= 3) return 'ja';
+  // Whichever script carries most of the text wins. The old order tested Chinese
+  // BEFORE English and additionally required han < 3 for English, so an English
+  // bio naming a place in kanji — 'Professor at 東京大学. Researcher, Tokyo.' —
+  // classified as Chinese and the whole persona came back in Simplified Chinese.
+  // A kanji-only Japanese bio still lands on 'zh': nothing here can tell
+  // Simplified from Japanese kanji without kana, which is why the caller's
+  // requested language is the fallback rather than a guess.
+  if (latin >= 10 && latin > han && hangul == 0 && kana == 0) return 'en';
   if (han >= 3 && kana == 0 && hangul == 0) return 'zh';
-  if (latin >= 10 && hangul == 0 && kana == 0 && han < 3) return 'en';
-  final f = fallback.toLowerCase();
-  return (f == 'ko' || f == 'ja' || f == 'en' || f == 'zh') ? f : 'ja';
+  return normalizeLang(fallback);
 }
 
 /// Uses the on-device model to turn profile text into a fictional tutor template.

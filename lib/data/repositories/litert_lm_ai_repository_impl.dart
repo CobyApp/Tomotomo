@@ -1,6 +1,7 @@
 import 'dart:convert';
 
-import '../../core/locale/languages.dart';
+import '../../core/text/display_width.dart';
+import '../../core/text/script_checks.dart';
 import '../../domain/entities/character.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/ai_chat_repository.dart';
@@ -153,7 +154,7 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
     final gloss = message.vocabulary?.isNotEmpty == true
         ? message.vocabulary!.first.meaning.trim()
         : '';
-    if (!_containsScriptFor('$translation $gloss', _appUiLanguageCode)) {
+    if (!dominantScriptIs('$translation $gloss', _appUiLanguageCode)) {
       return true;
     }
 
@@ -162,31 +163,9 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
     if (vocabulary.length < _minVocabulary) return true;
 
     // 4. Readings missing or written in the wrong script.
-    return vocabulary.any((v) => _readingWrong(v, character.friendLanguage));
+    return vocabulary.any((v) => readingLooksWrong(v.reading, character.friendLanguage));
   }
 
-  /// A reading must exist (except English) and use the friend language's
-  /// pronunciation script — Hiragana for ja, Latin for ko/zh romanization.
-  bool _readingWrong(Vocabulary v, String friendLanguage) {
-    final reading = v.reading?.trim() ?? '';
-    switch (readingSystemFor(friendLanguage)) {
-      case ReadingSystem.hiragana:
-        // Kana only: Kanji or Latin in a "Hiragana" reading is wrong.
-        return reading.isEmpty ||
-            _cjk.hasMatch(reading) ||
-            _latin.hasMatch(reading);
-      case ReadingSystem.romaja:
-      case ReadingSystem.pinyin:
-        // Romanization: must be Latin, never the source script.
-        return reading.isEmpty ||
-            !_latin.hasMatch(reading) ||
-            _cjk.hasMatch(reading) ||
-            _hangul.hasMatch(reading);
-      case ReadingSystem.ipa:
-        // Optional for English.
-        return false;
-    }
-  }
 
   /// Keeps the reply text, and for each study field takes whichever version is
   /// actually usable — the repair pass is not automatically better.
@@ -269,10 +248,18 @@ bool _analysisNeedsRepair(ChatMessage message, Character character) {
   final vocabulary = message.vocabulary;
   if (vocabulary == null || vocabulary.length < 2) return true;
   final requireReading = character.friendLanguage != 'en';
+  // Rendered width, not rune count. A 15-rune floor is a Latin-length floor: the
+  // prompt's own worked Chinese rows ('疑问词“什么”。' = 8 runes) sit below it, so a
+  // Chinese learner triggered the repair pass on a sheet written exactly as
+  // demonstrated — doubling the slowest operation in the app for nothing.
   return vocabulary.any((item) =>
       (requireReading && (item.reading?.trim().isEmpty ?? true)) ||
-      item.meaning.runes.length < 15);
+      displayWidth(item.meaning) < _minMeaningHalfWidths);
 }
+
+/// Shortest gloss accepted before asking the model to try again, in half-widths
+/// (≈ 30 Latin letters, or 15 CJK characters).
+const int _minMeaningHalfWidths = 30;
 
 String _takeRunes(String value, int limit) {
   final runes = value.runes;
@@ -280,39 +267,3 @@ String _takeRunes(String value, int limit) {
   return String.fromCharCodes(runes.take(limit));
 }
 
-// Script ranges used to sanity-check that a study sheet is in the learner's
-// language. Deliberately loose — we only need to catch a whole gloss written
-// in the wrong language, not classify every character.
-final RegExp _hangul = RegExp(r'[가-힣ᄀ-ᇿ㄰-㆏]');
-final RegExp _kana = RegExp(r'[぀-ゟ゠-ヿ]');
-final RegExp _cjk = RegExp(r'[一-鿿]');
-final RegExp _latin = RegExp(r'[A-Za-z]');
-
-/// Whether [text] contains at least one character of the script expected for
-/// [appLang]. For Chinese we also require the absence of Kana/Hangul so a
-/// Japanese or Korean gloss is not mistaken for Chinese (they share Kanji).
-bool _containsScriptFor(String text, String appLang) {
-  switch (appLang.trim().toLowerCase().startsWith('zh')
-      ? 'zh'
-      : appLang.trim().toLowerCase().startsWith('ja')
-          ? 'ja'
-          : appLang.trim().toLowerCase().startsWith('en')
-              ? 'en'
-              : 'ko') {
-    case 'ja':
-      return _kana.hasMatch(text);
-    case 'en':
-      // English glosses are Latin; treat any CJK/Kana/Hangul-free Latin text as
-      // valid. If it has none of the others but has Latin, it's fine.
-      return _latin.hasMatch(text) &&
-          !_kana.hasMatch(text) &&
-          !_hangul.hasMatch(text);
-    case 'zh':
-      return _cjk.hasMatch(text) &&
-          !_kana.hasMatch(text) &&
-          !_hangul.hasMatch(text);
-    case 'ko':
-    default:
-      return _hangul.hasMatch(text);
-  }
-}

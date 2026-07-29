@@ -15,9 +15,15 @@ void main() {
   // Japanese in the form.
   test('each built-in friend speaks its own language', () {
     for (final character in characters) {
-      final style = character.speechStyle;
-      final phrases = character.commonPhrases.join(' ');
-      final sample = '$style $phrases';
+      final sample = [
+        character.speechStyle,
+        character.commonPhrases.join(' '),
+        // Descriptors reach the model as "Personality:" and "Interests:". They
+        // were not checked here before, which is how the Japanese friend kept
+        // Korean ones.
+        character.traits.map((t) => t.trait).join(' '),
+        character.interests.expand((i) => i.items).join(' '),
+      ].join(' ');
       final where = '${character.id} (${character.friendLanguage})';
 
       switch (character.friendLanguage) {

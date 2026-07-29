@@ -4,16 +4,12 @@ import '../../domain/entities/character.dart';
 const String _imageBasePath = 'assets/images';
 const String _imageExtension = '.png';
 
+/// Reaches the model as "Personality:". English because the whole system prompt
+/// is English; these used to be Korean words ('친절함', '배려심') handed to a model
+/// under instruction to use one language only.
 const List<CharacterTrait> _commonTraits = [
-  CharacterTrait('친절함', 0.8),
-  CharacterTrait('배려심', 0.8),
-];
-
-const List<CharacterInterest> _commonInterests = [
-  CharacterInterest(
-    category: '일본어',
-    items: ['일본어 학습', '일본 문화'],
-  ),
+  CharacterTrait('kind', 0.8),
+  CharacterTrait('considerate', 0.8),
 ];
 
 const Map<String, List<String>> _commonEmotionalResponses = {
@@ -40,10 +36,10 @@ const Map<String, Map<String, Color>> _characterColors = {
 
 const Map<String, List<CharacterTrait>> _characterSpecificTraits = {
   'yuna': [
-    CharacterTrait('명랑함', 0.9),
-    CharacterTrait('수다스러움', 0.8),
-    CharacterTrait('호기심', 0.9),
-    CharacterTrait('귀여움', 0.8),
+    CharacterTrait('明るい', 0.9),
+    CharacterTrait('おしゃべり', 0.8),
+    CharacterTrait('好奇心旺盛', 0.9),
+    CharacterTrait('かわいい', 0.8),
   ],
   'junho': [
     CharacterTrait('차분함', 0.85),
@@ -56,8 +52,8 @@ const Map<String, List<CharacterTrait>> _characterSpecificTraits = {
 const Map<String, List<CharacterInterest>> _characterSpecificInterests = {
   'yuna': [
     CharacterInterest(
-      category: '취미',
-      items: ['아이돌', '연애', '모바일 게임', 'SNS', '카페 투어', '쇼핑'],
+      category: '趣味',
+      items: ['アイドル', '恋愛', 'スマホゲーム', 'SNS', 'カフェ巡り', '買い物'],
     ),
   ],
   'junho': [
@@ -117,7 +113,7 @@ final List<Character> characters = [
     schoolYear: '고등학교 2학년',
     occupation: '고등학생',
     traits: [..._commonTraits, ..._characterSpecificTraits['yuna']!],
-    interests: [..._commonInterests, ..._characterSpecificInterests['yuna']!],
+    interests: _characterSpecificInterests['yuna']!,
     speechStyle: _characterSpeechStyles['yuna']!,
     primaryColor: _characterColors['yuna']!['primary']!,
     secondaryColor: _characterColors['yuna']!['secondary']!,
@@ -147,7 +143,7 @@ final List<Character> characters = [
     schoolYear: '',
     occupation: '백엔드 개발자',
     traits: [..._commonTraits, ..._characterSpecificTraits['junho']!],
-    interests: [..._commonInterests, ..._characterSpecificInterests['junho']!],
+    interests: _characterSpecificInterests['junho']!,
     speechStyle: _characterSpeechStyles['junho']!,
     primaryColor: _characterColors['junho']!['primary']!,
     secondaryColor: _characterColors['junho']!['secondary']!,
@@ -180,7 +176,6 @@ final List<Character> characters = [
     occupation: 'College student',
     traits: [..._commonTraits, const CharacterTrait('cheerful', 0.85)],
     interests: [
-      ..._commonInterests,
       const CharacterInterest(category: 'life', items: ['movies', 'travel', 'cafés']),
     ],
     speechStyle: 'Warm, upbeat, and casual — like chatting with a close friend.',
@@ -211,7 +206,6 @@ final List<Character> characters = [
     occupation: 'Bike shop mechanic',
     traits: [..._commonTraits, const CharacterTrait('easygoing', 0.85)],
     interests: [
-      ..._commonInterests,
       const CharacterInterest(category: 'hobbies', items: ['football', 'music', 'road trips']),
     ],
     speechStyle: 'Relaxed and friendly, with everyday casual English.',
@@ -242,7 +236,6 @@ final List<Character> characters = [
     occupation: '大学生',
     traits: [..._commonTraits, const CharacterTrait('开朗', 0.85)],
     interests: [
-      ..._commonInterests,
       const CharacterInterest(category: '生活', items: ['美食', 'K-pop', '拍照']),
     ],
     speechStyle: '亲切、活泼，用日常口语聊天。',
@@ -272,7 +265,6 @@ final List<Character> characters = [
     occupation: '产品经理',
     traits: [..._commonTraits, const CharacterTrait('沉稳', 0.85)],
     interests: [
-      ..._commonInterests,
       const CharacterInterest(category: '兴趣', items: ['咖啡', '篮球', '科技']),
     ],
     speechStyle: '沉稳友好，用自然的日常中文。',

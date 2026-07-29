@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/ui/app_tokens.dart';
 import '../../core/ui/paper/paper_scaffold.dart';
+import '../../core/ui/paper/paper_theme.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_widgets.dart';
 import '../../domain/entities/saved_expression.dart';
@@ -333,7 +334,13 @@ class _StudyCard extends StatelessWidget {
               Text(
                 word,
                 textAlign: TextAlign.center,
+                // The headword is content in notebookLanguage, so its font stack
+                // follows that — not the app UI language, which is what the
+                // theme's headlineMedium was keyed to. Saving 这个 from a Chinese
+                // friend and studying it under a Korean UI drew 这 and 个 in two
+                // different typefaces.
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontFamilyFallback: cuteDisplayFallback(notebookLanguage),
                   fontFamily: notebookLanguage == 'ko' ? 'Pretendard' : null,
                   fontWeight: FontWeight.w900,
                   color: p.ink,
