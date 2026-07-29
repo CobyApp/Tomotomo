@@ -3,55 +3,45 @@ import 'package:aichat/domain/entities/character_record.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Character _base({String? friendLanguage, bool koreanPersona = false, String tutorLocale = 'ko'}) => Character(
-      id: 'x', name: 'n', nameJp: 'n', nameKanji: 'n', level: 'intermediate',
-      description: '', age: 0, schoolYear: '', occupation: '',
-      traits: const [], interests: const [], speechStyle: '',
-      primaryColor: const Color(0xFF000000), secondaryColor: const Color(0xFFFFFFFF),
-      hairStyle: '', hairColor: '', eyeColor: '', outfit: '', accessories: const [],
-      selfReference: '', commonPhrases: const [], emotionalResponses: const {},
-      imageUrl: '', imagePath: '',
-      friendLanguage: friendLanguage,
-      koreanNationalPersona: koreanPersona, tutorLocale: tutorLocale);
+Character _base({required String friendLanguage}) => Character(
+  id: 'x', name: 'n', nameJp: 'n', nameKanji: 'n', level: 'intermediate',
+  description: '', age: 0, schoolYear: '', occupation: '',
+  traits: const [], interests: const [], speechStyle: '',
+  primaryColor: const Color(0xFF000000), secondaryColor: const Color(0xFFFFFFFF),
+  hairStyle: '', hairColor: '', eyeColor: '', outfit: '', accessories: const [],
+  selfReference: '', commonPhrases: const [], emotionalResponses: const {},
+  imageUrl: '', imagePath: '',
+  friendLanguage: friendLanguage,
+);
 
 void main() {
-  test('explicit friendLanguage wins', () {
-    expect(_base(friendLanguage: 'zh').friendLanguage, 'zh');
-    expect(_base(friendLanguage: 'en').defaultNotebookLangForVocabSave, 'en');
+  // The legacy-migration cases that used to live here are gone with the fields
+  // they migrated from (koreanNationalPersona, tutorLocale) and with
+  // Character.fromJson — Character is never deserialized, every construction
+  // passes friendLanguage, and the compiler now requires it.
+  test('friendLanguage is carried through, for all four languages', () {
+    for (final lang in const ['ko', 'ja', 'en', 'zh']) {
+      expect(_base(friendLanguage: lang).friendLanguage, lang);
+      expect(_base(friendLanguage: lang).defaultNotebookLangForVocabSave, lang);
+    }
   });
 
-  test('legacy getters derive from friendLanguage', () {
+  test('a region tag or odd casing still resolves', () {
+    expect(_base(friendLanguage: 'zh-Hans').friendLanguage, 'zh');
+    expect(_base(friendLanguage: 'EN').friendLanguage, 'en');
+  });
+
+  test('koreanNationalPersona derives from friendLanguage', () {
     expect(_base(friendLanguage: 'ko').koreanNationalPersona, isTrue);
-    expect(_base(friendLanguage: 'ja').koreanNationalPersona, isFalse);
-  });
-
-  test('migration: no friendLanguage falls back to old fields', () {
-    expect(_base(koreanPersona: true).friendLanguage, 'ko');
-    expect(_base(tutorLocale: 'ja').friendLanguage, 'ja');
-    // Legacy default (koreanNationalPersona == false) meant a Japanese friend.
-    expect(_base().friendLanguage, 'ja');
+    for (final lang in const ['ja', 'en', 'zh']) {
+      expect(_base(friendLanguage: lang).koreanNationalPersona, isFalse);
+    }
   });
 
   test('fromRecord maps record.language to friendLanguage', () {
-    final r = CharacterRecord.draft(name: 'A', language: 'zh');
-    expect(Character.fromRecord(r).friendLanguage, 'zh');
-  });
-
-  test('fromJson reads new friendLanguage, else derives', () {
-    final withNew = Character.fromJson({..._json(), 'friendLanguage': 'en'});
-    expect(withNew.friendLanguage, 'en');
-    final legacy = Character.fromJson({..._json(), 'koreanNationalPersona': true});
-    expect(legacy.friendLanguage, 'ko');
+    for (final lang in const ['ko', 'ja', 'en', 'zh']) {
+      final r = CharacterRecord.draft(name: 'A', language: lang);
+      expect(Character.fromRecord(r).friendLanguage, lang);
+    }
   });
 }
-
-Map<String, dynamic> _json() => {
-      'id': 'x', 'name': 'n', 'nameJp': 'n', 'nameKanji': 'n', 'level': 'intermediate',
-      'description': '', 'age': 0, 'schoolYear': '', 'occupation': '',
-      'traits': const [], 'interests': const [], 'speechStyle': '',
-      'primaryColor': '4278190080', 'secondaryColor': '4294967295',
-      'hairStyle': '', 'hairColor': '', 'eyeColor': '', 'outfit': '',
-      'accessories': const <String>[], 'selfReference': '',
-      'commonPhrases': const <String>[], 'emotionalResponses': const <String, List<String>>{},
-      'imageUrl': '', 'imagePath': '',
-    };

@@ -51,14 +51,8 @@ class Character {
   final String imageUrl;
   final String imagePath;
 
-  /// Legacy immersion hint; retained for backward compat. Derived from friendLanguage.
-  final String tutorLocale;
-
-  /// Explicit friend language when known (`ko`|`ja`|`en`|`zh`); else null → derive.
-  final String? _friendLanguageRaw;
-
-  /// Legacy flag; retained for backward compat.
-  final bool _koreanNationalPersonaRaw;
+  /// The friend's language, one of [kSupportedLanguages].
+  final String _friendLanguageRaw;
 
   /// When true, [displayNameSecondary] is always empty (packaged default tutors).
   final bool omitSecondaryDisplayName;
@@ -89,31 +83,22 @@ class Character {
     required this.emotionalResponses,
     required this.imageUrl,
     required this.imagePath,
-    this.tutorLocale = 'ko',
-    String? friendLanguage,
-    bool koreanNationalPersona = false,
+    required String friendLanguage,
     this.omitSecondaryDisplayName = false,
-  })  : _friendLanguageRaw = friendLanguage,
-        _koreanNationalPersonaRaw = koreanNationalPersona;
+  }) : _friendLanguageRaw = friendLanguage;
 
   String get displayImageUrl => imageUrl;
 
 
-  /// The language the friend speaks and replies in. Explicit when set;
-  /// otherwise migrated from legacy fields.
-  String get friendLanguage {
-    final raw = _friendLanguageRaw;
-    if (raw != null && kSupportedLanguages.contains(normalizeLang(raw))) {
-      return normalizeLang(raw);
-    }
-    // Legacy migration: the only two historical personas were the Korean friend
-    // (koreanNationalPersona == true) and the Japanese friend (everything else,
-    // including tutorLocale == 'ja'). Default to Japanese for that legacy case.
-    if (_koreanNationalPersonaRaw) return 'ko';
-    return 'ja';
-  }
+  /// The language the friend speaks and replies in.
+  ///
+  /// Required at construction rather than defaulted: the old fallback silently
+  /// answered 'ja' for anything it could not derive, and the legacy fields it
+  /// derived from (koreanNationalPersona, tutorLocale) no longer had a single
+  /// production caller.
+  String get friendLanguage => normalizeLang(_friendLanguageRaw);
 
-  /// Backward-compatible: true when the friend speaks Korean.
+  /// True when the friend speaks Korean.
   bool get koreanNationalPersona => friendLanguage == 'ko';
 
   /// Notebook segment for vocabulary [+] saves: the friend language's script.
@@ -191,94 +176,10 @@ class Character {
       emotionalResponses: {},
       imageUrl: image,
       imagePath: image,
-      tutorLocale: 'ko',
       friendLanguage: r.language,
       omitSecondaryDisplayName: true,
     );
   }
 
-  factory Character.fromJson(Map<String, dynamic> json) {
-    return Character(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      nameJp: json['nameJp'] as String,
-      nameKanji: json['nameKanji'] as String,
-      level: json['level'] as String,
-      tagline: json['tagline'] as String? ?? '',
-      description: json['description'] as String,
-      age: json['age'] as int,
-      schoolYear: json['schoolYear'] as String,
-      occupation: json['occupation'] as String,
-      traits: (json['traits'] as List)
-          .map(
-            (e) => CharacterTrait(e['trait'] as String, e['weight'] as double),
-          )
-          .toList(),
-      interests: (json['interests'] as List)
-          .map(
-            (e) => CharacterInterest(
-              category: e['category'] as String,
-              items: e['items'] as List<String>,
-            ),
-          )
-          .toList(),
-      speechStyle: json['speechStyle'] as String,
-      primaryColor: Color(int.parse(json['primaryColor'] as String)),
-      secondaryColor: Color(int.parse(json['secondaryColor'] as String)),
-      hairStyle: json['hairStyle'] as String,
-      hairColor: json['hairColor'] as String,
-      eyeColor: json['eyeColor'] as String,
-      outfit: json['outfit'] as String,
-      accessories: json['accessories'] as List<String>,
-      selfReference: json['selfReference'] as String,
-      commonPhrases: json['commonPhrases'] as List<String>,
-      emotionalResponses:
-          json['emotionalResponses'] as Map<String, List<String>>,
-      imageUrl: json['imageUrl'] as String,
-      imagePath: json['imagePath'] as String,
-      tutorLocale: json['tutorLocale'] as String? ?? 'ko',
-      friendLanguage: json['friendLanguage'] as String?,
-      koreanNationalPersona: json['koreanNationalPersona'] as bool? ?? false,
-      omitSecondaryDisplayName:
-          json['omitSecondaryDisplayName'] as bool? ?? false,
-    );
-  }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'nameJp': nameJp,
-      'nameKanji': nameKanji,
-      'level': level,
-      'tagline': tagline,
-      'description': description,
-      'age': age,
-      'schoolYear': schoolYear,
-      'occupation': occupation,
-      'traits': traits
-          .map((e) => {'trait': e.trait, 'weight': e.weight})
-          .toList(),
-      'interests': interests
-          .map((e) => {'category': e.category, 'items': e.items})
-          .toList(),
-      'speechStyle': speechStyle,
-      'primaryColor': primaryColor.toARGB32().toString(),
-      'secondaryColor': secondaryColor.toARGB32().toString(),
-      'hairStyle': hairStyle,
-      'hairColor': hairColor,
-      'eyeColor': eyeColor,
-      'outfit': outfit,
-      'accessories': accessories,
-      'selfReference': selfReference,
-      'commonPhrases': commonPhrases,
-      'emotionalResponses': emotionalResponses,
-      'imageUrl': imageUrl,
-      'imagePath': imagePath,
-      'tutorLocale': tutorLocale,
-      'friendLanguage': friendLanguage,
-      'koreanNationalPersona': koreanNationalPersona,
-      'omitSecondaryDisplayName': omitSecondaryDisplayName,
-    };
-  }
 }

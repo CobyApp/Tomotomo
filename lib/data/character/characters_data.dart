@@ -169,9 +169,7 @@ final List<Character> characters = [
     },
     imageUrl: '$_imageBasePath/junho$_imageExtension',
     imagePath: '$_imageBasePath/junho$_imageExtension',
-    tutorLocale: 'ko',
     friendLanguage: 'ko',
-    koreanNationalPersona: true,
     omitSecondaryDisplayName: true,
   ),
   // ── English-speaking friends ──────────────────────────────────

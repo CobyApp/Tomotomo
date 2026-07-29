@@ -227,10 +227,4 @@ class XProfileReader {
     }
     throw Exception(_fetchFailedMessage);
   }
-
-  /// Backward-compatible: text only.
-  Future<String> fetchReadableText(String canonicalXUrl) async {
-    final page = await fetchReadablePage(canonicalXUrl);
-    return page.text;
-  }
 }

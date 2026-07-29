@@ -1,5 +1,3 @@
-import '../../core/text/display_width.dart';
-
 /// Character cap on a friend's tagline, enforced both by the editor's text
 /// field and by the clamp applied to an imported one — a width-only budget let
 /// an imported ASCII tagline open the field already over its own limit.
@@ -43,20 +41,6 @@ class CharacterRecord {
     required this.updatedAt,
   });
 
-  /// Text for list subtitles: [tagline], else first line of [speechStyle].
-  String get listDetailLine {
-    final tag = tagline?.trim();
-    if (tag != null && tag.isNotEmpty) return tag;
-    final m = speechStyle?.trim();
-    if (m != null && m.isNotEmpty) {
-      final first = m.split(RegExp(r'\r?\n')).first.trim();
-      // Width-budgeted and rune-safe: the old `.length`/`.substring` pair
-      // counted UTF-16 code units, so it could cut an emoji into two broken
-      // halves, and it clipped English at the count tuned for CJK.
-      return clampToDisplayWidth(first, 96);
-    }
-    return '';
-  }
 
   /// Creates a draft record for insert (id/dates are stripped by repository).
   static CharacterRecord draft({

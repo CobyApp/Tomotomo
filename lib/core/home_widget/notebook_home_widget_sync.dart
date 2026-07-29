@@ -62,11 +62,6 @@ Future<void> _ensureIosAppGroupReady() async {
   return _iosAppGroupOnce!;
 }
 
-/// Optional explicit init; [syncNotebookToHomeWidget] already calls [_ensureIosAppGroupReady].
-Future<void> initNotebookHomeWidget() async {
-  await _ensureIosAppGroupReady();
-}
-
 /// Push word-book data to the home screen widget. Preserves the shown language
 /// unless it is unset or no longer supported.
 Future<void> syncNotebookToHomeWidget(

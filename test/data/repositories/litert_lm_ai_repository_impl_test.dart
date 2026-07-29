@@ -159,6 +159,7 @@ final class _DeficientSheetRuntime implements OnDeviceAiRuntime {
 
 const _character = Character(
   id: 'yuna',
+  friendLanguage: 'ja',
   name: '유나',
   nameJp: 'ゆうな',
   nameKanji: '優奈',

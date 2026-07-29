@@ -161,7 +161,11 @@ class CelebrityPersonaSuggester {
     );
   }
 
-  /// When crawling fails, user can paste bio + sample posts as plain text.
+  /// When crawling fails, a caller can pass bio + sample posts as plain text.
+  ///
+  /// No screen offers this yet — it is kept because it is the seam the tests
+  /// use to exercise the shared parsing path that the X-URL import also runs
+  /// through. Deleting it would delete that coverage, not dead weight.
   Future<CelebrityPersonaSuggestion> suggestFromProfileText(
     String rawText, {
     String? sourceHint,

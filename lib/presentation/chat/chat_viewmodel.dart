@@ -126,14 +126,6 @@ class ChatViewModel extends ChangeNotifier {
     }
   }
 
-  /// Sends [text] as the user message (same pipeline as typing in [messageController]).
-  /// Does not read or clear the text field — use for voice / external input.
-  Future<void> sendTextMessage(String text) async {
-    final userMessage = text.trim();
-    if (userMessage.isEmpty || _isGenerating) return;
-    await _sendUserMessage(userMessage);
-  }
-
   Future<void> sendMessage() async {
     final userMessage = messageController.text.trim();
     if (userMessage.isEmpty || _isGenerating) return;

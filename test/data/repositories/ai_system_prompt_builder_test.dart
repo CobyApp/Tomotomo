@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 const _character = Character(
   id: 'yuna',
+  friendLanguage: 'ja',
   name: '유나',
   nameJp: 'ゆうな',
   nameKanji: '優奈',

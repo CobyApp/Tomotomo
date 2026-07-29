@@ -8,6 +8,7 @@ import 'package:aichat/domain/entities/chat_message.dart';
 Character _testCharacter({String id = 'char-1', String name = 'さくら'}) {
   return Character(
     id: id,
+    friendLanguage: 'ja',
     name: name,
     nameJp: name,
     nameKanji: name,

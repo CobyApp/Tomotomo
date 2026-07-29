@@ -10,8 +10,4 @@ String modelDownloadSizeLabel(double progress) {
   return '${_gb(done)} / ${_gb(total)}GB';
 }
 
-/// Total download size, for "this is a one-time NNN GB download" copy.
-String get modelDownloadTotalLabel =>
-    '${_gb(OnDeviceModelConfig.byteCount)}GB';
-
 String _gb(int bytes) => (bytes / (1024 * 1024 * 1024)).toStringAsFixed(1);
