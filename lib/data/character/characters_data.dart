@@ -75,9 +75,9 @@ const Map<String, Map<String, List<String>>> _characterSpecificEmotionalResponse
     'excited': ['マジで！？', 'すごーい！', 'わくわく！'],
   },
   'junho': {
-    'happy': ['いいね！', 'それな！', 'ナイス！'],
-    'sad': ['ざんねん…', 'まあいいか', 'ゆっくりでOK'],
-    'excited': ['おっ、いいじゃん！', 'おもしろそう！', 'やってみようぜ'],
+    'happy': ['좋네!', '그러니까!', '나이스!'],
+    'sad': ['아쉽다…', '뭐 괜찮아', '천천히 해도 돼'],
+    'excited': ['오, 괜찮네!', '재밌겠다!', '한번 해보자'],
   },
 };
 
@@ -88,15 +88,15 @@ const Map<String, List<String>> _characterPhrases = {
     'また一緒に勉強しよっ♡',
   ],
   'junho': [
-    '現場で使うと便利だよ、これ。',
-    '間違えても大丈夫。何度か言えば身につく。',
-    '次は敬語バージョンもやってみる？',
+    '이건 현장에서 쓰면 편해.',
+    '틀려도 괜찮아. 몇 번 말해보면 익숙해져.',
+    '다음엔 존댓말 버전도 해볼까?',
   ],
 };
 
 const Map<String, String> _characterSpeechStyles = {
   'yuna': '~だよね！, え〜マジで！？, ~してみよっか！',
-  'junho': '落ち着いたタメ口, 〜だよな, 〜じゃん, たまに冗談',
+  'junho': '차분한 반말, ~하지, ~잖아, 가끔 농담',
 };
 
 /// Short list subtitle (~20 chars, Korean UI line).
@@ -147,7 +147,7 @@ final List<Character> characters = [
     level: 'intermediate',
     tagline: _characterTaglines['junho']!,
     description:
-        '서울 IT 스타트업에서 일하는 개발자. 일본 출장·애니 덕후 경험이 있어 한국어 회화를 도와 주고, 설명·노트는 日本語로 답니다. 단어장에는 말풍선의 한국어 표현이 올라가고 의미는 일본어로 적힙니다.',
+        '서울 IT 스타트업에서 일하는 개발자. 차분하고 듬직하게 실전 한국어 회화를 도와줍니다.',
     age: 29,
     schoolYear: '',
     occupation: '백엔드 개발자',
@@ -161,7 +161,7 @@ final List<Character> characters = [
     eyeColor: _commonAppearance['eyeColor']!,
     outfit: '맨투맨과 청바지',
     accessories: ['노트북', '텀블러'],
-    selfReference: 'ジュンホ',
+    selfReference: '준호',
     commonPhrases: _characterPhrases['junho']!,
     emotionalResponses: {
       ..._commonEmotionalResponses,

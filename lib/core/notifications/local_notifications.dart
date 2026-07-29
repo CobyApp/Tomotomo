@@ -1,8 +1,19 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../di/injection.dart';
+import '../l10n/app_strings.dart';
+import '../locale/languages.dart';
+
 /// Thin wrapper around local notifications, used to tell the user a friend's
 /// reply finished while the app was in the background. Best-effort: every call
 /// is guarded so a notification failure never affects chat.
+/// Android channel names appear in the OS notification settings, so they are
+/// localized like any other user-facing label. Note Android caches a channel's
+/// name at creation time, so an existing install keeps the name it was created
+/// with even after the user switches language.
+String _channelName(String key) =>
+    AppStrings.of(normalizeLang(appLanguageCode), key);
+
 abstract final class LocalNotifications {
   static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -52,11 +63,11 @@ abstract final class LocalNotifications {
   }) async {
     try {
       await ensurePermission();
-      const details = NotificationDetails(
-        iOS: DarwinNotificationDetails(),
+      final details = NotificationDetails(
+        iOS: const DarwinNotificationDetails(),
         android: AndroidNotificationDetails(
           'model_ready',
-          'Chat engine ready',
+          _channelName('notifChannelModelReady'),
           importance: Importance.high,
           priority: Priority.high,
         ),
@@ -77,11 +88,11 @@ abstract final class LocalNotifications {
   }) async {
     try {
       await init();
-      const details = NotificationDetails(
-        iOS: DarwinNotificationDetails(),
+      final details = NotificationDetails(
+        iOS: const DarwinNotificationDetails(),
         android: AndroidNotificationDetails(
           'chat_replies',
-          'Chat replies',
+          _channelName('notifChannelChatReplies'),
           importance: Importance.high,
           priority: Priority.high,
         ),
