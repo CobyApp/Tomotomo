@@ -338,6 +338,7 @@ class _ChatScreenContent extends StatelessWidget {
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: p.ink,
+                        language: character.friendLanguage,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

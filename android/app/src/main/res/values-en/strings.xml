@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_notebook_title">Vocabulary</string>
+    <string name="widget_notebook_description">Shows your saved words on the home screen.</string>
+    <string name="widget_notebook_empty_hint">No saved words yet. Add them from the study notes in a chat.</string>
+</resources>

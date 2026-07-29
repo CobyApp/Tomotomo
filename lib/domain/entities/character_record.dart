@@ -1,3 +1,5 @@
+import '../../core/text/display_width.dart';
+
 /// Custom character stored locally in Hive.
 ///
 /// Friend language ([language]): 'ko' | 'ja' | 'en' | 'zh' (Simplified).
@@ -43,8 +45,10 @@ class CharacterRecord {
     final m = speechStyle?.trim();
     if (m != null && m.isNotEmpty) {
       final first = m.split(RegExp(r'\r?\n')).first.trim();
-      if (first.length > 48) return '${first.substring(0, 45)}…';
-      return first;
+      // Width-budgeted and rune-safe: the old `.length`/`.substring` pair
+      // counted UTF-16 code units, so it could cut an emoji into two broken
+      // halves, and it clipped English at the count tuned for CJK.
+      return clampToDisplayWidth(first, 96);
     }
     return '';
   }

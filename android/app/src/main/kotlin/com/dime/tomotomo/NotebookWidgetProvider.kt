@@ -42,42 +42,34 @@ class NotebookWidgetProvider : HomeWidgetProvider() {
     val emptyText =
         widgetData.getString("notebook_widget_empty", null)
             ?: context.getString(R.string.widget_notebook_empty_hint)
+    val langLabel = widgetData.getString("notebook_widget_lang_label", null) ?: lang
+    val cycleCount =
+        (widgetData.getString("notebook_widget_langs", null) ?: "")
+            .split(',')
+            .count { it.isNotBlank() }
 
     appWidgetIds.forEach { widgetId ->
       val views =
           RemoteViews(context.packageName, R.layout.notebook_widget).apply {
             setTextViewText(R.id.widget_title, title)
 
-            val koActive = lang == "ko"
-            setInt(
-                R.id.widget_btn_ko,
-                "setBackgroundResource",
-                if (koActive) R.drawable.widget_lang_active else R.drawable.widget_lang_inactive,
+            // One chip showing the current language, tapped to cycle. Hidden
+            // when there is nothing to switch between.
+            setTextViewText(R.id.widget_btn_lang, langLabel)
+            setViewVisibility(
+                R.id.widget_btn_lang,
+                if (cycleCount > 1) View.VISIBLE else View.GONE,
             )
-            setInt(
-                R.id.widget_btn_ja,
-                "setBackgroundResource",
-                if (!koActive) R.drawable.widget_lang_active else R.drawable.widget_lang_inactive,
-            )
-
-            val piKo =
+            setOnClickPendingIntent(
+                R.id.widget_btn_lang,
                 PendingIntent.getBroadcast(
                     context,
                     7101,
                     Intent(context, NotebookWidgetActionReceiver::class.java)
-                        .setAction(NotebookWidgetActionReceiver.ACTION_LANG_KO),
+                        .setAction(NotebookWidgetActionReceiver.ACTION_LANG_CYCLE),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                )
-            val piJa =
-                PendingIntent.getBroadcast(
-                    context,
-                    7102,
-                    Intent(context, NotebookWidgetActionReceiver::class.java)
-                        .setAction(NotebookWidgetActionReceiver.ACTION_LANG_JA),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                )
-            setOnClickPendingIntent(R.id.widget_btn_ko, piKo)
-            setOnClickPendingIntent(R.id.widget_btn_ja, piJa)
+                ),
+            )
 
             setOnClickPendingIntent(
                 R.id.widget_root,

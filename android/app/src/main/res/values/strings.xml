@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Fallbacks only: the app pushes localized widget text through the App Group
+     (see notebook_home_widget_sync.dart). These show before the first sync. -->
 <resources>
-    <string name="widget_notebook_title">単語帳</string>
-    <string name="widget_notebook_description">保存した単語をホーム画面に表示します</string>
-    <string name="widget_lang_ko">韓国語</string>
-    <string name="widget_lang_ja">日本語</string>
-    <string name="widget_notebook_empty_hint">保存した単語はありません。アプリのチャット解説から追加できます。</string>
+    <string name="widget_notebook_title">단어장</string>
+    <string name="widget_notebook_description">저장한 단어를 홈 화면에 보여줍니다.</string>
+    <string name="widget_notebook_empty_hint">저장한 단어가 없습니다. 채팅의 학습 노트에서 추가할 수 있어요.</string>
 </resources>

@@ -12,14 +12,21 @@ private const val HOME_WIDGET_PREFS = "HomeWidgetPreferences"
 class NotebookWidgetActionReceiver : BroadcastReceiver() {
 
   override fun onReceive(context: Context, intent: Intent?) {
-    val action = intent?.action ?: return
-    val prefs = context.getSharedPreferences(HOME_WIDGET_PREFS, Context.MODE_PRIVATE).edit()
-    when (action) {
-      ACTION_LANG_KO -> prefs.putString("notebook_widget_lang", "ko")
-      ACTION_LANG_JA -> prefs.putString("notebook_widget_lang", "ja")
-      else -> return
-    }
-    prefs.commit()
+    if (intent?.action != ACTION_LANG_CYCLE) return
+    val store = context.getSharedPreferences(HOME_WIDGET_PREFS, Context.MODE_PRIVATE)
+
+    // The app pushes the cycle order, so this receiver never needs to know which
+    // languages exist — it used to hardcode a KO/JA pair.
+    val order =
+        (store.getString("notebook_widget_langs", null) ?: "")
+            .split(',')
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+    if (order.size < 2) return
+
+    val current = store.getString("notebook_widget_lang", null)
+    val next = order[(order.indexOf(current).coerceAtLeast(0) + 1) % order.size]
+    store.edit().putString("notebook_widget_lang", next).commit()
 
     val mgr = AppWidgetManager.getInstance(context)
     val cn = ComponentName(context, NotebookWidgetProvider::class.java)
@@ -33,7 +40,6 @@ class NotebookWidgetActionReceiver : BroadcastReceiver() {
   }
 
   companion object {
-    const val ACTION_LANG_KO = "com.dime.tomotomo.action.NOTEBOOK_WIDGET_LANG_KO"
-    const val ACTION_LANG_JA = "com.dime.tomotomo.action.NOTEBOOK_WIDGET_LANG_JA"
+    const val ACTION_LANG_CYCLE = "com.dime.tomotomo.action.NOTEBOOK_WIDGET_LANG_CYCLE"
   }
 }

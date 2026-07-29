@@ -162,6 +162,7 @@ class ChatsTabState extends State<ChatsTab>
                         _resolved[r.roomId]?.displayNamePrimary ?? r.title,
                         style: AppTextStyles.listTitle(
                           context,
+                          language: _resolved[r.roomId]?.friendLanguage,
                         ).copyWith(color: p.ink, fontWeight: FontWeight.w800),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

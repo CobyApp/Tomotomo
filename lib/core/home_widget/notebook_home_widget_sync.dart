@@ -27,6 +27,16 @@ const String _keyTitle = 'notebook_widget_title';
 const String _keyEmpty = 'notebook_widget_empty';
 const String _keyLangLabel = 'notebook_widget_lang_label';
 
+/// Name + blurb shown in the OS widget gallery. Localizing these natively would
+/// mean adding a strings catalog to the extension target; reading them from the
+/// App Group keeps it in one place with the rest of the widget's text.
+const String _keyGalleryDesc = 'notebook_widget_gallery_desc';
+
+/// Languages the widget's language chip can cycle through, in order, as CSV —
+/// the ones that actually have saved words. Pushed from here so the native side
+/// never has to know the language list or hardcode a ko/ja pair.
+const String _keyLangs = 'notebook_widget_langs';
+
 const int _maxItems = 8;
 
 /// Ensures App Group is set once on iOS. [syncNotebookToHomeWidget] calls this.
@@ -84,17 +94,24 @@ Future<void> syncNotebookToHomeWidget(
       );
     }
 
+    final withWords = kSupportedLanguages
+        .where((l) => lists[l]!.isNotEmpty)
+        .toList();
+
     var lang = await HomeWidget.getWidgetData<String>(_keyLang);
     if (lang == null || !kSupportedLanguages.contains(lang)) {
       lang = normalizeLang(defaultLangIfUnset);
       // If words exist in exactly one language, show that one — the default is
-      // only a guess, and an empty widget is worse than the wrong tab.
-      final withWords = kSupportedLanguages
-          .where((l) => lists[l]!.isNotEmpty)
-          .toList();
+      // only a guess, and an empty widget is worse than the wrong tab. Once the
+      // user has picked a language we leave it alone, even when it's empty.
       if (withWords.length == 1) lang = withWords.first;
       await HomeWidget.saveWidgetData<String>(_keyLang, lang);
     }
+
+    await HomeWidget.saveWidgetData<String>(
+      _keyLangs,
+      (withWords.isEmpty ? kSupportedLanguages.toList() : withWords).join(','),
+    );
 
     // The native widget can't reach AppStrings, so its chrome was hardcoded
     // Japanese for everyone. Push the localized text instead.
@@ -106,6 +123,10 @@ Future<void> syncNotebookToHomeWidget(
     await HomeWidget.saveWidgetData<String>(
       _keyEmpty,
       AppStrings.of(ui, 'notebookEmpty'),
+    );
+    await HomeWidget.saveWidgetData<String>(
+      _keyGalleryDesc,
+      AppStrings.of(ui, 'widgetGalleryDescription'),
     );
     // Endonym: reads correctly whatever the UI language is.
     await HomeWidget.saveWidgetData<String>(

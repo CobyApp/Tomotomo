@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_notebook_title">単語帳</string>
+    <string name="widget_notebook_description">保存した単語をホーム画面に表示します。</string>
+    <string name="widget_notebook_empty_hint">保存した単語はありません。チャットの学習ノートから追加できます。</string>
+</resources>

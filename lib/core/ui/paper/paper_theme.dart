@@ -1,12 +1,37 @@
 import 'package:flutter/material.dart';
+import '../../di/injection.dart';
+import '../../locale/languages.dart';
 import 'paper_tokens.dart';
+
+/// Font fallback stack for display text in [language] (null = the app UI
+/// language). Exposed so styles built from the theme's text slots can opt into
+/// the right stack for text whose language differs from the UI — see
+/// [cuteDisplay] for why Chinese needs a different one.
+List<String> cuteDisplayFallback(String? language) =>
+    normalizeLang(language ?? appLanguageCode) == 'zh'
+    ? const ['Pretendard']
+    : const ['CuteJp', 'Pretendard'];
 
 /// Cute display text style: Korean via Do Hyeon (CuteKo), Japanese kana/kanji
 /// via M PLUS Rounded 1c (CuteJp), falling back to Pretendard for anything else.
-TextStyle cuteDisplay({double? fontSize, FontWeight? fontWeight, Color? color}) {
+///
+/// [language] is the language of the TEXT itself, not of the UI — a Chinese
+/// friend's name is Chinese even in a Korean UI. Chinese skips CuteJp because
+/// that font is Japanese and covers only part of the Simplified set, so a word
+/// came out half in a rounded Japanese face and half in the system face: 这个
+/// rendered 这 from the system font and 个 from CuteJp, 学习 the other way
+/// round. Neither CuteKo nor Pretendard has any Han at all, so dropping CuteJp
+/// sends every Han character to the system font — consistent, and with the
+/// correct Simplified shapes. Latin and digits still come from CuteKo.
+TextStyle cuteDisplay({
+  double? fontSize,
+  FontWeight? fontWeight,
+  Color? color,
+  String? language,
+}) {
   return TextStyle(
     fontFamily: 'CuteKo',
-    fontFamilyFallback: const ['CuteJp', 'Pretendard'],
+    fontFamilyFallback: cuteDisplayFallback(language),
     fontSize: fontSize,
     fontWeight: fontWeight,
     color: color,

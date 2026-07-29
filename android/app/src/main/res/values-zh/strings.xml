@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_notebook_title">生词本</string>
+    <string name="widget_notebook_description">在主屏幕上显示已保存的单词。</string>
+    <string name="widget_notebook_empty_hint">还没有保存的单词。可以在聊天的学习笔记中添加。</string>
+</resources>

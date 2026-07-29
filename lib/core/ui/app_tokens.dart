@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'paper/paper_theme.dart';
+
 /// Shared layout and typography tokens for shell tabs and list-heavy screens.
 abstract final class AppSpacing {
   static const double pageH = 20;
@@ -44,12 +46,18 @@ abstract final class AppSizes {
 }
 
 abstract final class AppTextStyles {
-  static TextStyle listTitle(BuildContext context) {
+  /// [language] is the language of the text being rendered — pass it when a row
+  /// shows content (a friend's name), not UI chrome, since the theme's stack is
+  /// built for the UI language. See [cuteDisplayFallback].
+  static TextStyle listTitle(BuildContext context, {String? language}) {
     final t = Theme.of(context).textTheme;
     return (t.titleMedium ?? const TextStyle()).copyWith(
       fontWeight: FontWeight.w700,
       letterSpacing: -0.25,
       height: 1.25,
+      fontFamilyFallback: language == null
+          ? null
+          : cuteDisplayFallback(language),
     );
   }
 

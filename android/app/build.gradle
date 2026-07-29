@@ -39,6 +39,9 @@ android {
     ndkVersion "28.2.13676358"
 
     compileOptions {
+        // flutter_local_notifications requires this; without it the Android
+        // build fails at :app:checkDebugAarMetadata before compiling anything.
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
@@ -92,4 +95,8 @@ configurations.all {
         force 'androidx.glance:glance-appwidget:1.1.1'
         force 'androidx.glance:glance:1.1.1'
     }
+}
+
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 }

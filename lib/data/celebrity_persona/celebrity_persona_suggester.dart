@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../core/di/injection.dart';
+import '../../core/text/display_width.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/x_profile/x_profile_reader.dart';
 import '../on_device/on_device_ai_runtime.dart';
@@ -106,14 +107,14 @@ class CelebrityPersonaSuggester {
     return t;
   }
 
-  /// Keeps list subtitle short (Unicode-safe).
-  static String _clampTagline(String? raw, {int maxChars = 28}) {
+  /// Keeps the list subtitle short. Budgeted by rendered width, not character
+  /// count: 28 characters of Japanese is about 56 Latin letters wide, so a
+  /// count tuned for CJK cut English off less than halfway.
+  static String _clampTagline(String? raw, {int maxHalfWidths = 56}) {
     var t = raw?.trim().replaceAll(RegExp(r'[\r\n#]'), ' ') ?? '';
     t = t.replaceAll(RegExp(r'\s+'), ' ').trim();
     if (t.isEmpty) return '';
-    final runes = t.runes;
-    if (runes.length <= maxChars) return t;
-    return '${String.fromCharCodes(runes.take(maxChars - 1))}…';
+    return clampToDisplayWidth(t, maxHalfWidths);
   }
 
   static String _composeSpeechStyle({

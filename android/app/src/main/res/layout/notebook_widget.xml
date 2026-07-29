@@ -22,29 +22,16 @@
         android:layout_marginTop="8dp"
         android:orientation="horizontal">
 
+        <!-- One chip that cycles through the languages that have saved words.
+             Two fixed KO/JA buttons could not represent four languages. -->
         <TextView
-            android:id="@+id/widget_btn_ko"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/widget_lang_inactive"
-            android:gravity="center"
-            android:paddingVertical="8dp"
-            android:text="@string/widget_lang_ko"
-            android:textColor="#FF334155"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/widget_btn_ja"
+            android:id="@+id/widget_btn_lang"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/widget_lang_inactive"
+            android:background="@drawable/widget_lang_active"
             android:gravity="center"
             android:paddingVertical="8dp"
-            android:text="@string/widget_lang_ja"
             android:textColor="#FF334155"
             android:textSize="13sp"
             android:textStyle="bold" />

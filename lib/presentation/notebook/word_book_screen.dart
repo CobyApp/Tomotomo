@@ -218,6 +218,7 @@ class WordBookScreenState extends State<WordBookScreen>
       fontSize: 18,
       fontWeight: FontWeight.w800,
       color: p.ink,
+      language: e.notebookLang,
     );
     final readingStyle = TextStyle(
       fontSize: 14,

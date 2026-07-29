@@ -595,6 +595,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
               fontSize: 26,
               fontWeight: FontWeight.w900,
               color: p.ink,
+              language: _language,
             ),
           ),
         ),

@@ -20,6 +20,7 @@ import '../../domain/entities/character_record.dart';
 import '../../domain/on_device/on_device_model_snapshot.dart';
 import '../../domain/repositories/character_record_repository.dart';
 import '../../domain/repositories/profile_repository.dart';
+import '../locale/friend_language_notifier.dart';
 import '../locale/l10n_context.dart';
 import '../on_device/model_download_labels.dart';
 import '../locale/locale_notifier.dart';
@@ -209,6 +210,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       // form — no built-in seeding, no points cost on first run.
       final repo = context.read<CharacterRecordRepository>();
       final profileRepo = context.read<ProfileRepository>();
+      final friendLanguage = context.read<FriendLanguageNotifier>();
       final tagline = _taglineController.text.trim();
       final persona = _personaController.text.trim();
       await repo.createCharacter(
@@ -221,6 +223,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           level: _level,
         ),
       );
+      // Remember WHICH language they chose to study. Without this the choice
+      // lived only in this widget's state, so afterwards the word book opened
+      // the wrong segment and new friends defaulted to a language the user
+      // never picked (studyLanguageForApp guesses Japanese for en/zh UIs).
+      await friendLanguage.setLanguage(lang);
       // Save the learner's own name to their profile so friends greet them by
       // name from the first message.
       final myName = _myNameController.text.trim();

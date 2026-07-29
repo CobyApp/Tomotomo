@@ -195,7 +195,10 @@ class CharactersTabState extends State<CharactersTab>
                     children: [
                       Text(
                         r.name,
-                        style: AppTextStyles.listTitle(context).copyWith(
+                        style: AppTextStyles.listTitle(
+                          context,
+                          language: r.language,
+                        ).copyWith(
                           color: p.ink,
                           fontSize: 18,
                           fontWeight: FontWeight.w800,

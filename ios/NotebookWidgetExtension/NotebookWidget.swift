@@ -98,12 +98,24 @@ struct NotebookWidgetBundle: WidgetBundle {
 struct NotebookWidget: Widget {
   let kind: String = "NotebookWidget"
 
+  /// Gallery strings come from the App Group, like the rest of the widget's
+  /// text, so they follow the language chosen in the app. Localizing them
+  /// natively would need a strings catalog added to this target.
+  private var galleryStrings: (name: String, description: String) {
+    let d = UserDefaults(suiteName: widgetGroupId)
+    return (
+      d?.string(forKey: "notebook_widget_title") ?? "단어장",
+      d?.string(forKey: "notebook_widget_gallery_desc")
+        ?? "저장한 단어를 홈 화면에 보여줍니다."
+    )
+  }
+
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: kind, provider: NotebookProvider()) { entry in
       NotebookWidgetView(entry: entry)
     }
-    .configurationDisplayName("単語帳")
-    .description("保存した単語をホーム画面に表示します。")
+    .configurationDisplayName(galleryStrings.name)
+    .description(galleryStrings.description)
     .supportedFamilies([.systemSmall, .systemMedium])
   }
 }
