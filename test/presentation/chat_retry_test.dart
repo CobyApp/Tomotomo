@@ -74,4 +74,44 @@ void main() {
     await tester.enterText(find.byType(TextField), 'hello');
     expect(find.text('hello'), findsOneWidget);
   });
+
+  testWidgets('the send button stays inert until there is something to send',
+      (tester) async {
+    final controller = TextEditingController();
+    var sent = 0;
+    await tester.pumpWidget(
+      ChangeNotifierProvider<LocaleNotifier>(
+        create: (_) => LocaleNotifier(_StubProfiles()),
+        child: MaterialApp(
+          theme: PaperTheme.light,
+          home: Scaffold(
+            body: ChatInput(
+              controller: controller,
+              onSend: () => sent++,
+              isGenerating: false,
+              character: characters.first,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Empty: the button looked fully enabled and the tap was dropped upstream.
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    expect(sent, 0, reason: 'an empty message was sendable');
+
+    await tester.enterText(find.byType(TextField), 'hello');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    expect(sent, 1, reason: 'the button did not wake up when text arrived');
+  });
+
+  testWidgets('the composer stays editable while a reply generates',
+      (tester) async {
+    await tester.pumpWidget(host(showRetry: false, isGenerating: true));
+    final field = tester.widget<TextField>(find.byType(TextField));
+    // readOnly dropped the keyboard for the several seconds inference takes.
+    expect(field.readOnly, isFalse);
+    expect(field.enabled, isTrue);
+  });
 }

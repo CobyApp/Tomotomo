@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/ads/ad_config.dart';
+import '../../core/ads/rewarded_ad_service.dart';
 import '../../core/ui/paper/paper_bottom_sheet.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_widgets.dart';
@@ -46,6 +47,9 @@ class _TopUpSheetState extends State<_TopUpSheet> {
   Widget build(BuildContext context) {
     final p = context.paper;
     final balance = context.watch<PointsBalanceNotifier>().balance;
+    final adService = context.watch<RewardedAdService>();
+    final adReady = adService.isReady;
+    final adLoading = adService.isLoading;
     final remaining = context
         .read<LocalPointsRepositoryImpl>()
         .adsRemainingToday(today: todayKey());
@@ -97,9 +101,22 @@ class _TopUpSheetState extends State<_TopUpSheet> {
                 'adEarnSubtitle',
                 params: {'points': '${AdConfig.pointsPerAd}'},
               ),
-              busy: _watching,
-              onPressed: _watchAd,
+              // Watch the service, so this button reflects reality AND wakes up
+              // by itself when an ad finishes loading. Unconditionally enabled,
+              // it silently no-opped into a "Loading ad…" snackbar — on the one
+              // path where the user is already blocked and has no other move.
+              busy: _watching || adLoading,
+              onPressed: adReady ? _watchAd : null,
             ),
+            if (!adReady) ...[
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  context.tr('adEarnNotReady'),
+                  style: TextStyle(color: p.inkSoft, fontSize: 12),
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
             Center(
               child: Text(

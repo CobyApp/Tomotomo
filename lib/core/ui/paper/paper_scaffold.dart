@@ -2,13 +2,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../app_tokens.dart';
-import '../points_toolbar_chip.dart';
 import 'paper_tokens.dart';
 import 'paper_wordmark.dart';
 
 /// PAPER-CARTOON page layout: [title], [subtitle], [body], [actions],
 /// [bottom], [floatingActionButton], [transparentBackground],
-/// [showPointsChip], plus an additive [useWordmark] flag for the app root
+/// [actions], plus an additive [useWordmark] flag for the app root
 /// screen. Renders the paper background with a subtle dotted grain overlay
 /// and a cute display / [PaperWordmark] app-bar title.
 class PaperScaffold extends StatelessWidget {
@@ -21,7 +20,6 @@ class PaperScaffold extends StatelessWidget {
     this.bottom,
     this.floatingActionButton,
     this.transparentBackground = true,
-    this.showPointsChip = false,
     this.useWordmark = false,
     this.showBackground = true,
   });
@@ -31,8 +29,6 @@ class PaperScaffold extends StatelessWidget {
   final Widget body;
   final List<Widget>? actions;
 
-  /// When true, prepends [PointsToolbarChip] to [actions] (main shell tabs).
-  final bool showPointsChip;
   final PreferredSizeWidget? bottom;
   final Widget? floatingActionButton;
   final bool transparentBackground;
@@ -53,7 +49,6 @@ class PaperScaffold extends StatelessWidget {
     final hasSubtitle = subtitle != null && subtitle!.trim().isNotEmpty;
 
     final mergedActions = <Widget>[
-      if (showPointsChip) const PointsToolbarChip(),
       ...?actions,
     ];
 

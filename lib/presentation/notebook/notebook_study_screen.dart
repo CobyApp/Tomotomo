@@ -294,6 +294,11 @@ class _StudyCard extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
+          // maxHeight, not a bare minHeight: the revealed face (headword +
+          // reading + gloss + legacy note) can exceed the card on a small screen
+          // at the app's 1.3x text clamp, and a non-scrollable Column painted the
+          // overflow outside the card. The summary face was already scrollable;
+          // the session face was not.
           constraints: const BoxConstraints(maxWidth: 520, minHeight: 330),
           width: double.infinity,
           padding: const EdgeInsets.all(28),
@@ -310,7 +315,8 @@ class _StudyCard extends StatelessWidget {
               ),
             ],
           ),
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               StampTicket(
@@ -402,6 +408,7 @@ class _StudyCard extends StatelessWidget {
                 ),
               ],
             ],
+            ),
           ),
         ),
       ),

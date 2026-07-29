@@ -107,6 +107,7 @@ class _ChatScreenState extends State<ChatScreen>
             ),
             onLeaveRoom: (ctx) => _confirmLeaveRoom(ctx, viewModel),
             onOpenBackground: _openBackgroundPicker,
+            onMessageCountChanged: _onMessageCountChanged,
           );
         },
       ),
@@ -159,6 +160,15 @@ class _ChatScreenState extends State<ChatScreen>
   /// true and the 10 Hz retry ran for the life of the process — and a new chain
   /// started on every rebuild. Opening a friend's chat, looking, and backing out
   /// leaked a timer every time.
+  int _lastMessageCount = -1;
+
+  /// Scrolls to the newest message only when the conversation actually grew.
+  void _onMessageCountChanged(int count) {
+    if (count == _lastMessageCount) return;
+    _lastMessageCount = count;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
   void _scrollToBottom({int attemptsLeft = 10}) {
     if (!mounted) return;
     if (_scrollController.hasClients) {
@@ -191,6 +201,11 @@ class _ChatScreenContent extends StatelessWidget {
   final ScrollController scrollController;
   final String? chatRoomId;
   final ChatBackground background;
+
+  /// Lets the stateful parent decide whether the list grew — this widget has no
+  /// state of its own, and scrolling on every rebuild yanked a user reading
+  /// history down to the newest message.
+  final void Function(int count) onMessageCountChanged;
   final Future<void> Function(BuildContext context) onReportRoom;
   final Future<void> Function(BuildContext context) onLeaveRoom;
   final Future<void> Function(BuildContext context) onOpenBackground;
@@ -203,27 +218,9 @@ class _ChatScreenContent extends StatelessWidget {
     required this.onReportRoom,
     required this.onLeaveRoom,
     required this.onOpenBackground,
+    required this.onMessageCountChanged,
   });
 
-  /// Bounded retry. There is no `mounted` here — this is a StatelessWidget — so
-  /// an attempt count is the only thing that can stop it. Unbounded, an empty
-  /// room (a Center, not a scrollable) span a 10 Hz loop for the life of the
-  /// process, and a fresh loop started on every rebuild of the Consumer below.
-  void _scrollToBottom({int attemptsLeft = 10}) {
-    if (scrollController.hasClients) {
-      scrollController.animateTo(
-        scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-      return;
-    }
-    if (attemptsLeft <= 0) return;
-    Future.delayed(
-      const Duration(milliseconds: 100),
-      () => _scrollToBottom(attemptsLeft: attemptsLeft - 1),
-    );
-  }
 
   /// Chat options as a reliable bottom sheet (background / report / leave).
   Future<void> _showChatOptions(BuildContext context) async {
@@ -378,9 +375,11 @@ class _ChatScreenContent extends StatelessWidget {
               Expanded(
                 child: Consumer<ChatViewModel>(
                   builder: (context, viewModel, child) {
-                    WidgetsBinding.instance.addPostFrameCallback(
-                      (_) => _scrollToBottom(),
-                    );
+                    // Only when the conversation actually grew. Scrolling on every
+                    // notify yanked a user who was reading history down to the
+                    // newest message on any state change — including each keyboard
+                    // movement, via didChangeMetrics.
+                    onMessageCountChanged(viewModel.messages.length);
                     return ChatList(
                       messages: viewModel.messages,
                       character: character,

@@ -75,7 +75,7 @@ class AppStrings {
     'adEarnFreeBadge': '무료 티켓',
     'pointsHelpTitle': '포인트 안내',
     'pointsBalanceLabel': '보유 포인트',
-    'pointsHelpLead': '친구와 이야기하거나 표현을 볼 때 포인트를 써요.',
+    'pointsHelpLead': '친구와 이야기하거나 새 친구를 만들 때 포인트를 써요. 학습 노트는 무료예요.',
     'pointsHelpSectionWhen': '언제 쓰이나요?',
     'pointsHelpItemXImport': '새 친구 만들기에서 X 프로필을 가져올 때마다 10포인트예요.',
     'pointsHelpItemCharacterChat':
@@ -83,7 +83,7 @@ class AppStrings {
     'pointsHelpItemCustomCreate':
         '새 친구를 만들어 저장할 때 10포인트예요. (이미 있는 친구를 수정만 할 때는 없어요)',
     'pointsHelpFooter':
-        '잔액은 이 기기에 저장돼요. 포인트가 부족하면 해당 기능을 쓸 수 없어요. 앱 상단의 별 칩에서 이 안내를 다시 열 수 있어요.',
+        '잔액은 이 기기에 저장돼요. 포인트가 부족하면 해당 기능을 쓸 수 없어요. 설정의 포인트 카드에서 이 안내를 다시 열 수 있어요.',
     'cancel': '취소',
     'confirm': '확인',
     'retry': '다시 시도',
@@ -336,7 +336,7 @@ class AppStrings {
     'adEarnFreeBadge': '無料チケット',
     'pointsHelpTitle': 'ポイントについて',
     'pointsBalanceLabel': '保有ポイント',
-    'pointsHelpLead': '友だちと話したり表現を見るときにポイントを使います。',
+    'pointsHelpLead': '友だちと話したり新しい友だちを作るときにポイントを使います。学習ノートは無料です。',
     'pointsHelpSectionWhen': 'いつ消費されますか？',
     'pointsHelpItemXImport': '新しい友だち作成でXプロフィールを取り込むたびに10ptです。',
     'pointsHelpItemCharacterChat':
@@ -344,7 +344,7 @@ class AppStrings {
     'pointsHelpItemCustomCreate':
         '新しい友だちを作成して保存するとき10ptです。（既存の友だちを編集するだけのときはかかりません）',
     'pointsHelpFooter':
-        '残高はこの端末に保存されます。ポイントが足りないとその機能は使えません。画面上部の星チップからこの説明を開けます。',
+        '残高はこの端末に保存されます。ポイントが足りないとその機能は使えません。設定のポイントカードからこの説明を開けます。',
     'cancel': 'キャンセル',
     'confirm': 'OK',
     'retry': '再試行',
@@ -598,7 +598,7 @@ class AppStrings {
     'pointsHelpTitle': 'About Points',
     'pointsBalanceLabel': 'Your points',
     'pointsHelpLead':
-        'Points are used when chatting with friends or viewing expressions.',
+        'Points are used for chatting and for making a new friend. Study notes are free.',
     'pointsHelpSectionWhen': 'When are they used?',
     'pointsHelpItemXImport':
         '10 points each time you import an X profile in Create New Friend.',
@@ -607,7 +607,7 @@ class AppStrings {
     'pointsHelpItemCustomCreate':
         '10 points when you create and save a new friend. (Not charged when only editing an existing friend)',
     'pointsHelpFooter':
-        "Your balance is stored on this device. If you don't have enough points, that feature can't be used. You can reopen this guide from the star chip at the top of the app.",
+        "Your balance is stored on this device. If you don't have enough points, that feature can't be used. You can reopen this guide from the points card in Settings.",
     'cancel': 'Cancel',
     'confirm': 'OK',
     'retry': 'Retry',
@@ -879,14 +879,14 @@ class AppStrings {
     'adEarnFreeBadge': '免费券',
     'pointsHelpTitle': '积分说明',
     'pointsBalanceLabel': '我的积分',
-    'pointsHelpLead': '与朋友聊天或查看表达时会使用积分。',
+    'pointsHelpLead': '与朋友聊天或创建新朋友时会使用积分。学习笔记免费。',
     'pointsHelpSectionWhen': '什么时候使用？',
     'pointsHelpItemXImport': '在创建新朋友时每导入一次X资料需要10积分。',
     'pointsHelpItemCharacterChat':
         '与朋友聊天时每次成功获得回复需要5积分。（发送后收到回复时扣除）',
     'pointsHelpItemCustomCreate': '创建并保存新朋友时需要10积分。（仅编辑已有朋友时不收取）',
     'pointsHelpFooter':
-        '余额保存在本设备上。积分不足时无法使用该功能。可以在应用顶部的星星图标中再次打开此说明。',
+        '余额保存在本设备上。积分不足时无法使用该功能。可以在设置的积分卡片中再次打开此说明。',
     'cancel': '取消',
     'confirm': '确定',
     'retry': '重试',

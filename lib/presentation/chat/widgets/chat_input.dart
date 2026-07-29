@@ -5,7 +5,7 @@ import '../../../core/ui/paper/paper_widgets.dart';
 import '../../../domain/entities/character.dart';
 import '../../locale/l10n_context.dart';
 
-class ChatInput extends StatelessWidget {
+class ChatInput extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
   final bool isGenerating;
@@ -31,8 +31,44 @@ class ChatInput extends StatelessWidget {
   });
 
   @override
+  State<ChatInput> createState() => _ChatInputState();
+}
+
+class _ChatInputState extends State<ChatInput> {
+  @override
+  void initState() {
+    super.initState();
+    // The button looked fully enabled — coral gradient, gloss, shadow — with an
+    // empty field, and the tap was dropped by the caller. Nothing listened to the
+    // widget.controller, so it could not rebuild on text change; the disabled visual it
+    // already has was only ever used for widget.isGenerating.
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void didUpdateWidget(ChatInput old) {
+    super.didUpdateWidget(old);
+    if (old.controller != widget.controller) {
+      old.controller.removeListener(_onTextChanged);
+      widget.controller.addListener(_onTextChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final canTapSend = !isGenerating && canSendMessage;
+    final hasText = widget.controller.text.trim().isNotEmpty;
+    final canTapSend =
+        !widget.isGenerating && widget.canSendMessage && hasText;
     final p = context.paper;
 
     // One unified "sticker bar": the text field and the send button live
@@ -45,7 +81,7 @@ class ChatInput extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (showRetry && onRetry != null && !isGenerating)
+            if (widget.showRetry && widget.onRetry != null && !widget.isGenerating)
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
@@ -57,7 +93,7 @@ class ChatInput extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     TextButton(
-                      onPressed: onRetry,
+                      onPressed: widget.onRetry,
                       style: TextButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                         padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -90,10 +126,15 @@ class ChatInput extends StatelessWidget {
             children: [
               Expanded(
                 child: TextField(
-                  controller: controller,
-                  readOnly: !canSendMessage,
+                  controller: widget.controller,
+                  // Not readOnly while a reply generates: EditableText drops its
+                  // input connection when readOnly, so the keyboard collapsed the
+                  // moment you sent — for the several seconds on-device inference
+                  // takes — and tapping the field did nothing. You can draft the
+                  // next line now; only SENDING is gated, by canTapSend.
+                  enabled: true,
                   decoration: InputDecoration(
-                    hintText: hintOverride ?? context.tr('chatInputHint'),
+                    hintText: widget.hintOverride ?? context.tr('chatInputHint'),
                     hintStyle: TextStyle(
                       color: p.inkSoft.withValues(alpha: 0.7),
                       fontSize: 15,
@@ -111,7 +152,7 @@ class ChatInput extends StatelessWidget {
                   minLines: 1,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) {
-                    if (canSendMessage) onSend();
+                    if (widget.canSendMessage) widget.onSend();
                   },
                 ),
               ),
@@ -142,11 +183,11 @@ class ChatInput extends StatelessWidget {
                   color: Colors.transparent,
                   shape: const CircleBorder(),
                   child: InkWell(
-                    onTap: canTapSend ? onSend : null,
+                    onTap: canTapSend ? widget.onSend : null,
                     customBorder: const CircleBorder(),
                     child: Center(
                       child: Icon(
-                        isGenerating
+                        widget.isGenerating
                             ? Icons.more_horiz_rounded
                             : Icons.arrow_upward_rounded,
                         color: Colors.white,
