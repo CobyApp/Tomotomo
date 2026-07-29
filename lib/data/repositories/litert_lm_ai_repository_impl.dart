@@ -97,18 +97,11 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
       prompt: prompt.toString(),
       maxTokens: 2048,
     );
-    final lang = _appUiLanguageCode.toLowerCase();
-    final meaningMode = lang.startsWith('ja')
-        ? VocabularyMeaningPickMode.preferJapaneseGloss
-        : lang.startsWith('en')
-            ? VocabularyMeaningPickMode.preferEnglishGloss
-            : lang.startsWith('zh')
-                ? VocabularyMeaningPickMode.preferChineseGloss
-                : VocabularyMeaningPickMode.preferKoreanGloss;
+    final meaningMode = meaningPickModeForApp(_appUiLanguageCode);
     var parsed = chatMessageFromAiJsonMap(
       extractJsonObject(raw),
       character,
-      vocabularyMeaningPickModeOverride: meaningMode,
+      meaningMode: meaningMode,
     );
     _history.add((
       role: 'user',
@@ -228,14 +221,7 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
     final encodedUtterance = jsonEncode(
       _takeRunes(utterance, _maxCurrentMessageRunes),
     );
-    final lang = appUiLanguageCode.toLowerCase();
-    final meaningMode = lang.startsWith('ja')
-        ? VocabularyMeaningPickMode.preferJapaneseGloss
-        : lang.startsWith('en')
-            ? VocabularyMeaningPickMode.preferEnglishGloss
-            : lang.startsWith('zh')
-                ? VocabularyMeaningPickMode.preferChineseGloss
-                : VocabularyMeaningPickMode.preferKoreanGloss;
+    final meaningMode = meaningPickModeForApp(appUiLanguageCode);
 
     Future<ChatMessage> analyze(String prompt) async {
       final raw = await _runtime.generateText(
@@ -247,7 +233,7 @@ final class LiteRtLmAiRepositoryImpl implements AiChatRepository {
       return chatMessageFromAiJsonMap(
         extractJsonObject(raw),
         character,
-        vocabularyMeaningPickModeOverride: meaningMode,
+        meaningMode: meaningMode,
       );
     }
 

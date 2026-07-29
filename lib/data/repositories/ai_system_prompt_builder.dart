@@ -20,12 +20,18 @@ String _personaSummary(Character character) {
       .where((value) => value.isNotEmpty)
       .join(', ');
 
+  // Every default here is deliberately language-neutral. A custom friend used to
+  // arrive with a Role that named the scripts to use, contradicting the reply and
+  // explanation languages stated further down in this same prompt.
+  final role = _oneLine(character.occupation, maxRunes: 80);
+  final voice = _oneLine(character.speechStyle);
+
   return '''
 Name: ${_oneLine(character.displayNamePrimary, maxRunes: 60)}
-Role: ${_oneLine(character.occupation, maxRunes: 80)}
+Role: ${role.isEmpty ? 'conversation partner' : role}
 Personality: ${traits.isEmpty ? 'friendly and attentive' : traits}
 Interests: ${interests.isEmpty ? 'everyday conversation' : interests}
-Voice and background: ${_oneLine(character.speechStyle)}
+Voice and background: ${voice.isEmpty ? 'warm and easy to talk to' : voice}
 Self-reference: ${_oneLine(character.selfReference, maxRunes: 40)}
 '''
       .trim();

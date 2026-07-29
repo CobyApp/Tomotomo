@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/locale/languages.dart';
 import 'character_record.dart';
-import 'chat_message.dart';
 
 class CharacterTrait {
   final String trait;
@@ -99,16 +98,6 @@ class Character {
 
   String get displayImageUrl => imageUrl;
 
-  /// AI JSON: Korean vocabulary meanings (Japanese dialogue).
-  bool get expectsKoreanStudyNotes =>
-      !koreanNationalPersona && tutorLocale != 'ja';
-
-  /// AI JSON: Japanese glosses (Korean dialogue or immersion).
-  bool get expectsJapaneseStudyNotes =>
-      koreanNationalPersona || tutorLocale == 'ja';
-
-  /// Prefer Pretendard / Hangul-friendly font for [ChatMessage.content] in the expression sheet.
-  bool get assistantMessagePrefersHangulFont => koreanNationalPersona;
 
   /// The language the friend speaks and replies in. Explicit when set;
   /// otherwise migrated from legacy fields.
@@ -129,15 +118,6 @@ class Character {
 
   /// Notebook segment for vocabulary [+] saves: the friend language's script.
   String get defaultNotebookLangForVocabSave => friendLanguage;
-
-  /// How to read `vocabulary[].*` meaning fields from AI/DB JSON for this persona.
-  VocabularyMeaningPickMode get vocabularyMeaningPickMode {
-    if (tutorLocale == 'ja') return VocabularyMeaningPickMode.neutral;
-    if (koreanNationalPersona) {
-      return VocabularyMeaningPickMode.preferJapaneseGloss;
-    }
-    return VocabularyMeaningPickMode.preferKoreanGloss;
-  }
 
   bool get hasAvatar => imagePath.isNotEmpty;
 
@@ -165,10 +145,10 @@ class Character {
 
   /// Builds a chat character from a locally stored custom character record.
   ///
-  /// [CharacterRecord.language]: `ja` → Japanese-speaking persona, Korean glosses on vocabulary in JSON.
-  /// `ko` → Korean-speaking persona (friend), Japanese glosses on vocabulary in JSON.
+  /// The friend speaks [CharacterRecord.language]; the language its study notes
+  /// explain in is the learner's app language, decided by the prompt builder —
+  /// not something this record knows.
   static Character fromRecord(CharacterRecord r) {
-    final isJaPersona = r.language == 'ja';
     final image = r.avatarUrl ?? '';
     final descParts = <String>[
       if (r.tagline != null && r.tagline!.trim().isNotEmpty) r.tagline!.trim(),
@@ -176,36 +156,29 @@ class Character {
         r.speechStyle!.trim(),
     ];
 
-    // Align with built-in [Character] rows: [name] = Korean-line label, [nameJp] = Japanese script.
-    // DB for `ja` characters: primary [name] is Japanese; [name_secondary] is Korean (optional).
-    final String nameKoLine;
-    final String nameJaLine;
-    final String nameKanjiVal;
-    final String selfRef;
+    // A custom friend has one name, whatever language it is in, so every name
+    // slot gets it — [omitSecondaryDisplayName] hides the bilingual subtitle.
     final displayName = r.name.trim();
-    nameJaLine = displayName;
-    nameKoLine = displayName;
-    nameKanjiVal = displayName;
-    selfRef = displayName;
 
     return Character(
       id: r.id,
-      name: nameKoLine,
-      nameJp: nameJaLine,
-      nameKanji: nameKanjiVal,
+      name: displayName,
+      nameJp: displayName,
+      nameKanji: displayName,
       level: r.level,
       tagline: r.tagline?.trim() ?? '',
       description: descParts.isEmpty ? '' : descParts.join('\n'),
       age: 0,
       schoolYear: '',
-      occupation: isJaPersona
-          ? '일본어 튜터 · 말풍선 일본어, 단어 뜻 한국어'
-          : '한국어 튜터 · 말풍선 한국어, 단어 뜻 일본어',
-      traits: const [CharacterTrait('친절함', 0.8)],
-      interests: const [
-        CharacterInterest(category: '언어', items: ['대화']),
-      ],
-      speechStyle: r.speechStyle ?? '친근하게 대화합니다.',
+      // These three reach the model as "Role:", "Personality:" and "Interests:".
+      // They used to assert which scripts to use ("말풍선 한국어, 단어 뜻 일본어"),
+      // which contradicted the reply/explanation languages the prompt states
+      // right below — and was simply false for an English or Chinese friend.
+      // Left empty so the builder supplies its own neutral defaults.
+      occupation: '',
+      traits: const [],
+      interests: const [],
+      speechStyle: r.speechStyle ?? '',
       primaryColor: const Color(0xFF6A3EA1),
       secondaryColor: const Color(0xFFF0E6FF),
       hairStyle: '-',
@@ -213,7 +186,7 @@ class Character {
       eyeColor: '-',
       outfit: '-',
       accessories: [],
-      selfReference: selfRef,
+      selfReference: displayName,
       commonPhrases: [],
       emotionalResponses: {},
       imageUrl: image,

@@ -343,13 +343,16 @@ Map<String, dynamic> _hoistFlatVocabularyIntoArray(Map<String, dynamic> root) {
 }
 
 /// Maps LLM JSON payload to [ChatMessage] with alternate key names.
+/// [meaningMode] is required on purpose: it used to fall back to a value derived
+/// from the character, which could only ever answer "Korean or Japanese gloss",
+/// so any new caller that forgot to pass it silently gave English and Chinese
+/// learners Korean glosses. Build it with [meaningPickModeForApp].
 ChatMessage chatMessageFromAiJsonMap(
   Map<String, dynamic> json,
   Character character, {
-  VocabularyMeaningPickMode? vocabularyMeaningPickModeOverride,
+  required VocabularyMeaningPickMode meaningMode,
 }) {
   final root = _hoistFlatVocabularyIntoArray(_effectiveRoot(json));
-  final meaningMode = vocabularyMeaningPickModeOverride ?? character.vocabularyMeaningPickMode;
 
   final content = _firstNonEmptyString(root, const [
         'content',

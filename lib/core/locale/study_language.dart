@@ -1,6 +1,10 @@
-/// Returns the language the user is studying for the current app language.
+import 'languages.dart';
+
+/// The language a user is assumed to be studying, from their app UI language.
 ///
-/// Japanese UI users study Korean; Korean UI users study Japanese.
-String studyLanguageForApp(String appLanguageCode) {
-  return appLanguageCode == 'ja' ? 'ko' : 'ja';
-}
+/// This is only a FALLBACK. Onboarding asks outright and persists the answer
+/// (`FriendLanguageNotifier`), so this applies to installs made before that
+/// question existed and to the moment before onboarding finishes. Japanese UI →
+/// Korean; every other UI → Japanese, which is what the app launched as.
+String studyLanguageForApp(String appLanguageCode) =>
+    normalizeLang(appLanguageCode) == 'ja' ? 'ko' : 'ja';

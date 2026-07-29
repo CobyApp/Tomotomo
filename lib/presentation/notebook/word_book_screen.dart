@@ -211,9 +211,8 @@ class WordBookScreenState extends State<WordBookScreen>
     final (reading, meaningBody) = _parseNotebookTranslation(e.translation);
     final hasGlossLine = meaningBody.isNotEmpty;
     final word = (e.content ?? '').trim().isEmpty ? '—' : e.content!.trim();
-    final usePretendard = e.notebookLang == 'ko';
-
-    // Mirrors chat expression sheet: cute headword, optional reading, then gloss line.
+    // Same split as the chat expression sheet: cute headword, body-font reading
+    // and gloss line.
     final wordStyle = cuteDisplay(
       fontSize: 18,
       fontWeight: FontWeight.w800,
@@ -224,13 +223,11 @@ class WordBookScreenState extends State<WordBookScreen>
       fontSize: 14,
       fontWeight: FontWeight.w600,
       color: p.inkSoft,
-      fontFamily: usePretendard ? 'Pretendard' : null,
     );
     final meaningStyle = TextStyle(
       fontSize: 13,
       height: 1.4,
       color: p.ink,
-      fontFamily: usePretendard ? 'Pretendard' : null,
     );
 
     return Padding(
@@ -308,8 +305,7 @@ class WordBookScreenState extends State<WordBookScreen>
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: p.inkSoft,
-                      fontFamily: usePretendard ? 'Pretendard' : null,
-                    ),
+                                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(

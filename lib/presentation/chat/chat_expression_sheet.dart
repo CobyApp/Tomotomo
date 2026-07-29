@@ -12,7 +12,6 @@ import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/saved_expression.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
 import '../locale/l10n_context.dart';
-import '../locale/locale_notifier.dart';
 import '../notebook/word_book_refresh_notifier.dart';
 
 /// Bottom sheet: message, per-word [+] saves **that word only** (headword + gloss) to the word book.
@@ -143,9 +142,6 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
 
   String? get _effectiveLineTranslation => widget.message.lineTranslation;
 
-  bool get _vocabMeaningUsesHangul =>
-      context.read<LocaleNotifier>().languageCode == 'ko';
-
   Future<void> _saveWordToNotebook(int index, Vocabulary v) async {
     if (_savedWordIndices.contains(index) || _savingIndices.contains(index)) {
       return;
@@ -189,7 +185,6 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
   Widget build(BuildContext context) {
     final sheetContext = context;
     final message = widget.message;
-    final character = widget.character;
     final tr = sheetContext.tr;
     final p = context.paper;
 
@@ -198,15 +193,11 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       height: 1.5,
       color: p.ink,
       fontWeight: FontWeight.w500,
-      fontFamily: character.assistantMessagePrefersHangulFont
-          ? 'Pretendard'
-          : null,
     );
     final meaningStyle = TextStyle(
       fontSize: 14,
       height: 1.42,
       color: p.ink,
-      fontFamily: _vocabMeaningUsesHangul ? 'Pretendard' : null,
     );
     final sectionLabelStyle = TextStyle(
       fontSize: 13,
@@ -219,29 +210,25 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
       fontSize: 15,
       height: 1.5,
       color: p.ink,
-      fontFamily: character.assistantMessagePrefersHangulFont
-          ? 'Pretendard'
-          : null,
     );
-    final vocabWordUsesPretendard = character.koreanNationalPersona;
-    final wordStyle = TextStyle(
+    // Body text: the theme already supplies Pretendard, so these styles used to
+    // carry `isKorean ? 'Pretendard' : null` branches where BOTH arms resolved
+    // to Pretendard — a null family in a fresh TextStyle loses to the inherited
+    // DefaultTextStyle. Verified by resolving the rendered style.
+    // Cute headword, body-font reading and gloss — the same split the word book
+    // uses, so a word keeps its look after being saved. The book's comment
+    // already claimed it mirrored this sheet; the sheet was the one out of step.
+    final wordStyle = cuteDisplay(
       fontSize: 16,
       fontWeight: FontWeight.w700,
       color: p.ink,
-      fontFamily: vocabWordUsesPretendard ? 'Pretendard' : null,
+      language: widget.character.friendLanguage,
     );
 
     final translation = _effectiveLineTranslation?.trim();
     final showTranslation = translation != null && translation.isNotEmpty;
 
-    final translationUsesHangul =
-        context.read<LocaleNotifier>().languageCode == 'ko';
-
-    Widget sectionBlock(
-      String label,
-      String body, {
-      bool useHangulBody = false,
-    }) {
+    Widget sectionBlock(String label, String body) {
       return Padding(
         padding: const EdgeInsets.only(top: 14),
         child: Column(
@@ -251,14 +238,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
             const SizedBox(height: 6),
             _DashedRule(color: p.cardEdge),
             const SizedBox(height: 8),
-            Text(
-              body,
-              style: sectionBodyStyle.copyWith(
-                fontFamily: useHangulBody
-                    ? 'Pretendard'
-                    : sectionBodyStyle.fontFamily,
-              ),
-            ),
+            Text(body, style: sectionBodyStyle),
           ],
         ),
       );
@@ -289,7 +269,6 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
               sectionBlock(
                 tr('expressionFullTranslationLabel'),
                 translation,
-                useHangulBody: translationUsesHangul,
               ),
             if (_effectiveVocabulary != null &&
                 _effectiveVocabulary!.isNotEmpty) ...[
@@ -385,7 +364,6 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
                     fontSize: 14,
                     height: 1.4,
                     color: p.inkSoft,
-                    fontFamily: _vocabMeaningUsesHangul ? 'Pretendard' : null,
                   ),
                 ),
               ),
