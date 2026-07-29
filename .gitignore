@@ -46,3 +46,7 @@ app.*.map.json
 
 .env
 android/key.properties
+
+# Written by CI from secrets — must never be committed.
+ios/Flutter/AdMob.xcconfig
+android/app/keystore.jks

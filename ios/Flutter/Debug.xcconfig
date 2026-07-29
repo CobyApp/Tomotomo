@@ -3,3 +3,9 @@
 
 // Workaround: macOS may add xattrs (e.g. com.apple.provenance) that break codesign.
 OTHER_CODE_SIGN_FLAGS = --strip-disallowed-xattrs
+
+// AdMob application id. CI overrides this by writing
+// ios/Flutter/AdMob.xcconfig before the build; the default is
+// Google's public TEST id so a local build needs no AdMob account.
+ADMOB_APP_ID = ca-app-pub-3940256099942544~1458002511
+#include? "AdMob.xcconfig"

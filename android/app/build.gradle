@@ -56,6 +56,16 @@ android {
     }
 
     defaultConfig {
+        // AdMob app id comes from CI (-PadmobAppId=...), not from a value checked
+        // into the repo. Falls back to Google's public TEST id so a local build
+        // works without an AdMob account — a release built without the property
+        // will serve test ads, which earn nothing.
+        // `+=`, not `=`: assigning wipes Flutter's own placeholders (applicationName)
+        // and the manifest merger then fails on ${applicationName}.
+        manifestPlaceholders += [
+            admobAppId: (project.findProperty('admobAppId')
+                ?: 'ca-app-pub-3940256099942544~3347511713')
+        ]
         applicationId "com.dime.tomotomo"
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion

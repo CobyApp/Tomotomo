@@ -33,9 +33,6 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Create .env file
-        run: printf '%s' "${{ secrets.ENV_FILE }}" > .env
-
       - name: Install dependencies
         run: flutter pub get
 
@@ -66,7 +63,9 @@ jobs:
           flutter build appbundle --release \
             --build-name=1.0.${{ github.run_number }} \
             --build-number=${{ steps.build_number.outputs.build_number }} \
-            --dart-define=API_ENV=prod
+            --dart-define=API_ENV=prod \
+            --dart-define=ADMOB_REWARDED_ANDROID=${{ secrets.ADMOB_REWARDED_ANDROID }} \
+            -PadmobAppId=${{ secrets.ADMOB_APP_ID_ANDROID }}
 
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
@@ -109,9 +108,6 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Create .env file
-        run: printf '%s' "${{ secrets.ENV_FILE }}" > .env
-
       - name: Install dependencies
         run: flutter pub get
 
@@ -144,11 +140,17 @@ jobs:
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           echo "📦 릴리즈 빌드 번호: $BUILD_NUMBER"
 
+      - name: Write AdMob xcconfig
+        run: |
+          printf 'ADMOB_APP_ID = %s\n' "${{ secrets.ADMOB_APP_ID_IOS }}" \
+            > ios/Flutter/AdMob.xcconfig
+
       - name: Flutter Build iOS (no codesign)
         run: |
           flutter build ios --release \
             --no-codesign \
-            --dart-define=API_ENV=prod
+            --dart-define=API_ENV=prod \
+            --dart-define=ADMOB_REWARDED_IOS=${{ secrets.ADMOB_REWARDED_IOS }}
 
       - name: Xcode Archive
         env:
