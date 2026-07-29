@@ -125,7 +125,12 @@ class WordBookScreenState extends State<WordBookScreen>
       final found = <String>[];
       for (final seg in kSupportedLanguageList) {
         final items = await repo.listForCurrentUser(notebookLang: seg);
-        if (items.isNotEmpty) found.add(seg);
+        // Always keep the segment being shown, even when it is empty. Listing
+        // only segments that HAVE words meant that an empty current segment plus
+        // exactly one other with words left a single chip — and the row hides
+        // itself at one chip, so the saved words became unreachable from this
+        // screen. Same fix already written for the home widget's language cycle.
+        if (items.isNotEmpty || seg == _notebookLang) found.add(seg);
       }
       if (!mounted) return;
       setState(() => _availableSegments = found);
@@ -245,6 +250,9 @@ class WordBookScreenState extends State<WordBookScreen>
             SnackBar(content: Text(context.trRead('notebookWordDeleted'))),
           );
           _syncHomeWidgetFromLocalData();
+          // A delete can empty a segment, which changes the chip row — it was
+          // pushed to the widget but never refreshed on screen.
+          unawaited(_refreshAvailableSegments());
         },
         background: Container(
           alignment: Alignment.centerRight,

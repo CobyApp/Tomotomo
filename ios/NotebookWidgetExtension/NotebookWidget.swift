@@ -26,8 +26,10 @@ struct NotebookEntry: TimelineEntry {
   let date: Date
   /// Language name in its own script (한국어 / 日本語 / English / 中文).
   let langLabel: String
-  /// Chrome text, localized by the app — this extension cannot reach AppStrings,
-  /// so it used to render hardcoded Japanese for every user.
+  /// Chrome text, localized by the app — this extension cannot reach AppStrings.
+  /// The fallbacks below are only visible before the app has synced once, and are
+  /// English to match Android's default resources and CFBundleDevelopmentRegion;
+  /// they were Japanese, then Korean, i.e. one specific language for everyone.
   let title: String
   let emptyText: String
   let lines: [String]
@@ -36,8 +38,8 @@ struct NotebookEntry: TimelineEntry {
 struct NotebookProvider: TimelineProvider {
   func placeholder(in context: Context) -> NotebookEntry {
     NotebookEntry(
-      date: Date(), langLabel: "한국어", title: "단어장",
-      emptyText: "저장한 단어가 없습니다", lines: ["…"])
+      date: Date(), langLabel: "English", title: "Vocabulary",
+      emptyText: "No saved words", lines: ["…"])
   }
 
   func getSnapshot(in context: Context, completion: @escaping (NotebookEntry) -> Void) {
@@ -59,8 +61,8 @@ struct NotebookProvider: TimelineProvider {
     return NotebookEntry(
       date: Date(),
       langLabel: languageLabel(d, lang),
-      title: d?.string(forKey: "notebook_widget_title") ?? "단어장",
-      emptyText: d?.string(forKey: "notebook_widget_empty") ?? "저장한 단어가 없습니다",
+      title: d?.string(forKey: "notebook_widget_title") ?? "Vocabulary",
+      emptyText: d?.string(forKey: "notebook_widget_empty") ?? "No saved words",
       lines: parseLines(raw))
   }
 
@@ -121,9 +123,9 @@ struct NotebookWidget: Widget {
   private var galleryStrings: (name: String, description: String) {
     let d = UserDefaults(suiteName: widgetGroupId)
     return (
-      d?.string(forKey: "notebook_widget_title") ?? "단어장",
+      d?.string(forKey: "notebook_widget_title") ?? "Vocabulary",
       d?.string(forKey: "notebook_widget_gallery_desc")
-        ?? "저장한 단어를 홈 화면에 보여줍니다."
+        ?? "Shows your saved words on the home screen."
     )
   }
 

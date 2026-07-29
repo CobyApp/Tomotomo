@@ -7,6 +7,7 @@ import '../../core/ui/app_tokens.dart';
 import '../../core/ui/paper/paper_scaffold.dart';
 import '../../core/ui/paper/paper_status_views.dart';
 import '../../core/ui/paper/paper_tokens.dart';
+import '../../core/ui/paper/paper_widgets.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
@@ -48,6 +49,20 @@ class LanguageSettingsScreen extends StatelessWidget {
     }
   }
 
+  /// Sets the default language for new friends and the word book.
+  ///
+  /// Existing friends keep their own language — changing this must not rewrite
+  /// conversations the user already has.
+  Future<void> _selectStudyLanguage(BuildContext context, String code) async {
+    final expressions = context.read<SavedExpressionRepository>();
+    await context.read<FriendLanguageNotifier>().setLanguage(code);
+    try {
+      await syncNotebookToHomeWidget(expressions, defaultLangIfUnset: code);
+    } catch (_) {
+      // A stale widget label must never break changing the language.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PaperScaffold(
@@ -68,6 +83,8 @@ class LanguageSettingsScreen extends StatelessWidget {
           }
           final p = context.paper;
           final appLanguage = context.watch<LocaleNotifier>().languageCode;
+          final friendLanguage = context.watch<FriendLanguageNotifier>();
+          final studyLanguage = friendLanguage.resolve(appLanguage);
 
           Widget tile(
             String label,
@@ -92,6 +109,7 @@ class LanguageSettingsScreen extends StatelessWidget {
               AppSpacing.pageBottom,
             ),
             children: [
+              PaperSectionLabel(context.tr('settingsUiLanguageSection')),
               AppSettingsPanel(
                 dividerIndent: 16,
                 children: [
@@ -102,6 +120,30 @@ class LanguageSettingsScreen extends StatelessWidget {
                       () => _selectAppLanguage(context, code, profile),
                     ),
                 ],
+              ),
+              const SizedBox(height: AppSpacing.sectionAfter),
+              // The study language had no control anywhere in the app after
+              // onboarding, even though this screen's own docstring described the
+              // section — and it decides the word book's default segment and every
+              // new friend's language.
+              PaperSectionLabel(context.tr('settingsStudyLanguageSection')),
+              AppSettingsPanel(
+                dividerIndent: 16,
+                children: [
+                  for (final code in _languages)
+                    tile(
+                      languageEndonym(code),
+                      studyLanguage == code,
+                      () => _selectStudyLanguage(context, code),
+                    ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(6, 8, 6, 0),
+                child: Text(
+                  context.tr('settingsStudyLanguageHint'),
+                  style: TextStyle(fontSize: 12.5, color: p.inkSoft),
+                ),
               ),
             ],
           );

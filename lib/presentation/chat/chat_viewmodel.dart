@@ -211,14 +211,27 @@ class ChatViewModel extends ChangeNotifier {
     _safeNotify();
 
     final index = _messages.length - 1;
-    final userRowId = await chatRepository.saveMessage(
-      character,
-      userChatMessage,
-    );
-    // Index captured before the await: a reload landing inside it used to make
-    // this write to the wrong row, or throw RangeError on a fresh room.
-    if (userRowId != null && index >= 0 && index < _messages.length) {
-      _messages[index] = _messages[index].copyWith(serverId: userRowId);
+    try {
+      final userRowId = await chatRepository.saveMessage(
+        character,
+        userChatMessage,
+      );
+      // Index captured before the await: a reload landing inside it used to make
+      // this write to the wrong row, or throw RangeError on a fresh room.
+      if (userRowId != null && index >= 0 && index < _messages.length) {
+        _messages[index] = _messages[index].copyWith(serverId: userRowId);
+      }
+    } catch (e) {
+      // Claiming the room before this await (so a second send cannot be
+      // swallowed) means a throw here would otherwise leave the room "typing"
+      // forever with the composer read-only — recoverable only by leaving the
+      // screen. Give the message back to the composer instead.
+      debugPrint('Saving the outgoing message failed: $e');
+      if (index >= 0 && index < _messages.length) _messages.removeAt(index);
+      messageController.text = userMessage;
+      _isGenerating = false;
+      _safeNotify();
+      return;
     }
     _safeNotify();
 

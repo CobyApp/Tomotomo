@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../core/locale/languages.dart';
@@ -101,8 +103,20 @@ class Character {
 
   bool get isNetworkImage => imagePath.startsWith('http');
 
+  /// True for a photo the user picked, which is stored as an absolute path under
+  /// the app's Documents directory.
+  bool get isFileImage => imagePath.startsWith('/');
+
   ImageProvider get imageProvider => isNetworkImage
       ? NetworkImage(imagePath)
+      // A user-picked photo is a FILE, not a bundled asset. Without this branch
+      // AssetImage was handed '/var/mobile/…/avatar_123.jpg' as a bundle key, so
+      // every custom friend's photo was an empty frame in the chat header, in
+      // every reply bubble and in the Chats row — and because hasAvatar is true
+      // the person-glyph fallback never took over either. The Friends tab got it
+      // right, which is why the photo appeared there and nowhere else.
+      : isFileImage
+      ? FileImage(File(imagePath))
       : AssetImage(imagePath) as ImageProvider;
 
   /// Builds a chat character from a locally stored custom character record.

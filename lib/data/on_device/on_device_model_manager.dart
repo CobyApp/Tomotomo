@@ -136,6 +136,10 @@ class OnDeviceModelManager extends ChangeNotifier {
 
   void cancelInstall() {
     if (_snapshot.phase != OnDeviceModelPhase.downloading) return;
+    // Cancelling has to clear the intent too. It did not, so resumeIfInterrupted
+    // read a still-true flag on the next launch and started the 2.6 GB download
+    // again on its own — the user cancelled and the app overruled them.
+    unawaited(_setInstallDesired(false));
     _runtime.cancelInstall();
     _setSnapshot(
       const OnDeviceModelSnapshot(phase: OnDeviceModelPhase.notInstalled),

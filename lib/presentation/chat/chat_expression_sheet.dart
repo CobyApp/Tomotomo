@@ -143,7 +143,7 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
     final sheetContext = context;
     final repo = sheetContext.read<SavedExpressionRepository>();
     final lang = widget.character.defaultNotebookLangForVocabSave;
-    final saveFailedPrefix = sheetContext.trRead('wordSaveNotebookFailed');
+    final saveFailedMessage = sheetContext.trRead('wordSaveNotebookFailed');
     setState(() => _savingIndices.add(index));
     try {
       await repo.add(
@@ -168,11 +168,14 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
         sheetContext.read<WordBookRefreshNotifier>().requestRefresh();
       }
     } catch (e) {
+      // Localized message only. Appending the exception put untranslated text —
+      // sometimes a hardcoded Korean message from a lower layer — in front of
+      // every language's users, the same leak already fixed for the X import and
+      // the chat error bubble.
+      debugPrint('Saving a word to the notebook failed: $e');
       if (!mounted) return;
       setState(() => _savingIndices.remove(index));
-      widget.messenger.showSnackBar(
-        SnackBar(content: Text('$saveFailedPrefix\n$e')),
-      );
+      widget.messenger.showSnackBar(SnackBar(content: Text(saveFailedMessage)));
     }
   }
 
