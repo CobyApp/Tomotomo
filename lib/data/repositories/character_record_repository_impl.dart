@@ -33,7 +33,6 @@ class CharacterRecordRepositoryImpl implements CharacterRecordRepository {
     final record = CharacterRecord(
       id: id,
       name: character.name,
-      nameSecondary: character.nameSecondary,
       avatarUrl: character.avatarUrl,
       tagline: character.tagline,
       speechStyle: character.speechStyle,
@@ -51,7 +50,6 @@ class CharacterRecordRepositoryImpl implements CharacterRecordRepository {
     final record = CharacterRecord(
       id: character.id,
       name: character.name,
-      nameSecondary: character.nameSecondary,
       avatarUrl: character.avatarUrl,
       tagline: character.tagline,
       speechStyle: character.speechStyle,

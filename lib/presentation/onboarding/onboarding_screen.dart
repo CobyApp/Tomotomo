@@ -151,7 +151,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final match = characters.where((c) => c.friendLanguage == lang);
     if (match.isEmpty) return;
     final c = match.first;
-    _nameController.text = c.displayNamePrimary;
+    _nameController.text = c.name;
     _taglineController.text = context.trRead('tplTagline_$lang');
     _personaController.text = [
       context.trRead('tplPersona_$lang'),

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Character _base({required String friendLanguage}) => Character(
-  id: 'x', name: 'n', nameJp: 'n', nameKanji: 'n', level: 'intermediate',
+  id: 'x', name: 'n', level: 'intermediate',
   description: '', age: 0, schoolYear: '', occupation: '',
   traits: const [], interests: const [], speechStyle: '',
   primaryColor: const Color(0xFF000000), secondaryColor: const Color(0xFFFFFFFF),
@@ -16,9 +16,9 @@ Character _base({required String friendLanguage}) => Character(
 
 void main() {
   // The legacy-migration cases that used to live here are gone with the fields
-  // they migrated from (koreanNationalPersona, tutorLocale) and with
-  // Character.fromJson — Character is never deserialized, every construction
-  // passes friendLanguage, and the compiler now requires it.
+  // they migrated from (koreanNationalPersona, tutorLocale, the nameJp/nameKanji
+  // pair) and with Character.fromJson — Character is never deserialized, every
+  // construction passes friendLanguage, and the compiler now requires it.
   test('friendLanguage is carried through, for all four languages', () {
     for (final lang in const ['ko', 'ja', 'en', 'zh']) {
       expect(_base(friendLanguage: lang).friendLanguage, lang);
@@ -29,13 +29,6 @@ void main() {
   test('a region tag or odd casing still resolves', () {
     expect(_base(friendLanguage: 'zh-Hans').friendLanguage, 'zh');
     expect(_base(friendLanguage: 'EN').friendLanguage, 'en');
-  });
-
-  test('koreanNationalPersona derives from friendLanguage', () {
-    expect(_base(friendLanguage: 'ko').koreanNationalPersona, isTrue);
-    for (final lang in const ['ja', 'en', 'zh']) {
-      expect(_base(friendLanguage: lang).koreanNationalPersona, isFalse);
-    }
   });
 
   test('fromRecord maps record.language to friendLanguage', () {

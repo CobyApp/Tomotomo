@@ -7,8 +7,6 @@ const _character = Character(
   id: 'yuna',
   friendLanguage: 'ja',
   name: '유나',
-  nameJp: 'ゆうな',
-  nameKanji: '優奈',
   level: 'intermediate',
   description: '친구',
   age: 20,
@@ -71,7 +69,7 @@ void main() {
 }
 
 Character _friend(String friendLanguage) => Character(
-      id: 'x', name: 'n', nameJp: 'n', nameKanji: 'n', level: 'intermediate',
+      id: 'x', name: 'n', level: 'intermediate',
       description: '', age: 0, schoolYear: '', occupation: '',
       traits: const [], interests: const [], speechStyle: '',
       primaryColor: const Color(0xFF000000), secondaryColor: const Color(0xFFFFFFFF),

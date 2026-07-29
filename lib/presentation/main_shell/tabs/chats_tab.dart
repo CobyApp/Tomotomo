@@ -159,7 +159,7 @@ class ChatsTabState extends State<ChatsTab>
                   children: [
                     Expanded(
                       child: Text(
-                        _resolved[r.roomId]?.displayNamePrimary ?? r.title,
+                        _resolved[r.roomId]?.name ?? r.title,
                         style: AppTextStyles.listTitle(
                           context,
                           language: _resolved[r.roomId]?.friendLanguage,

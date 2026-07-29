@@ -10,8 +10,6 @@ Character _testCharacter({String id = 'char-1', String name = 'さくら'}) {
     id: id,
     friendLanguage: 'ja',
     name: name,
-    nameJp: name,
-    nameKanji: name,
     level: '일본어',
     description: '',
     age: 0,

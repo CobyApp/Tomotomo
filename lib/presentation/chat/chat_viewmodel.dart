@@ -216,7 +216,7 @@ class ChatViewModel extends ChangeNotifier {
           AppLifecycleState.resumed) {
         unawaited(
           LocalNotifications.showChatReply(
-            title: character.displayNamePrimary,
+            title: character.name,
             body: _notificationPreview(aiMessage.content),
           ),
         );

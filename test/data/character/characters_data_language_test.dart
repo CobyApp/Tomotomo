@@ -50,4 +50,20 @@ void main() {
       );
     }
   });
+
+  test('each built-in is named in its own language', () {
+    // Collapsing the old name/nameJp/nameKanji trio into one `name` had to leave
+    // every displayed name byte-identical to what displayNamePrimary returned.
+    expect(
+      {for (final c in characters) c.id: c.name},
+      {
+        'yuna': 'ゆうな',
+        'junho': '준호',
+        'emily': 'Emily',
+        'jack': 'Jack',
+        'lina': '李娜',
+        'wangwei': '王伟',
+      },
+    );
+  });
 }

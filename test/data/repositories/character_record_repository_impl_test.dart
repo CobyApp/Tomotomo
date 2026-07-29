@@ -15,11 +15,7 @@ void main() {
   tearDown(() async => Hive.deleteFromDisk());
 
   test('create generates an id, then list/get/delete round-trip', () async {
-    final draft = CharacterRecord.draft(
-      name: 'さくら',
-      nameSecondary: '사쿠라',
-      language: 'ja',
-    );
+    final draft = CharacterRecord.draft(name: 'さくら', language: 'ja');
     final created = await repo.createCharacter(draft);
     expect(created.id, isNotEmpty);
     expect(created.name, 'さくら');
@@ -30,7 +26,7 @@ void main() {
 
     final fetched = await repo.getCharacter(created.id);
     expect(fetched, isNotNull);
-    expect(fetched!.nameSecondary, '사쿠라');
+    expect(fetched!.name, 'さくら');
 
     await repo.deleteCharacter(created.id);
     expect(await repo.getCharacter(created.id), isNull);

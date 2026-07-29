@@ -11,8 +11,6 @@ import 'package:flutter_test/flutter_test.dart';
 const _character = Character(
   id: 'yuna',
   name: '유나',
-  nameJp: 'ゆうな',
-  nameKanji: '優奈',
   level: 'intermediate',
   description: '친구 같은 친구',
   age: 20,

@@ -161,8 +161,6 @@ const _character = Character(
   id: 'yuna',
   friendLanguage: 'ja',
   name: '유나',
-  nameJp: 'ゆうな',
-  nameKanji: '優奈',
   level: '일본어',
   description: '친구 같은 튜터',
   age: 20,

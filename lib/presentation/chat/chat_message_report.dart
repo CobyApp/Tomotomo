@@ -84,7 +84,7 @@ Future<void> confirmAndReportChatRoom(
   final body =
       '${tr('chatRoomReportFieldRoom')}: ${chatRoomId ?? '-'}\n'
       '${tr('chatRoomReportFieldType')}: $typeLine\n'
-      '${tr('chatRoomReportFieldName')}: ${character.displayNamePrimary}\n\n'
+      '${tr('chatRoomReportFieldName')}: ${character.name}\n\n'
       '${tr('chatReportReasonLabel')}\n';
   await _launchReportMail(subject: subject, body: body);
 }

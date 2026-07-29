@@ -7,14 +7,12 @@ const int kTaglineMaxChars = 40;
 ///
 /// Friend language ([language]): 'ko' | 'ja' | 'en' | 'zh' (Simplified).
 ///
-/// **Name**: [name] is the only display name. [nameSecondary] remains solely
-/// for reading records created by older app versions.
+/// **Name**: [name] is the only display name.
 ///
 /// For chat UI and colors use [Character.fromRecord].
 class CharacterRecord {
   final String id;
   final String name;
-  final String? nameSecondary;
   final String? avatarUrl;
 
   /// One-line list subtitle (~20 chars); not the full AI memo ([speechStyle]).
@@ -31,7 +29,6 @@ class CharacterRecord {
   const CharacterRecord({
     required this.id,
     required this.name,
-    this.nameSecondary,
     this.avatarUrl,
     this.tagline,
     this.speechStyle,
@@ -45,7 +42,6 @@ class CharacterRecord {
   /// Creates a draft record for insert (id/dates are stripped by repository).
   static CharacterRecord draft({
     required String name,
-    String? nameSecondary,
     String? avatarUrl,
     String? tagline,
     String? speechStyle,
@@ -56,7 +52,6 @@ class CharacterRecord {
     return CharacterRecord(
       id: '',
       name: name,
-      nameSecondary: nameSecondary,
       avatarUrl: avatarUrl,
       tagline: tagline,
       speechStyle: speechStyle,
@@ -71,7 +66,6 @@ class CharacterRecord {
     return CharacterRecord(
       id: json['id'] as String,
       name: json['name'] as String,
-      nameSecondary: json['name_secondary'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       tagline: json['tagline'] as String?,
       speechStyle: json['speech_style'] as String?,
@@ -86,7 +80,6 @@ class CharacterRecord {
     return {
       'id': id,
       'name': name,
-      'name_secondary': nameSecondary,
       'avatar_url': avatarUrl,
       'tagline': tagline,
       'speech_style': speechStyle,

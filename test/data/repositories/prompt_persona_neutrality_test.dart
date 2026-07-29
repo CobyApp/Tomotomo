@@ -52,11 +52,9 @@ void main() {
     }
   });
 
-  test('the single name reaches the primary display line in every language', () {
+  test('the record name carries through for every language', () {
     for (final language in const ['ko', 'ja', 'en', 'zh']) {
-      final character = Character.fromRecord(record(language));
-      expect(character.displayNamePrimary, 'Sam');
-      expect(character.displayNameSecondary, isEmpty);
+      expect(Character.fromRecord(record(language)).name, 'Sam');
     }
   });
 }

@@ -108,9 +108,7 @@ const Map<String, String> _characterTaglines = {
 final List<Character> characters = [
   Character(
     id: 'yuna',
-    name: '유우나',
-    nameJp: 'ゆうな',
-    nameKanji: '天音 ゆうな',
+    name: 'ゆうな',
     level: 'beginner',
     tagline: _characterTaglines['yuna']!,
     description:
@@ -137,13 +135,10 @@ final List<Character> characters = [
     imageUrl: '$_imageBasePath/yuna$_imageExtension',
     imagePath: '$_imageBasePath/yuna$_imageExtension',
     friendLanguage: 'ja',
-    omitSecondaryDisplayName: true,
   ),
   Character(
     id: 'junho',
     name: '준호',
-    nameJp: 'ジュンホ',
-    nameKanji: '朴 俊浩',
     level: 'intermediate',
     tagline: _characterTaglines['junho']!,
     description:
@@ -170,14 +165,11 @@ final List<Character> characters = [
     imageUrl: '$_imageBasePath/junho$_imageExtension',
     imagePath: '$_imageBasePath/junho$_imageExtension',
     friendLanguage: 'ko',
-    omitSecondaryDisplayName: true,
   ),
   // ── English-speaking friends ──────────────────────────────────
   Character(
     id: 'emily',
     name: 'Emily',
-    nameJp: 'Emily',
-    nameKanji: 'Emily',
     level: 'intermediate',
     tagline: 'Easy, friendly English every day!',
     description:
@@ -205,13 +197,10 @@ final List<Character> characters = [
     imageUrl: '$_imageBasePath/emily$_imageExtension',
     imagePath: '$_imageBasePath/emily$_imageExtension',
     friendLanguage: 'en',
-    omitSecondaryDisplayName: true,
   ),
   Character(
     id: 'jack',
     name: 'Jack',
-    nameJp: 'Jack',
-    nameKanji: 'Jack',
     level: 'intermediate',
     tagline: 'Chat about sports, music & life.',
     description:
@@ -239,14 +228,11 @@ final List<Character> characters = [
     imageUrl: '$_imageBasePath/jack$_imageExtension',
     imagePath: '$_imageBasePath/jack$_imageExtension',
     friendLanguage: 'en',
-    omitSecondaryDisplayName: true,
   ),
   // ── Chinese-speaking friends ──────────────────────────────────
   Character(
     id: 'lina',
     name: '李娜',
-    nameJp: '李娜',
-    nameKanji: '李娜',
     level: 'intermediate',
     tagline: '用简单的中文轻松聊天！',
     description:
@@ -273,13 +259,10 @@ final List<Character> characters = [
     imageUrl: '$_imageBasePath/lina$_imageExtension',
     imagePath: '$_imageBasePath/lina$_imageExtension',
     friendLanguage: 'zh',
-    omitSecondaryDisplayName: true,
   ),
   Character(
     id: 'wangwei',
     name: '王伟',
-    nameJp: '王伟',
-    nameKanji: '王伟',
     level: 'intermediate',
     tagline: '一起聊工作、科技和咖啡。',
     description:
@@ -306,6 +289,5 @@ final List<Character> characters = [
     imageUrl: '$_imageBasePath/wangwei$_imageExtension',
     imagePath: '$_imageBasePath/wangwei$_imageExtension',
     friendLanguage: 'zh',
-    omitSecondaryDisplayName: true,
   ),
 ];

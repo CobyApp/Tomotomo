@@ -306,7 +306,6 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
         context.read<PointsBalanceNotifier>().setBalance(spend.balance);
         final record = CharacterRecord.draft(
           name: name,
-          nameSecondary: null,
           tagline: tagline.isEmpty ? null : tagline,
           speechStyle: memo.isEmpty ? null : memo,
           avatarUrl: _avatarUrl,
@@ -318,7 +317,6 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
         final updated = CharacterRecord(
           id: existing.id,
           name: name,
-          nameSecondary: null,
           tagline: tagline.isEmpty ? null : tagline,
           speechStyle: memo.isEmpty ? null : memo,
           avatarUrl: _avatarUrl,

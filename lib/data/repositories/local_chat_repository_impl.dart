@@ -49,7 +49,7 @@ class LocalChatRepositoryImpl implements ChatRepository {
     messages.add(stored.toJson());
 
     entry['messages'] = messages;
-    entry['title'] = character.displayNamePrimary;
+    entry['title'] = character.name;
     entry['avatarNetworkUrl'] = character.isNetworkImage
         ? character.imagePath
         : null;

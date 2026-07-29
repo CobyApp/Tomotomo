@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/ui/ui.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_theme.dart';
 import '../../core/ui/paper/paper_widgets.dart';
@@ -130,7 +129,7 @@ class _ChatScreenState extends State<ChatScreen>
     BuildContext context,
     ChatViewModel viewModel,
   ) async {
-    final name = widget.character.displayNamePrimary;
+    final name = widget.character.name;
     final ok = await showPaperConfirm(
       context,
       title: context.tr('chatsDeleteTitle'),
@@ -328,31 +327,16 @@ class _ChatScreenContent extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      character.displayNamePrimary,
-                      style: cuteDisplay(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: p.ink,
-                        language: character.friendLanguage,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (character.displayNameSecondary.isNotEmpty)
-                      Text(
-                        character.displayNameSecondary,
-                        style: AppTextStyles.listSubtitle(
-                          context,
-                        ).copyWith(color: p.inkSoft),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
+                child: Text(
+                  character.name,
+                  style: cuteDisplay(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: p.ink,
+                    language: character.friendLanguage,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

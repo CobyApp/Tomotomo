@@ -27,7 +27,7 @@ String _personaSummary(Character character) {
   final voice = _oneLine(character.speechStyle);
 
   return '''
-Name: ${_oneLine(character.displayNamePrimary, maxRunes: 60)}
+Name: ${_oneLine(character.name, maxRunes: 60)}
 Role: ${role.isEmpty ? 'conversation partner' : role}
 Personality: ${traits.isEmpty ? 'friendly and attentive' : traits}
 Interests: ${interests.isEmpty ? 'everyday conversation' : interests}

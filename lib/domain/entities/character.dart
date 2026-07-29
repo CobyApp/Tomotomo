@@ -24,9 +24,11 @@ class CharacterInterest {
 
 class Character {
   final String id;
+
+  /// The friend's name, in the friend's own language. One name, not a
+  /// Korean/Japanese pair: every screen showed the same single line, and the
+  /// bilingual subtitle was switched off on every character that existed.
   final String name;
-  final String nameJp;
-  final String nameKanji;
   final String level;
 
   /// Short one-line subtitle for character lists.
@@ -54,14 +56,9 @@ class Character {
   /// The friend's language, one of [kSupportedLanguages].
   final String _friendLanguageRaw;
 
-  /// When true, [displayNameSecondary] is always empty (packaged default tutors).
-  final bool omitSecondaryDisplayName;
-
   const Character({
     required this.id,
     required this.name,
-    required this.nameJp,
-    required this.nameKanji,
     required this.level,
     this.tagline = '',
     required this.description,
@@ -84,7 +81,6 @@ class Character {
     required this.imageUrl,
     required this.imagePath,
     required String friendLanguage,
-    this.omitSecondaryDisplayName = false,
   }) : _friendLanguageRaw = friendLanguage;
 
   String get displayImageUrl => imageUrl;
@@ -98,29 +94,10 @@ class Character {
   /// production caller.
   String get friendLanguage => normalizeLang(_friendLanguageRaw);
 
-  /// True when the friend speaks Korean.
-  bool get koreanNationalPersona => friendLanguage == 'ko';
-
   /// Notebook segment for vocabulary [+] saves: the friend language's script.
   String get defaultNotebookLangForVocabSave => friendLanguage;
 
   bool get hasAvatar => imagePath.isNotEmpty;
-
-  /// Korean persona: large line is Korean. Japanese persona: large line is Japanese.
-  bool get _showsKoreanNamePrimary => koreanNationalPersona;
-
-  /// Primary name line for UI (chat header, list tiles, etc.).
-  String get displayNamePrimary {
-    return _showsKoreanNamePrimary ? name : nameJp;
-  }
-
-  /// Smaller bilingual subtitle; empty when there is no second script or it matches [displayNamePrimary].
-  String get displayNameSecondary {
-    if (omitSecondaryDisplayName) return '';
-    final other = (_showsKoreanNamePrimary ? nameJp : name).trim();
-    if (other.isEmpty || other == displayNamePrimary) return '';
-    return other;
-  }
 
   bool get isNetworkImage => imagePath.startsWith('http');
 
@@ -141,15 +118,11 @@ class Character {
         r.speechStyle!.trim(),
     ];
 
-    // A custom friend has one name, whatever language it is in, so every name
-    // slot gets it — [omitSecondaryDisplayName] hides the bilingual subtitle.
     final displayName = r.name.trim();
 
     return Character(
       id: r.id,
       name: displayName,
-      nameJp: displayName,
-      nameKanji: displayName,
       level: r.level,
       tagline: r.tagline?.trim() ?? '',
       description: descParts.isEmpty ? '' : descParts.join('\n'),
@@ -177,7 +150,6 @@ class Character {
       imageUrl: image,
       imagePath: image,
       friendLanguage: r.language,
-      omitSecondaryDisplayName: true,
     );
   }
 
