@@ -57,6 +57,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String _level = 'beginner';
   String? _avatarPath;
   String? _prefillLang;
+
+  /// True once the user has changed the first-friend form themselves.
+  bool _userEditedFriendForm = false;
+
+  /// Suppresses [_userEditedFriendForm] while the prefill writes the fields.
+  bool _applyingPrefill = false;
   bool _pickingAvatar = false;
 
   static const _introCount = 3;
@@ -90,6 +96,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     _nameController.addListener(rebuild);
     _myNameController.addListener(rebuild);
+    // A change the prefill did not make means the user typed it.
+    void markEdited() {
+      if (!_applyingPrefill) _userEditedFriendForm = true;
+    }
+
+    _nameController.addListener(markEdited);
+    _taglineController.addListener(markEdited);
+    _personaController.addListener(markEdited);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_bootstrap());
     });
@@ -151,12 +165,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final match = characters.where((c) => c.friendLanguage == lang);
     if (match.isEmpty) return;
     final c = match.first;
+    // Never overwrite what the user typed. Going back to change the study
+    // language ran this again and unconditionally replaced the name, tagline and
+    // persona, so naming a friend and rewriting their memo then switching
+    // language silently discarded all of it.
+    if (_userEditedFriendForm) {
+      setState(() => _prefillLang = lang);
+      return;
+    }
+    _applyingPrefill = true;
     _nameController.text = c.name;
     _taglineController.text = context.trRead('tplTagline_$lang');
     _personaController.text = [
       context.trRead('tplPersona_$lang'),
       c.speechStyle.trim(),
     ].where((s) => s.isNotEmpty).join('\n');
+    _applyingPrefill = false;
     setState(() {
       _level = c.level;
       _prefillLang = lang;
@@ -213,6 +237,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
+  /// Set once the first friend exists, so retrying after a later failure does not
+  /// create a second one. complete() used to sit in the same try as
+  /// createCharacter: if it threw, the friend was already saved but the user was
+  /// still on onboarding, and tapping Get Started again made a duplicate.
+  bool _friendCreated = false;
+
   Future<void> _finish() async {
     final lang = _studyLanguage;
     final name = _nameController.text.trim();
@@ -226,16 +256,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final friendLanguage = context.read<FriendLanguageNotifier>();
       final tagline = _taglineController.text.trim();
       final persona = _personaController.text.trim();
-      await repo.createCharacter(
-        CharacterRecord.draft(
-          name: name,
-          avatarUrl: _avatarPath,
-          tagline: tagline.isEmpty ? null : tagline,
-          speechStyle: persona.isEmpty ? null : persona,
-          language: lang,
-          level: _level,
-        ),
-      );
+      if (!_friendCreated) {
+        await repo.createCharacter(
+          CharacterRecord.draft(
+            name: name,
+            avatarUrl: _avatarPath,
+            tagline: tagline.isEmpty ? null : tagline,
+            speechStyle: persona.isEmpty ? null : persona,
+            language: lang,
+            level: _level,
+          ),
+        );
+        _friendCreated = true;
+      }
       // Remember WHICH language they chose to study. Without this the choice
       // lived only in this widget's state, so afterwards the word book opened
       // the wrong segment and new friends defaulted to a language the user

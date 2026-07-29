@@ -154,7 +154,25 @@ class OnDeviceModelManager extends ChangeNotifier {
         const OnDeviceModelSnapshot(phase: OnDeviceModelPhase.notInstalled),
       );
     } catch (error) {
-      _setError(error);
+      // A failed DELETE was reported as the generic error phase, which the setup
+      // screen renders as "couldn't prepare the chat engine" with a Download
+      // button — offering to re-download 2.6 GB of a model still sitting on disk.
+      // Re-check what is actually there and say that instead.
+      debugPrint('Deleting the model failed: $error');
+      try {
+        final installed = await _runtime.isModelInstalled();
+        _setSnapshot(
+          OnDeviceModelSnapshot(
+            phase: installed
+                ? OnDeviceModelPhase.ready
+                : OnDeviceModelPhase.notInstalled,
+            progress: installed ? 1 : 0,
+            backend: _runtime.activeBackend,
+          ),
+        );
+      } catch (_) {
+        _setError(error);
+      }
     }
   }
 
