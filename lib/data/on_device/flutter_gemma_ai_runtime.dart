@@ -216,6 +216,11 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
     return model;
   }
 
+  /// Longest a single on-device generation may take before it is abandoned.
+  /// Generous: a slow device answering a long prompt can legitimately take a
+  /// minute or more.
+  static const Duration _generationTimeout = Duration(minutes: 3);
+
   @override
   Future<String> generateText({
     required String systemInstruction,
@@ -224,6 +229,26 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
     int maxTokens = 2048,
   }) {
     final result = Completer<String>();
+    // Every generation shares one serial queue, so a native call that never
+    // returns — iOS suspending the inference session while the app is in the
+    // background is the realistic case — used to hang the room forever AND every
+    // other room behind it, with no cancel and no expiry. Only a restart
+    // recovered. A generation that overruns this now fails like any other error,
+    // so the user gets the friendly error bubble and can try again.
+    Timer? watchdog;
+    void finish(void Function() complete) {
+      watchdog?.cancel();
+      if (!result.isCompleted) complete();
+    }
+
+    watchdog = Timer(_generationTimeout, () {
+      if (!result.isCompleted) {
+        result.completeError(
+          TimeoutException('on-device generation', _generationTimeout),
+        );
+      }
+    });
+
     _queue = _queue.catchError((_) {}).then((_) async {
       try {
         if (!await isModelInstalled()) {
@@ -248,9 +273,9 @@ final class FlutterGemmaAiRuntime implements OnDeviceAiRuntime {
         if (text.trim().isEmpty) {
           throw const FormatException('대화 엔진 응답이 비어 있습니다.');
         }
-        result.complete(text.trim());
+        finish(() => result.complete(text.trim()));
       } catch (error, stackTrace) {
-        result.completeError(error, stackTrace);
+        finish(() => result.completeError(error, stackTrace));
       }
     });
     return result.future;

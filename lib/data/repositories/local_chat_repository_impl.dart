@@ -114,4 +114,7 @@ class LocalChatRepositoryImpl implements ChatRepository {
   Future<void> deleteRoom(String roomId) async {
     await _box.delete(roomId);
   }
+
+  @override
+  Future<bool> roomExists(String roomId) async => _box.containsKey(roomId);
 }

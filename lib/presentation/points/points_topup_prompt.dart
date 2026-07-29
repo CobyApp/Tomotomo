@@ -33,11 +33,13 @@ class _TopUpSheetState extends State<_TopUpSheet> {
     if (_watching) return;
     setState(() => _watching = true);
     final navigator = Navigator.of(context);
-    final shown = await watchRewardedAdForPoints(context);
+    final credited = await watchRewardedAdForPoints(context);
     if (!mounted) return;
     setState(() => _watching = false);
-    // Close so the user lands right back on the action they were doing.
-    if (shown) navigator.pop();
+    // Close only once the points are actually in the wallet. It used to close on
+    // "the ad was presented", which resolved instantly — so the sheet vanished
+    // while the ad was still on screen, and also when the user was still broke.
+    if (credited) navigator.pop();
   }
 
   @override

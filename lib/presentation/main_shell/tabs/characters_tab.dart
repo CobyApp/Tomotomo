@@ -248,9 +248,15 @@ class CharactersTabState extends State<CharactersTab>
                       );
                       if (!confirm || !mounted) return;
                       try {
+                        final chats = context.read<ChatRepository>();
                         await context
                             .read<CharacterRecordRepository>()
                             .deleteCharacter(r.id);
+                        // The conversation is keyed by the same id. Leaving it
+                        // behind left an un-openable row in the Chats tab: the
+                        // friend can no longer be resolved, so tapping it only
+                        // showed a load error.
+                        await chats.deleteRoom(r.id);
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(

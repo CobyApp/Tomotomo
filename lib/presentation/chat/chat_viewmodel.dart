@@ -170,14 +170,24 @@ class ChatViewModel extends ChangeNotifier {
       timestamp: DateTime.now(),
     );
 
+    // Claim the room BEFORE the awaits below. The send button is gated on
+    // isGenerating, and this used to be set only after the save and the 1s beat,
+    // leaving the input live for over a second: a second message sent in that
+    // window was persisted, then collapsed onto the first generation by the
+    // registry and never shown to the model — no reply, no error, no hint.
+    _isGenerating = true;
     _messages.add(userChatMessage);
+    _safeNotify();
+
+    final index = _messages.length - 1;
     final userRowId = await chatRepository.saveMessage(
       character,
       userChatMessage,
     );
-    if (userRowId != null) {
-      final i = _messages.length - 1;
-      _messages[i] = _messages[i].copyWith(serverId: userRowId);
+    // Index captured before the await: a reload landing inside it used to make
+    // this write to the wrong row, or throw RangeError on a fresh room.
+    if (userRowId != null && index >= 0 && index < _messages.length) {
+      _messages[index] = _messages[index].copyWith(serverId: userRowId);
     }
     _safeNotify();
 
@@ -185,9 +195,6 @@ class ChatViewModel extends ChangeNotifier {
     // message first, then started typing (not shown instantly).
     await Future<void>.delayed(const Duration(milliseconds: 1000));
     if (_disposed) return;
-
-    _isGenerating = true;
-    _safeNotify();
 
     // Run generation through the registry so it keeps going and persists the
     // reply even if the user leaves this screen mid-generation.
@@ -206,30 +213,24 @@ class ChatViewModel extends ChangeNotifier {
   /// must NOT touch UI state or bail on [_disposed]; it always saves so the
   /// answer finishes even after leaving the chat.
   Future<void> _generateAndSave(String userMessage) async {
+    final ChatMessage aiMessage;
     try {
       // One generation produces the reply AND its study sheet (translation +
       // vocabulary), so the expression sheet shows instantly with no extra call.
-      final aiMessage = await aiChatRepository.generateResponse(userMessage);
+      aiMessage = await aiChatRepository.generateResponse(userMessage);
+      if (aiMessage.content.trim().isEmpty) {
+        // Valid JSON with no content field parses to an empty string. Saving it
+        // put a blank bubble in the history for good and charged for it.
+        throw const FormatException('empty reply');
+      }
+      // The user may have left the room or deleted it during the generation.
+      // Saving into a deleted room recreated it, leaving a conversation the user
+      // had just removed holding a reply with no question before it.
+      if (!await chatRepository.roomExists(character.id)) {
+        debugPrint('Reply dropped: room ${character.id} no longer exists');
+        return;
+      }
       await chatRepository.saveMessage(character, aiMessage);
-      // If the user left the app while the reply was generating, notify them.
-      if (WidgetsBinding.instance.lifecycleState !=
-          AppLifecycleState.resumed) {
-        unawaited(
-          LocalNotifications.showChatReply(
-            title: character.name,
-            body: _notificationPreview(aiMessage.content),
-          ),
-        );
-      }
-      final spend = await pointsRepository.spendPoints(kChatReplyPointCost, 'character_chat');
-      if (spend.ok) {
-        pointsBalanceNotifier?.setBalance(spend.balance);
-      } else {
-        if (spend.error == 'insufficient_points' && !_disposed) {
-          onInsufficientPoints?.call();
-        }
-        debugPrint('Point spend failed after AI reply: ${spend.error}');
-      }
     } catch (e) {
       debugPrint('AI chat failed: $e');
       final errorBubble = ChatMessage(
@@ -242,6 +243,35 @@ class ChatViewModel extends ChangeNotifier {
       } catch (saveErr) {
         debugPrint('Failed to persist AI error message: $saveErr');
       }
+      return;
+    }
+
+    // Past this point the reply is saved. These steps must NOT be able to append
+    // an error bubble after a successful reply, which is what the single wide try
+    // block above used to do when the points write failed.
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      unawaited(
+        LocalNotifications.showChatReply(
+          title: character.name,
+          body: _notificationPreview(aiMessage.content),
+        ),
+      );
+    }
+    try {
+      final spend = await pointsRepository.spendPoints(
+        kChatReplyPointCost,
+        'character_chat',
+      );
+      if (spend.ok) {
+        pointsBalanceNotifier?.setBalance(spend.balance);
+      } else {
+        if (spend.error == 'insufficient_points' && !_disposed) {
+          onInsufficientPoints?.call();
+        }
+        debugPrint('Point spend failed after AI reply: ${spend.error}');
+      }
+    } catch (e) {
+      debugPrint('Point spend threw after AI reply: $e');
     }
   }
 

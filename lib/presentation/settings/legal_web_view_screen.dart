@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -64,6 +65,25 @@ class _LegalWebViewScreenState extends State<LegalWebViewScreen> {
         ..setBackgroundColor(const Color(0x00000000))
         ..setNavigationDelegate(
           NavigationDelegate(
+            // Keep the in-app browser on our own documents. Without this the
+            // legal page — served from a public Pages site — could navigate this
+            // WebView anywhere, which is an in-app phishing surface if that site
+            // is ever tampered with. Anything else opens in the real browser,
+            // where the user can see the address bar.
+            onNavigationRequest: (request) {
+              final target = Uri.tryParse(request.url);
+              if (target != null &&
+                  target.scheme == 'https' &&
+                  target.host.toLowerCase() == _url.host.toLowerCase()) {
+                return NavigationDecision.navigate;
+              }
+              if (target != null && target.scheme == 'https') {
+                unawaited(
+                  launchUrl(target, mode: LaunchMode.externalApplication),
+                );
+              }
+              return NavigationDecision.prevent;
+            },
             onPageStarted: (_) {
               if (mounted) setState(() => _loading = true);
             },

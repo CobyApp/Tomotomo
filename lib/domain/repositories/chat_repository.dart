@@ -12,4 +12,8 @@ abstract class ChatRepository {
   Future<List<ChatRoomSummary>> getRecentRooms();
   /// Deletes all messages for the room identified by [roomId] (== character id here).
   Future<void> deleteRoom(String roomId);
+
+  /// Whether a room still exists. Checked before saving a reply that finished
+  /// after the user deleted the conversation — saving would recreate it.
+  Future<bool> roomExists(String roomId);
 }

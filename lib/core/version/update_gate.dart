@@ -106,10 +106,14 @@ class _UpdateGateState extends State<UpdateGate> {
 }
 
 Future<void> _openStore(String? storeUrl) async {
-  if (storeUrl == null || storeUrl.trim().isEmpty) return;
-  final uri = Uri.tryParse(storeUrl.trim());
-  if (uri == null) return;
-  await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!isAllowedStoreUrl(storeUrl)) {
+    debugPrint('Ignored update store url: $storeUrl');
+    return;
+  }
+  await launchUrl(
+    Uri.parse(storeUrl!.trim()),
+    mode: LaunchMode.externalApplication,
+  );
 }
 
 /// Non-dismissible full-screen gate shown when the build is below `min_build`.

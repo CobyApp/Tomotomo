@@ -15,6 +15,7 @@ import '../../core/ui/paper/paper_widgets.dart';
 import '../../data/repositories/local_points_repository_impl.dart';
 import '../locale/l10n_context.dart';
 import 'points_balance_notifier.dart';
+import 'watch_rewarded_ad.dart';
 
 /// The single points screen: earn (watch a rewarded ad) at the top, then an
 /// explanation of when points are spent. Opened from the balance chip or
@@ -39,29 +40,11 @@ class _PointsUsageScreenState extends State<PointsUsageScreen> {
     });
   }
 
+  /// Delegates to the shared helper so this screen and the top-up sheet cannot
+  /// drift apart — this copy had its own credit-and-report logic, which is how it
+  /// ended up the only place that ever showed a success message.
   Future<void> _watchAd() async {
-    final ad = context.read<RewardedAdService>();
-    final pts = context.read<LocalPointsRepositoryImpl>();
-    final notifier = context.read<PointsBalanceNotifier>();
-    final shown = await ad.show(
-      onEarned: () async {
-        final r = await pts.recordAdReward(today: _today());
-        if (r.credited) {
-          notifier.setBalance(r.balance);
-          if (mounted) {
-            setState(() {});
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('+${AdConfig.pointsPerAd}pt')),
-            );
-          }
-        }
-      },
-    );
-    if (!shown && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.tr('adEarnNotReady'))));
-    }
+    await watchRewardedAdForPoints(context);
     if (mounted) setState(() {});
   }
 

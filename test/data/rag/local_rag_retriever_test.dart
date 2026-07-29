@@ -67,6 +67,8 @@ final class _FakeChat implements ChatRepository {
   Future<List<ChatRoomSummary>> getRecentRooms() async => const [];
   @override
   Future<void> deleteRoom(String roomId) async {}
+  @override
+  Future<bool> roomExists(String roomId) async => true;
 }
 
 SavedExpression _word(String content, String translation, {String lang = 'ja'}) {

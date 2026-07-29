@@ -106,8 +106,10 @@ class LocalPointsRepositoryImpl implements PointsRepository {
       return AdRewardOutcome(credited: false, balance: _balance, remaining: 0);
     }
     count += 1;
-    await _box.put('ad_date', today);
-    await _box.put('ad_count', count);
+    // One write, not two: awaiting the date first left a window where a reader
+    // saw today's date beside yesterday's count, which would have credited twice
+    // and advanced the counter once.
+    await _box.putAll({'ad_date': today, 'ad_count': count});
     final bal = await creditReward(AdConfig.pointsPerAd);
     return AdRewardOutcome(
       credited: true,

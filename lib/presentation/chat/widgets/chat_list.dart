@@ -67,11 +67,16 @@ class _ChatListState extends State<ChatList> {
                     chatRoomId: widget.chatRoomId,
                   )
                 : null,
-            onLongPressReport: () => confirmAndReportChatMessage(
-              context,
-              message: message,
-              character: widget.character,
-            ),
+            // Reporting is for the friend's messages. This was wired for every
+            // bubble, so long-pressing your own text opened a report draft
+            // containing what you had just written.
+            onLongPressReport: isUser
+                ? null
+                : () => confirmAndReportChatMessage(
+                    context,
+                    message: message,
+                    character: widget.character,
+                  ),
           ),
         );
       },

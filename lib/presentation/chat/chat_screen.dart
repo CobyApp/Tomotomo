@@ -152,16 +152,28 @@ class _ChatScreenState extends State<ChatScreen>
     }
   }
 
-  void _scrollToBottom() {
+  /// Retries a few times while the list is still attaching, then gives up.
+  ///
+  /// This used to reschedule itself unconditionally with no `mounted` check. An
+  /// empty room renders a Center, not a scrollable, so `hasClients` was never
+  /// true and the 10 Hz retry ran for the life of the process — and a new chain
+  /// started on every rebuild. Opening a friend's chat, looking, and backing out
+  /// leaked a timer every time.
+  void _scrollToBottom({int attemptsLeft = 10}) {
+    if (!mounted) return;
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
-    } else {
-      Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+      return;
     }
+    if (attemptsLeft <= 0) return;
+    Future.delayed(
+      const Duration(milliseconds: 100),
+      () => _scrollToBottom(attemptsLeft: attemptsLeft - 1),
+    );
   }
 
   @override
@@ -193,16 +205,24 @@ class _ChatScreenContent extends StatelessWidget {
     required this.onOpenBackground,
   });
 
-  void _scrollToBottom() {
+  /// Bounded retry. There is no `mounted` here — this is a StatelessWidget — so
+  /// an attempt count is the only thing that can stop it. Unbounded, an empty
+  /// room (a Center, not a scrollable) span a 10 Hz loop for the life of the
+  /// process, and a fresh loop started on every rebuild of the Consumer below.
+  void _scrollToBottom({int attemptsLeft = 10}) {
     if (scrollController.hasClients) {
       scrollController.animateTo(
         scrollController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
-    } else {
-      Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+      return;
     }
+    if (attemptsLeft <= 0) return;
+    Future.delayed(
+      const Duration(milliseconds: 100),
+      () => _scrollToBottom(attemptsLeft: attemptsLeft - 1),
+    );
   }
 
   /// Chat options as a reliable bottom sheet (background / report / leave).

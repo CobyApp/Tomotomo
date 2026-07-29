@@ -14,16 +14,20 @@ String todayKey() => DateFormat('yyyy-MM-dd').format(DateTime.now());
 /// Rewarded-ad top-up shared by every entry point (the insufficient-points
 /// sheet and the Settings points card), so they can't drift apart.
 ///
-/// Returns true when the ad was actually shown. Credits the reward, updates the
-/// balance and reports the outcome through the app-level messenger.
+/// Returns true when the reward was credited. Every other outcome — no ad
+/// loaded, closed before the reward, daily cap already reached — now says so,
+/// because they were previously indistinguishable: the sheet just closed with no
+/// message and the user was still blocked.
 Future<bool> watchRewardedAdForPoints(BuildContext context) async {
   final ad = context.read<RewardedAdService>();
   final points = context.read<LocalPointsRepositoryImpl>();
   final notifier = context.read<PointsBalanceNotifier>();
   final notReadyText = context.trRead('adEarnNotReady');
+  final notFinishedText = context.trRead('adEarnNotFinished');
+  final capReachedText = context.trRead('adEarnCapReached');
 
   var credited = false;
-  final shown = await ad.show(
+  final outcome = await ad.show(
     onEarned: () async {
       final r = await points.recordAdReward(today: todayKey());
       if (!r.credited) return;
@@ -33,12 +37,16 @@ Future<bool> watchRewardedAdForPoints(BuildContext context) async {
   );
 
   final messenger = appScaffoldMessengerKey.currentState;
-  if (!shown) {
-    messenger?.showSnackBar(SnackBar(content: Text(notReadyText)));
-  } else if (credited) {
-    messenger?.showSnackBar(
-      SnackBar(content: Text('+${AdConfig.pointsPerAd}pt')),
-    );
+  void say(String text) =>
+      messenger?.showSnackBar(SnackBar(content: Text(text)));
+
+  switch (outcome) {
+    case RewardedAdOutcome.notReady:
+      say(notReadyText);
+    case RewardedAdOutcome.notFinished:
+      say(notFinishedText);
+    case RewardedAdOutcome.rewarded:
+      say(credited ? '+${AdConfig.pointsPerAd}pt' : capReachedText);
   }
-  return shown;
+  return credited;
 }

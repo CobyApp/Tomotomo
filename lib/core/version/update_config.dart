@@ -83,3 +83,26 @@ Future<RemoteVersionConfig?> fetchVersionConfig(
     if (client == null) c.close();
   }
 }
+
+/// Hosts the update button is allowed to open.
+const Set<String> _storeHosts = {
+  'apps.apple.com',
+  'itunes.apple.com',
+  'play.google.com',
+};
+
+/// Whether [storeUrl] is a real store listing.
+///
+/// The URL arrives in a remote JSON file. Unvalidated, a tampered file could pair
+/// a forced-update screen the user cannot dismiss with a button that opens any
+/// https page or registered scheme — a phishing prompt carrying the app's own
+/// credibility.
+bool isAllowedStoreUrl(String? storeUrl) {
+  final raw = storeUrl?.trim() ?? '';
+  if (raw.isEmpty) return false;
+  final uri = Uri.tryParse(raw);
+  if (uri == null) return false;
+  final scheme = uri.scheme.toLowerCase();
+  if (scheme == 'itms-apps' || scheme == 'market') return true;
+  return scheme == 'https' && _storeHosts.contains(uri.host.toLowerCase());
+}
