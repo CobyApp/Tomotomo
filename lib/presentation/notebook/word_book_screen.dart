@@ -123,7 +123,7 @@ class WordBookScreenState extends State<WordBookScreen>
     try {
       final repo = context.read<SavedExpressionRepository>();
       final found = <String>[];
-      for (final seg in const ['ko', 'ja', 'en', 'zh']) {
+      for (final seg in kSupportedLanguageList) {
         final items = await repo.listForCurrentUser(notebookLang: seg);
         if (items.isNotEmpty) found.add(seg);
       }

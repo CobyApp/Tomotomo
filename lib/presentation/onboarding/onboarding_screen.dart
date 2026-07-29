@@ -547,7 +547,7 @@ class _StudyLanguagePage extends StatelessWidget {
   final String? selected;
   final ValueChanged<String> onSelected;
 
-  static const _languages = ['ko', 'ja', 'en', 'zh'];
+  static const _languages = kSupportedLanguageList;
 
   @override
   Widget build(BuildContext context) {

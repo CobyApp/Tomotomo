@@ -1,6 +1,14 @@
 /// Canonical UI + friend language codes. `zh` = Simplified (简体).
 const Set<String> kSupportedLanguages = {'ko', 'ja', 'en', 'zh'};
 
+/// The same languages in display order, for pickers and segmented rows.
+///
+/// Four screens each hardcoded their own copy of this list. They happened to
+/// agree, but MaterialApp.supportedLocales was a fifth copy that had been left
+/// at [ko, ja] — so English and Chinese users saw Korean in every OS-supplied
+/// string. One source removes that failure mode.
+const List<String> kSupportedLanguageList = ['ko', 'ja', 'en', 'zh'];
+
 /// Normalizes an arbitrary code to a supported one; defaults to `ko`.
 String normalizeLang(String? code) {
   if (code == null) return 'ko';

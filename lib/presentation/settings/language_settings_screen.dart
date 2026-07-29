@@ -22,7 +22,7 @@ const String _localUserId = 'local';
 class LanguageSettingsScreen extends StatelessWidget {
   const LanguageSettingsScreen({super.key});
 
-  static const List<String> _languages = ['ko', 'ja', 'en', 'zh'];
+  static const List<String> _languages = kSupportedLanguageList;
 
   /// Applies the UI language, then re-pushes the home widget's text.
   ///

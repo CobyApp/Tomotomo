@@ -11,5 +11,5 @@ import 'languages.dart';
 /// labels) in the first listed language instead. Keeping the two in sync by
 /// construction means adding a language can't reintroduce that drift.
 final List<Locale> kAppSupportedLocales = List.unmodifiable(
-  kSupportedLanguages.map(Locale.new),
+  kSupportedLanguageList.map(Locale.new),
 );

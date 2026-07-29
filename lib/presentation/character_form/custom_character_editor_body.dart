@@ -681,7 +681,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   // ── Friend language selector ──────────────────────────────────
   Widget _languageSection(BuildContext context) {
     final p = context.paper;
-    const languages = ['ko', 'ja', 'en', 'zh'];
+    const languages = kSupportedLanguageList;
     return _SectionCard(
       icon: Icons.translate_rounded,
       title: context.tr('friendLangSectionTitle'),
