@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/di/injection.dart';
 import '../../../core/ui/app_tokens.dart';
 import '../../../core/ui/paper/paper_theme.dart';
 import '../../../core/ui/paper/paper_tokens.dart';
@@ -21,7 +22,6 @@ import '../../../domain/repositories/points_repository.dart';
 import '../locale/friend_language_notifier.dart';
 import '../locale/l10n_context.dart';
 import '../locale/locale_notifier.dart';
-import '../points/points_balance_notifier.dart';
 import '../points/points_topup_prompt.dart';
 
 /// Single local user id (no auth).
@@ -213,22 +213,29 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     }
   }
 
-  Future<bool> _spendPointsForXProfileImport() async {
-    final spend = await context.read<PointsRepository>().spendPoints(
-      10,
-      'x_profile_import',
-    );
-    if (!spend.ok) {
-      if (mounted) {
-        setState(() => _error = context.tr('pointsInsufficient'));
-        await showPointsTopUpPrompt(context);
-      }
-      return false;
-    }
+  /// Whether the wallet can cover [cost]; shows the top-up sheet when it cannot.
+  ///
+  /// Separate from taking the points on purpose: the charge now happens only
+  /// after the work succeeds. Charging first meant a bad URL, being offline, or a
+  /// 28-second timeout still cost 10 points, with no refund and nothing to show
+  /// for it — an offline user could empty a 200-point wallet in twenty taps.
+  Future<bool> _canAfford(int cost) async {
+    final balance = await context.read<PointsRepository>().currentBalance();
+    if (balance >= cost) return true;
     if (mounted) {
-      context.read<PointsBalanceNotifier>().setBalance(spend.balance);
+      setState(() => _error = context.tr('pointsInsufficient'));
+      await showPointsTopUpPrompt(context);
     }
-    return true;
+    return false;
+  }
+
+  /// Takes [cost] points for [reason] after the work is already done.
+  ///
+  /// Updates the app-wide notifier rather than this widget's, so a balance change
+  /// is never dropped just because the screen was closed mid-charge.
+  Future<void> _chargePoints(int cost, String reason) async {
+    final spend = await pointsRepository.spendPoints(cost, reason);
+    if (spend.ok) pointsBalanceNotifier?.setBalance(spend.balance);
   }
 
   Future<void> _importPersonaFromXUrl() async {
@@ -245,14 +252,15 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       _importUrlBusy = true;
     });
     try {
-      final okSpend = await _spendPointsForXProfileImport();
-      if (!okSpend) return;
+      if (!await _canAfford(10)) return;
       if (!mounted) return;
       final suggester = context.read<CelebrityPersonaSuggester>();
       final s = await suggester.suggestFromXProfileUrl(
         url,
         targetLanguage: _language,
       );
+      // Succeeded — now it is fair to charge.
+      await _chargePoints(10, 'x_profile_import');
       if (!mounted) return;
       await _applyPersonaSuggestion(s);
       if (!mounted) return;
@@ -289,21 +297,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     try {
       final repo = context.read<CharacterRecordRepository>();
       if (existing == null) {
-        final spend = await context.read<PointsRepository>().spendPoints(
-          10,
-          'custom_character_create',
-        );
-        if (!spend.ok) {
-          if (!mounted) return;
-          setState(() {
-            _error = context.tr('pointsInsufficient');
-            _saving = false;
-          });
-          await showPointsTopUpPrompt(context);
+        if (!await _canAfford(10)) {
+          if (mounted) setState(() => _saving = false);
           return;
         }
-        if (!mounted) return;
-        context.read<PointsBalanceNotifier>().setBalance(spend.balance);
         final record = CharacterRecord.draft(
           name: name,
           tagline: tagline.isEmpty ? null : tagline,
@@ -312,7 +309,11 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
           language: _language,
           level: _level,
         );
+        // The friend exists before the points are taken. The old order charged
+        // first and then returned early on `!mounted`, so closing the screen at
+        // that moment cost 10 points and produced no friend.
         await repo.createCharacter(record);
+        await _chargePoints(10, 'custom_character_create');
       } else {
         final updated = CharacterRecord(
           id: existing.id,

@@ -23,6 +23,9 @@ class LocalPointsRepositoryImpl implements PointsRepository {
   Future<void> _setBalance(int v) => _box.put('balance', v);
 
   @override
+  Future<int> currentBalance() async => _balance;
+
+  @override
   Future<SpendPointsOutcome> spendPoints(int amount, String reason) async {
     if (amount <= 0) {
       return SpendPointsOutcome(ok: true, balance: _balance);

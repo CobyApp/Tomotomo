@@ -46,13 +46,21 @@ abstract final class PaperTheme {
   static ThemeData get dark => _build(Brightness.dark, PaperColors.dark);
 
   static ThemeData _build(Brightness brightness, PaperColors colors) {
+    // Label colour for anything filled with coralDeep (primary button,
+    // snackbar). Measured, not assumed: white on the light fill is 4.6:1, but
+    // white on the DARK fill was only 3.0:1 — below AA and below even the 3:1
+    // large-text floor — while a near-black label on it is 6.6:1. The old code
+    // used white in both and asserted in a comment that both passed AA.
+    final onCoralDeep = brightness == Brightness.dark
+        ? const Color(0xFF0E0620)
+        : Colors.white;
     final scheme = ColorScheme.fromSeed(
       seedColor: colors.coral,
       brightness: brightness,
       surface: colors.card,
     ).copyWith(
       primary: colors.coral,
-      onPrimary: Colors.white,
+      onPrimary: onCoralDeep,
       surface: colors.card,
       onSurface: colors.ink,
       onSurfaceVariant: colors.inkSoft,
@@ -139,15 +147,15 @@ abstract final class PaperTheme {
         backgroundColor: colors.coralDeep,
         elevation: 6,
         insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        contentTextStyle: const TextStyle(
+        contentTextStyle: TextStyle(
           fontFamily: 'Pretendard',
-          color: Colors.white,
+          color: onCoralDeep,
           fontWeight: FontWeight.w700,
           fontSize: 14,
         ),
-        actionTextColor: Colors.white,
+        actionTextColor: onCoralDeep,
         showCloseIcon: true,
-        closeIconColor: Colors.white,
+        closeIconColor: onCoralDeep,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: colors.ink, width: 2),
@@ -156,10 +164,8 @@ abstract final class PaperTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           elevation: 0,
-          // coralDeep (not colorScheme.primary=coral) keeps white-on-fill text
-          // at/above WCAG AA contrast in both modes — see Step 1 contrast note.
           backgroundColor: colors.coralDeep,
-          foregroundColor: Colors.white,
+          foregroundColor: onCoralDeep,
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(PaperRadii.button),

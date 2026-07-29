@@ -35,7 +35,7 @@ class PaperColors extends ThemeExtension<PaperColors> {
     ink: Color(0xFF3A1D5C),
     inkSoft: Color(0xFF7A5A93),
     coral: Color(0xFFFF4FD8), // hotpink
-    coralDeep: Color(0xFF9B4DFF), // purple
+    coralDeep: Color(0xFF9445FF), // purple — dark enough for white label text
     tape: Color(0xB3FFE24D), // lemon
     stampBlue: Color(0xFF46E3E6), // cyan
     grain: Color(0x00000000),
