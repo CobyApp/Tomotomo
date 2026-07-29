@@ -175,21 +175,6 @@ class WordBookScreenState extends State<WordBookScreen>
     );
   }
 
-  /// Same flow as [ChatsTab._confirmDeleteRoom]: dialog only; API runs in [Dismissible.confirmDismiss].
-  /// Same shape as [_vocabTranslationLine] in chat: `reading — meaning` when both exist.
-  (String? reading, String meaning) _parseNotebookTranslation(
-    String? translation,
-  ) {
-    final t = translation?.trim() ?? '';
-    if (t.isEmpty) return (null, '');
-    const sep = ' — ';
-    final i = t.indexOf(sep);
-    if (i < 0) return (null, t);
-    final r = t.substring(0, i).trim();
-    final m = t.substring(i + sep.length).trim();
-    if (m.isEmpty) return (null, t);
-    return (r.isEmpty ? null : r, m);
-  }
 
   Future<bool> _confirmDeleteExpression(
     BuildContext context,
@@ -208,7 +193,7 @@ class WordBookScreenState extends State<WordBookScreen>
     final p = context.paper;
     final legacyBlock = e.explanation?.trim();
     final hasLegacy = legacyBlock != null && legacyBlock.isNotEmpty;
-    final (reading, meaningBody) = _parseNotebookTranslation(e.translation);
+    final (reading, meaningBody) = e.readingAndMeaning;
     final hasGlossLine = meaningBody.isNotEmpty;
     final word = (e.content ?? '').trim().isEmpty ? '—' : e.content!.trim();
     // Same split as the chat expression sheet: cute headword, body-font reading

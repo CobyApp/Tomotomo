@@ -256,6 +256,7 @@ Map<String, dynamic>? _unwrapNestedVocabEntry(Map<String, dynamic> m) {
 List<Vocabulary>? _parseVocabularyField(
   dynamic raw, {
   required VocabularyMeaningPickMode meaningMode,
+  required String friendLanguage,
 }) {
   raw = _unwrapVocabularyDynamic(raw);
   if (raw == null) return null;
@@ -263,7 +264,11 @@ List<Vocabulary>? _parseVocabularyField(
   if (raw is Map) {
     final nested = _unwrapNestedVocabEntry(Map<String, dynamic>.from(raw));
     final map = _normalizeVocabularyEntryAliases(nested ?? Map<String, dynamic>.from(raw));
-    final v = Vocabulary.tryParseLoose(map, meaningMode: meaningMode);
+    final v = Vocabulary.tryParseLoose(
+      map,
+      meaningMode: meaningMode,
+      friendLanguage: friendLanguage,
+    );
     return v == null ? null : [v];
   }
   if (raw is! List) return null;
@@ -274,7 +279,11 @@ List<Vocabulary>? _parseVocabularyField(
     final nested = _unwrapNestedVocabEntry(map);
     if (nested != null) map = nested;
     map = _normalizeVocabularyEntryAliases(map);
-    final v = Vocabulary.tryParseLoose(map, meaningMode: meaningMode);
+    final v = Vocabulary.tryParseLoose(
+      map,
+      meaningMode: meaningMode,
+      friendLanguage: friendLanguage,
+    );
     if (v != null) out.add(v);
   }
   return out.isEmpty ? null : out;
@@ -416,6 +425,7 @@ ChatMessage chatMessageFromAiJsonMap(
   final vocabulary = _parseVocabularyField(
     _pickVocabularyRawFromMap(root),
     meaningMode: meaningMode,
+    friendLanguage: character.friendLanguage,
   );
 
   return ChatMessage(

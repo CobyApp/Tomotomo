@@ -106,13 +106,7 @@ Future<void> showChatExpressionSheet(
   );
 }
 
-String _vocabTranslationLine(Vocabulary v) {
-  final r = v.reading?.trim();
-  if (r != null && r.isNotEmpty) {
-    return '$r — ${v.meaning}';
-  }
-  return v.meaning;
-}
+
 
 class _ExpressionSheetBody extends StatefulWidget {
   final ChatMessage message;
@@ -157,7 +151,8 @@ class _ExpressionSheetBodyState extends State<_ExpressionSheetBody> {
           source: 'chat',
           notebookLang: lang,
           content: v.word,
-          translation: _vocabTranslationLine(v),
+          reading: v.reading?.trim(),
+          translation: v.meaning,
           roomId: widget.chatRoomId,
         ),
       );

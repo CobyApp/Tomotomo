@@ -92,4 +92,43 @@ void main() {
     expect(parse({'reading': 'x'}, VocabularyMeaningPickMode.neutral), isNull);
     expect(parse({'word': 'w'}, VocabularyMeaningPickMode.neutral), isNull);
   });
+
+  group('headword language is independent of gloss language', () {
+    test('a Korean friend gets the Hangul headword whatever the UI language is', () {
+      // The model often sends both a romanization and the Hangul. Preferring
+      // Hangul used to be gated on the gloss mode being Japanese — which, in the
+      // two-language app, was the same thing as "the friend speaks Korean". A
+      // Chinese- or English-UI learner of Korean stored the romanization instead.
+      final json = {'word': 'oneul', 'korean_word': '오늘', 'meaning': 'today'};
+      for (final mode in VocabularyMeaningPickMode.values) {
+        expect(
+          Vocabulary.tryParseLoose(json, meaningMode: mode, friendLanguage: 'ko')?.word,
+          '오늘',
+          reason: 'gloss mode $mode changed the headword',
+        );
+      }
+    });
+
+    test('a non-Korean friend is unaffected by the Hangul preference', () {
+      final json = {'word': 'today', 'korean_word': '오늘', 'meaning': '今天'};
+      expect(
+        Vocabulary.tryParseLoose(json,
+            meaningMode: VocabularyMeaningPickMode.preferChineseGloss,
+            friendLanguage: 'en')?.word,
+        'today',
+      );
+    });
+
+    test('a Korean gloss wins over an English one in Korean mode', () {
+      // The "does this look Korean" filter returned true for ANY Latin-only
+      // string, so the English gloss under the generic `meaning` key was taken as
+      // Korean and the actual Korean gloss beside it was never reached.
+      final v = Vocabulary.tryParseLoose(
+        {'word': '今日', 'meaning': 'Means "today".', '뜻': '오늘'},
+        meaningMode: VocabularyMeaningPickMode.preferKoreanGloss,
+        friendLanguage: 'ja',
+      );
+      expect(v?.meaning, '오늘', reason: 'the English gloss passed as Korean');
+    });
+  });
 }

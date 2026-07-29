@@ -277,17 +277,7 @@ class _StudyCard extends StatelessWidget {
   final String notebookLanguage;
   final VoidCallback onTap;
 
-  (String?, String) get _translationParts {
-    final translation = item.translation?.trim() ?? '';
-    const separator = ' — ';
-    final separatorIndex = translation.indexOf(separator);
-    if (separatorIndex < 0) return (null, translation);
-    final reading = translation.substring(0, separatorIndex).trim();
-    final meaning = translation
-        .substring(separatorIndex + separator.length)
-        .trim();
-    return (reading.isEmpty ? null : reading, meaning);
-  }
+  (String?, String) get _translationParts => item.readingAndMeaning;
 
   @override
   Widget build(BuildContext context) {

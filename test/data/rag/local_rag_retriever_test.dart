@@ -127,4 +127,36 @@ void main() {
     );
     expect(out, contains('北海道'));
   });
+
+  test('an unrelated English word is not retrieved as relevant', () async {
+    // Character bigrams stand in for word segmentation in CJK, but applied to
+    // Latin they are letter pairs: 'I love studying Japanese' produced il/lo/ov/
+    // ve/es/st/…, so 'hello' matched on lo/in/ng and was injected as vocabulary
+    // the learner "knows". Measured overlap for that pair went 3 -> 0, while the
+    // genuinely relevant word still matches.
+    final english = Character(
+      id: 'emily', name: 'Emily', level: 'intermediate', description: '',
+      age: 0, schoolYear: '', occupation: '', traits: const [],
+      interests: const [], speechStyle: '',
+      primaryColor: const Color(0xFF000000),
+      secondaryColor: const Color(0xFFFFFFFF),
+      hairStyle: '', hairColor: '', eyeColor: '', outfit: '',
+      accessories: const [], selfReference: 'I', commonPhrases: const [],
+      emotionalResponses: const {}, imageUrl: '', imagePath: '',
+      friendLanguage: 'en',
+    );
+    final r = LocalRagRetriever(
+      _FakeWordbook([
+        _word('hello', 'a greeting', lang: 'en'),
+        _word('studying', 'learning something', lang: 'en'),
+      ]),
+      _FakeChat([]),
+    );
+    final out = await r.retrieveContext(
+      character: english,
+      userMessage: 'I love studying Japanese',
+    );
+    expect(out, contains('studying'), reason: 'the relevant word is gone');
+    expect(out, isNot(contains('hello')), reason: 'letter-pair noise is back');
+  });
 }

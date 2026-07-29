@@ -1,3 +1,5 @@
+import '../../core/locale/languages.dart';
+
 /// Which JSON keys to prefer when filling [Vocabulary.meaning] (LLMs often send both JA/KO fields).
 enum VocabularyMeaningPickMode {
   /// Japanese-speaking tutor, Korean study notes: prefer Korean gloss keys; do not take `meaning_ja` before `meaning`.
@@ -178,18 +180,25 @@ class Vocabulary {
   static bool _hasCjkUnified(String s) =>
       RegExp(r'[\u4e00-\u9fff]').hasMatch(s);
 
-  /// For Korean gloss mode: reject strings that look like Japanese (kana or kanji-only) without Hangul.
+  /// Whether [t] can be a Korean gloss. Hangul says yes; kana, Han or Latin-only
+  /// text says no — the last of those used to return true, so an English gloss
+  /// was accepted as Korean and shown to a Korean-UI learner untranslated.
   static bool _looksLikeKoreanVocabMeaning(String t) {
     if (_hasHangul(t)) return true;
-    if (_hasKana(t)) return false;
-    if (_hasCjkUnified(t)) return false;
-    return true;
+    if (_hasKana(t) || _hasCjkUnified(t)) return false;
+    return !RegExp(r'[A-Za-z]').hasMatch(t);
   }
 
   /// Accepts common alternate keys from LLM / legacy rows.
+  /// [friendLanguage] is the language of the HEADWORD; [meaningMode] is the
+  /// language of the gloss. They are independent — a Chinese-UI learner can have
+  /// a Korean friend — and the Hangul-preferring headword pick used to be gated
+  /// on the gloss mode being Japanese, which in the two-language app implied
+  /// "Korean friend" and no longer does.
   static Vocabulary? tryParseLoose(
     Map<String, dynamic> json, {
     VocabularyMeaningPickMode meaningMode = VocabularyMeaningPickMode.neutral,
+    String? friendLanguage,
   }) {
     String? pickString(List<String> keys) {
       for (final k in keys) {
@@ -211,18 +220,16 @@ class Vocabulary {
       return null;
     }
 
-    final String? word = switch (meaningMode) {
-      // A Korean-speaking friend's headword is Hangul, so when several candidate
-      // keys are present prefer the one that actually holds Hangul.
-      VocabularyMeaningPickMode.preferJapaneseGloss =>
-        pickString(const [
-          'word_ko', 'wordKo', 'korean_word', 'phrase_ko', 'surface_ko',
-          'expression_ko', 'hangul',
-        ]) ??
-            pickFirstWhere(_wordKeyAliases, _hasHangul) ??
-            pickString(_wordKeyAliases),
-      _ => pickString(_wordKeyAliases),
-    };
+    // A Korean-speaking friend's headword is Hangul, so when several candidate
+    // keys are present prefer the one that actually holds Hangul.
+    final String? word = normalizeLang(friendLanguage) == 'ko'
+        ? pickString(const [
+                'word_ko', 'wordKo', 'korean_word', 'phrase_ko', 'surface_ko',
+                'expression_ko', 'hangul',
+              ]) ??
+              pickFirstWhere(_wordKeyAliases, _hasHangul) ??
+              pickString(_wordKeyAliases)
+        : pickString(_wordKeyAliases);
 
     final String? meaning = switch (meaningMode) {
       VocabularyMeaningPickMode.preferKoreanGloss => () {

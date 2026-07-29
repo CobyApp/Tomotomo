@@ -34,6 +34,7 @@ class SavedExpressionRepositoryImpl implements SavedExpressionRepository {
       'notebook_lang': draft.notebookLang,
       'content': draft.content,
       'explanation': draft.explanation,
+      'reading': draft.reading,
       'translation': draft.translation,
       'room_id': draft.roomId,
       'created_at': DateTime.now().toIso8601String(),

@@ -280,7 +280,7 @@ Return exactly one valid JSON object with no markdown or extra keys:
     final combinedStyle = _composeSpeechStyle(bio: bio, speechStyle: speech);
     var line = _clampTagline(map['tagline'] as String?);
     if (line.isEmpty) {
-      line = _clampTagline(bio.split(RegExp(r'[。．.!?\n]')).first);
+      line = _clampTagline(bio.split(RegExp(r'[。．.!?！？\n]')).first);
     }
 
     final modelImage = (map['profile_image_url'] as String?)?.trim();
