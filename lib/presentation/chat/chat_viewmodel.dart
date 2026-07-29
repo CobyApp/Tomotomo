@@ -82,6 +82,37 @@ class ChatViewModel extends ChangeNotifier {
   List<ChatMessage> get messages => _messages;
   bool get isGenerating => _isGenerating;
 
+  /// True when the last message is the learner's and no reply is coming.
+  ///
+  /// The registry lives in memory, so if iOS terminates the app during the
+  /// multi-second inference the reply is simply lost: the user's message is
+  /// already on disk, and on relaunch the room showed it followed by silence —
+  /// no error, no typing state, nothing to tap. The app promises the reply
+  /// survives leaving the room, so silence reads as a bug.
+  bool get awaitingRetry =>
+      !_isGenerating && _messages.isNotEmpty && _messages.last.role == 'user';
+
+  /// Asks again for a reply to the last message, without re-sending it.
+  Future<void> retryLastMessage() async {
+    if (_isGenerating || !awaitingRetry) return;
+    final text = _messages.last.content.trim();
+    if (text.isEmpty) return;
+    if (!await _hasPointsForReply()) {
+      onInsufficientPoints?.call();
+      return;
+    }
+    _isGenerating = true;
+    _safeNotify();
+    await ChatGenerationRegistry.instance.run(
+      character.id,
+      () => _generateAndSave(text),
+    );
+    if (_disposed) return;
+    _isGenerating = false;
+    _safeNotify();
+    await _reloadMessages();
+  }
+
   /// Room id equals the character id in the local store.
   String? get chatRoomId => character.id;
 

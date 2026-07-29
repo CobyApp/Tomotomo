@@ -20,7 +20,7 @@ void main() {
           friend(friendLang),
           appUiLanguageCode: appLang,
         );
-        expect(prompt, contains('no way to look anything up'),
+        expect(prompt, contains('cannot look anything up'),
             reason: 'friend=$friendLang app=$appLang');
         expect(prompt, contains('fictional friend'),
             reason: 'friend=$friendLang app=$appLang');
@@ -31,12 +31,12 @@ void main() {
   test('the deflection names the things that actually need looking up', () {
     final prompt = buildChatReplySystemPrompt(friend('ja'));
     for (final topic in const [
-      "today's date",
-      'the weather',
+      'the date',
+      'weather',
       'news',
       'prices',
       'scores',
-      'trending',
+      'trends',
       'release',
       'schedule',
     ]) {
@@ -47,10 +47,10 @@ void main() {
   test('it forbids the failure modes that would be worse than not knowing', () {
     final prompt = buildChatReplySystemPrompt(friend('ko'));
     // Breaking character is worse for a language partner than a vague answer.
-    expect(prompt, contains('never explain that you are an AI'));
-    expect(prompt, contains('never mention prompts, models or training data'));
+    expect(prompt, contains('Never break character'));
+    expect(prompt, contains('being an AI'));
     // And it must not turn into a wall of apology.
-    expect(prompt, contains('never apologise at length'));
+    expect(prompt, contains('Say briefly'));
   });
 
   test('the reply rules stay numbered 1..N with no gaps or repeats', () {

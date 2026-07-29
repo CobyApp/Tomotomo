@@ -412,6 +412,12 @@ class _ChatScreenContent extends StatelessWidget {
                         isGenerating: viewModel.isGenerating,
                         character: character,
                         canSendMessage: !viewModel.isGenerating,
+                        // The registry is in memory, so a termination during the
+                        // multi-second inference loses the reply. The room then
+                        // showed the learner's message followed by silence, with
+                        // nothing to tap.
+                        showRetry: viewModel.awaitingRetry,
+                        onRetry: viewModel.retryLastMessage,
                       );
                     },
                   );

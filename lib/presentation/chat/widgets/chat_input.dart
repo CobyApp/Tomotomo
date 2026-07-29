@@ -13,6 +13,11 @@ class ChatInput extends StatelessWidget {
   final bool canSendMessage;
   final String? hintOverride;
 
+  /// Shown when the last message never got a reply — the app was terminated
+  /// mid-generation, so the room would otherwise sit in unexplained silence.
+  final bool showRetry;
+  final VoidCallback? onRetry;
+
   const ChatInput({
     super.key,
     required this.controller,
@@ -21,6 +26,8 @@ class ChatInput extends StatelessWidget {
     required this.character,
     this.canSendMessage = true,
     this.hintOverride,
+    this.showRetry = false,
+    this.onRetry,
   });
 
   @override
@@ -34,7 +41,41 @@ class ChatInput extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
       child: SafeArea(
         top: false,
-        child: Container(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (showRetry && onRetry != null && !isGenerating)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      context.tr('chatReplyMissing'),
+                      style: TextStyle(fontSize: 12.5, color: p.inkSoft),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: onRetry,
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        minimumSize: const Size(0, 32),
+                      ),
+                      child: Text(
+                        context.tr('retry'),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: p.coralDeep,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Container(
           padding: const EdgeInsets.fromLTRB(6, 5, 5, 5),
           decoration: BoxDecoration(
             color: p.card,
@@ -117,6 +158,8 @@ class ChatInput extends StatelessWidget {
               ),
             ],
           ),
+            ),
+          ],
         ),
       ),
     );

@@ -41,41 +41,7 @@ class LocalPointsRepositoryImpl implements PointsRepository {
     return SpendPointsOutcome(ok: true, balance: _balance);
   }
 
-  @override
-  Future<LineAnalysisCacheRow?> getLineAnalysisCache(
-    String messageServerId,
-    String appLang,
-  ) async {
-    final v = _box.get('line_cache/$messageServerId/$appLang');
-    if (v is! Map) return null;
-    final m = Map<String, dynamic>.from(v);
-    final vocab =
-        (m['vocabulary'] as List?)
-            ?.whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList() ??
-        <Map<String, dynamic>>[];
-    return LineAnalysisCacheRow(
-      explanation: m['explanation']?.toString(),
-      lineTranslation: m['line_translation']?.toString(),
-      vocabularyJson: vocab,
-    );
-  }
 
-  @override
-  Future<void> saveLineAnalysisCache(
-    String messageServerId,
-    String appLang, {
-    String? explanation,
-    String? lineTranslation,
-    List<Map<String, dynamic>>? vocabularyJson,
-  }) async {
-    await _box.put('line_cache/$messageServerId/$appLang', {
-      'explanation': explanation,
-      'line_translation': lineTranslation,
-      'vocabulary': vocabularyJson ?? [],
-    });
-  }
 
   /// Credits an arbitrary reward (used by rewarded ads in Phase 3). Returns new balance.
   Future<int> creditReward(int points) async {

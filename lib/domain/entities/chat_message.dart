@@ -129,11 +129,20 @@ class ChatMessage {
     'vocabulary': vocabulary?.map((v) => v.toJson()).toList(),
   };
 
+  /// Reads a stored row.
+  ///
+  /// `content`, `role` and `timestamp` used to be cast and parsed unguarded. One
+  /// malformed row — a legacy write, a partial save — made getMessages throw
+  /// mid-loop, the caller swallowed it, and the room rendered COMPLETELY EMPTY
+  /// while the Chats tab still showed a preview. A defaulted field loses far less
+  /// than a whole conversation.
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
     serverId: json['serverId'] as String?,
-    content: json['content'] as String,
-    role: json['role'] as String,
-    timestamp: DateTime.parse(json['timestamp']),
+    content: json['content']?.toString() ?? '',
+    role: json['role']?.toString() ?? 'assistant',
+    timestamp:
+        DateTime.tryParse(json['timestamp']?.toString() ?? '') ??
+        DateTime.fromMillisecondsSinceEpoch(0),
     explanation: json['explanation'] as String?,
     lineTranslation: json['lineTranslation'] as String?,
     vocabulary: json['vocabulary'] != null
