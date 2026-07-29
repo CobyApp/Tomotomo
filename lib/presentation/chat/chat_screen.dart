@@ -136,6 +136,10 @@ class _ChatScreenState extends State<ChatScreen>
       title: context.tr('chatsDeleteTitle'),
       message: context.tr('chatsDeleteBodyCharacter', params: {'name': name}),
       confirmLabel: context.tr('confirm'),
+      // The Chats tab's identical dialog passes this; the entry point with the
+      // softest wording and a logout arrow was the one that looked least
+      // dangerous, even though it deletes the whole conversation.
+      destructive: true,
     );
     if (!ok || !mounted) return;
     try {
@@ -285,7 +289,8 @@ class _ChatScreenContent extends StatelessWidget {
                 ),
                 Divider(height: 1, color: p.cardEdge),
                 option(
-                  Icons.logout_rounded,
+                  // Not a logout arrow: this deletes the conversation.
+                  Icons.delete_outline_rounded,
                   sheetCtx.tr('chatMenuLeave'),
                   'leave',
                   tint: p.coralDeep,

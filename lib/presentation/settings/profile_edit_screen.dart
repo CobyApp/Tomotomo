@@ -100,11 +100,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         _error = null;
       });
     } catch (e) {
+      debugPrint('profile_edit_screen failed: $e');
       if (!mounted) return;
       setState(() {
         _profile = null;
         _loading = false;
-        _error = e.toString();
+        _error = context.trRead('commonLoadFailed');
       });
     }
   }
@@ -141,10 +142,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       );
       Navigator.pop(context, true);
     } catch (e) {
+      debugPrint('profile_edit_screen failed: $e');
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = e.toString();
+        _error = context.trRead('commonSaveFailed');
       });
     }
   }

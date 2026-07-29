@@ -107,12 +107,13 @@ class WordBookScreenState extends State<WordBookScreen>
       _syncHomeWidgetFromLocalData();
       unawaited(_refreshAvailableSegments());
     } catch (e) {
+      debugPrint('word_book_screen failed: $e');
       if (!mounted) return;
       setState(() {
         _notebookLang = targetLanguage;
         _langInitialized = true;
         _loading = false;
-        _error = e.toString();
+        _error = context.trRead('commonLoadFailed');
       });
     }
   }
@@ -164,9 +165,10 @@ class WordBookScreenState extends State<WordBookScreen>
       _syncHomeWidgetFromLocalData();
       unawaited(_refreshAvailableSegments());
     } catch (e) {
+      debugPrint('word_book_screen failed: $e');
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = context.trRead('commonLoadFailed');
         _loading = false;
       });
     }

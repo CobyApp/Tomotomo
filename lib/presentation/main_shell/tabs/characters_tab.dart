@@ -69,9 +69,10 @@ class CharactersTabState extends State<CharactersTab>
         _error = null;
       });
     } catch (e) {
+      debugPrint('characters_tab failed: $e');
       if (!mounted) return;
       setState(() {
-        if (!silent) _error = e.toString();
+        if (!silent) _error = context.trRead('commonLoadFailed');
         _loading = false;
       });
     }

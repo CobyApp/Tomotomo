@@ -166,13 +166,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   /// Gallery pick → square crop → copy into the app's avatars dir.
   /// Returns the stored path, or null when cancelled/failed.
   Future<String?> _pickAndStoreAvatar() async {
-    final x = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 512,
-      imageQuality: 85,
-    );
-    if (x == null || !mounted) return null;
-    final cropped = await cropImagePath(x.path, square: true);
+    final String? cropped;
+    try {
+      final x = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        imageQuality: 85,
+      );
+      if (x == null || !mounted) return null;
+      cropped = await cropImagePath(x.path, square: true);
+    } catch (e) {
+      // Same unguarded pick as the editor had: a denied Photos permission made
+      // the tap do nothing at all.
+      debugPrint('Picking an avatar failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.trRead('photoAccessFailed'))),
+        );
+      }
+      return null;
+    }
     if (cropped == null || !mounted) return null;
     try {
       final dir = await getApplicationDocumentsDirectory();

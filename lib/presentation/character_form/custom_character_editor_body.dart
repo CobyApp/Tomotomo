@@ -340,23 +340,35 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       );
       Navigator.of(context).pop(true);
     } catch (e) {
+      debugPrint('custom_character_editor_body failed: $e');
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = context.trRead('commonSaveFailed');
         _saving = false;
       });
     }
   }
 
   Future<void> _pickAvatar() async {
-    final x = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 512,
-      imageQuality: 85,
-    );
-    if (x == null || !mounted) return;
-    // Let the user crop/resize (square for avatars). Cancel aborts the change.
-    final cropped = await cropImagePath(x.path, square: true);
+    final String? cropped;
+    try {
+      final x = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        imageQuality: 85,
+      );
+      if (x == null || !mounted) return;
+      // Let the user crop/resize (square for avatars). Cancel aborts the change.
+      cropped = await cropImagePath(x.path, square: true);
+    } catch (e) {
+      // Picking and cropping used to sit outside any try, so a denied Photos
+      // permission threw past the handler: no message, no state change, the tap
+      // simply did nothing — forever, with no route to Settings.
+      debugPrint('Picking an avatar failed: $e');
+      if (!mounted) return;
+      setState(() => _error = context.trRead('photoAccessFailed'));
+      return;
+    }
     if (cropped == null || !mounted) return;
     setState(() {
       _error = null;
@@ -374,9 +386,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
         context,
       ).showSnackBar(SnackBar(content: Text(context.tr('avatarUploadDone'))));
     } catch (e) {
+      debugPrint('custom_character_editor_body failed: $e');
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = context.trRead('commonSaveFailed');
         _uploadingAvatar = false;
       });
     }
