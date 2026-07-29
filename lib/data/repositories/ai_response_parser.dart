@@ -227,8 +227,19 @@ Map<String, dynamic> _normalizeVocabularyEntryAliases(Map<String, dynamic> m) {
   copyIfEmpty('meaning_ja', ['ja_gloss', 'ja_meaning', 'japanese_meaning', 'nihongo', 'def_ja', 'definition_ja']);
   copyIfEmpty('meaning_en', ['english', 'en_gloss', 'english_meaning', 'definition_en', 'def_en']);
   copyIfEmpty('meaning_zh', ['chinese', 'zh_gloss', 'chinese_meaning', 'definition_zh', 'def_zh']);
-  copyIfEmpty('word', ['headword', 'lemma', 'token', '表記', '見出し語', 'surface_form', 'surfaceForm']);
-  copyIfEmpty('reading', ['yomi', 'furigana', 'romaji', 'pronunciation']);
+  copyIfEmpty('word', [
+    'headword', 'lemma', 'token', 'surface_form', 'surfaceForm',
+    '表記', '見出し語', // ja
+    '단어', '낱말', // ko
+    '单词', '词', '词语', '汉字', // zh
+  ]);
+  copyIfEmpty('reading', [
+    'pronunciation',
+    'yomi', 'furigana', 'romaji', // ja
+    'romaja', 'romanization', // ko
+    'pinyin', // zh
+    'ipa', 'phonetic', // en
+  ]);
 
   return o;
 }
@@ -285,12 +296,10 @@ Map<String, dynamic> _hoistFlatVocabularyIntoArray(Map<String, dynamic> root) {
   final meaningEn = _firstNonEmptyString(root, const ['meaning_en', 'meaningEn', 'gloss_en']);
   final meaningZh = _firstNonEmptyString(root, const ['meaning_zh', 'meaningZh', 'gloss_zh']);
   final meaning = _firstNonEmptyString(root, const [
-    'meaning',
-    'definition',
-    'gloss',
-    'translation',
-    'mean',
-    '뜻',
+    'meaning', 'definition', 'gloss', 'translation', 'mean', 'sense',
+    '意味', '訳', // ja
+    '뜻', '의미', // ko
+    '意思', '释义', '含义', // zh
   ]);
   if (meaningJa == null &&
       meaningKo == null &&
@@ -307,26 +316,29 @@ Map<String, dynamic> _hoistFlatVocabularyIntoArray(Map<String, dynamic> root) {
         'text',
         'response',
         'answer',
-        '発話',
         'utterance',
+        '発話', // ja
+        '발화', // ko
+        '回复', '回答', // zh
       ]) ??
       '';
   final word = _firstNonEmptyString(root, const [
-    'word',
-    'term',
-    'expression',
-    'surface',
-    '単語',
+    'word', 'term', 'expression', 'surface',
+    '単語', // ja
+    '단어', // ko
+    '单词', '词', // zh
   ]);
   final w = (word != null && word.isNotEmpty) ? word : content.trim();
   if (w.isEmpty) return root;
 
+  // Four reading systems, not one: hiragana, Revised Romanization, Hanyu Pinyin
+  // and IPA. A model often names this key after the system it was asked for.
   final reading = _firstNonEmptyString(root, const [
-    'reading',
-    'read',
-    'yomi',
-    'hiragana',
-    'kana',
+    'reading', 'read', 'pronunciation',
+    'yomi', 'hiragana', 'kana', 'furigana', // ja
+    'romaja', 'romanization', 'romanized', // ko
+    'pinyin', '拼音', // zh
+    'ipa', 'phonetic', // en
   ]);
 
   final item = <String, dynamic>{'word': w};
@@ -361,8 +373,10 @@ ChatMessage chatMessageFromAiJsonMap(
         'text',
         'response',
         'answer',
-        '発話',
         'utterance',
+        '発話', // ja
+        '발화', // ko
+        '回复', '回答', // zh
       ]) ??
       '';
 
@@ -383,9 +397,10 @@ ChatMessage chatMessageFromAiJsonMap(
     'grammar_note',
     'note',
     'notes',
-    '설명',
-    '한글설명',
-    'korean_explanation',
+    '설명', '한글설명', 'korean_explanation', // ko
+    '解説', '説明', // ja
+    '说明', '解释', // zh
+    'english_explanation', // en
     'learning_note',
     'learningNote',
     'brief_explanation',

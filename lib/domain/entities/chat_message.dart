@@ -26,6 +26,54 @@ VocabularyMeaningPickMode meaningPickModeForApp(String appLanguageCode) {
   return VocabularyMeaningPickMode.preferKoreanGloss;
 }
 
+/// Key aliases the model may use instead of the ones the prompt asks for.
+///
+/// These lists were written when the app taught only Japanese and Korean, so
+/// they covered `単語` / `読み` / `뜻` and nothing else. A model prompted about
+/// Chinese naturally emits `单词` or `拼音`, and one prompted about English emits
+/// `ipa` — neither was listed, so the field was silently dropped. Every list now
+/// covers all four languages, and lives in ONE place instead of being repeated
+/// per gloss mode, which is how the gap went unnoticed.
+const List<String> _wordKeyAliases = [
+  'word', 'term', 'expression', 'surface', 'headword', 'lemma', 'token',
+  'phrase',
+  // Japanese
+  '単語', '表記', '見出し語', 'japanese',
+  // Korean
+  '단어', '낱말', 'hangul', 'korean_word', 'word_ko', 'wordKo', 'phrase_ko',
+  'surface_ko', 'expression_ko',
+  // Chinese
+  '单词', '词', '词语', '生词', '汉字', 'hanzi', 'chinese_word', 'pinyin_word',
+  // English
+  'english_word', 'word_en',
+];
+
+const List<String> _meaningKeyAliases = [
+  'meaning', 'definition', 'gloss', 'translation', 'mean', 'sense',
+  // Japanese
+  '意味', '訳',
+  // Korean
+  '뜻', '의미',
+  // Chinese
+  '意思', '释义', '含义',
+];
+
+/// Pronunciation aid. The app uses four systems — hiragana, Revised
+/// Romanization, Hanyu Pinyin and IPA — and a model often names the key after
+/// the system rather than using the requested `reading`.
+const List<String> _readingKeyAliases = [
+  'reading', 'read', 'pronunciation', 'transcription',
+  // Japanese
+  'yomi', 'hiragana', 'kana', 'katakana', 'yomikata', 'furigana', 'ruby',
+  'pronunciation_ja', 'pronunciationJa', 'yomi_ja', 'よみ', '読み', '読み方',
+  // Korean
+  'romaja', 'romanization', 'romanized', 'romanisation', '발음', '읽기',
+  // Chinese
+  'pinyin', 'pin_yin', 'pinyin_tone', '拼音', '注音',
+  // English
+  'ipa', 'phonetic', 'phonetics', 'phonemic',
+];
+
 class ChatMessage {
   /// Persistent local message identifier; null for optimistic rows.
   final String? serverId;
@@ -164,71 +212,16 @@ class Vocabulary {
     }
 
     final String? word = switch (meaningMode) {
-      VocabularyMeaningPickMode.preferJapaneseGloss => () {
-        const koKeys = [
-          'word_ko',
-          'wordKo',
-          'korean_word',
-          'phrase_ko',
-          'surface_ko',
-          'expression_ko',
-          'hangul',
-        ];
-        const generic = [
-          'word',
-          'term',
-          'expression',
-          'surface',
-          'headword',
-          'lemma',
-          'token',
-          'phrase',
-          '単語',
-          'japanese',
-        ];
-        return pickString(koKeys) ??
-            pickFirstWhere(generic, _hasHangul) ??
-            pickString(generic);
-      }(),
-      VocabularyMeaningPickMode.preferKoreanGloss => pickString(const [
-        'word',
-        'term',
-        'expression',
-        '単語',
-        'japanese',
-        'surface',
-        'headword',
-        'lemma',
-        'token',
-        'phrase',
-        'hangul',
-        'word_ko',
-        'wordKo',
-        'phrase_ko',
-        'surface_ko',
-      ]),
-      VocabularyMeaningPickMode.neutral => pickString(const [
-        'word',
-        'term',
-        'expression',
-        '単語',
-        'japanese',
-        'surface',
-        'headword',
-        'lemma',
-        'token',
-        'phrase',
-        'word_ko',
-        'wordKo',
-        'phrase_ko',
-        'surface_ko',
-      ]),
-      VocabularyMeaningPickMode.preferEnglishGloss ||
-      VocabularyMeaningPickMode.preferChineseGloss => pickString(const [
-        'word', 'term', 'expression', '単語', 'japanese', 'surface',
-        'headword', 'lemma', 'token', 'phrase', 'word_ko', 'wordKo',
-        'phrase_ko', 'surface_ko', 'hanzi', 'pinyin_word',
-      ]),
+      // A Korean-speaking friend's headword is Hangul, so when several candidate
+      // keys are present prefer the one that actually holds Hangul.
+      VocabularyMeaningPickMode.preferJapaneseGloss =>
+        pickString(const [
+          'word_ko', 'wordKo', 'korean_word', 'phrase_ko', 'surface_ko',
+          'expression_ko', 'hangul',
+        ]) ??
+            pickFirstWhere(_wordKeyAliases, _hasHangul) ??
+            pickString(_wordKeyAliases),
+      _ => pickString(_wordKeyAliases),
     };
 
     final String? meaning = switch (meaningMode) {
@@ -243,86 +236,39 @@ class Vocabulary {
           'korean',
           'ko_gloss',
         ];
-        const loose = [
-          'meaning',
-          'definition',
-          'gloss',
-          'translation',
-          'mean',
-          '뜻',
-        ];
         const jaFallback = ['meaning_ja', 'meaningJa', 'gloss_ja'];
         return pickString(strictKo) ??
-            pickFirstWhere(loose, _looksLikeKoreanVocabMeaning) ??
-            pickString(loose) ??
+            pickFirstWhere(_meaningKeyAliases, _looksLikeKoreanVocabMeaning) ??
+            pickString(_meaningKeyAliases) ??
             pickString(jaFallback);
       }(),
       VocabularyMeaningPickMode.preferJapaneseGloss => pickString(const [
-        'meaning_ja',
-        'meaningJa',
-        'gloss_ja',
-        'ja_meaning',
-        'ja_gloss',
-        'japanese_meaning',
-        'nihongo',
-        'meaning',
-        'definition',
-        'gloss',
-        'translation',
-        'mean',
-        '뜻',
-        'meaning_ko',
-        'meaningKo',
-        'korean_meaning',
-        'gloss_ko',
+        'meaning_ja', 'meaningJa', 'gloss_ja', 'ja_meaning', 'ja_gloss',
+        'japanese_meaning', 'nihongo',
+        ..._meaningKeyAliases,
+        'meaning_ko', 'meaningKo', 'korean_meaning', 'gloss_ko',
       ]),
       VocabularyMeaningPickMode.neutral => pickString(const [
-        'meaning',
-        'definition',
-        'gloss',
-        'translation',
-        'mean',
-        '뜻',
-        'meaning_ko',
-        'meaningKo',
-        'korean_meaning',
-        'gloss_ko',
-        'meaning_ja',
-        'meaningJa',
-        'gloss_ja',
+        ..._meaningKeyAliases,
+        'meaning_ko', 'meaningKo', 'korean_meaning', 'gloss_ko',
+        'meaning_ja', 'meaningJa', 'gloss_ja',
       ]),
       VocabularyMeaningPickMode.preferEnglishGloss => pickString(const [
         'meaning_en', 'meaningEn', 'english_meaning', 'gloss_en', 'en_meaning',
         'english', 'en_gloss',
-        'meaning', 'definition', 'gloss', 'translation', 'mean',
+        ..._meaningKeyAliases,
         'meaning_ko', 'meaningKo', 'meaning_ja', 'meaningJa',
       ]),
       VocabularyMeaningPickMode.preferChineseGloss => pickString(const [
         'meaning_zh', 'meaningZh', 'chinese_meaning', 'gloss_zh', 'zh_meaning',
         'chinese', 'zh_gloss',
-        'meaning', 'definition', 'gloss', 'translation', 'mean',
+        ..._meaningKeyAliases,
         'meaning_ko', 'meaningKo', 'meaning_ja', 'meaningJa',
       ]),
     };
     if (word == null || meaning == null) return null;
 
-    final reading = pickString(const [
-      'reading',
-      'read',
-      'yomi',
-      'hiragana',
-      'kana',
-      'pronunciation_ja',
-      'pronunciationJa',
-      'yomi_ja',
-      'yomikata',
-      'furigana',
-      'ruby',
-      'katakana',
-      'よみ',
-      '読み',
-      '読み方',
-    ]);
+    final reading = pickString(_readingKeyAliases);
 
     return Vocabulary(word: word, reading: reading, meaning: meaning);
   }
