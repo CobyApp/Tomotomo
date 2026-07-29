@@ -16,7 +16,20 @@ import 'package:flutter/foundation.dart';
 /// serve, so [usingTestAdUnits] reports it instead of failing silently.
 class AdConfig {
   static const int pointsPerAd = 50;
-  static const int maxAdsPerDay = 5;
+  /// Daily cap on rewarded ads.
+  ///
+  /// Not unlimited on purpose: AdMob stops filling requests for a user who keeps
+  /// asking, so "no cap" becomes "the button silently fails", and grinding ads for
+  /// currency is the pattern invalid-traffic rules exist for. Ten covers 100 chat
+  /// replies a day, which is far past normal use.
+  static const int maxAdsPerDay = 10;
+
+  /// Free points granted on the first launch of each day, with no ad.
+  ///
+  /// The wallet is the one thing in this offline app that needed the network:
+  /// below the cost of one reply, the core feature was locked and the only top-up
+  /// was a rewarded ad. This keeps a plane or a dead zone usable.
+  static const int dailyFreePoints = 50;
 
   /// Google-provided public rewarded TEST unit ids.
   static const String _testAndroid = 'ca-app-pub-3940256099942544/5224354917';

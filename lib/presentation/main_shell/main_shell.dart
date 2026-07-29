@@ -69,7 +69,23 @@ class _MainShellState extends State<MainShell> {
       // Local profile is created with defaults if absent.
       await repo.getProfile(_localUserId);
       if (!mounted) return;
-      await context.read<PointsBalanceNotifier>().loadInitial();
+      final points = context.read<PointsBalanceNotifier>();
+      await points.loadInitial();
+      if (!mounted) return;
+      // Say why the balance went up. A silent increase reads as a bug, and this
+      // is the one top-up that needs neither an ad nor a network.
+      if (points.lastDailyGrant > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.trRead(
+                'pointsDailyFree',
+                params: {'points': '${points.lastDailyGrant}'},
+              ),
+            ),
+          ),
+        );
+      }
       if (!mounted) return;
       context.read<LocaleNotifier>().loadFromProfile(_localUserId);
     } catch (_) {}

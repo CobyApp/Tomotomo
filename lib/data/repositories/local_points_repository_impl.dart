@@ -25,6 +25,18 @@ class LocalPointsRepositoryImpl implements PointsRepository {
   @override
   Future<int> currentBalance() async => _balance;
 
+  /// Grants [AdConfig.dailyFreePoints] the first time this is called on [today].
+  ///
+  /// Returns the amount actually credited (0 when already claimed), so the caller
+  /// can tell the user why their balance changed. Idempotent per day, and safe to
+  /// call from more than one place.
+  Future<int> claimDailyFreePoints({required String today}) async {
+    if ((_box.get('daily_free_date') as String?) == today) return 0;
+    await _box.put('daily_free_date', today);
+    await _setBalance(_balance + AdConfig.dailyFreePoints);
+    return AdConfig.dailyFreePoints;
+  }
+
   @override
   Future<SpendPointsOutcome> spendPoints(int amount, String reason) async {
     if (amount <= 0) {

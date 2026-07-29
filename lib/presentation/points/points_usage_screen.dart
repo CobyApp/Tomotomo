@@ -113,6 +113,13 @@ class _PointsUsageScreenState extends State<PointsUsageScreen> {
                 _bullet(context, context.tr('pointsHelpItemXImport')),
                 _bullet(context, context.tr('pointsHelpItemCharacterChat')),
                 _bullet(context, context.tr('pointsHelpItemCustomCreate')),
+                _bullet(
+                  context,
+                  context.tr(
+                    'pointsHelpItemDailyFree',
+                    params: {'points': '${AdConfig.dailyFreePoints}'},
+                  ),
+                ),
               ],
             ),
           ),

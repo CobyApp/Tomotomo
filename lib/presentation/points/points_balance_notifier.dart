@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import '../../data/repositories/local_points_repository_impl.dart';
 import '../../domain/repositories/points_repository.dart';
+import 'watch_rewarded_ad.dart';
 
 /// Cached point balance from the local wallet / spend outcomes; drives the app bar chip.
 class PointsBalanceNotifier extends ChangeNotifier {
@@ -17,14 +19,25 @@ class PointsBalanceNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Loads the current balance from the local wallet (e.g. on app startup).
+  /// Points granted by the daily free top-up during the last [loadInitial], or 0.
+  ///
+  /// Surfaced so the app can say why the balance went up — a silent increase reads
+  /// as a bug.
+  int get lastDailyGrant => _lastDailyGrant;
+  int _lastDailyGrant = 0;
+
+  /// Loads the current balance from the local wallet (e.g. on app startup), and
+  /// grants the day's free points if they have not been claimed yet.
   Future<void> loadInitial() async {
     try {
-      // A zero-amount spend is a side-effect-free way to read the current
-      // balance through the [PointsRepository] interface (which exposes no
-      // dedicated getter).
-      final result = await _pointsRepository.spendPoints(0, 'balance_check');
-      setBalance(result.balance);
+      final repo = _pointsRepository;
+      if (repo is LocalPointsRepositoryImpl) {
+        // Claimed here rather than in main(): this is where the wallet is first
+        // read, whichever screen gets there first, and the grant is idempotent
+        // per day so calling it more than once is safe.
+        _lastDailyGrant = await repo.claimDailyFreePoints(today: todayKey());
+      }
+      setBalance(await _pointsRepository.currentBalance());
     } catch (_) {}
   }
 }
