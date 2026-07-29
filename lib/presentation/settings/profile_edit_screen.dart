@@ -111,6 +111,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _save() async {
+    // The button is guarded by `busy`, but the field's onFieldSubmitted calls
+    // this directly — two saves each reached Navigator.pop, and the second one
+    // popped Settings as well, behind two stacked "Saved." snackbars.
+    if (_saving) return;
     final profile = _profile;
     if (profile == null) return;
     final name = _displayNameController.text.trim();
@@ -206,6 +210,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ),
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.done,
+            // Locked while saving: text typed after the save started was
+            // snapshotted away and silently discarded.
+            enabled: !_saving,
             onFieldSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 24),

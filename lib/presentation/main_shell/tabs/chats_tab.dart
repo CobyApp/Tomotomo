@@ -230,7 +230,10 @@ class ChatsTabState extends State<ChatsTab>
       title: context.tr('chatsDeleteTitle'),
       message: context.tr(
         'chatsDeleteBodyCharacter',
-        params: {'name': r.title},
+        // The same name the row shows. r.title is the title stored at the last
+        // message save, so renaming a friend without sending anything made the
+        // row and this dialog name two different friends.
+        params: {'name': _resolved[r.roomId]?.name ?? r.title},
       ),
       confirmLabel: context.tr('confirm'),
       destructive: true,

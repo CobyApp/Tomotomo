@@ -82,6 +82,15 @@ class ChatViewModel extends ChangeNotifier {
   List<ChatMessage> get messages => _messages;
   bool get isGenerating => _isGenerating;
 
+  /// Set when the stored history could not be read.
+  ///
+  /// Without this a failed load left _messages empty and the room rendered the
+  /// "say hi to get started" empty state — a conversation of weeks looked brand
+  /// new, with no error and no retry, and the old messages reappeared later once
+  /// a send re-read the list.
+  bool get loadFailed => _loadFailed;
+  bool _loadFailed = false;
+
   /// True when the last message is the learner's and no reply is coming.
   ///
   /// The registry lives in memory, so if iOS terminates the app during the
@@ -141,10 +150,20 @@ class ChatViewModel extends ChangeNotifier {
           await _reloadMessages();
         });
       }
+      _loadFailed = false;
       _safeNotify();
     } catch (e) {
       debugPrint('Failed to load messages: $e');
+      _loadFailed = true;
+      _safeNotify();
     }
+  }
+
+  /// Re-reads the stored history after a failed load.
+  Future<void> retryLoad() async {
+    _loadFailed = false;
+    _safeNotify();
+    await _loadMessages();
   }
 
   Future<void> _reloadMessages() async {

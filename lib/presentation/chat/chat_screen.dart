@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/ui/paper/paper_status_views.dart';
 import '../../core/ui/paper/paper_tokens.dart';
 import '../../core/ui/paper/paper_theme.dart';
 import '../../core/ui/paper/paper_widgets.dart';
@@ -385,6 +386,17 @@ class _ChatScreenContent extends StatelessWidget {
                     // newest message on any state change — including each keyboard
                     // movement, via didChangeMetrics.
                     onMessageCountChanged(viewModel.messages.length);
+                    // Distinguish "could not read the history" from "no messages
+                    // yet". Chat was the one surface with neither a loading nor an
+                    // error state, so a failed read told a long-time user to say
+                    // hi for the first time.
+                    if (viewModel.loadFailed && viewModel.messages.isEmpty) {
+                      return PaperErrorBody(
+                        message: context.tr('commonLoadFailed'),
+                        onRetry: viewModel.retryLoad,
+                        retryLabel: context.tr('retry'),
+                      );
+                    }
                     return ChatList(
                       messages: viewModel.messages,
                       character: character,

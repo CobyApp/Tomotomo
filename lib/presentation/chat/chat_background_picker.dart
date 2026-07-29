@@ -104,9 +104,22 @@ class _ChatBackgroundPickerBodyState extends State<_ChatBackgroundPickerBody> {
     }
   }
 
+  bool _applying = false;
+
   Future<void> _apply() async {
+    // `mounted` stays true through the pop transition, so a second tap popped
+    // again — past this sheet and out of the chat room entirely. This file
+    // already guards its other button with a flag; Apply had none.
+    if (_applying) return;
+    setState(() => _applying = true);
     final bg = _draft;
-    await widget.store.set(widget.characterId, bg);
+    try {
+      await widget.store.set(widget.characterId, bg);
+    } catch (e) {
+      debugPrint('Applying the chat background failed: $e');
+      if (mounted) setState(() => _applying = false);
+      return;
+    }
     if (!mounted) return;
     Navigator.of(context).pop(bg);
   }
@@ -178,6 +191,7 @@ class _ChatBackgroundPickerBodyState extends State<_ChatBackgroundPickerBody> {
           PaperButton(
             label: context.tr('chatBgApply'),
             icon: Icons.check_rounded,
+            busy: _applying,
             onPressed: _apply,
           ),
         ],
