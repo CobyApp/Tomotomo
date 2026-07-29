@@ -10,4 +10,9 @@ String modelDownloadSizeLabel(double progress) {
   return '${_gb(done)} / ${_gb(total)}GB';
 }
 
-String _gb(int bytes) => (bytes / (1024 * 1024 * 1024)).toStringAsFixed(1);
+/// Decimal GB, the unit iOS and the App Store use for download sizes.
+///
+/// Dividing by 1024³ and calling the result "GB" understated a 2.59 GB model as
+/// "2.4GB" — contradicting this file's own documented example and making the
+/// download look smaller than the figure the user was given.
+String _gb(int bytes) => (bytes / (1000 * 1000 * 1000)).toStringAsFixed(1);
