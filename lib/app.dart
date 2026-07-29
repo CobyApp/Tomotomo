@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'core/ads/rewarded_ad_service.dart';
 import 'core/di/injection.dart';
+import 'core/locale/supported_locales.dart';
 import 'data/repositories/local_points_repository_impl.dart';
 import 'domain/repositories/chat_repository.dart';
 import 'domain/repositories/ai_chat_repository.dart';
@@ -93,7 +94,7 @@ class App extends StatelessWidget {
             darkTheme: context.watch<ThemeNotifier>().darkTheme,
             themeMode: context.watch<ThemeNotifier>().mode,
             locale: context.watch<LocaleNotifier>().locale,
-            supportedLocales: const [Locale('ko'), Locale('ja')],
+            supportedLocales: kAppSupportedLocales,
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,

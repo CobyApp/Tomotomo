@@ -6,6 +6,9 @@ import 'package:home_widget/home_widget.dart';
 
 import '../../domain/entities/saved_expression.dart';
 import '../../domain/repositories/saved_expression_repository.dart';
+import '../di/injection.dart';
+import '../l10n/app_strings.dart';
+import '../locale/languages.dart';
 import '../platform/ios_post_layout_frames.dart';
 
 /// iOS: add a Widget Extension in Xcode, enable App Group [kNotebookWidgetAppGroup] on Runner + extension,
@@ -13,8 +16,16 @@ import '../platform/ios_post_layout_frames.dart';
 const String kNotebookWidgetAppGroup = 'group.com.dime.tomotomo';
 
 const String _keyLang = 'notebook_widget_lang';
-const String _keyPayloadKo = 'notebook_widget_payload_ko';
-const String _keyPayloadJa = 'notebook_widget_payload_ja';
+
+/// One payload per supported language. `ko` / `ja` keep the historical key
+/// names, so an already-installed widget keeps reading the same slots.
+String _payloadKey(String lang) => 'notebook_widget_payload_$lang';
+
+/// Chrome text pushed from Dart: the widget extension can't reach [AppStrings],
+/// so it used to be hardcoded Japanese for every user.
+const String _keyTitle = 'notebook_widget_title';
+const String _keyEmpty = 'notebook_widget_empty';
+const String _keyLangLabel = 'notebook_widget_lang_label';
 
 const int _maxItems = 8;
 
@@ -40,7 +51,8 @@ Future<void> initNotebookHomeWidget() async {
   await _ensureIosAppGroupReady();
 }
 
-/// Push word-book data to the home screen widget. Preserves KO/JA choice unless unset.
+/// Push word-book data to the home screen widget. Preserves the shown language
+/// unless it is unset or no longer supported.
 Future<void> syncNotebookToHomeWidget(
   SavedExpressionRepository repo, {
   String defaultLangIfUnset = 'ko',
@@ -48,8 +60,12 @@ Future<void> syncNotebookToHomeWidget(
   try {
     await _ensureIosAppGroupReady();
 
-    final ko = await repo.listForCurrentUser(notebookLang: 'ko');
-    final ja = await repo.listForCurrentUser(notebookLang: 'ja');
+    // Every supported language, not just ko/ja: an English or Chinese learner's
+    // saved words never reached the widget at all.
+    final lists = <String, List<SavedExpression>>{};
+    for (final lang in kSupportedLanguages) {
+      lists[lang] = await repo.listForCurrentUser(notebookLang: lang);
+    }
 
     String encodePayload(List<SavedExpression> list) {
       final slice = list.take(_maxItems).map((e) {
@@ -61,17 +77,41 @@ Future<void> syncNotebookToHomeWidget(
       return jsonEncode(slice);
     }
 
-    await HomeWidget.saveWidgetData<String>(_keyPayloadKo, encodePayload(ko));
-    await HomeWidget.saveWidgetData<String>(_keyPayloadJa, encodePayload(ja));
+    for (final entry in lists.entries) {
+      await HomeWidget.saveWidgetData<String>(
+        _payloadKey(entry.key),
+        encodePayload(entry.value),
+      );
+    }
 
     var lang = await HomeWidget.getWidgetData<String>(_keyLang);
-    if (lang != 'ko' && lang != 'ja') {
-      lang = defaultLangIfUnset;
-      if (lang != 'ko' && lang != 'ja') lang = 'ko';
-      if (ja.isNotEmpty && ko.isEmpty) lang = 'ja';
-      if (ko.isNotEmpty && ja.isEmpty) lang = 'ko';
+    if (lang == null || !kSupportedLanguages.contains(lang)) {
+      lang = normalizeLang(defaultLangIfUnset);
+      // If words exist in exactly one language, show that one — the default is
+      // only a guess, and an empty widget is worse than the wrong tab.
+      final withWords = kSupportedLanguages
+          .where((l) => lists[l]!.isNotEmpty)
+          .toList();
+      if (withWords.length == 1) lang = withWords.first;
       await HomeWidget.saveWidgetData<String>(_keyLang, lang);
     }
+
+    // The native widget can't reach AppStrings, so its chrome was hardcoded
+    // Japanese for everyone. Push the localized text instead.
+    final ui = normalizeLang(appLanguageCode);
+    await HomeWidget.saveWidgetData<String>(
+      _keyTitle,
+      AppStrings.of(ui, 'notebookTitle'),
+    );
+    await HomeWidget.saveWidgetData<String>(
+      _keyEmpty,
+      AppStrings.of(ui, 'notebookEmpty'),
+    );
+    // Endonym: reads correctly whatever the UI language is.
+    await HomeWidget.saveWidgetData<String>(
+      _keyLangLabel,
+      languageEndonym(lang),
+    );
 
     await _reloadWidget();
   } catch (_) {

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../core/di/injection.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/x_profile/x_profile_reader.dart';
 import '../on_device/on_device_ai_runtime.dart';
 import 'profile_text_compactor.dart';
@@ -115,40 +117,20 @@ class CelebrityPersonaSuggester {
   }
 
   static String _composeSpeechStyle({
-    required String language,
     required String bio,
     required String speechStyle,
   }) {
     final b = bio.trim();
     final s = speechStyle.trim();
     final buf = StringBuffer();
-    // Headers are read by the USER in the persona field, so they follow the
-    // friend's language. Previously only ko/ja existed, so an English or
-    // Chinese import produced Japanese headers.
-    final (profileHeader, styleHeader, styleFallback) = switch (
-      normalizeLang(language)
-    ) {
-      'ko' => (
-        '【프로필·소개】',
-        '【말투·말하는 방식 (AI가 따를 것)】',
-        '친근하고 자연스럽게 대화합니다.',
-      ),
-      'en' => (
-        '[Profile]',
-        '[Voice & speaking style (the AI should follow this)]',
-        'Speaks in a friendly, natural way.',
-      ),
-      'zh' => (
-        '【简介】',
-        '【语气·说话方式（AI 需遵循）】',
-        '以亲切自然的方式聊天。',
-      ),
-      _ => (
-        '【プロフィール・紹介】',
-        '【口調・話し方（AIが従うこと）】',
-        '親しみやすく自然に話します。',
-      ),
-    };
+    // These headers explain the field TO the user ("the AI should follow this"),
+    // so they follow the app UI language — the same rule the onboarding prefill
+    // documents. Keying them off the friend's language instead handed an
+    // English-UI user Japanese headers the moment they imported a JP friend.
+    final ui = normalizeLang(appLanguageCode);
+    final profileHeader = AppStrings.of(ui, 'personaProfileHeader');
+    final styleHeader = AppStrings.of(ui, 'personaStyleHeader');
+    final styleFallback = AppStrings.of(ui, 'personaStyleFallback');
     if (b.isNotEmpty) {
       buf.writeln(profileHeader);
       buf.writeln(b);
@@ -274,17 +256,16 @@ Return exactly one valid JSON object with no markdown or extra keys:
     final lang = normalizedLanguage;
 
     final handle = _handleFromCanonicalUrl(sourceHint);
-    // Language-neutral placeholder; 'ユーザー' was used even for en/zh imports.
-    final fallback = handle != null && handle.isNotEmpty ? handle : 'Friend';
+    // The user reads and edits this name, so it follows the app UI language —
+    // it was a hardcoded 'ユーザー', then a hardcoded English 'Friend'.
+    final fallback = handle != null && handle.isNotEmpty
+        ? handle
+        : AppStrings.of(normalizeLang(appLanguageCode), 'personaFallbackName');
     final primary = _nonEmpty(map['name']?.toString()) ?? fallback;
 
     final bio = (map['bio'] as String?)?.trim() ?? '';
     final speech = (map['speech_style'] as String?)?.trim() ?? '';
-    final combinedStyle = _composeSpeechStyle(
-      language: lang,
-      bio: bio,
-      speechStyle: speech,
-    );
+    final combinedStyle = _composeSpeechStyle(bio: bio, speechStyle: speech);
     var line = _clampTagline(map['tagline'] as String?);
     if (line.isEmpty) {
       line = _clampTagline(bio.split(RegExp(r'[。．.!?\n]')).first);

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
+import 'package:aichat/core/locale/languages.dart';
 import 'package:aichat/data/repositories/profile_repository_impl.dart';
 
 void main() {
@@ -52,11 +53,20 @@ void main() {
     expect(await repo.getNationality(), 'ko');
   });
 
-  test('friend language defaults null and only accepts ko/ja', () async {
+  // This used to assert "only accepts ko/ja" — written before en/zh shipped and
+  // never revisited, so it pinned the bug in place: an English or Chinese friend
+  // had its write dropped and reverted to Japanese on the next launch.
+  test('friend language defaults null and round-trips every language', () async {
     expect(await repo.getFriendLanguage(), isNull);
-    await repo.setFriendLanguage('en');
-    expect(await repo.getFriendLanguage(), isNull);
+    for (final lang in kSupportedLanguages) {
+      await repo.setFriendLanguage(lang);
+      expect(await repo.getFriendLanguage(), lang);
+    }
+  });
+
+  test('friend language rejects an unsupported code', () async {
     await repo.setFriendLanguage('ko');
+    await repo.setFriendLanguage('fr');
     expect(await repo.getFriendLanguage(), 'ko');
   });
 }

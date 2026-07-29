@@ -104,9 +104,11 @@ class XProfileReader {
     ).toString();
   }
 
-  /// User-facing (Korean) message when the reader cannot fetch the profile.
-  static const String _fetchFailedMessage =
-      'X에서 불러오지 못했어요. 잠시 후 다시 시도하거나, 직접 만들기로 진행해 주세요.';
+  /// Internal only — never displayed. The caller logs this and shows the
+  /// localized `characterImportFromXError` instead, so the text stays English
+  /// on purpose; the doc used to claim it was the user-facing Korean message,
+  /// which would have made someone "fix" it by surfacing it untranslated.
+  static const String _fetchFailedMessage = 'X profile fetch failed';
 
   /// A realistic browser User-Agent for the syndication request.
   static const String _userAgent =

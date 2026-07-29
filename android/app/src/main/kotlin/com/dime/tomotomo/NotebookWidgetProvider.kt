@@ -28,18 +28,26 @@ class NotebookWidgetProvider : HomeWidgetProvider() {
             R.id.widget_line_5,
         )
 
-    val payloadKo = widgetData.getString("notebook_widget_payload_ko", null)
-    val payloadJa = widgetData.getString("notebook_widget_payload_ja", null)
-
     val lang = widgetData.getString("notebook_widget_lang", "ko") ?: "ko"
-    val payloadKey =
-        if (lang == "ja") "notebook_widget_payload_ja" else "notebook_widget_payload_ko"
-    val raw = widgetData.getString(payloadKey, null) ?: "[]"
+    // One payload slot per language. Hardcoding ko/ja showed the Korean list to
+    // English and Chinese learners instead of their own saved words.
+    val raw = widgetData.getString("notebook_widget_payload_$lang", null) ?: "[]"
     val lines = parsePayload(raw).take(5)
+
+    // Chrome text pushed by the app in the user's chosen language; the bundled
+    // string resources are Japanese only, with no values-ko/-en/-zh variants.
+    val title =
+        widgetData.getString("notebook_widget_title", null)
+            ?: context.getString(R.string.widget_notebook_title)
+    val emptyText =
+        widgetData.getString("notebook_widget_empty", null)
+            ?: context.getString(R.string.widget_notebook_empty_hint)
 
     appWidgetIds.forEach { widgetId ->
       val views =
           RemoteViews(context.packageName, R.layout.notebook_widget).apply {
+            setTextViewText(R.id.widget_title, title)
+
             val koActive = lang == "ko"
             setInt(
                 R.id.widget_btn_ko,
@@ -78,10 +86,7 @@ class NotebookWidgetProvider : HomeWidgetProvider() {
 
             if (lines.isEmpty()) {
               setViewVisibility(R.id.widget_empty, View.VISIBLE)
-              setTextViewText(
-                  R.id.widget_empty,
-                  context.getString(R.string.widget_notebook_empty_hint),
-              )
+              setTextViewText(R.id.widget_empty, emptyText)
               lineIds.forEach { setViewVisibility(it, View.GONE) }
             } else {
               setViewVisibility(R.id.widget_empty, View.GONE)

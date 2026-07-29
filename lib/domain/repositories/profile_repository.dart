@@ -16,7 +16,8 @@ abstract class ProfileRepository {
   Future<void> setNationality(String? value);
 
   /// The friend/learning language the user explicitly chose during onboarding
-  /// (`ko` | `ja`), or null when never chosen (derive from app language).
+  /// (any of `kSupportedLanguages`), or null when never chosen (derive from the
+  /// app language).
   Future<String?> getFriendLanguage();
   Future<void> setFriendLanguage(String code);
 }

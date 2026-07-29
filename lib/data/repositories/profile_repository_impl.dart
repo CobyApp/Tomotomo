@@ -1,5 +1,6 @@
 import 'package:hive_ce/hive.dart';
 
+import '../../core/locale/languages.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../local/local_json_store.dart';
@@ -78,15 +79,18 @@ class ProfileRepositoryImpl implements ProfileRepository {
     await _store.putValue(_kNationality, value);
   }
 
+  // Validated against kSupportedLanguages, not a hardcoded ko/ja pair: the
+  // whitelist predated en/zh support, so picking an English or Chinese friend
+  // had its write dropped and reverted to a Japanese friend on next launch.
   @override
   Future<String?> getFriendLanguage() async {
     final v = _store.getValue(_kFriendLanguage) as String?;
-    return (v == 'ko' || v == 'ja') ? v : null;
+    return kSupportedLanguages.contains(v) ? v : null;
   }
 
   @override
   Future<void> setFriendLanguage(String code) async {
-    if (code != 'ko' && code != 'ja') return;
+    if (!kSupportedLanguages.contains(code)) return;
     await _store.putValue(_kFriendLanguage, code);
   }
 

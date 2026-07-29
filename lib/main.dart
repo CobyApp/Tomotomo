@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:background_downloader/background_downloader.dart'
     show FileDownloader, TaskNotification;
@@ -21,6 +20,7 @@ void main() async {
   await openAllBoxes();
 
   setupInjection();
+  await _primeAppLanguage();
   await LocalNotifications.init();
   await _configureDownloadNotifications();
   await onDeviceModelManager.initialize();
@@ -32,12 +32,32 @@ void main() async {
   runApp(const App());
 }
 
+/// Loads the saved UI language into [appLanguageCode] before anything that has
+/// to localize without a BuildContext runs.
+///
+/// `LocaleNotifier` reads the same value, but only once the widget tree is up —
+/// too late for the download notification, which is configured here at startup.
+/// Reading the device locale instead (what this used to do) showed the
+/// notification in a language the user never picked, and fell all the way back
+/// to Korean on any unsupported device locale.
+Future<void> _primeAppLanguage() async {
+  try {
+    final profile = await profileRepository.getProfile('local');
+    final code = profile?.appLanguage;
+    if (code != null && kSupportedLanguages.contains(code)) {
+      appLanguageCode = code;
+    }
+  } catch (_) {
+    // Keep the default; a mislocalized notification must not block startup.
+  }
+}
+
 /// Configures the OS notification (with progress bar) for the model download
 /// group so progress shows in the iOS/Android notification shade even when the
 /// download auto-starts (onboarding / relaunch), not only from Settings.
 Future<void> _configureDownloadNotifications() async {
   try {
-    final lang = normalizeLang(PlatformDispatcher.instance.locale.languageCode);
+    final lang = normalizeLang(appLanguageCode);
     String t(String k) => AppStrings.of(lang, k);
     // NOTE: the notification PERMISSION is requested when a download actually
     // starts (OnDeviceModelManager.install) — never at cold start with no

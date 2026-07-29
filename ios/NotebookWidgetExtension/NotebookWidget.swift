@@ -7,13 +7,20 @@ private let widgetGroupId = "group.com.dime.tomotomo"
 
 struct NotebookEntry: TimelineEntry {
   let date: Date
-  let lang: String
+  /// Language name in its own script (한국어 / 日本語 / English / 中文).
+  let langLabel: String
+  /// Chrome text, localized by the app — this extension cannot reach AppStrings,
+  /// so it used to render hardcoded Japanese for every user.
+  let title: String
+  let emptyText: String
   let lines: [String]
 }
 
 struct NotebookProvider: TimelineProvider {
   func placeholder(in context: Context) -> NotebookEntry {
-    NotebookEntry(date: Date(), lang: "ko", lines: ["…"])
+    NotebookEntry(
+      date: Date(), langLabel: "한국어", title: "단어장",
+      emptyText: "저장한 단어가 없습니다", lines: ["…"])
   }
 
   func getSnapshot(in context: Context, completion: @escaping (NotebookEntry) -> Void) {
@@ -29,9 +36,15 @@ struct NotebookProvider: TimelineProvider {
   private func readEntry() -> NotebookEntry {
     let d = UserDefaults(suiteName: widgetGroupId)
     let lang = d?.string(forKey: "notebook_widget_lang") ?? "ko"
-    let key = lang == "ja" ? "notebook_widget_payload_ja" : "notebook_widget_payload_ko"
-    let raw = d?.string(forKey: key) ?? "[]"
-    return NotebookEntry(date: Date(), lang: lang, lines: parseLines(raw))
+    // One slot per language: hardcoding ko/ja meant an English or Chinese
+    // learner's words were never shown, only the Korean slot.
+    let raw = d?.string(forKey: "notebook_widget_payload_\(lang)") ?? "[]"
+    return NotebookEntry(
+      date: Date(),
+      langLabel: d?.string(forKey: "notebook_widget_lang_label") ?? lang,
+      title: d?.string(forKey: "notebook_widget_title") ?? "단어장",
+      emptyText: d?.string(forKey: "notebook_widget_empty") ?? "저장한 단어가 없습니다",
+      lines: parseLines(raw))
   }
 
   private func parseLines(_ json: String) -> [String] {
@@ -54,13 +67,13 @@ struct NotebookWidgetView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
-      Text("単語帳")
+      Text(entry.title)
         .font(.headline)
-      Text(entry.lang == "ja" ? "日本語" : "韓国語")
+      Text(entry.langLabel)
         .font(.caption)
         .foregroundColor(.secondary)
       if entry.lines.isEmpty {
-        Text("保存した単語はありません")
+        Text(entry.emptyText)
           .font(.caption)
       } else {
         ForEach(Array(entry.lines.enumerated()), id: \.offset) { _, line in

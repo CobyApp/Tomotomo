@@ -4,7 +4,8 @@ class SavedExpression {
   final String userId;
   final String source;
 
-  /// `ko` | `ja` — which word-book segment this row belongs to.
+  /// Which word-book segment this row belongs to (any of
+  /// `kSupportedLanguages`).
   final String notebookLang;
 
   /// Headword (word / phrase).
@@ -49,7 +50,7 @@ class SavedExpression {
 class SavedExpressionDraft {
   final String source;
 
-  /// `ko` | `ja`
+  /// Which word-book segment to save into (any of `kSupportedLanguages`).
   final String notebookLang;
   final String? content;
   final String? explanation;
