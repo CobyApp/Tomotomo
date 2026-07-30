@@ -122,7 +122,22 @@ class _LegalWebViewScreenState extends State<LegalWebViewScreen> {
   }
 
   Future<void> _openExternally() async {
-    await launchUrl(_url, mode: LaunchMode.externalApplication);
+    // This is the escape hatch shown when the in-app WebView itself failed, so a
+    // silent no-op here leaves the user on an error screen with nothing that
+    // works and no explanation.
+    final failed = context.trRead('linkOpenFailed');
+    bool ok;
+    try {
+      ok = await launchUrl(_url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('Failed to open legal page externally: $e');
+      ok = false;
+    }
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(failed)));
+    }
   }
 
   @override

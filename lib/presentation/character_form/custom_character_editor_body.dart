@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -148,6 +149,33 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   bool _uploadingAvatar = false;
   bool _importUrlBusy = false;
   String? _error;
+
+  /// The error banner is the first child of a long ListView while the save
+  /// button is the last, so setting it from the bottom of the form put the only
+  /// feedback off-screen — tapping Create with an empty name looked like the
+  /// button did nothing. Exactly one phase is built at a time, so a single
+  /// controller is safe.
+  final ScrollController _formScroll = ScrollController();
+
+  /// Sets [_error] and scrolls it into view.
+  void _setError(String? message) {
+    if (!mounted) return;
+    setState(() => _error = message);
+    if (message != null) _revealTopOfForm();
+  }
+
+  /// Also used when the inline field validators fail: those sit near the top of
+  /// the form too, and are just as invisible from the button.
+  void _revealTopOfForm() {
+    if (!_formScroll.hasClients || _formScroll.offset <= 0) return;
+    unawaited(
+      _formScroll.animateTo(
+        0,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOut,
+      ),
+    );
+  }
   String? _avatarUrl;
   _CreatePhase _phase = _CreatePhase.xImport;
 
@@ -182,6 +210,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
 
   @override
   void dispose() {
+    _formScroll.dispose();
     _nameController.dispose();
     _taglineController.dispose();
     _memoController.dispose();
@@ -223,7 +252,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     final balance = await context.read<PointsRepository>().currentBalance();
     if (balance >= cost) return true;
     if (mounted) {
-      setState(() => _error = context.tr('pointsInsufficient'));
+      _setError(context.tr('pointsInsufficient'));
       await showPointsTopUpPrompt(context);
     }
     return false;
@@ -241,9 +270,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
   Future<void> _importPersonaFromXUrl() async {
     final url = _xUrlController.text.trim();
     if (url.isEmpty) {
-      setState(
-        () => _error = context.trRead('characterImportFromXUrlRequired'),
-      );
+      _setError(context.trRead('characterImportFromXUrlRequired'));
       return;
     }
     FocusScope.of(context).unfocus();
@@ -274,7 +301,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       // Localized message only: the underlying exceptions carry hardcoded
       // Korean/English text that would otherwise leak into every language.
       debugPrint('X profile import failed: $e');
-      setState(() => _error = context.trRead('characterImportFromXError'));
+      _setError(context.trRead('characterImportFromXError'));
     } finally {
       if (mounted) setState(() => _importUrlBusy = false);
     }
@@ -285,7 +312,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     final existing = _existing;
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = context.tr('nameRequired'));
+      _setError(context.tr('nameRequired'));
       return;
     }
     setState(() {
@@ -346,6 +373,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
         _error = context.trRead('commonSaveFailed');
         _saving = false;
       });
+      _revealTopOfForm();
     }
   }
 
@@ -366,7 +394,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
       // simply did nothing — forever, with no route to Settings.
       debugPrint('Picking an avatar failed: $e');
       if (!mounted) return;
-      setState(() => _error = context.trRead('photoAccessFailed'));
+      _setError(context.trRead('photoAccessFailed'));
       return;
     }
     if (cropped == null || !mounted) return;
@@ -392,6 +420,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
         _error = context.trRead('commonSaveFailed');
         _uploadingAvatar = false;
       });
+      _revealTopOfForm();
     }
   }
 
@@ -732,6 +761,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
     return Form(
       key: _formKey,
       child: ListView(
+        controller: _formScroll,
         padding: _pagePadding,
         children: [
           if (_error != null) _errorBanner(context),
@@ -816,6 +846,9 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
             onPressed: () async {
               if (_formKey.currentState?.validate() ?? false) {
                 await _save();
+              } else {
+                // The rejected field's inline message is up near the top.
+                _revealTopOfForm();
               }
             },
           ),

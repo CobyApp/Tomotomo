@@ -82,35 +82,7 @@ class _ChatInputState extends State<ChatInput> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (widget.showRetry && widget.onRetry != null && !widget.isGenerating)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      context.tr('chatReplyMissing'),
-                      style: TextStyle(fontSize: 12.5, color: p.inkSoft),
-                    ),
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: widget.onRetry,
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        minimumSize: const Size(0, 32),
-                      ),
-                      child: Text(
-                        context.tr('retry'),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: p.coralDeep,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              ChatRetryNotice(onRetry: widget.onRetry!),
             Container(
           padding: const EdgeInsets.fromLTRB(6, 5, 5, 5),
           decoration: BoxDecoration(
@@ -202,6 +174,58 @@ class _ChatInputState extends State<ChatInput> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The "no reply arrived" affordance, shared by the composer and the model gate.
+///
+/// It used to live only inside [ChatInput], which the gate bar *replaces* while
+/// the model is not ready — and a cold start after a termination mid-inference
+/// is exactly when the model is still being probed. The one explanation for the
+/// room's silence was therefore hidden in the case it was written for.
+class ChatRetryNotice extends StatelessWidget {
+  /// Null while the model is not ready: retrying would only fail, so the
+  /// explanation shows without an action the user cannot successfully take.
+  final VoidCallback? onRetry;
+
+  const ChatRetryNotice({super.key, this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.paper;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Flexible(
+            child: Text(
+              context.tr('chatReplyMissing'),
+              style: TextStyle(fontSize: 12.5, color: p.inkSoft),
+            ),
+          ),
+          if (onRetry != null) ...[
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: onRetry,
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              minimumSize: const Size(0, 32),
+            ),
+            child: Text(
+              context.tr('retry'),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: p.coralDeep,
+              ),
+            ),
+          ),
+          ],
+        ],
       ),
     );
   }

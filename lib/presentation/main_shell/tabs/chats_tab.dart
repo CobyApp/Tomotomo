@@ -18,6 +18,7 @@ import '../../../data/character/characters_data.dart';
 import '../../../domain/entities/character.dart';
 import '../../../domain/entities/chat_room_summary.dart';
 import '../../../domain/repositories/ai_chat_repository.dart';
+import '../../chat/chat_generation_registry.dart';
 import '../../../domain/repositories/chat_repository.dart';
 import '../../../domain/repositories/character_record_repository.dart';
 import '../../locale/l10n_context.dart';
@@ -62,8 +63,15 @@ class ChatsTabState extends State<ChatsTab>
   String? _error;
 
   @override
+  void dispose() {
+    ChatGenerationRegistry.instance.removeListener(_onGenerationChanged);
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
+    ChatGenerationRegistry.instance.addListener(_onGenerationChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(() async {
         await waitIosPostLayoutFrames(frames: 3);
@@ -75,6 +83,23 @@ class ChatsTabState extends State<ChatsTab>
 
   @override
   void onAppResumed() => unawaited(_load(silent: true));
+
+  /// Leaving a room mid-generation left this list stale: the reply landed on
+  /// disk with the in-app notification suppressed and no reload scheduled, so
+  /// the row kept showing the learner's own message until they switched tabs.
+  int _seenCompletions = ChatGenerationRegistry.instance.completions;
+
+  void _onGenerationChanged() {
+    if (!mounted) return;
+    final registry = ChatGenerationRegistry.instance;
+    if (registry.completions != _seenCompletions) {
+      _seenCompletions = registry.completions;
+      unawaited(_load(silent: true));
+    } else {
+      // A generation started — repaint so the row shows "typing…".
+      setState(() {});
+    }
+  }
 
   Future<void> _load({bool silent = false}) async {
     if (!silent) {
@@ -200,6 +225,11 @@ class ChatsTabState extends State<ChatsTab>
   }
 
   String _messagePreview(BuildContext context, ChatRoomSummary r) {
+    // A reply still generating means the stored last message is the learner's
+    // own — showing it back to them read as "nothing happened".
+    if (ChatGenerationRegistry.instance.isGenerating(r.roomId)) {
+      return context.tr('chatsTyping');
+    }
     final raw = r.lastMessageContent;
     if (raw == null || raw.trim().isEmpty) {
       return context.tr('chatsListNoPreview');

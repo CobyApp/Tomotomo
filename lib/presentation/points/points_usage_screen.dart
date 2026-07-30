@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -74,7 +75,8 @@ class _PointsUsageScreenState extends State<PointsUsageScreen> {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    final balance = context.watch<PointsBalanceNotifier>().balance;
+    final points = context.watch<PointsBalanceNotifier>();
+    final balance = points.balance;
     return PaperScaffold(
       title: context.tr('pointsHelpTitle'),
       subtitle: context.tr('pointsHelpLead'),
@@ -87,7 +89,26 @@ class _PointsUsageScreenState extends State<PointsUsageScreen> {
           AppSpacing.pageBottom,
         ),
         children: [
-          _BalanceCard(balance: balance),
+          _BalanceCard(
+            balance: balance,
+            unknown: balance == null && points.loadFailed,
+          ),
+          if (points.loadFailed)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Center(
+                child: TextButton(
+                  onPressed: () => unawaited(points.loadInitial()),
+                  child: Text(
+                    context.tr('retry'),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: p.coralDeep,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           const SizedBox(height: 16),
           Builder(
             builder: (context) {
@@ -140,9 +161,12 @@ class _PointsUsageScreenState extends State<PointsUsageScreen> {
 /// points. The number counts up and pops, and a "+N" with sparkles bursts out
 /// whenever the balance increases (e.g. after a rewarded ad).
 class _BalanceCard extends StatefulWidget {
-  const _BalanceCard({required this.balance});
+  const _BalanceCard({required this.balance, required this.unknown});
 
   final int? balance;
+
+  /// The wallet could not be read — distinct from a balance of zero.
+  final bool unknown;
 
   @override
   State<_BalanceCard> createState() => _BalanceCardState();
@@ -244,7 +268,7 @@ class _BalanceCardState extends State<_BalanceCard>
                             duration: const Duration(milliseconds: 650),
                             curve: Curves.easeOutCubic,
                             builder: (context, v, child) => Text(
-                              '${v.round()}',
+                              widget.unknown ? '—' : '${v.round()}',
                               style: cuteDisplay(
                                 fontSize: 36,
                                 fontWeight: FontWeight.w900,

@@ -112,13 +112,21 @@ class ChatViewModel extends ChangeNotifier {
     }
     _isGenerating = true;
     _safeNotify();
-    await ChatGenerationRegistry.instance.run(
-      character.id,
-      () => _generateAndSave(text),
-    );
+    // finally, not a straight-line reset: anything escaping the generation left
+    // the flag set, which shows "typing…" forever AND suppresses the retry row
+    // (awaitingRetry requires !_isGenerating) — the exact silence this method
+    // exists to break. _generateAndSave swallows everything today; this stops
+    // that from being load-bearing.
+    try {
+      await ChatGenerationRegistry.instance.run(
+        character.id,
+        () => _generateAndSave(text),
+      );
+    } finally {
+      _isGenerating = false;
+      _safeNotify();
+    }
     if (_disposed) return;
-    _isGenerating = false;
-    _safeNotify();
     await _reloadMessages();
   }
 
@@ -261,14 +269,18 @@ class ChatViewModel extends ChangeNotifier {
 
     // Run generation through the registry so it keeps going and persists the
     // reply even if the user leaves this screen mid-generation.
-    await ChatGenerationRegistry.instance.run(
-      character.id,
-      () => _generateAndSave(userMessage),
-    );
+    try {
+      await ChatGenerationRegistry.instance.run(
+        character.id,
+        () => _generateAndSave(userMessage),
+      );
+    } finally {
+      // See retryLastMessage: a stranded flag is a permanently stuck room.
+      _isGenerating = false;
+      _safeNotify();
+    }
 
     if (_disposed) return;
-    _isGenerating = false;
-    _safeNotify();
     await _reloadMessages();
   }
 

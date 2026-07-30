@@ -412,7 +412,24 @@ class _ChatScreenContent extends StatelessWidget {
                   // Until the on-device model is ready, replace the input with
                   // a friendly "preparing" bar so chat never silently fails.
                   if (!manager.isReady) {
-                    return _ModelGateBar(snapshot: manager.snapshot);
+                    // The retry notice normally lives inside ChatInput, which
+                    // this bar replaces — so keep the explanation for the room's
+                    // silence visible here too, minus an action that cannot work
+                    // until the model is loaded.
+                    return Selector<ChatViewModel, bool>(
+                      selector: (_, vm) => vm.awaitingRetry,
+                      builder: (context, awaitingRetry, _) => Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (awaitingRetry)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: ChatRetryNotice(),
+                            ),
+                          _ModelGateBar(snapshot: manager.snapshot),
+                        ],
+                      ),
+                    );
                   }
                   return Consumer<ChatViewModel>(
                     builder: (context, viewModel, child) {
@@ -461,11 +478,14 @@ class _ModelGateBar extends StatelessWidget {
         snapshot.phase == OnDeviceModelPhase.downloading ||
         snapshot.phase == OnDeviceModelPhase.finalizing;
     final pct = (snapshot.progress.clamp(0.0, 1.0) * 100).round();
+    // `checking` is the install probe at cold start — a second or two during
+    // which the model may well be present. Telling the user to go download it,
+    // with the same wording as a genuinely missing model, sent people to Settings
+    // to re-download 2.6 GB they already had.
     final label = downloading
-        ? context.tr(
-            'chatModelPreparing',
-            params: {'progress': '$pct'},
-          )
+        ? context.tr('chatModelPreparing', params: {'progress': '$pct'})
+        : snapshot.phase == OnDeviceModelPhase.checking
+        ? context.tr('chatModelChecking')
         : context.tr('chatModelNotReady');
 
     return SafeArea(

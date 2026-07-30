@@ -26,6 +26,13 @@ class PointsBalanceNotifier extends ChangeNotifier {
   int get lastDailyGrant => _lastDailyGrant;
   int _lastDailyGrant = 0;
 
+  /// True when the last [loadInitial] threw, so the balance is unknown rather
+  /// than zero. The two must not render the same: a failed read used to draw a
+  /// hard "0" on the big balance card while the wallet itself was intact, which
+  /// reads as "my points were wiped".
+  bool get loadFailed => _loadFailed;
+  bool _loadFailed = false;
+
   /// Loads the current balance from the local wallet (e.g. on app startup), and
   /// grants the day's free points if they have not been claimed yet.
   Future<void> loadInitial() async {
@@ -37,7 +44,13 @@ class PointsBalanceNotifier extends ChangeNotifier {
         // per day so calling it more than once is safe.
         _lastDailyGrant = await repo.claimDailyFreePoints(today: todayKey());
       }
-      setBalance(await _pointsRepository.currentBalance());
-    } catch (_) {}
+      final loaded = await _pointsRepository.currentBalance();
+      _loadFailed = false;
+      setBalance(loaded);
+    } catch (e) {
+      debugPrint('Point balance load failed: $e');
+      _loadFailed = true;
+      notifyListeners();
+    }
   }
 }

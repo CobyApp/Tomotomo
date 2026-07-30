@@ -105,15 +105,31 @@ class _UpdateGateState extends State<UpdateGate> {
   }
 }
 
-Future<void> _openStore(String? storeUrl) async {
+Future<void> _openStore(BuildContext context, String? storeUrl) async {
   if (!isAllowedStoreUrl(storeUrl)) {
     debugPrint('Ignored update store url: $storeUrl');
     return;
   }
-  await launchUrl(
-    Uri.parse(storeUrl!.trim()),
-    mode: LaunchMode.externalApplication,
-  );
+  // The forced-update screen cannot be dismissed, so a silent failure here is a
+  // hard lock: one button that does nothing and no explanation. The body copy
+  // already tells the user to update from the store, so saying the launch failed
+  // is enough to make that the obvious next move.
+  final failed = context.trRead('linkOpenFailed');
+  bool ok;
+  try {
+    ok = await launchUrl(
+      Uri.parse(storeUrl!.trim()),
+      mode: LaunchMode.externalApplication,
+    );
+  } catch (e) {
+    debugPrint('Failed to open the store: $e');
+    ok = false;
+  }
+  if (!ok && context.mounted) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(failed)));
+  }
 }
 
 /// Non-dismissible full-screen gate shown when the build is below `min_build`.
@@ -125,7 +141,9 @@ class _ForceUpdateScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    final hasStore = storeUrl != null && storeUrl!.trim().isNotEmpty;
+    // Not merely non-empty: _openStore drops anything the allowlist rejects, so
+    // an unexpected remote url used to render a button that did nothing.
+    final hasStore = isAllowedStoreUrl(storeUrl);
     return PopScope(
       canPop: false,
       child: PaperScaffold(
@@ -162,7 +180,7 @@ class _ForceUpdateScreen extends StatelessWidget {
                 if (hasStore)
                   PaperButton(
                     label: context.tr('updateNowButton'),
-                    onPressed: () => _openStore(storeUrl),
+                    onPressed: () => _openStore(context, storeUrl),
                   ),
               ],
             ),
@@ -186,7 +204,9 @@ class _RecommendUpdateBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    final hasStore = storeUrl != null && storeUrl!.trim().isNotEmpty;
+    // Not merely non-empty: _openStore drops anything the allowlist rejects, so
+    // an unexpected remote url used to render a button that did nothing.
+    final hasStore = isAllowedStoreUrl(storeUrl);
     return SafeArea(
       child: Align(
         alignment: Alignment.topCenter,
@@ -220,7 +240,7 @@ class _RecommendUpdateBanner extends StatelessWidget {
                   ),
                   if (hasStore)
                     TextButton(
-                      onPressed: () => _openStore(storeUrl),
+                      onPressed: () => _openStore(context, storeUrl),
                       child: Text(
                         context.tr('updateNowShort'),
                         style: TextStyle(
