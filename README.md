@@ -42,12 +42,10 @@
    flutter pub get
    ```
 
-3. 환경 변수 설정
-   ```bash
-   cp .env.example .env
-   ```
-   - AI API 키는 필요하지 않습니다.
-   - 릴리스 광고를 사용할 경우 `ADMOB_REWARDED_ANDROID`와 `ADMOB_REWARDED_IOS` 설정
+3. 환경 변수 설정 — 로컬 개발에서는 필요 없습니다.
+   - AI API 키가 필요하지 않고, `.env` 파일도 사용하지 않습니다.
+   - 디버그 빌드는 Google 테스트 광고 단위를 씁니다.
+   - 릴리스 광고 설정은 [SETTINGS.md](SETTINGS.md#리워드-광고)를 참고하세요.
 
 4. 앱 실행
    - iPhone 실기기는 profile 모드를 사용합니다.
