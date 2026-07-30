@@ -297,8 +297,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       }
       if (!mounted) return;
       await context.read<OnboardingNotifier>().complete();
-    } catch (_) {
-      if (mounted) setState(() => _saving = false);
+    } catch (e) {
+      // The spinner stopped and the button came back with no explanation, so the
+      // only reading available was "the button is broken".
+      debugPrint('Finishing onboarding failed: $e');
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('onboardingFinishFailed'))),
+      );
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/locale/languages.dart';
 import '../../../core/widgets/on_app_resumed_mixin.dart';
+import '../../../data/chat_background/chat_background_store.dart';
 import '../../../domain/entities/character.dart';
 import '../../../domain/entities/character_record.dart';
 import '../../../domain/repositories/chat_repository.dart';
@@ -250,6 +251,8 @@ class CharactersTabState extends State<CharactersTab>
                       if (!confirm || !mounted) return;
                       try {
                         final chats = context.read<ChatRepository>();
+                        final backgrounds = context
+                            .read<ChatBackgroundStore>();
                         await context
                             .read<CharacterRecordRepository>()
                             .deleteCharacter(r.id);
@@ -258,6 +261,9 @@ class CharactersTabState extends State<CharactersTab>
                         // friend can no longer be resolved, so tapping it only
                         // showed a load error.
                         await chats.deleteRoom(r.id);
+                        // And the room's background, whose entry would keep the
+                        // picked photo alive on disk.
+                        await backgrounds.remove(r.id);
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -266,11 +272,15 @@ class CharactersTabState extends State<CharactersTab>
                         );
                         unawaited(_load());
                       } catch (e) {
+                        // The localized message only: appending the exception
+                        // put untranslated internals on screen in every
+                        // language.
+                        debugPrint('Deleting a friend failed: $e');
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              '${context.tr('charactersDeleteFailed')}: $e',
+                              context.tr('charactersDeleteFailed'),
                             ),
                           ),
                         );

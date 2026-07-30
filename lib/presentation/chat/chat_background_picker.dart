@@ -97,8 +97,13 @@ class _ChatBackgroundPickerBodyState extends State<_ChatBackgroundPickerBody> {
       final stored = await _copyBgToAppDir(File(cropped));
       if (!mounted) return;
       setState(() => _imagePath = stored);
-    } catch (_) {
-      // Best-effort; leave the current selection unchanged on failure.
+    } catch (e) {
+      debugPrint('Picking a chat background image failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('photoAccessFailed'))),
+        );
+      }
     } finally {
       if (mounted) setState(() => _picking = false);
     }
@@ -117,7 +122,13 @@ class _ChatBackgroundPickerBodyState extends State<_ChatBackgroundPickerBody> {
       await widget.store.set(widget.characterId, bg);
     } catch (e) {
       debugPrint('Applying the chat background failed: $e');
-      if (mounted) setState(() => _applying = false);
+      if (!mounted) return;
+      setState(() => _applying = false);
+      // Without this the sheet just sat there: the user tapped Apply, the
+      // background did not change, and nothing said why.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('commonSaveFailed'))),
+      );
       return;
     }
     if (!mounted) return;

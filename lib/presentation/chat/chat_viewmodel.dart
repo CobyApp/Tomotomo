@@ -350,20 +350,6 @@ class ChatViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> resetChat() async {
-    try {
-      await chatRepository.clearMessages(character);
-      _messages.clear();
-      messageController.clear();
-      _isGenerating = false;
-
-      aiChatRepository.resetChat();
-      _safeNotify();
-    } catch (e) {
-      debugPrint('Failed to reset chat: $e');
-    }
-  }
-
   /// Deletes the local room (and messages) and clears local state. Caller should pop the screen.
   Future<void> leaveRoom() async {
     if (_disposed) return;

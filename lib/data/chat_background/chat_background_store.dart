@@ -25,4 +25,9 @@ class ChatBackgroundStore {
   /// Persists [bg] for this room.
   Future<void> set(String characterId, ChatBackground bg) =>
       _box.put(_key(characterId), bg.toJson());
+
+  /// Drops this room's background. Called when a friend is deleted, whose entry
+  /// otherwise stayed in the box forever — and kept its image file alive, since
+  /// the orphan-image sweep treats any stored path as a live reference.
+  Future<void> remove(String characterId) => _box.delete(_key(characterId));
 }

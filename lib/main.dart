@@ -8,6 +8,7 @@ import 'app.dart';
 import 'core/di/injection.dart';
 import 'core/l10n/app_strings.dart';
 import 'core/local/hive_boxes.dart';
+import 'core/storage/orphan_image_pruner.dart';
 import 'core/locale/languages.dart';
 import 'core/notifications/local_notifications.dart';
 
@@ -26,6 +27,11 @@ void main() async {
   unawaited(onDeviceModelManager.resumeIfInterrupted());
 
   unawaited(_initAds());
+
+  // Housekeeping, not startup work: reclaims photo copies left behind by
+  // replaced avatars/backgrounds, abandoned picks and deleted friends. Startup
+  // is the only safe moment — see the function's docs.
+  unawaited(pruneOrphanImagesAtStartup());
 
   runApp(const App());
 }
