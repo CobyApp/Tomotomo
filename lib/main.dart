@@ -8,32 +8,66 @@ import 'app.dart';
 import 'core/di/injection.dart';
 import 'core/l10n/app_strings.dart';
 import 'core/local/hive_boxes.dart';
+import 'core/startup/startup_failure_app.dart';
 import 'core/storage/orphan_image_pruner.dart';
 import 'core/locale/languages.dart';
 import 'core/notifications/local_notifications.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _startApp();
+}
 
-  await Hive.initFlutter();
-  await openAllBoxes();
-
-  setupInjection();
-  await _primeAppLanguage();
-  await LocalNotifications.init();
-  await _configureDownloadNotifications();
-  await onDeviceModelManager.initialize();
-  // Continue an interrupted download automatically on relaunch.
-  unawaited(onDeviceModelManager.resumeIfInterrupted());
-
-  unawaited(_initAds());
-
-  // Housekeeping, not startup work: reclaims photo copies left behind by
-  // replaced avatars/backgrounds, abandoned picks and deleted friends. Startup
-  // is the only safe moment — see the function's docs.
-  unawaited(pruneOrphanImagesAtStartup());
+/// Initializes everything the app needs, then runs it.
+///
+/// A failure here used to propagate out of `main`, so `runApp` was never reached
+/// and the launch died on a blank screen with nothing said. The likeliest causes
+/// — a corrupted box, a full disk — are also the ones a user cannot diagnose, and
+/// the only recovery they can think of is deleting the app, which takes the
+/// 2.6 GB model and every saved conversation with it.
+Future<void> _startApp() async {
+  try {
+    // Each step runs at most once across retries: re-initializing the ad SDK or
+    // the model manager because a *later* step failed would trade one problem
+    // for another.
+    await _once('hive', () async {
+      await Hive.initFlutter();
+      await openAllBoxes();
+    });
+    await _once('injection', () async {
+      setupInjection();
+      await _primeAppLanguage();
+    });
+    await _once('notifications', () async {
+      await LocalNotifications.init();
+      await _configureDownloadNotifications();
+    });
+    await _once('model', () async {
+      await onDeviceModelManager.initialize();
+      // Continue an interrupted download automatically on relaunch.
+      unawaited(onDeviceModelManager.resumeIfInterrupted());
+    });
+    await _once('ads', () async => unawaited(_initAds()));
+    // Housekeeping, not startup work: reclaims photo copies left behind by
+    // replaced avatars/backgrounds, abandoned picks and deleted friends. Startup
+    // is the only safe moment — see the function's docs.
+    await _once('prune', () async => unawaited(pruneOrphanImagesAtStartup()));
+  } catch (e, st) {
+    debugPrint('Startup failed: $e\n$st');
+    runApp(StartupFailureApp(onRetry: () => unawaited(_startApp())));
+    return;
+  }
 
   runApp(const App());
+}
+
+/// Startup steps that have already succeeded, so a retry does not repeat them.
+final Set<String> _completedStartupSteps = <String>{};
+
+Future<void> _once(String step, Future<void> Function() body) async {
+  if (_completedStartupSteps.contains(step)) return;
+  await body();
+  _completedStartupSteps.add(step);
 }
 
 /// Loads the saved UI language into [appLanguageCode] before anything that has
