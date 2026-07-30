@@ -3,6 +3,13 @@ import 'package:flutter/material.dart';
 import 'paper/paper_theme.dart';
 
 /// Shared layout and typography tokens for shell tabs and list-heavy screens.
+/// Smallest comfortable tap target, from the Apple HIG and WCAG 2.5.5 (44pt).
+///
+/// Applied to the tap area, not the drawn shape: the sticker look depends on the
+/// pill and badge sizes, so controls keep their visual size and gain the
+/// difference as hit area.
+const double kMinTapTarget = 44;
+
 abstract final class AppSpacing {
   static const double pageH = 20;
   static const double pageTop = 12;

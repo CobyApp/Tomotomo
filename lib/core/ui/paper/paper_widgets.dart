@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../app_tokens.dart';
 import 'paper_loading.dart';
 import 'paper_theme.dart';
 import 'paper_tokens.dart';
@@ -45,35 +47,46 @@ class PaperChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
+    // The pill measures 42pt tall, 2pt under the 44pt minimum, and chips are the
+    // only way to pick a level / language / notebook segment. The InkWell — the
+    // part that receives the tap — is stretched to 44 while the pill keeps its
+    // size, so the sticker look is unchanged. The pill is opaque, so it already
+    // hid the ink splash; that does not change either.
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(PaperRadii.pill),
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-          foregroundDecoration: selected
-              ? stickerGloss(
-                  borderRadius: BorderRadius.circular(PaperRadii.pill),
-                  strength: 0.22,
-                )
-              : null,
-          decoration: BoxDecoration(
-            // Sticker chip: hotpink fill when selected, ink border + hard shadow.
-            color: selected ? p.coral : p.card,
-            borderRadius: BorderRadius.circular(PaperRadii.pill),
-            border: Border.all(color: p.ink, width: 2),
-            boxShadow: [
-              BoxShadow(color: p.hardShadow, offset: const Offset(2, 2)),
-            ],
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected ? Colors.white : p.ink,
-              fontWeight: FontWeight.w800,
-              fontSize: 14,
+        child: SizedBox(
+          height: kMinTapTarget,
+          child: Center(
+            widthFactor: 1,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+              foregroundDecoration: selected
+                  ? stickerGloss(
+                      borderRadius: BorderRadius.circular(PaperRadii.pill),
+                      strength: 0.22,
+                    )
+                  : null,
+              decoration: BoxDecoration(
+                // Sticker chip: hotpink fill when selected, ink border + hard shadow.
+                color: selected ? p.coral : p.card,
+                borderRadius: BorderRadius.circular(PaperRadii.pill),
+                border: Border.all(color: p.ink, width: 2),
+                boxShadow: [
+                  BoxShadow(color: p.hardShadow, offset: const Offset(2, 2)),
+                ],
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: selected ? Colors.white : p.ink,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
+              ),
             ),
           ),
         ),
@@ -104,11 +117,7 @@ class _PaperCardState extends State<PaperCard> {
     final tappable = widget.onTap != null;
     final card = AnimatedContainer(
       duration: const Duration(milliseconds: 90),
-      transform: Matrix4.translationValues(
-        _down ? 2 : 0,
-        _down ? 2 : 0,
-        0,
-      ),
+      transform: Matrix4.translationValues(_down ? 2 : 0, _down ? 2 : 0, 0),
       padding: widget.padding ?? const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: p.card,
@@ -308,7 +317,10 @@ class _PaperRoundButtonState extends State<PaperRoundButton> {
         width: widget.size,
         height: widget.size,
         transform: Matrix4.translationValues(_down ? 2 : 0, _down ? 2 : 0, 0),
-        foregroundDecoration: stickerGloss(shape: BoxShape.circle, strength: 0.3),
+        foregroundDecoration: stickerGloss(
+          shape: BoxShape.circle,
+          strength: 0.3,
+        ),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
@@ -424,7 +436,10 @@ class PaperEntrance extends StatelessWidget {
       curve: Curves.easeOutCubic,
       builder: (context, t, child) => Opacity(
         opacity: t.clamp(0.0, 1.0),
-        child: Transform.translate(offset: Offset(0, (1 - t) * 18), child: child),
+        child: Transform.translate(
+          offset: Offset(0, (1 - t) * 18),
+          child: child,
+        ),
       ),
       child: child,
     );

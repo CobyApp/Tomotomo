@@ -557,6 +557,10 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                 ),
                 keyboardType: TextInputType.url,
                 autocorrect: false,
+                // The keyboard's Return did nothing here, so the only way to
+                // submit a pasted URL was to reach for the button.
+                textInputAction: TextInputAction.go,
+                onSubmitted: (_) => _importPersonaFromXUrl(),
               ),
               const SizedBox(height: 14),
               PaperButton(
@@ -780,6 +784,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                     prefixIcon: Icon(Icons.badge_outlined, color: p.coral),
                   ),
                   textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
                   validator: (v) => (v == null || v.trim().isEmpty)
                       ? context.tr('nameRequired')
                       : null,
@@ -797,6 +802,7 @@ class _CustomCharacterEditorBodyState extends State<CustomCharacterEditorBody> {
                     ),
                   ),
                   maxLength: kTaglineMaxChars,
+                  textInputAction: TextInputAction.next,
                 ),
               ],
             ),

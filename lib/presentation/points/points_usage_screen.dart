@@ -239,7 +239,11 @@ class _BalanceCardState extends State<_BalanceCard>
                   shape: BoxShape.circle,
                   border: Border.all(color: p.ink, width: 2),
                 ),
-                child: Icon(Icons.auto_awesome_rounded, color: p.coral, size: 24),
+                // stars, not the sparkle: auto_awesome means "the AI is doing
+                // something" in model setup and the X auto-fill, so using it here
+                // gave one symbol two meanings. The other two points surfaces
+                // already use stars.
+                child: Icon(Icons.stars_rounded, color: p.coral, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(

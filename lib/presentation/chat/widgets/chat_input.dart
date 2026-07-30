@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/ui/app_tokens.dart';
 import '../../../core/ui/paper/paper_tokens.dart';
 import '../../../core/ui/paper/paper_widgets.dart';
 import '../../../domain/entities/character.dart';
@@ -67,8 +68,7 @@ class _ChatInputState extends State<ChatInput> {
   @override
   Widget build(BuildContext context) {
     final hasText = widget.controller.text.trim().isNotEmpty;
-    final canTapSend =
-        !widget.isGenerating && widget.canSendMessage && hasText;
+    final canTapSend = !widget.isGenerating && widget.canSendMessage && hasText;
     final p = context.paper;
 
     // One unified "sticker bar": the text field and the send button live
@@ -81,96 +81,111 @@ class _ChatInputState extends State<ChatInput> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (widget.showRetry && widget.onRetry != null && !widget.isGenerating)
+            if (widget.showRetry &&
+                widget.onRetry != null &&
+                !widget.isGenerating)
               ChatRetryNotice(onRetry: widget.onRetry!),
             Container(
-          padding: const EdgeInsets.fromLTRB(6, 5, 5, 5),
-          decoration: BoxDecoration(
-            color: p.card,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: p.ink, width: 2.5),
-            boxShadow: [
-              BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
-            ],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: widget.controller,
-                  // Not readOnly while a reply generates: EditableText drops its
-                  // input connection when readOnly, so the keyboard collapsed the
-                  // moment you sent — for the several seconds on-device inference
-                  // takes — and tapping the field did nothing. You can draft the
-                  // next line now; only SENDING is gated, by canTapSend.
-                  enabled: true,
-                  decoration: InputDecoration(
-                    hintText: widget.hintOverride ?? context.tr('chatInputHint'),
-                    hintStyle: TextStyle(
-                      color: p.inkSoft.withValues(alpha: 0.7),
-                      fontSize: 15,
-                    ),
-                    filled: false,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    isCollapsed: true,
-                    contentPadding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
-                  ),
-                  style: TextStyle(fontSize: 15.5, color: p.ink),
-                  maxLines: 5,
-                  minLines: 1,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) {
-                    if (widget.canSendMessage) widget.onSend();
-                  },
-                ),
+              padding: const EdgeInsets.fromLTRB(6, 5, 5, 5),
+              decoration: BoxDecoration(
+                color: p.card,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: p.ink, width: 2.5),
+                boxShadow: [
+                  BoxShadow(color: p.hardShadow, offset: const Offset(0, 3)),
+                ],
               ),
-              const SizedBox(width: 6),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 140),
-                width: 44,
-                height: 44,
-                foregroundDecoration: canTapSend
-                    ? stickerGloss(shape: BoxShape.circle, strength: 0.3)
-                    : null,
-                decoration: BoxDecoration(
-                  gradient: canTapSend
-                      ? LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [p.coral, p.coralDeep],
-                        )
-                      : null,
-                  color: canTapSend ? null : p.inkSoft.withValues(alpha: 0.25),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: p.ink, width: 2),
-                  boxShadow: canTapSend
-                      ? [BoxShadow(color: p.hardShadow, offset: const Offset(1, 2))]
-                      : null,
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    onTap: canTapSend ? widget.onSend : null,
-                    customBorder: const CircleBorder(),
-                    child: Center(
-                      child: Icon(
-                        widget.isGenerating
-                            ? Icons.more_horiz_rounded
-                            : Icons.arrow_upward_rounded,
-                        color: Colors.white,
-                        size: 22,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: widget.controller,
+                      // Not readOnly while a reply generates: EditableText drops its
+                      // input connection when readOnly, so the keyboard collapsed the
+                      // moment you sent — for the several seconds on-device inference
+                      // takes — and tapping the field did nothing. You can draft the
+                      // next line now; only SENDING is gated, by canTapSend.
+                      enabled: true,
+                      decoration: InputDecoration(
+                        hintText:
+                            widget.hintOverride ?? context.tr('chatInputHint'),
+                        hintStyle: TextStyle(
+                          color: p.inkSoft.withValues(alpha: 0.7),
+                          fontSize: 15,
+                        ),
+                        filled: false,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        isCollapsed: true,
+                        contentPadding: const EdgeInsets.fromLTRB(
+                          14,
+                          12,
+                          10,
+                          12,
+                        ),
+                      ),
+                      style: TextStyle(fontSize: 15.5, color: p.ink),
+                      maxLines: 5,
+                      minLines: 1,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) {
+                        if (widget.canSendMessage) widget.onSend();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 140),
+                    width: 44,
+                    height: 44,
+                    foregroundDecoration: canTapSend
+                        ? stickerGloss(shape: BoxShape.circle, strength: 0.3)
+                        : null,
+                    decoration: BoxDecoration(
+                      gradient: canTapSend
+                          ? LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [p.coral, p.coralDeep],
+                            )
+                          : null,
+                      color: canTapSend
+                          ? null
+                          : p.inkSoft.withValues(alpha: 0.25),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: p.ink, width: 2),
+                      boxShadow: canTapSend
+                          ? [
+                              BoxShadow(
+                                color: p.hardShadow,
+                                offset: const Offset(1, 2),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        onTap: canTapSend ? widget.onSend : null,
+                        customBorder: const CircleBorder(),
+                        child: Center(
+                          child: Icon(
+                            widget.isGenerating
+                                ? Icons.more_horiz_rounded
+                                : Icons.arrow_upward_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
             ),
           ],
         ),
@@ -207,23 +222,26 @@ class ChatRetryNotice extends StatelessWidget {
             ),
           ),
           if (onRetry != null) ...[
-          const SizedBox(width: 8),
-          TextButton(
-            onPressed: onRetry,
-            style: TextButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              minimumSize: const Size(0, 32),
-            ),
-            child: Text(
-              context.tr('retry'),
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: p.coralDeep,
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                // 32 was under the 44pt minimum, on the one control offered when a
+                // reply never arrived.
+                minimumSize: const Size(kMinTapTarget, kMinTapTarget),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                context.tr('retry'),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: p.coralDeep,
+                ),
               ),
             ),
-          ),
           ],
         ],
       ),

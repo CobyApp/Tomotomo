@@ -33,7 +33,12 @@ class ModelDownloadBanner extends StatelessWidget {
         final downloading = phase == OnDeviceModelPhase.downloading;
         final pct = (manager.snapshot.progress.clamp(0.0, 1.0) * 100).round();
         return Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.navDockInset, 0, AppSpacing.navDockInset, 8),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.navDockInset,
+            0,
+            AppSpacing.navDockInset,
+            8,
+          ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
@@ -44,7 +49,10 @@ class ModelDownloadBanner extends StatelessWidget {
                 ),
               ),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: p.card,
                   borderRadius: BorderRadius.circular(16),
@@ -108,7 +116,10 @@ class ModelDownloadBanner extends StatelessWidget {
                         style: TextButton.styleFrom(
                           visualDensity: VisualDensity.compact,
                           padding: const EdgeInsets.symmetric(horizontal: 10),
-                          minimumSize: Size.zero,
+                          // Size.zero plus shrinkWrap left this as tall as its
+                          // label — the smallest target in the app, on the retry
+                          // for a failed model install.
+                          minimumSize: const Size(kMinTapTarget, kMinTapTarget),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         child: Text(

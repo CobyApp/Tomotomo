@@ -160,8 +160,16 @@ class CharactersTabState extends State<CharactersTab>
                     child: _recordTile(e.$2, isMine: true),
                   ),
                 ),
+                // The same treatment the Chats and Word book tabs give an empty
+                // list — this was the only one showing a bare line of text
+                // inside the list. Reachable now that built-in friends can be
+                // deleted too.
                 if (visibleRecords.isEmpty)
-                  PaperEmptyHint(text: context.tr('charactersEmptyMyHint')),
+                  PaperEmptyState(
+                    icon: Icons.person_add_alt_1_rounded,
+                    title: context.tr('charactersEmptyTitle'),
+                    subtitle: context.tr('charactersEmptyHint'),
+                  ),
               ],
             ),
     );

@@ -122,7 +122,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _bootstrap() async {
     // 1) App language follows the device locale (no question asked).
     try {
-      final p = await context.read<ProfileRepository>().getProfile(_localUserId);
+      final p = await context.read<ProfileRepository>().getProfile(
+        _localUserId,
+      );
       if (p != null && mounted) {
         final devLang = normalizeLang(
           WidgetsBinding.instance.platformDispatcher.locale.languageCode,
@@ -328,17 +330,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   if (i == _pageCount - 1) _prefillFirstFriend();
                 },
                 children: [
-                  _IntroSlide(
+                  IntroSlide(
                     assetImage: 'assets/images/app_icon.png',
                     title: context.tr('onboardingIntro1Title'),
                     body: context.tr('onboardingIntro1Body'),
                   ),
-                  _IntroSlide(
+                  IntroSlide(
                     icon: Icons.menu_book_rounded,
                     title: context.tr('onboardingIntro2Title'),
                     body: context.tr('onboardingIntro2Body'),
                   ),
-                  _IntroSlide(
+                  IntroSlide(
                     icon: Icons.offline_bolt_rounded,
                     title: context.tr('onboardingIntro3Title'),
                     body: context.tr('onboardingIntro3Body'),
@@ -363,7 +365,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
             const _DownloadStatus(),
-            _Dots(count: _pageCount, index: _page, color: p.coral, edge: p.cardEdge),
+            _Dots(
+              count: _pageCount,
+              index: _page,
+              color: p.coral,
+              edge: p.cardEdge,
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.pageH,
@@ -410,14 +417,21 @@ class _DownloadStatus extends StatelessWidget {
           lead = Icon(Icons.check_circle_rounded, size: 16, color: p.coral);
           title = context.tr('modelDlReady');
         } else if (phase == OnDeviceModelPhase.error) {
-          lead = Icon(Icons.error_outline_rounded, size: 16, color: p.coralDeep);
+          lead = Icon(
+            Icons.error_outline_rounded,
+            size: 16,
+            color: p.coralDeep,
+          );
           title = context.tr('modelDlError');
           trailing = TextButton(
             onPressed: () => manager.retryInstall(),
             style: TextButton.styleFrom(
               foregroundColor: p.coralDeep,
               padding: const EdgeInsets.symmetric(horizontal: 6),
-              minimumSize: const Size(0, 30),
+              // shrinkWrap drops Material's own padding, so the declared minimum
+              // is the whole tap target; 30 left the only way to recover a failed
+              // model install under the 44pt minimum.
+              minimumSize: const Size(kMinTapTarget, kMinTapTarget),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               textStyle: const TextStyle(fontWeight: FontWeight.w800),
             ),
@@ -443,7 +457,12 @@ class _DownloadStatus extends StatelessWidget {
         }
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.pageH, 2, AppSpacing.pageH, 8),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.pageH,
+            2,
+            AppSpacing.pageH,
+            8,
+          ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
@@ -499,8 +518,12 @@ class _DownloadStatus extends StatelessWidget {
   }
 }
 
-class _IntroSlide extends StatelessWidget {
-  const _IntroSlide({
+/// One onboarding intro page. Public only so the text-scale overflow test can
+/// pump it: it lives in a height-constrained PageView, and a Column there has no
+/// slack to give when the user scales text up.
+class IntroSlide extends StatelessWidget {
+  const IntroSlide({
+    super.key,
     this.icon,
     this.assetImage,
     required this.title,
@@ -515,80 +538,99 @@ class _IntroSlide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.paper;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 8, 32, 8),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (assetImage != null)
-            Container(
-              width: 104,
-              height: 104,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: p.ink, width: 2.5),
-                // DecorationImage clips the image cleanly inside the border —
-                // no corner bleed like a clipped child image has.
-                image: DecorationImage(
-                  image: AssetImage(assetImage!),
-                  fit: BoxFit.cover,
+    // Scrollable, because the PageView gives this a fixed height and a Column
+    // cannot shrink: at larger text sizes the longest slide overflowed, which is
+    // silent in release and ships as clipped text.
+    //
+    // The minimum height is the viewport, so the content still centres when it
+    // fits — inside a plain scroll view the height is unbounded and
+    // MainAxisAlignment.center silently becomes top alignment.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(32, 8, 32, 8),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight - 16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (assetImage != null)
+                Container(
+                  width: 104,
+                  height: 104,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: p.ink, width: 2.5),
+                    // DecorationImage clips the image cleanly inside the border —
+                    // no corner bleed like a clipped child image has.
+                    image: DecorationImage(
+                      image: AssetImage(assetImage!),
+                      fit: BoxFit.cover,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: p.hardShadow,
+                        offset: const Offset(3, 3),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                // Same pastel-sticker look as slide 1's app icon: soft pink→blue
+                // gradient tile, ink border, hard offset shadow, gloss, and a
+                // coral-gradient glyph — so the three slides read as one set.
+                Container(
+                  width: 104,
+                  height: 104,
+                  foregroundDecoration: stickerGloss(
+                    borderRadius: BorderRadius.circular(28),
+                    strength: 0.22,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFFFFE0F4), Color(0xFFD8ECFF)],
+                    ),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: p.ink, width: 2.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: p.hardShadow,
+                        offset: const Offset(3, 3),
+                      ),
+                    ],
+                  ),
+                  child: ShaderMask(
+                    shaderCallback: (rect) => LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [p.coral, p.coralDeep],
+                    ).createShader(rect),
+                    child: Icon(icon, size: 48, color: Colors.white),
+                  ),
                 ),
-                boxShadow: [
-                  BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
-                ],
-              ),
-            )
-          else
-            // Same pastel-sticker look as slide 1's app icon: soft pink→blue
-            // gradient tile, ink border, hard offset shadow, gloss, and a
-            // coral-gradient glyph — so the three slides read as one set.
-            Container(
-              width: 104,
-              height: 104,
-              foregroundDecoration: stickerGloss(
-                borderRadius: BorderRadius.circular(28),
-                strength: 0.22,
-              ),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFFFFE0F4), Color(0xFFD8ECFF)],
+              const SizedBox(height: 28),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: cuteDisplay(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: p.ink,
                 ),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: p.ink, width: 2.5),
-                boxShadow: [
-                  BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
-                ],
               ),
-              child: ShaderMask(
-                shaderCallback: (rect) => LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [p.coral, p.coralDeep],
-                ).createShader(rect),
-                child: Icon(icon, size: 48, color: Colors.white),
+              const SizedBox(height: 12),
+              Text(
+                body,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: p.inkSoft,
+                  height: 1.55,
+                ),
               ),
-            ),
-          const SizedBox(height: 28),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: cuteDisplay(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: p.ink,
-            ),
+            ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            body,
-            textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: p.inkSoft, height: 1.55),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -800,6 +842,9 @@ class _ProfilePage extends StatelessWidget {
         TextField(
           controller: myNameController,
           textCapitalization: TextCapitalization.words,
+          // The only field on this step, so Return should dismiss the keyboard
+          // rather than sit there doing nothing.
+          textInputAction: TextInputAction.done,
           style: TextStyle(color: p.ink, fontSize: 15),
           decoration: InputDecoration(
             hintText: context.tr('onboardingYourNameHint'),
@@ -910,7 +955,10 @@ class _FirstFriendPage extends StatelessWidget {
                           )
                         : null,
                     boxShadow: [
-                      BoxShadow(color: p.hardShadow, offset: const Offset(3, 3)),
+                      BoxShadow(
+                        color: p.hardShadow,
+                        offset: const Offset(3, 3),
+                      ),
                     ],
                   ),
                   child: pickingAvatar
@@ -1025,7 +1073,10 @@ class _FirstFriendPage extends StatelessWidget {
         hintStyle: TextStyle(color: p.inkSoft.withValues(alpha: 0.7)),
         filled: true,
         fillColor: p.card,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: radius,
           borderSide: BorderSide(color: p.ink, width: 2),

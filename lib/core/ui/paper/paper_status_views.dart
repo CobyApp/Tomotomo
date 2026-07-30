@@ -72,27 +72,6 @@ class PaperErrorBody extends StatelessWidget {
   }
 }
 
-/// PAPER-CARTOON inline empty hint. Mirrors [AppEmptyHint]'s public API ([text]).
-class PaperEmptyHint extends StatelessWidget {
-  const PaperEmptyHint({super.key, required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 16),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: context.paper.inkSoft,
-          height: 1.35,
-        ),
-      ),
-    );
-  }
-}
-
 /// PAPER-CARTOON empty state. Mirrors [AppEmptyState]'s public API
 /// ([icon], [title], [subtitle], [emoji]).
 class PaperEmptyState extends StatelessWidget {
