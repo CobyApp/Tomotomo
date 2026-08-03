@@ -12,6 +12,26 @@ List<String> cuteDisplayFallback(String? language) =>
     ? const ['Pretendard']
     : const ['CuteJp', 'Pretendard'];
 
+/// Body font for [language] (null = the app UI language), or null to let the
+/// platform choose.
+///
+/// Pretendard carries the whole Hangul syllabary and both kana, but **no Han at
+/// all** — measured: 0 of 20,992 CJK ideographs. Japanese runs 30–50% kanji, so
+/// every Japanese sentence in the app was drawn in two typefaces at once, kana
+/// from Pretendard and kanji from whatever the platform substituted. Not an edge
+/// case: the primary language, every screen.
+///
+/// Japanese therefore uses the platform font (Hiragino Sans on iOS, Noto Sans
+/// CJK on Android), which covers kana and kanji in one consistent face and costs
+/// no bundle size. The brand voice stays in the display font — [cuteDisplay]
+/// still uses M PLUS Rounded 1c for Japanese titles and the wordmark.
+///
+/// Korean and English keep Pretendard, which covers them fully. Chinese already
+/// resolves entirely to the platform font, since it is all Han and Pretendard
+/// has none — consistent already, so nothing changes there.
+String? bodyFontFamily([String? language]) =>
+    normalizeLang(language ?? appLanguageCode) == 'ja' ? null : 'Pretendard';
+
 /// Cute display text style: Korean via Do Hyeon (CuteKo), Japanese kana/kanji
 /// via M PLUS Rounded 1c (CuteJp), falling back to Pretendard for anything else.
 ///
@@ -69,7 +89,7 @@ abstract final class PaperTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
-      fontFamily: 'Pretendard',
+      fontFamily: bodyFontFamily(),
       // InkSparkle uses a shader path that has triggered EXC_BAD_ACCESS on some iOS devices (Skia).
       splashFactory: InkRipple.splashFactory,
       scaffoldBackgroundColor: colors.paperBg,
@@ -117,7 +137,7 @@ abstract final class PaperTheme {
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
-            fontFamily: 'Pretendard',
+            fontFamily: bodyFontFamily(),
             fontSize: 11,
             letterSpacing: 0.2,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
@@ -148,7 +168,7 @@ abstract final class PaperTheme {
         elevation: 6,
         insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         contentTextStyle: TextStyle(
-          fontFamily: 'Pretendard',
+          fontFamily: bodyFontFamily(),
           color: onCoralDeep,
           fontWeight: FontWeight.w700,
           fontSize: 14,
@@ -170,8 +190,8 @@ abstract final class PaperTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(PaperRadii.button),
           ),
-          textStyle: const TextStyle(
-            fontFamily: 'Pretendard',
+          textStyle: TextStyle(
+            fontFamily: bodyFontFamily(),
             fontWeight: FontWeight.w700,
             fontSize: 15,
           ),
@@ -200,12 +220,12 @@ abstract final class PaperTheme {
           horizontal: 20,
           vertical: 16,
         ),
-        hintStyle: TextStyle(fontFamily: 'Pretendard', color: colors.inkSoft),
+        hintStyle: TextStyle(fontFamily: bodyFontFamily(), color: colors.inkSoft),
       ),
       textTheme: TextTheme(
-        displayLarge: TextStyle(fontFamily: 'Pretendard', color: colors.ink),
-        displayMedium: TextStyle(fontFamily: 'Pretendard', color: colors.ink),
-        displaySmall: TextStyle(fontFamily: 'Pretendard', color: colors.ink),
+        displayLarge: TextStyle(fontFamily: bodyFontFamily(), color: colors.ink),
+        displayMedium: TextStyle(fontFamily: bodyFontFamily(), color: colors.ink),
+        displaySmall: TextStyle(fontFamily: bodyFontFamily(), color: colors.ink),
         headlineLarge: cuteDisplay(
           fontSize: 28,
           fontWeight: FontWeight.w800,
@@ -232,36 +252,36 @@ abstract final class PaperTheme {
           color: colors.ink,
         ),
         titleSmall: TextStyle(
-          fontFamily: 'Pretendard',
+          fontFamily: bodyFontFamily(),
           fontWeight: FontWeight.w600,
           color: colors.ink,
         ),
         bodyLarge: TextStyle(
-          fontFamily: 'Pretendard',
+          fontFamily: bodyFontFamily(),
           fontSize: 15,
           height: 1.4,
           color: colors.ink,
         ),
         bodyMedium: TextStyle(
-          fontFamily: 'Pretendard',
+          fontFamily: bodyFontFamily(),
           fontSize: 14,
           height: 1.4,
           color: colors.ink,
         ),
         bodySmall: TextStyle(
-          fontFamily: 'Pretendard',
+          fontFamily: bodyFontFamily(),
           fontSize: 14,
           height: 1.4,
           color: colors.ink,
         ),
         labelLarge: TextStyle(
-          fontFamily: 'Pretendard',
+          fontFamily: bodyFontFamily(),
           fontWeight: FontWeight.w700,
           color: colors.ink,
         ),
-        labelMedium: TextStyle(fontFamily: 'Pretendard', color: colors.ink),
+        labelMedium: TextStyle(fontFamily: bodyFontFamily(), color: colors.ink),
         // Secondary/caption use — matches Material's onSurfaceVariant pattern.
-        labelSmall: TextStyle(fontFamily: 'Pretendard', color: colors.inkSoft),
+        labelSmall: TextStyle(fontFamily: bodyFontFamily(), color: colors.inkSoft),
       ),
     );
   }
