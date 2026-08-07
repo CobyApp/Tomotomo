@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
@@ -14,11 +15,16 @@ import '../locale/languages.dart';
 /// It cannot rely on the app's providers (the boxes they need are exactly what
 /// failed), so it resolves its own strings from the device locale.
 class StartupFailureApp extends StatelessWidget {
-  const StartupFailureApp({super.key, required this.onRetry});
+  const StartupFailureApp({super.key, required this.onRetry, this.detail});
+
+  /// Which step failed, shown only in debug builds. Users must never be given
+  /// internals, but without this a startup failure is opaque to whoever has to
+  /// fix it — there is no running app left to log from.
 
   /// Re-runs initialization. Corruption will not fix itself, but a transient
   /// cause (storage pressure, a locked file) can clear.
   final VoidCallback onRetry;
+  final String? detail;
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +70,17 @@ class StartupFailureApp extends StatelessWidget {
                   onPressed: onRetry,
                   child: Text(tr('startupRetry')),
                 ),
+                if (kDebugMode && detail != null) ...[
+                  const SizedBox(height: 20),
+                  Text(
+                    detail!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF9A93A6),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

@@ -48,6 +48,22 @@ class OnDeviceModelManager extends ChangeNotifier {
   OnDeviceModelSnapshot get snapshot => _snapshot;
   bool get isReady => _snapshot.isReady;
 
+  /// Presents the model as installed without touching the runtime.
+  ///
+  /// For the store-screenshot entry point only: no simulator has the 2.6 GB
+  /// model, so every chat screen would show the "preparing" bar instead of a
+  /// conversation. The only caller is `lib/main_store_shots.dart`, which no
+  /// release build targets. Not @visibleForTesting — that entry point is not a
+  /// test, and the annotation would flag its one legitimate use.
+  void debugMarkReadyForScreenshots() {
+    _setSnapshot(
+      const OnDeviceModelSnapshot(
+        phase: OnDeviceModelPhase.ready,
+        progress: 1,
+      ),
+    );
+  }
+
   Future<void> initialize() async {
     try {
       await _runtime.initialize();

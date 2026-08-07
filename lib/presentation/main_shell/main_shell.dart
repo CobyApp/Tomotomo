@@ -19,14 +19,18 @@ import '../notebook/word_book_screen.dart';
 import '../on_device/model_download_banner.dart';
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  const MainShell({super.key, this.initialTab = 0});
+
+  /// Which tab to open on. Used by the store-screenshot entry point so a capture
+  /// run needs no simulated taps; the app always starts on Friends otherwise.
+  final int initialTab;
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell> {
-  int _index = 0;
+  late int _index = widget.initialTab;
   static const String _localUserId = 'local';
   final GlobalKey<WordBookScreenState> _wordBookKey =
       GlobalKey<WordBookScreenState>();

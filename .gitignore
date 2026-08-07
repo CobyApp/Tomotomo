@@ -51,3 +51,6 @@ android/key.properties
 ios/Flutter/AdMob.xcconfig
 android/app/keystore.jks
 .claude/
+
+# Raw store screenshots are build output.
+build/store_shots/

@@ -28,7 +28,15 @@ import 'core/ui/paper/paper_tokens.dart';
 import 'core/version/update_gate.dart';
 
 class App extends StatelessWidget {
-  const App({super.key});
+  const App({super.key, this.showDebugBanner = true, this.initialTab = 0});
+
+  /// Passed through to [MainShell]; see there.
+  final int initialTab;
+
+  /// Off only for the store-screenshot entry point, where the debug ribbon would
+  /// sit across the corner of every capture. Simulator builds cannot be release
+  /// builds, so the ribbon cannot be removed by build mode.
+  final bool showDebugBanner;
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +96,7 @@ class App extends StatelessWidget {
       child: Builder(
         builder: (context) {
           return MaterialApp(
+            debugShowCheckedModeBanner: showDebugBanner,
             scaffoldMessengerKey: appScaffoldMessengerKey,
             title: 'トモトモ',
             theme: context.watch<ThemeNotifier>().theme,
@@ -133,7 +142,7 @@ class App extends StatelessWidget {
                 if (onboarding.onboarded == false) {
                   return const OnboardingScreen();
                 }
-                return const MainShell();
+                return MainShell(initialTab: initialTab);
               },
             ),
           );

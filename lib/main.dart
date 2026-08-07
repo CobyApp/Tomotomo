@@ -52,9 +52,23 @@ Future<void> _startApp() async {
     // replaced avatars/backgrounds, abandoned picks and deleted friends. Startup
     // is the only safe moment — see the function's docs.
     await _once('prune', () async => unawaited(pruneOrphanImagesAtStartup()));
+  } on _StartupStepError catch (e, st) {
+    debugPrint('Startup failed at ${e.step}: ${e.cause}\n$st');
+    runApp(
+      StartupFailureApp(
+        onRetry: () => unawaited(_startApp()),
+        detail: '${e.step}: ${e.cause}',
+      ),
+    );
+    return;
   } catch (e, st) {
     debugPrint('Startup failed: $e\n$st');
-    runApp(StartupFailureApp(onRetry: () => unawaited(_startApp())));
+    runApp(
+      StartupFailureApp(
+        onRetry: () => unawaited(_startApp()),
+        detail: '$e',
+      ),
+    );
     return;
   }
 
@@ -66,8 +80,24 @@ final Set<String> _completedStartupSteps = <String>{};
 
 Future<void> _once(String step, Future<void> Function() body) async {
   if (_completedStartupSteps.contains(step)) return;
-  await body();
+  try {
+    await body();
+  } catch (e) {
+    // Tagged with the step: a bare exception here leaves whoever has to fix it
+    // guessing, since the app never got far enough to log anything else.
+    throw _StartupStepError(step, e);
+  }
   _completedStartupSteps.add(step);
+}
+
+/// A startup failure, carrying which step it came from.
+class _StartupStepError implements Exception {
+  _StartupStepError(this.step, this.cause);
+  final String step;
+  final Object cause;
+
+  @override
+  String toString() => 'startup step "$step" failed: $cause';
 }
 
 /// Loads the saved UI language into [appLanguageCode] before anything that has
