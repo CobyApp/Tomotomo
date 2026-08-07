@@ -170,6 +170,16 @@ Future<void> _seed(String lang) async {
           timestamp: stamp,
           lineTranslation: turn.translation,
           explanation: turn.explanation,
+          vocabulary: turn.vocabulary.isEmpty
+              ? null
+              : [
+                  for (final w in turn.vocabulary)
+                    Vocabulary(
+                      word: w.term,
+                      reading: w.reading,
+                      meaning: w.meaning,
+                    ),
+                ],
         ),
       );
     }

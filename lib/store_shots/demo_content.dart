@@ -14,12 +14,17 @@ class DemoTurn {
     required this.fromLearner,
     this.translation,
     this.explanation,
+    this.vocabulary = const [],
   });
 
   final String text;
   final bool fromLearner;
   final String? translation;
   final String? explanation;
+
+  /// Words the study sheet lists under the translation. Without these the sheet
+  /// shows only its empty-vocabulary line, which is not what the feature does.
+  final List<DemoWord> vocabulary;
 }
 
 class DemoFriend {
@@ -180,12 +185,13 @@ List<DemoTurn> _japaneseConversation(String uiLang) {
       fromLearner: false,
       translation: under[3],
       explanation: '「ちょっと」は程度をやわらげる言い方です。',
+      vocabulary: _japaneseWords(uiLang),
     ),
   ];
 }
 
 /// A Korean conversation for the Japanese listing.
-List<DemoTurn> _koreanConversation() => const [
+List<DemoTurn> _koreanConversation() => [
   DemoTurn(text: '오늘 뭐 했어?', fromLearner: true, translation: '今日は何をしたの？'),
   DemoTurn(
     text: '친구랑 농구했어! 완전 재밌었어.',
@@ -199,6 +205,11 @@ List<DemoTurn> _koreanConversation() => const [
     fromLearner: false,
     translation: '今度いっしょに行こう！ぼくが教えてあげる。',
     explanation: '「-을게」は話し手の意思をやわらかく伝えます。',
+    vocabulary: [
+      DemoWord(term: '다음에', reading: 'タウメ', meaning: '今度、次に'),
+      DemoWord(term: '같이', reading: 'カチ', meaning: 'いっしょに'),
+      DemoWord(term: '알려주다', reading: 'アルリョジュダ', meaning: '教えてあげる'),
+    ],
   ),
 ];
 

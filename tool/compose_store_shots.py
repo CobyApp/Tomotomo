@@ -18,6 +18,7 @@ is easy to miss in a language you do not read.
 """
 from __future__ import annotations
 
+import shutil
 import struct
 import sys
 from pathlib import Path
@@ -51,29 +52,33 @@ FONTS = {
 # the top of it, in a loading state, which is the worst thing to lead a store
 # listing with. The multilingual point it would have carried is made better by
 # the friends screen, whose language chips actually show it.
-SCREENS = ["chat", "friends", "words", "chats"]
+SCREENS = ["chat", "sheet", "friends", "words", "chats"]
 
 CAPTIONS = {
     "ko": {
         "chat": "대화하면서\n자연스럽게 배워요",
+        "sheet": "모르는 문장은\n번역과 단어까지 한 번에",
         "friends": "네 가지 언어의 친구를\n직접 만들어요",
         "words": "저장한 표현으로\n카드 복습",
         "chats": "인터넷 없이\n기기 안에서 대화",
     },
     "ja": {
         "chat": "話しながら\n自然に身につく",
+        "sheet": "わからない一文は\n訳と単語をその場で",
         "friends": "4つの言語の友だちを\n自分で作れる",
         "words": "保存した表現を\nカードで復習",
         "chats": "ネットなしで\n端末の中だけで会話",
     },
     "en": {
         "chat": "Learn a language\nby actually chatting",
+        "sheet": "Tap any line for the\ntranslation and its words",
         "friends": "Make friends in\nany of four languages",
         "words": "Review saved phrases\nas flashcards",
         "chats": "Runs on your device,\nwith no internet",
     },
     "zh": {
         "chat": "在聊天中\n自然学会",
+        "sheet": "看不懂的句子\n译文和单词一起看",
         "friends": "创建四种语言的\n专属朋友",
         "words": "用收藏的表达\n卡片复习",
         "chats": "无需联网\n完全在设备上对话",
@@ -220,6 +225,12 @@ def main() -> int:
         # you cannot read — so refuse rather than ship it.
         print("\n".join(problems), file=sys.stderr)
         return 1
+
+    # Clear first: renumbering the screens leaves the previous run's files
+    # beside the new ones (2-friends next to 2-sheet), and the wrong set is easy
+    # to upload by mistake.
+    if OUT.exists():
+        shutil.rmtree(OUT)
 
     written = 0
     for store, size in SIZES.items():

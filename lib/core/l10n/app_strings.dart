@@ -184,7 +184,7 @@ class AppStrings {
     'notebookWordDeleted': '단어를 삭제했습니다.',
     'notebookLegacyNoteLabel': '(이전 버전에서 저장된 긴 메모)',
     'expressionMissingVocabulary':
-        '단어·어휘 항목이 비어 있습니다. AI 응답이 JSON 형식인지 확인해 주세요.',
+        '이 문장에서는 따로 뽑은 단어가 없어요. 번역은 위에서 볼 수 있어요.',
     'expressionFullTranslationLabel': '문장 번역',
     'expressionVocabularyLabel': '어휘',
     'close': '닫기',
@@ -459,7 +459,7 @@ class AppStrings {
     'notebookDeleteTitle': '単語を削除',
     'notebookWordDeleted': '単語を削除しました。',
     'notebookLegacyNoteLabel': '（以前のバージョンで保存された長いメモ）',
-    'expressionMissingVocabulary': '語彙が空です。AIの応答がJSON形式か確認してください。',
+    'expressionMissingVocabulary': 'この文から取り出した単語はありません。訳は上でご覧いただけます。',
     'expressionFullTranslationLabel': '文の翻訳',
     'expressionVocabularyLabel': '語彙',
     'close': '閉じる',
@@ -753,7 +753,7 @@ class AppStrings {
     'notebookWordDeleted': 'Word deleted.',
     'notebookLegacyNoteLabel': '(Long note saved from a previous version)',
     'expressionMissingVocabulary':
-        'The word/vocabulary field is empty. Please check that the AI response is in JSON format.',
+        "No words were picked out from this line. You can still read the translation above.",
     'expressionFullTranslationLabel': 'Sentence Translation',
     'expressionVocabularyLabel': 'Vocabulary',
     'close': 'Close',
@@ -1034,7 +1034,7 @@ class AppStrings {
     'notebookWordDeleted': '单词已删除。',
     'notebookLegacyNoteLabel': '（旧版本保存的长备注）',
     'expressionMissingVocabulary':
-        '单词、词汇项为空。请确认AI回复是否为JSON格式。',
+        '这句话没有提取出单词。上方仍可查看译文。',
     'expressionFullTranslationLabel': '句子翻译',
     'expressionVocabularyLabel': '词汇',
     'close': '关闭',
