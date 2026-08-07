@@ -54,3 +54,5 @@ android/app/keystore.jks
 
 # Raw store screenshots are build output.
 build/store_shots/
+
+build/store_shots_android/

@@ -26,10 +26,17 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
-RAW = ROOT / "build" / "store_shots"
-OUT = RAW / "out"
+RAW_IOS = ROOT / "build" / "store_shots"
+RAW_ANDROID = ROOT / "build" / "store_shots_android"
+OUT = ROOT / "build" / "store_shots" / "out"
 
-SIZES = {"appstore": (1320, 2868), "play": (1080, 1920)}
+# Each store gets captures from its own platform. Rescaling an iPhone capture to
+# a Play size still shows the iOS status bar and the Dynamic Island, which is
+# plainly the wrong device in an Android listing.
+STORES = {
+    "appstore": {"size": (1320, 2868), "raw": RAW_IOS},
+    "play": {"size": (1080, 1920), "raw": RAW_ANDROID},
+}
 
 TOP = (247, 201, 245)
 BOTTOM = (221, 233, 250)
@@ -205,8 +212,18 @@ def compose(shot: Path, caption: str, font_path: Path, size: tuple[int, int]) ->
 
 
 def main() -> int:
-    if not RAW.exists():
-        print(f"No captures in {RAW}; run tool/store_shots.sh first.", file=sys.stderr)
+    missing_raw = [
+        f"{name}: {spec['raw']}"
+        for name, spec in STORES.items()
+        if not spec["raw"].exists()
+    ]
+    if missing_raw:
+        print(
+            "Missing captures — run tool/store_shots.sh (iOS) and "
+            "tool/store_shots_android.sh (Android) first:\n  "
+            + "\n  ".join(missing_raw),
+            file=sys.stderr,
+        )
         return 1
 
     problems: list[str] = []
@@ -233,18 +250,24 @@ def main() -> int:
         shutil.rmtree(OUT)
 
     written = 0
-    for store, size in SIZES.items():
+    gaps: list[str] = []
+    for store, spec in STORES.items():
         for lang, screens in CAPTIONS.items():
             out_dir = OUT / store / lang
             out_dir.mkdir(parents=True, exist_ok=True)
             for index, screen in enumerate(SCREENS, start=1):
-                shot = RAW / lang / f"{screen}.png"
+                shot = spec["raw"] / lang / f"{screen}.png"
                 if not shot.exists():
-                    print(f"missing capture: {shot}", file=sys.stderr)
+                    gaps.append(str(shot))
                     continue
-                image = compose(shot, screens[screen], FONTS[lang], size)
+                image = compose(shot, screens[screen], FONTS[lang], spec["size"])
                 image.save(out_dir / f"{index}-{screen}.png")
                 written += 1
+    if gaps:
+        # Silently skipping would ship a listing with a screen missing from one
+        # language, which nobody notices until the store rejects the set.
+        print("missing captures:\n  " + "\n  ".join(gaps), file=sys.stderr)
+        return 1
     print(f"Wrote {written} images to {OUT}")
     return 0
 
