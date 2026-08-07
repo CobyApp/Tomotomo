@@ -40,6 +40,26 @@ class WordBookScreenState extends State<WordBookScreen>
   bool _langInitialized = false;
   WordBookRefreshNotifier? _refreshNotifier;
 
+  /// True once the user picks a segment by hand, after which the derived target
+  /// language stops overriding it.
+  bool _segmentChosenByUser = false;
+
+  /// Both language notifiers start on defaults and load from the profile
+  /// asynchronously, so this screen could bootstrap before either had its real
+  /// value: opening the app straight onto the word book resolved the target from
+  /// LocaleNotifier's initial 'ko', picked the wrong segment, and — because
+  /// _langInitialized was already true — kept it until the tab was re-selected.
+  /// Usually that meant an empty segment beside a full one.
+  FriendLanguageNotifier? _friendLanguage;
+  LocaleNotifier? _locale;
+
+  void _onLanguageResolved() {
+    if (!mounted || _segmentChosenByUser) return;
+    final target = _targetLanguageCode();
+    if (_langInitialized && target == _notebookLang) return;
+    unawaited(_bootstrapNotebookTab());
+  }
+
   /// Segments (`ko|ja|en|zh`) that currently have at least one saved word.
   List<String> _availableSegments = const [];
 
@@ -67,6 +87,10 @@ class WordBookScreenState extends State<WordBookScreen>
       if (!mounted) return;
       _refreshNotifier = context.read<WordBookRefreshNotifier>();
       _refreshNotifier!.addListener(_onWordBookRefreshRequested);
+      _friendLanguage = context.read<FriendLanguageNotifier>()
+        ..addListener(_onLanguageResolved);
+      _locale = context.read<LocaleNotifier>()
+        ..addListener(_onLanguageResolved);
       unawaited(_bootstrapNotebookTab());
     });
   }
@@ -74,6 +98,8 @@ class WordBookScreenState extends State<WordBookScreen>
   @override
   void dispose() {
     _refreshNotifier?.removeListener(_onWordBookRefreshRequested);
+    _friendLanguage?.removeListener(_onLanguageResolved);
+    _locale?.removeListener(_onLanguageResolved);
     super.dispose();
   }
 
@@ -140,7 +166,10 @@ class WordBookScreenState extends State<WordBookScreen>
 
   void _selectSegment(String seg) {
     if (seg == _notebookLang) return;
-    setState(() => _notebookLang = seg);
+    setState(() {
+      _notebookLang = seg;
+      _segmentChosenByUser = true;
+    });
     unawaited(_load());
   }
 

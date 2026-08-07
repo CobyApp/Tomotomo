@@ -65,6 +65,7 @@ class DemoContent {
     required this.studyLanguage,
     required this.friends,
     required this.conversation,
+    required this.secondConversation,
     required this.words,
   });
 
@@ -72,6 +73,9 @@ class DemoContent {
   final String studyLanguage;
   final List<DemoFriend> friends;
   final List<DemoTurn> conversation;
+
+  /// A short second thread, so the chat list is not a single lonely row.
+  final List<DemoTurn> secondConversation;
   final List<DemoWord> words;
 }
 
@@ -219,6 +223,30 @@ List<DemoWord> _koreanWords() => const [
   DemoWord(term: '알려주다', reading: 'アルリョジュダ', meaning: '教えてあげる'),
 ];
 
+/// Emily speaks English in every set, so her thread needs no per-locale variant
+/// beyond the translation line.
+List<DemoTurn> _englishConversation(String uiLang) {
+  final under = <String, List<String>>{
+    'ko': ['주말에 뭐 할 거야?', '오래된 영화 한 편 볼까 해. 너도 같이 볼래?'],
+    'ja': ['週末は何をするの？', '古い映画を観ようと思って。いっしょにどう？'],
+    'en': ['What are you up to this weekend?', 'Watching an old film. Want to join?'],
+    'zh': ['你周末打算做什么？', '想看一部老电影。要一起吗？'],
+  }[uiLang]!;
+  return [
+    DemoTurn(
+      text: 'What are you up to this weekend?',
+      fromLearner: true,
+      translation: under[0],
+    ),
+    DemoTurn(
+      text: "I'm watching an old film. Want to join?",
+      fromLearner: false,
+      translation: under[1],
+      explanation: '"Want to join?" is a casual way to invite someone.',
+    ),
+  ];
+}
+
 /// The demo set for a UI language.
 DemoContent demoContentFor(String uiLang) => switch (uiLang) {
   // A Japanese speaker learning Korean.
@@ -227,6 +255,7 @@ DemoContent demoContentFor(String uiLang) => switch (uiLang) {
     studyLanguage: 'ko',
     friends: _koreanFriends(),
     conversation: _koreanConversation(),
+    secondConversation: _englishConversation('ja'),
     words: _koreanWords(),
   ),
   'en' => DemoContent(
@@ -234,6 +263,7 @@ DemoContent demoContentFor(String uiLang) => switch (uiLang) {
     studyLanguage: 'ja',
     friends: _japaneseFriends(),
     conversation: _japaneseConversation('en'),
+    secondConversation: _englishConversation('en'),
     words: _japaneseWords('en'),
   ),
   'zh' => DemoContent(
@@ -241,6 +271,7 @@ DemoContent demoContentFor(String uiLang) => switch (uiLang) {
     studyLanguage: 'ja',
     friends: _japaneseFriends(),
     conversation: _japaneseConversation('zh'),
+    secondConversation: _englishConversation('zh'),
     words: _japaneseWords('zh'),
   ),
   // Korean UI, learning Japanese.
@@ -249,6 +280,7 @@ DemoContent demoContentFor(String uiLang) => switch (uiLang) {
     studyLanguage: 'ja',
     friends: _japaneseFriends(),
     conversation: _japaneseConversation('ko'),
+    secondConversation: _englishConversation('ko'),
     words: _japaneseWords('ko'),
   ),
 };

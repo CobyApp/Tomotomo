@@ -154,20 +154,48 @@ Future<void> _seed(String lang) async {
       updatedAt: now,
     ),
   );
-  var stamp = now.subtract(Duration(minutes: demo.conversation.length * 2));
-  for (final turn in demo.conversation) {
-    stamp = stamp.add(const Duration(minutes: 2));
-    await chatRepository.saveMessage(
-      character,
-      ChatMessage(
-        content: turn.text,
-        role: turn.fromLearner ? 'user' : 'assistant',
-        timestamp: stamp,
-        lineTranslation: turn.translation,
-        explanation: turn.explanation,
-      ),
-    );
+  Future<void> writeThread(
+    Character who,
+    List<DemoTurn> turns,
+    DateTime endingAt,
+  ) async {
+    var stamp = endingAt.subtract(Duration(minutes: turns.length * 2));
+    for (final turn in turns) {
+      stamp = stamp.add(const Duration(minutes: 2));
+      await chatRepository.saveMessage(
+        who,
+        ChatMessage(
+          content: turn.text,
+          role: turn.fromLearner ? 'user' : 'assistant',
+          timestamp: stamp,
+          lineTranslation: turn.translation,
+          explanation: turn.explanation,
+        ),
+      );
+    }
   }
+
+  await writeThread(character, demo.conversation, now);
+
+  // A second thread so the chat list is not one lonely row. Older, so the lead
+  // conversation stays on top — that is the one the chat screenshot opens.
+  final second = demo.friends[1];
+  await writeThread(
+    Character.fromRecord(
+      CharacterRecord(
+        id: second.id,
+        name: second.name,
+        tagline: second.tagline,
+        language: second.language,
+        level: second.level,
+        avatarUrl: second.avatarAsset,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ),
+    demo.secondConversation,
+    now.subtract(const Duration(days: 1, hours: 3)),
+  );
 
   for (final word in demo.words) {
     await savedExpressionRepository.add(
